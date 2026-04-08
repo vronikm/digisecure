@@ -28,10 +28,12 @@ use DigiSecure\Security\Crypto\Hasher;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Security\Rbac\Authorizer;
 use DigiSecure\Security\Session\SessionManager;
+use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\Controller\DashboardController;
 use DigiSecure\Security\Auth\Controller\LoginController;
 use DigiSecure\Security\Auth\Controller\LogoutController;
 use DigiSecure\Tenant\Domain\TenantContext;
+use DigiSecure\User\Controller\ProfileController;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -61,6 +63,7 @@ final class Bootstrap
         $debug = $config->bool('app.debug', false);
 
         $errorHandler = new ErrorHandler($debug, $logPath);
+        $errorHandler->setTemplatesPath("{$this->rootPath}/templates");
         $errorHandler->register();
 
         // 3. Container
@@ -141,7 +144,13 @@ final class Bootstrap
             ),
         );
 
-        // 10. Router con rutas registradas
+        // 10. ViewRenderer (templates)
+        $container->singleton(
+            ViewRenderer::class,
+            fn(): ViewRenderer => new ViewRenderer("{$this->rootPath}/templates"),
+        );
+
+        // 11. Router con rutas registradas
         $router = new Router();
         $this->registerRoutes($router);
         $container->instance(Router::class, $router);
@@ -254,6 +263,11 @@ final class Bootstrap
         $router->post('/logout', [LogoutController::class, 'logout'], name: 'logout');
         $router->get('/dashboard', [DashboardController::class, 'index'], name: 'dashboard');
 
+        // Perfil de usuario
+        $router->get('/perfil', [ProfileController::class, 'show'], name: 'perfil');
+        $router->get('/perfil/password', [ProfileController::class, 'showPasswordForm'], name: 'perfil.password');
+        $router->post('/perfil/password', [ProfileController::class, 'changePassword'], name: 'perfil.password.change');
+
         // --- Healthcheck y smoke tests (mantener para monitoreo) ---
         $router->get('/healthcheck', static fn(
             SessionManager $session,
@@ -262,7 +276,7 @@ final class Bootstrap
         ) => \DigiSecure\Kernel\Http\Response::json([
             'status' => 'ok',
             'service' => 'DigiSecure',
-            'phase' => '0.7',
+            'phase' => '0.9',
             'timestamp' => date('c'),
             'php' => PHP_VERSION,
             'session_active' => $session->isStarted(),

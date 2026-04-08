@@ -19,10 +19,21 @@ use DigiSecure\Security\Csrf\CsrfException;
  */
 final class ErrorHandler
 {
+    private ?string $templatesPath = null;
+
     public function __construct(
         private readonly bool $debug,
         private readonly string $logPath,
     ) {
+    }
+
+    /**
+     * Establece la ruta de templates para renderizar páginas de error bonitas.
+     * Si no se establece, se usa HTML básico como fallback.
+     */
+    public function setTemplatesPath(string $path): void
+    {
+        $this->templatesPath = $path;
     }
 
     /**
@@ -117,6 +128,32 @@ final class ErrorHandler
 
     private function renderProduction(\Throwable $e, int $status): Response
     {
+        // Intentar usar templates bonitas si están disponibles
+        $templateMap = [
+            Response::STATUS_FORBIDDEN => 'errors/403.php',
+            Response::STATUS_NOT_FOUND => 'errors/404.php',
+            Response::STATUS_INTERNAL_ERROR => 'errors/500.php',
+        ];
+
+        if ($this->templatesPath !== null && isset($templateMap[$status])) {
+            $templateFile = "{$this->templatesPath}/{$templateMap[$status]}";
+            if (is_file($templateFile)) {
+                try {
+                    ob_start();
+                    $debug = false;
+                    $message = '';
+                    $permiso = '';
+                    $userName = '';
+                    include $templateFile;
+                    $body = ob_get_clean() ?: '';
+                    return Response::html($body, $status);
+                } catch (\Throwable) {
+                    ob_end_clean();
+                    // Caer al HTML básico si el template falla
+                }
+            }
+        }
+
         $messages = [
             Response::STATUS_NOT_FOUND => 'Recurso no encontrado.',
             Response::STATUS_METHOD_NOT_ALLOWED => 'Método HTTP no permitido para este recurso.',
