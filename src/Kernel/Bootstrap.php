@@ -10,17 +10,28 @@ use DigiSecure\Kernel\Config\EnvLoader;
 use DigiSecure\Kernel\Container\Container;
 use DigiSecure\Kernel\Error\ErrorHandler;
 use DigiSecure\Kernel\Http\Request;
+use DigiSecure\Kernel\Middleware\AuditMiddleware;
+use DigiSecure\Kernel\Middleware\AuthenticationMiddleware;
+use DigiSecure\Kernel\Middleware\AuthorizationMiddleware;
 use DigiSecure\Kernel\Middleware\CsrfMiddleware;
 use DigiSecure\Kernel\Middleware\ErrorHandlerMiddleware;
 use DigiSecure\Kernel\Middleware\Pipeline;
 use DigiSecure\Kernel\Middleware\SecurityHeadersMiddleware;
 use DigiSecure\Kernel\Middleware\SessionMiddleware;
+use DigiSecure\Kernel\Middleware\TenantContextMiddleware;
 use DigiSecure\Kernel\Routing\RouteDispatcher;
 use DigiSecure\Kernel\Routing\Router;
+use DigiSecure\Security\Audit\AuditLogger;
+use DigiSecure\Security\Auth\Authenticator;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Security\Crypto\Hasher;
 use DigiSecure\Security\Csrf\CsrfGuard;
+use DigiSecure\Security\Rbac\Authorizer;
 use DigiSecure\Security\Session\SessionManager;
+use DigiSecure\Security\Auth\Controller\DashboardController;
+use DigiSecure\Security\Auth\Controller\LoginController;
+use DigiSecure\Security\Auth\Controller\LogoutController;
+use DigiSecure\Tenant\Domain\TenantContext;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -94,7 +105,43 @@ final class Bootstrap
             ),
         );
 
-        // 6. Router con rutas registradas
+        // 6. Multi-tenancy: TenantContext (request-scoped, singleton por request)
+        $container->singleton(
+            TenantContext::class,
+            static fn(): TenantContext => new TenantContext(),
+        );
+
+        // 7. Auditoría
+        $container->singleton(
+            AuditLogger::class,
+            static fn(Container $c): AuditLogger => new AuditLogger(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+
+        // 8. RBAC
+        $container->singleton(
+            Authorizer::class,
+            static fn(Container $c): Authorizer => new Authorizer(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+
+        // 9. Authenticator
+        $container->singleton(
+            Authenticator::class,
+            static fn(Container $c): Authenticator => new Authenticator(
+                $c->get(PdoConnection::class),
+                $c->get(SessionManager::class),
+                $c->get(Authorizer::class),
+                $c->get(AuditLogger::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+
+        // 10. Router con rutas registradas
         $router = new Router();
         $this->registerRoutes($router);
         $container->instance(Router::class, $router);
@@ -108,13 +155,19 @@ final class Bootstrap
         //  - ErrorHandler captura excepciones del resto del pipeline (incluida CsrfException).
         //  - Session debe iniciarse antes que CSRF (CSRF lee/escribe en sesión).
         //  - CSRF debe ejecutarse antes del handler para abortar requests inválidos.
+        //  - Authentication carga el usuario de sesión y protege rutas.
+        //  - TenantContext establece el tenant_id para BaseRepository.
+        //  - Authorization verifica permisos de ruta.
+        //  - Audit registra operaciones de escritura.
         $globalMiddlewares = [
             SecurityHeadersMiddleware::class,
             ErrorHandlerMiddleware::class,
             SessionMiddleware::class,
             CsrfMiddleware::class,
-            // En Fase 0.7 se añade: AuthenticationMiddleware
-            // En Fase 0.8 se añade: TenantContextMiddleware
+            AuthenticationMiddleware::class,
+            TenantContextMiddleware::class,
+            AuthorizationMiddleware::class,
+            AuditMiddleware::class,
         ];
 
         $dispatcher = new RouteDispatcher($router, $container);
@@ -186,27 +239,37 @@ final class Bootstrap
     private function registerRoutes(Router $router): void
     {
         // Las rutas se moverán a config/routes.php cuando crezcan.
-        // Por ahora, rutas de smoke test que validan que el Kernel y la Fase 0.5 funcionan.
 
-        $router->get('/', static fn() => \DigiSecure\Kernel\Http\Response::html(
-            '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>DigiSecure</title></head><body><h1>DigiSecure</h1><p>Kernel HTTP activo. Fase 0.5 completada.</p><ul><li><a href="/healthcheck">/healthcheck</a></li><li><a href="/_smoke/session">/_smoke/session</a></li></ul></body></html>'
-        ), name: 'home');
+        // --- Rutas públicas ---
+        $router->get('/', static fn(Authenticator $auth) => $auth->isAuthenticated()
+            ? \DigiSecure\Kernel\Http\Response::redirect('/dashboard')
+            : \DigiSecure\Kernel\Http\Response::redirect('/login'),
+            name: 'home',
+        );
 
+        $router->get('/login', [LoginController::class, 'showForm'], name: 'login');
+        $router->post('/login', [LoginController::class, 'processLogin'], name: 'login.process');
+
+        // --- Rutas protegidas ---
+        $router->post('/logout', [LogoutController::class, 'logout'], name: 'logout');
+        $router->get('/dashboard', [DashboardController::class, 'index'], name: 'dashboard');
+
+        // --- Healthcheck y smoke tests (mantener para monitoreo) ---
         $router->get('/healthcheck', static fn(
             SessionManager $session,
             CsrfGuard $csrf,
+            Authenticator $auth,
         ) => \DigiSecure\Kernel\Http\Response::json([
             'status' => 'ok',
             'service' => 'DigiSecure',
-            'phase' => '0.5',
+            'phase' => '0.7',
             'timestamp' => date('c'),
             'php' => PHP_VERSION,
             'session_active' => $session->isStarted(),
             'csrf_token_present' => $csrf->token() !== '',
+            'authenticated' => $auth->isAuthenticated(),
         ]), name: 'healthcheck');
 
-        // Smoke test de sesión + CSRF: incrementa un contador en sesión
-        // y devuelve el token CSRF actual.
         $router->get('/_smoke/session', static function (SessionManager $session, CsrfGuard $csrf) {
             $hits = (int)($session->get('_smoke.hits', 0)) + 1;
             $session->set('_smoke.hits', $hits);
