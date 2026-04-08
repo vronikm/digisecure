@@ -1,0 +1,6 @@
+- [DigiSecure - Proyecto SaaS Multi-tenant](project_digisecure.md) — SaaS seguridad privada Ecuador, PHP 8.3/MySQL 8, multi-tenant por tenant_id, AdminLTE 3
+- [DigiSecure - Dominio (Ficha del Guardia)](project_digisecure_domain.md) — Agregado raíz: ficha 46 campos, biométricos, LOPDP, cédula Ecuador
+- [DigiSecure - Decisiones arquitectónicas confirmadas](project_decisions_arquitectura.md) — 16 decisiones vinculantes: vanilla PHP 8.3 puro, sesiones, PDO, multi-tenant aislado, retención 5 años
+- [DigiSecure - Expediente Documental del Guardia](project_digisecure_expediente.md) — 2do agregado: 4 requisitos básicos + 27 documentos con validación externa, capturas, vencimientos
+- [DigiSecure - Notificaciones y Vencimientos](project_digisecure_notificaciones.md) — Motor email/WhatsApp para vencimientos (reentrenamiento 2 años, alerta 15 días antes)
+- [Rol multi-disciplinar y estándares DigiSecure](feedback_role_and_quality.md) — Arquitecto+Backend+DBA+Seguridad+DevOps+UX simultáneos, SOLID obligatorio, sin código espagueti

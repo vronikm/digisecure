@@ -1,0 +1,27 @@
+# =====================================================================
+# DigiSecure - Bloqueo de acceso a la raíz del proyecto
+# =====================================================================
+# Si Apache está mal configurado y apunta el DocumentRoot a la raíz del
+# proyecto (en vez de a public/), este .htaccess redirige todas las
+# peticiones a public/. NUNCA confiar solo en esto: la configuración
+# correcta es DocumentRoot = /ruta/digisecure/public
+# =====================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Si la petición no empieza con public/, reescribir
+    RewriteCond %{REQUEST_URI} !^/digisecure/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Bloquear acceso a directorios sensibles incluso si el DocumentRoot está mal
+<FilesMatch "\.(env|gitignore|md|json|lock|neon|dist|example)$">
+    Require all denied
+</FilesMatch>
+
+<DirectoryMatch "(src|var|config|tests|migrations|bin|vendor|docs)">
+    Require all denied
+</DirectoryMatch>
+
+Options -Indexes

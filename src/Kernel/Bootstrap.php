@@ -1,0 +1,220 @@
+<?php
+declare(strict_types=1);
+
+namespace DigiSecure\Kernel;
+
+use DigiSecure\Infrastructure\Persistence\MigrationRunner;
+use DigiSecure\Infrastructure\Persistence\PdoConnection;
+use DigiSecure\Kernel\Config\Config;
+use DigiSecure\Kernel\Config\EnvLoader;
+use DigiSecure\Kernel\Container\Container;
+use DigiSecure\Kernel\Error\ErrorHandler;
+use DigiSecure\Kernel\Http\Request;
+use DigiSecure\Kernel\Middleware\CsrfMiddleware;
+use DigiSecure\Kernel\Middleware\ErrorHandlerMiddleware;
+use DigiSecure\Kernel\Middleware\Pipeline;
+use DigiSecure\Kernel\Middleware\SecurityHeadersMiddleware;
+use DigiSecure\Kernel\Middleware\SessionMiddleware;
+use DigiSecure\Kernel\Routing\RouteDispatcher;
+use DigiSecure\Kernel\Routing\Router;
+use DigiSecure\Security\Crypto\Encryption;
+use DigiSecure\Security\Crypto\Hasher;
+use DigiSecure\Security\Csrf\CsrfGuard;
+use DigiSecure\Security\Session\SessionManager;
+
+/**
+ * Orquestador del arranque de la aplicación.
+ *
+ * Se invoca desde public/index.php. Su responsabilidad es:
+ * 1. Cargar configuración desde .env
+ * 2. Configurar el ErrorHandler global
+ * 3. Construir el Container y registrar bindings
+ * 4. Cargar las rutas
+ * 5. Construir el pipeline de middlewares
+ * 6. Procesar el request y enviar la response
+ */
+final class Bootstrap
+{
+    public function __construct(
+        public readonly string $rootPath,
+    ) {
+    }
+
+    public function run(): void
+    {
+        // 1. Configuración
+        $config = $this->loadConfig();
+
+        // 2. ErrorHandler global (antes de cualquier código que pueda fallar)
+        $logPath = "{$this->rootPath}/{$config->string('log.path', 'var/logs/digisecure.log')}";
+        $debug = $config->bool('app.debug', false);
+
+        $errorHandler = new ErrorHandler($debug, $logPath);
+        $errorHandler->register();
+
+        // 3. Container
+        $container = new Container();
+        $container->instance(Container::class, $container);
+        $container->instance(Config::class, $config);
+        $container->instance(ErrorHandler::class, $errorHandler);
+
+        // 4. Persistencia (lazy: la conexión PDO solo se abre al primer uso)
+        $container->singleton(
+            PdoConnection::class,
+            static fn(Container $c): PdoConnection => PdoConnection::fromConfig($c->get(Config::class)),
+        );
+        $container->singleton(
+            MigrationRunner::class,
+            fn(Container $c): MigrationRunner => new MigrationRunner(
+                $c->get(PdoConnection::class),
+                "{$this->rootPath}/migrations",
+            ),
+        );
+
+        // 5. Seguridad base (Fase 0.5)
+        $container->singleton(
+            SessionManager::class,
+            fn(Container $c): SessionManager => SessionManager::fromConfig(
+                $c->get(Config::class),
+                $this->rootPath,
+            ),
+        );
+        $container->singleton(
+            CsrfGuard::class,
+            static fn(Container $c): CsrfGuard => new CsrfGuard($c->get(SessionManager::class)),
+        );
+        $container->singleton(
+            Hasher::class,
+            static fn(): Hasher => new Hasher(),
+        );
+        $container->singleton(
+            Encryption::class,
+            static fn(Container $c): Encryption => Encryption::fromHexKey(
+                $c->get(Config::class)->string('encryption.key', '')
+            ),
+        );
+
+        // 6. Router con rutas registradas
+        $router = new Router();
+        $this->registerRoutes($router);
+        $container->instance(Router::class, $router);
+
+        // 7. Request desde superglobales
+        $request = Request::fromGlobals();
+
+        // 8. Pipeline de middlewares globales
+        // ORDEN CRÍTICO:
+        //  - SecurityHeaders envuelve todo: incluso 404/500 deben llevar headers de seguridad.
+        //  - ErrorHandler captura excepciones del resto del pipeline (incluida CsrfException).
+        //  - Session debe iniciarse antes que CSRF (CSRF lee/escribe en sesión).
+        //  - CSRF debe ejecutarse antes del handler para abortar requests inválidos.
+        $globalMiddlewares = [
+            SecurityHeadersMiddleware::class,
+            ErrorHandlerMiddleware::class,
+            SessionMiddleware::class,
+            CsrfMiddleware::class,
+            // En Fase 0.7 se añade: AuthenticationMiddleware
+            // En Fase 0.8 se añade: TenantContextMiddleware
+        ];
+
+        $dispatcher = new RouteDispatcher($router, $container);
+        $pipeline = new Pipeline($container, $globalMiddlewares, $dispatcher);
+
+        // 7. Procesar y enviar
+        $response = $pipeline->handle($request);
+        $response->send();
+    }
+
+    private function loadConfig(): Config
+    {
+        $envFile = "{$this->rootPath}/.env";
+        $envVars = EnvLoader::load($envFile);
+
+        // Mapear variables planas del .env a un árbol jerárquico
+        $values = [
+            'app' => [
+                'name' => $envVars['APP_NAME'] ?? 'DigiSecure',
+                'env' => $envVars['APP_ENV'] ?? 'production',
+                'debug' => $envVars['APP_DEBUG'] ?? 'false',
+                'url' => $envVars['APP_URL'] ?? '',
+                'timezone' => $envVars['APP_TIMEZONE'] ?? 'America/Guayaquil',
+                'locale' => $envVars['APP_LOCALE'] ?? 'es_EC',
+                'key' => $envVars['APP_KEY'] ?? '',
+            ],
+            'db' => [
+                'host' => $envVars['DB_HOST'] ?? '127.0.0.1',
+                'port' => $envVars['DB_PORT'] ?? '3306',
+                'database' => $envVars['DB_DATABASE'] ?? 'digisecure',
+                'username' => $envVars['DB_USERNAME'] ?? '',
+                'password' => $envVars['DB_PASSWORD'] ?? '',
+                'charset' => $envVars['DB_CHARSET'] ?? 'utf8mb4',
+                'collation' => $envVars['DB_COLLATION'] ?? 'utf8mb4_0900_ai_ci',
+            ],
+            'session' => [
+                'name' => $envVars['SESSION_NAME'] ?? 'DIGISECURE_SID',
+                'lifetime' => $envVars['SESSION_LIFETIME_MINUTES'] ?? '120',
+                'cookie_secure' => $envVars['SESSION_COOKIE_SECURE'] ?? 'false',
+                'cookie_httponly' => $envVars['SESSION_COOKIE_HTTPONLY'] ?? 'true',
+                'cookie_samesite' => $envVars['SESSION_COOKIE_SAMESITE'] ?? 'Strict',
+                'save_path' => $envVars['SESSION_SAVE_PATH'] ?? 'var/sessions',
+            ],
+            'encryption' => [
+                'key' => $envVars['ENCRYPTION_KEY'] ?? '',
+            ],
+            'mail' => [
+                'driver' => $envVars['MAIL_DRIVER'] ?? 'smtp',
+                'host' => $envVars['MAIL_HOST'] ?? '',
+                'port' => $envVars['MAIL_PORT'] ?? '587',
+                'username' => $envVars['MAIL_USERNAME'] ?? '',
+                'password' => $envVars['MAIL_PASSWORD'] ?? '',
+                'encryption' => $envVars['MAIL_ENCRYPTION'] ?? 'tls',
+                'from_address' => $envVars['MAIL_FROM_ADDRESS'] ?? '',
+                'from_name' => $envVars['MAIL_FROM_NAME'] ?? '',
+            ],
+            'log' => [
+                'path' => $envVars['LOG_PATH'] ?? 'var/logs/digisecure.log',
+                'level' => $envVars['LOG_LEVEL'] ?? 'info',
+            ],
+        ];
+
+        // Configurar timezone PHP
+        date_default_timezone_set($values['app']['timezone']);
+
+        return new Config($values);
+    }
+
+    private function registerRoutes(Router $router): void
+    {
+        // Las rutas se moverán a config/routes.php cuando crezcan.
+        // Por ahora, rutas de smoke test que validan que el Kernel y la Fase 0.5 funcionan.
+
+        $router->get('/', static fn() => \DigiSecure\Kernel\Http\Response::html(
+            '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>DigiSecure</title></head><body><h1>DigiSecure</h1><p>Kernel HTTP activo. Fase 0.5 completada.</p><ul><li><a href="/healthcheck">/healthcheck</a></li><li><a href="/_smoke/session">/_smoke/session</a></li></ul></body></html>'
+        ), name: 'home');
+
+        $router->get('/healthcheck', static fn(
+            SessionManager $session,
+            CsrfGuard $csrf,
+        ) => \DigiSecure\Kernel\Http\Response::json([
+            'status' => 'ok',
+            'service' => 'DigiSecure',
+            'phase' => '0.5',
+            'timestamp' => date('c'),
+            'php' => PHP_VERSION,
+            'session_active' => $session->isStarted(),
+            'csrf_token_present' => $csrf->token() !== '',
+        ]), name: 'healthcheck');
+
+        // Smoke test de sesión + CSRF: incrementa un contador en sesión
+        // y devuelve el token CSRF actual.
+        $router->get('/_smoke/session', static function (SessionManager $session, CsrfGuard $csrf) {
+            $hits = (int)($session->get('_smoke.hits', 0)) + 1;
+            $session->set('_smoke.hits', $hits);
+            return \DigiSecure\Kernel\Http\Response::json([
+                'session_id' => $session->id(),
+                'hits' => $hits,
+                'csrf_token' => $csrf->token(),
+            ]);
+        }, name: 'smoke.session');
+    }
+}

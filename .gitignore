@@ -1,0 +1,73 @@
+# =====================================================================
+# DigiSecure - .gitignore
+# =====================================================================
+
+# --- Composer ---
+/vendor/
+composer.phar
+composer.lock.bak
+
+# --- Variables de entorno (NUNCA versionar) ---
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# --- Archivos generados / runtime ---
+/var/cache/*
+!/var/cache/.gitkeep
+/var/logs/*
+!/var/logs/.gitkeep
+/var/sessions/*
+!/var/sessions/.gitkeep
+/var/storage/*
+!/var/storage/.gitkeep
+
+# --- IDEs / Editores ---
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.buildpath
+*.sublime-workspace
+*.sublime-project
+
+# --- Sistema operativo ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+$RECYCLE.BIN/
+
+# --- PHPUnit / Tests ---
+/.phpunit.cache/
+.phpunit.result.cache
+/coverage/
+/build/
+
+# --- PHPStan ---
+/.phpstan.cache/
+phpstan.neon.local
+
+# --- Logs sueltos ---
+*.log
+
+# --- Backups ---
+*.bak
+*.backup
+*.old
+
+# --- Archivos sensibles ---
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+private/
