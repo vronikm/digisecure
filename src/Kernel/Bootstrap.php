@@ -34,6 +34,8 @@ use DigiSecure\Security\Auth\Controller\LoginController;
 use DigiSecure\Security\Auth\Controller\LogoutController;
 use DigiSecure\Tenant\Domain\TenantContext;
 use DigiSecure\User\Controller\ProfileController;
+use DigiSecure\Ficha\Controller\FichaController;
+use DigiSecure\Expediente\Controller\ExpedienteController;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -150,7 +152,72 @@ final class Bootstrap
             fn(): ViewRenderer => new ViewRenderer("{$this->rootPath}/templates"),
         );
 
-        // 11. Router con rutas registradas
+        // 11. Módulo Ficha del Guardia
+        $container->singleton(
+            \DigiSecure\Ficha\Infrastructure\FichaRepository::class,
+            static fn(Container $c): \DigiSecure\Ficha\Infrastructure\FichaRepository => new \DigiSecure\Ficha\Infrastructure\FichaRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Ficha\Application\CrearFichaService::class,
+            static fn(Container $c) => new \DigiSecure\Ficha\Application\CrearFichaService(
+                $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
+                $c->get(PdoConnection::class),
+                $c->get(Encryption::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Ficha\Application\ActualizarFichaService::class,
+            static fn(Container $c) => new \DigiSecure\Ficha\Application\ActualizarFichaService(
+                $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
+                $c->get(PdoConnection::class),
+                $c->get(Encryption::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Ficha\Application\CompletarFichaService::class,
+            static fn(Container $c) => new \DigiSecure\Ficha\Application\CompletarFichaService(
+                $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 12. Módulo Expediente Documental
+        $container->singleton(
+            \DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class,
+            static fn(Container $c) => new \DigiSecure\Expediente\Infrastructure\ExpedienteRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Expediente\Application\SubirDocumentoService::class,
+            fn(Container $c) => new \DigiSecure\Expediente\Application\SubirDocumentoService(
+                $c->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class),
+                $c->get(AuditLogger::class),
+                "{$this->rootPath}/var/storage/documentos",
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Expediente\Application\RevisarDocumentoService::class,
+            static fn(Container $c) => new \DigiSecure\Expediente\Application\RevisarDocumentoService(
+                $c->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Expediente\Application\VerificarVencimientosService::class,
+            static fn(Container $c) => new \DigiSecure\Expediente\Application\VerificarVencimientosService(
+                $c->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 13. Router con rutas registradas
         $router = new Router();
         $this->registerRoutes($router);
         $container->instance(Router::class, $router);
@@ -268,6 +335,24 @@ final class Bootstrap
         $router->get('/perfil/password', [ProfileController::class, 'showPasswordForm'], name: 'perfil.password');
         $router->post('/perfil/password', [ProfileController::class, 'changePassword'], name: 'perfil.password.change');
 
+        // Fichas de guardia (Fase 1)
+        $router->get('/guardias', [FichaController::class, 'index'], name: 'fichas.index');
+        $router->get('/guardias/crear', [FichaController::class, 'create'], name: 'fichas.create');
+        $router->post('/guardias/crear', [FichaController::class, 'store'], name: 'fichas.store');
+        $router->get('/guardias/{id}', [FichaController::class, 'show'], name: 'fichas.show');
+        $router->get('/guardias/{id}/editar', [FichaController::class, 'edit'], name: 'fichas.edit');
+        $router->post('/guardias/{id}/editar', [FichaController::class, 'update'], name: 'fichas.update');
+        $router->post('/guardias/{id}/completar', [FichaController::class, 'completar'], name: 'fichas.completar');
+
+        // Expediente documental (Fase 2)
+        $router->get('/expedientes', [ExpedienteController::class, 'index'], name: 'expedientes.index');
+        $router->get('/expedientes/pendientes', [ExpedienteController::class, 'pendientes'], name: 'expedientes.pendientes');
+        $router->get('/guardias/{fichaId}/expediente', [ExpedienteController::class, 'dashboard'], name: 'expedientes.dashboard');
+        $router->get('/expedientes/{id}/documento/{tipoId}', [ExpedienteController::class, 'showUploadForm'], name: 'expedientes.documento.upload.form');
+        $router->post('/expedientes/{id}/documento/{tipoId}', [ExpedienteController::class, 'upload'], name: 'expedientes.documento.upload');
+        $router->get('/expedientes/documento/{docId}', [ExpedienteController::class, 'showDocumento'], name: 'expedientes.documento.show');
+        $router->post('/expedientes/documento/{docId}/revisar', [ExpedienteController::class, 'revisar'], name: 'expedientes.documento.revisar');
+
         // --- Healthcheck y smoke tests (mantener para monitoreo) ---
         $router->get('/healthcheck', static fn(
             SessionManager $session,
@@ -276,7 +361,7 @@ final class Bootstrap
         ) => \DigiSecure\Kernel\Http\Response::json([
             'status' => 'ok',
             'service' => 'DigiSecure',
-            'phase' => '0.9',
+            'phase' => '1.0',
             'timestamp' => date('c'),
             'php' => PHP_VERSION,
             'session_active' => $session->isStarted(),

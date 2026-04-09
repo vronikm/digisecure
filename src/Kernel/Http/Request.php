@@ -133,6 +133,18 @@ final class Request
     }
 
     /**
+     * Devuelve los datos de un archivo subido ($_FILES entry).
+     *
+     * @return array{name: string, type: string, tmp_name: string, error: int, size: int}|null
+     */
+    public function file(string $key): ?array
+    {
+        return isset($this->files[$key]) && is_array($this->files[$key])
+            ? $this->files[$key]
+            : null;
+    }
+
+    /**
      * Decodifica el body como JSON. Devuelve [] si no es válido.
      * @return array<string, mixed>
      */
