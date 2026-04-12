@@ -95,8 +95,8 @@ $returnTo = $returnTo ?? null;
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="/login" autocomplete="on" novalidate>
-                <input type="hidden" name="_csrf_token" value="<?= $e($csrfToken) ?>">
+            <form method="POST" action="<?= $view->url('/login') ?>" autocomplete="on" novalidate>
+                <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                 <?php if ($returnTo !== null): ?>
                     <input type="hidden" name="return_to" value="<?= $e($returnTo) ?>">
                 <?php endif; ?>
@@ -119,7 +119,7 @@ $returnTo = $returnTo ?? null;
                 </button>
 
                 <div class="text-center">
-                    <a href="/password/forgot" class="text-decoration-none small text-muted">
+                    <a href="<?= $view->url('/password/forgot') ?>" class="text-decoration-none small text-muted">
                         <i class="bi bi-question-circle me-1"></i>¿Olvidaste tu contraseña?
                     </a>
                 </div>

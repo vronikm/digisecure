@@ -22,9 +22,9 @@ $esReemplazo = $docExistente !== null;
 <?php $view->section('title') ?>Subir Documento — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="/guardias">Guardias</a></li>
-<li class="breadcrumb-item"><a href="/guardias/<?= $e($fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
-<li class="breadcrumb-item"><a href="/guardias/<?= $e($fichaId) ?>/expediente">Expediente</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>">Expediente</a></li>
 <li class="breadcrumb-item active"><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?></li>
 <?php $view->endSection() ?>
 
@@ -36,7 +36,7 @@ $esReemplazo = $docExistente !== null;
         </h4>
         <p class="text-muted mb-0"><?= $e($tipo['nombre']) ?></p>
     </div>
-    <a href="/guardias/<?= $e($fichaId) ?>/expediente" class="btn btn-outline-secondary btn-sm">
+    <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Volver al expediente
     </a>
 </div>
@@ -80,8 +80,8 @@ $esReemplazo = $docExistente !== null;
 </div>
 <?php endif ?>
 
-<form method="post" action="/expedientes/<?= $e($expId) ?>/documento/<?= $e($tipoId) ?>" enctype="multipart/form-data">
-    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+<form method="post" action="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipoId) ?>" enctype="multipart/form-data">
+    <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="card shadow-sm mb-4">
         <div class="card-header"><i class="bi bi-paperclip me-2"></i>Archivo</div>
@@ -143,7 +143,7 @@ $esReemplazo = $docExistente !== null;
     <?php endif ?>
 
     <div class="d-flex justify-content-end gap-2 mb-5">
-        <a href="/guardias/<?= $e($fichaId) ?>/expediente" class="btn btn-outline-secondary">Cancelar</a>
+        <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="btn btn-outline-secondary">Cancelar</a>
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-upload me-1"></i><?= $esReemplazo ? 'Reemplazar Documento' : 'Subir Documento' ?>
         </button>

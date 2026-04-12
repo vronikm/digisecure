@@ -1,8 +1,9 @@
 <?php
-/** @var \DigiSecure\Kernel\View\ViewRenderer $view */
+/** @var \DigiSecure\Kernel\View\ViewRenderer|null $view */
 $e = \DigiSecure\Kernel\View\ViewRenderer::e(...);
 $debug = $debug ?? false;
 $message = $message ?? '';
+$dashboardUrl = \DigiSecure\Kernel\Http\BasePath::prepend('/dashboard');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -29,7 +30,7 @@ $message = $message ?? '';
                 <strong>Debug:</strong> <?= $e($message) ?>
             </div>
         <?php endif; ?>
-        <a href="/dashboard" class="btn btn-primary mt-3">
+        <a href="<?= $e($dashboardUrl) ?>" class="btn btn-primary mt-3">
             <i class="bi bi-arrow-left me-1"></i>Volver al inicio
         </a>
     </div>

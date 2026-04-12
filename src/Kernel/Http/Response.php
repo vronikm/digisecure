@@ -75,7 +75,7 @@ final class Response
         return new self(
             status: $status,
             body: '',
-            headers: ['Location' => $location],
+            headers: ['Location' => BasePath::prepend($location)],
         );
     }
 

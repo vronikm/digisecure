@@ -1,6 +1,8 @@
-- [DigiSecure - Proyecto SaaS Multi-tenant](project_digisecure.md) — SaaS seguridad privada Ecuador, PHP 8.3/MySQL 8, multi-tenant por tenant_id, AdminLTE 3
-- [DigiSecure - Dominio (Ficha del Guardia)](project_digisecure_domain.md) — Agregado raíz: ficha 46 campos, biométricos, LOPDP, cédula Ecuador
-- [DigiSecure - Decisiones arquitectónicas confirmadas](project_decisions_arquitectura.md) — 16 decisiones vinculantes: vanilla PHP 8.3 puro, sesiones, PDO, multi-tenant aislado, retención 5 años
-- [DigiSecure - Expediente Documental del Guardia](project_digisecure_expediente.md) — 2do agregado: 4 requisitos básicos + 27 documentos con validación externa, capturas, vencimientos
-- [DigiSecure - Notificaciones y Vencimientos](project_digisecure_notificaciones.md) — Motor email/WhatsApp para vencimientos (reentrenamiento 2 años, alerta 15 días antes)
-- [Rol multi-disciplinar y estándares DigiSecure](feedback_role_and_quality.md) — Arquitecto+Backend+DBA+Seguridad+DevOps+UX simultáneos, SOLID obligatorio, sin código espagueti
+- [DigiSecure - Proyecto SaaS Multi-tenant](project_digisecure.md) - SaaS seguridad privada Ecuador, PHP 8.3/MySQL 8, multi-tenant por tenant_id, AdminLTE 3
+- [DigiSecure - Dominio (Ficha del Guardia)](project_digisecure_domain.md) - Agregado raiz: ficha 46 campos, biometricos, LOPDP, cedula Ecuador
+- [DigiSecure - Decisiones arquitectonicas confirmadas](project_decisions_arquitectura.md) - 23 decisiones vinculantes: vanilla PHP 8.3 puro, sesiones, PDO, multi-tenant aislado, retencion 5 anos
+- [DigiSecure - Expediente Documental del Guardia](project_digisecure_expediente.md) - 2do agregado: 4 requisitos basicos + 27 documentos con validacion externa, capturas, vencimientos
+- [DigiSecure - Notificaciones y Vencimientos](project_digisecure_notificaciones.md) - Motor email/WhatsApp para vencimientos (reentrenamiento 2 anos, alerta 15 dias antes)
+- [DigiSecure - Fase 4 entregada](project_digisecure_fase4.md) - Cola de notificaciones + cron + EmailChannel, admin de usuarios, auditoria y roles read-only
+- [DigiSecure - Fase 5 entregada](project_digisecure_fase5.md) - Notificaciones multicanal operativas (guardia+admin, email+whatsapp, dedupe por ruta)
+- [Rol multi-disciplinar y estandares DigiSecure](feedback_role_and_quality.md) - Arquitecto+Backend+DBA+Seguridad+DevOps+UX simultaneos, SOLID obligatorio, sin codigo espagueti

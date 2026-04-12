@@ -88,7 +88,7 @@ $db->transactional(function (PdoConnection $db) use ($tenantId, $adminId, $email
     // 1. Crear tenant de prueba
     $db->execute(
         "INSERT INTO tenants (id, razon_social, ruc, nombre_comercial, email_contacto, telefono, ciudad, provincia, estado, plan_codigo, plan_inicio, max_usuarios, max_guardias, max_storage_mb, created_at, updated_at)
-         VALUES (:id, :razon_social, :ruc, :nombre_comercial, :email_contacto, :telefono, :ciudad, :provincia, 'activo', 'professional', CURDATE(), 50, 500, 5120, :now, :now)",
+         VALUES (:id, :razon_social, :ruc, :nombre_comercial, :email_contacto, :telefono, :ciudad, :provincia, 'activo', 'professional', CURDATE(), 50, 500, 5120, :created_at, :updated_at)",
         [
             'id' => $tenantId,
             'razon_social' => 'SecuriTest Ecuador S.A.',
@@ -98,7 +98,8 @@ $db->transactional(function (PdoConnection $db) use ($tenantId, $adminId, $email
             'telefono' => '0991234567',
             'ciudad' => 'Guayaquil',
             'provincia' => 'Guayas',
-            'now' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
         ],
     );
     echo "  [OK] Tenant creado: SecuriTest Ecuador S.A. (ID: {$tenantId})\n";
@@ -107,7 +108,7 @@ $db->transactional(function (PdoConnection $db) use ($tenantId, $adminId, $email
     $emailNorm = mb_strtolower(trim($email), 'UTF-8');
     $db->execute(
         "INSERT INTO usuarios (id, tenant_id, email, email_normalizado, password_hash, nombres, apellidos, cargo, estado, created_at, updated_at)
-         VALUES (:id, :tenant_id, :email, :email_norm, :password_hash, :nombres, :apellidos, :cargo, 'activo', :now, :now)",
+         VALUES (:id, :tenant_id, :email, :email_norm, :password_hash, :nombres, :apellidos, :cargo, 'activo', :created_at, :updated_at)",
         [
             'id' => $adminId,
             'tenant_id' => $tenantId,
@@ -117,7 +118,8 @@ $db->transactional(function (PdoConnection $db) use ($tenantId, $adminId, $email
             'nombres' => 'Admin',
             'apellidos' => 'DigiSecure',
             'cargo' => 'Administrador del Sistema',
-            'now' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
         ],
     );
     echo "  [OK] Usuario creado: {$email} (ID: {$adminId})\n";
@@ -134,14 +136,15 @@ $db->transactional(function (PdoConnection $db) use ($tenantId, $adminId, $email
 
         $db->execute(
             "INSERT INTO roles (id, tenant_id, codigo, nombre, descripcion, es_sistema, created_at, updated_at)
-             VALUES (:id, :tenant_id, :codigo, :nombre, :descripcion, 0, :now, :now)",
+             VALUES (:id, :tenant_id, :codigo, :nombre, :descripcion, 0, :created_at, :updated_at)",
             [
                 'id' => $newRoleId,
                 'tenant_id' => $tenantId,
                 'codigo' => $sysRole['codigo'],
                 'nombre' => $sysRole['nombre'],
                 'descripcion' => $sysRole['descripcion'],
-                'now' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
         );
     }

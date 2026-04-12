@@ -236,12 +236,12 @@ $menuItems = MenuBuilder::build();
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li><span class="dropdown-item-text small text-muted"><?= $e($user->email) ?></span></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="/perfil"><i class="bi bi-person me-2"></i>Mi perfil</a></li>
-                <li><a class="dropdown-item" href="/perfil/password"><i class="bi bi-key me-2"></i>Cambiar contraseña</a></li>
+                <li><a class="dropdown-item" href="<?= $view->url('/perfil') ?>"><i class="bi bi-person me-2"></i>Mi perfil</a></li>
+                <li><a class="dropdown-item" href="<?= $view->url('/perfil/password') ?>"><i class="bi bi-key me-2"></i>Cambiar contraseña</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <form method="POST" action="/logout" class="d-inline">
-                        <input type="hidden" name="_csrf_token" value="<?= $e($csrfToken) ?>">
+                    <form method="POST" action="<?= $view->url('/logout') ?>" class="d-inline">
+                        <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                         <button type="submit" class="dropdown-item text-danger">
                             <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
                         </button>
@@ -266,7 +266,7 @@ $menuItems = MenuBuilder::build();
         ?>
             <?php if ($item->children === []): ?>
                 <!-- Item hoja -->
-                <a href="<?= $e($item->url ?? '#') ?>"
+                <a href="<?= $e($item->url !== null ? $view->url($item->url) : '#') ?>"
                    class="ds-menu-item<?= $isActive ? ' active' : '' ?>">
                     <i class="bi <?= $e($item->icon) ?>"></i>
                     <?= $e($item->label) ?>
@@ -292,7 +292,7 @@ $menuItems = MenuBuilder::build();
                         if (!$child->isVisibleFor($user->permisos)) continue;
                         $childActive = $child->isActive($currentPath);
                     ?>
-                        <a href="<?= $e($child->url ?? '#') ?>"
+                        <a href="<?= $e($child->url !== null ? $view->url($child->url) : '#') ?>"
                            class="ds-menu-item<?= $childActive ? ' active' : '' ?>">
                             <i class="bi <?= $e($child->icon) ?>"></i>
                             <?= $e($child->label) ?>

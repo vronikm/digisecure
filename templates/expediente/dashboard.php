@@ -30,8 +30,8 @@ $bloqueado = !$expediente['bloque_b_desbloqueado'];
 <?php $view->section('title') ?>Expediente — <?= $e($ficha['correlativo']) ?><?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="/guardias">Guardias</a></li>
-<li class="breadcrumb-item"><a href="/guardias/<?= $e($fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
 <li class="breadcrumb-item active">Expediente</li>
 <?php $view->endSection() ?>
 
@@ -49,7 +49,7 @@ $bloqueado = !$expediente['bloque_b_desbloqueado'];
             <span class="badge <?= $estado->badgeClass() ?>"><?= $e($estado->label()) ?></span>
         </div>
     </div>
-    <a href="/guardias/<?= $e($fichaId) ?>" class="btn btn-outline-secondary btn-sm">
+    <a href="<?= $view->url('/guardias/' . $fichaId) ?>" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Volver a ficha
     </a>
 </div>
@@ -177,12 +177,12 @@ $bloqueado = !$expediente['bloque_b_desbloqueado'];
                     </td>
                     <td class="text-end">
                         <?php if ($doc): ?>
-                        <a href="/expedientes/documento/<?= $e($doc['id']) ?>" class="btn btn-sm btn-outline-primary" title="Ver">
+                        <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="btn btn-sm btn-outline-primary" title="Ver">
                             <i class="bi bi-eye"></i>
                         </a>
                         <?php endif ?>
                         <?php if ($user->tienePermiso('expedientes.subir')): ?>
-                        <a href="/expedientes/<?= $e($expId) ?>/documento/<?= $e($tipo['id']) ?>"
+                        <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
                            class="btn btn-sm btn-outline-secondary" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
                             <i class="bi bi-upload"></i>
                         </a>
@@ -243,10 +243,10 @@ $bloqueado = !$expediente['bloque_b_desbloqueado'];
                     <td><span class="text-muted">—</span></td>
                     <td class="text-end">
                         <?php if ($doc): ?>
-                        <a href="/expedientes/documento/<?= $e($doc['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                        <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
                         <?php endif ?>
                         <?php if ($user->tienePermiso('expedientes.subir')): ?>
-                        <a href="/expedientes/<?= $e($expId) ?>/documento/<?= $e($tipo['id']) ?>" class="btn btn-sm btn-outline-secondary">
+                        <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-upload"></i>
                         </a>
                         <?php endif ?>

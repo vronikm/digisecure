@@ -20,8 +20,10 @@
     Require all denied
 </FilesMatch>
 
-<DirectoryMatch "(src|var|config|tests|migrations|bin|vendor|docs)">
-    Require all denied
-</DirectoryMatch>
+# Bloquear acceso a directorios sensibles vía RewriteRule
+# (DirectoryMatch no está permitido en .htaccess)
+<IfModule mod_rewrite.c>
+    RewriteRule ^(src|var|config|tests|migrations|bin|vendor|docs)(/|$) - [F,L]
+</IfModule>
 
 Options -Indexes

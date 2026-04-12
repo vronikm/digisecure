@@ -1,8 +1,9 @@
 <?php
-/** @var \DigiSecure\Kernel\View\ViewRenderer $view */
+/** @var \DigiSecure\Kernel\View\ViewRenderer|null $view */
 $e = \DigiSecure\Kernel\View\ViewRenderer::e(...);
 $permiso = $permiso ?? '';
 $userName = $userName ?? '';
+$dashboardUrl = \DigiSecure\Kernel\Http\BasePath::prepend('/dashboard');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -27,7 +28,7 @@ $userName = $userName ?? '';
         <?php if ($permiso !== ''): ?>
             <p class="small text-secondary">Permiso requerido: <code><?= $e($permiso) ?></code></p>
         <?php endif; ?>
-        <a href="/dashboard" class="btn btn-primary mt-3">
+        <a href="<?= $e($dashboardUrl) ?>" class="btn btn-primary mt-3">
             <i class="bi bi-arrow-left me-1"></i>Volver al inicio
         </a>
     </div>

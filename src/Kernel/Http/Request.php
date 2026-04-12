@@ -47,7 +47,10 @@ final class Request
     {
         $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
         $uri = (string)($_SERVER['REQUEST_URI'] ?? '/');
-        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+        $rawPath = parse_url($uri, PHP_URL_PATH) ?: '/';
+
+        // Stripear base path para que el router vea rutas limpias
+        $path = BasePath::stripFromPath($rawPath);
 
         return new self(
             method: $method,

@@ -22,14 +22,14 @@ $old = static fn(string $key, string $default = '') => $e((string)($input[$key] 
 <?php $view->section('title') ?>Nueva Ficha — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="/guardias">Guardias</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
 <li class="breadcrumb-item active">Nueva Ficha</li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Nueva Ficha de Guardia</h4>
-    <a href="/guardias" class="btn btn-outline-secondary btn-sm">
+    <a href="<?= $view->url('/guardias') ?>" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Volver
     </a>
 </div>
@@ -38,8 +38,8 @@ $old = static fn(string $key, string $default = '') => $e((string)($input[$key] 
 <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?= $e($error) ?></div>
 <?php endif ?>
 
-<form method="post" action="/guardias/crear" id="fichaForm">
-    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+<form method="post" action="<?= $view->url('/guardias/crear') ?>" id="fichaForm">
+    <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <!-- 1. Tipo de Ficha -->
     <div class="card shadow-sm mb-4">
@@ -329,7 +329,7 @@ $old = static fn(string $key, string $default = '') => $e((string)($input[$key] 
 
     <!-- Botones -->
     <div class="d-flex justify-content-end gap-2 mb-5">
-        <a href="/guardias" class="btn btn-outline-secondary">Cancelar</a>
+        <a href="<?= $view->url('/guardias') ?>" class="btn btn-outline-secondary">Cancelar</a>
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-save me-1"></i>Crear Ficha
         </button>

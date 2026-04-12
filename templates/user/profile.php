@@ -17,7 +17,7 @@ $e = ViewRenderer::e(...);
 <?php $view->section('title') ?>Mi perfil — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/dashboard') ?>">Dashboard</a></li>
 <li class="breadcrumb-item active">Mi perfil</li>
 <?php $view->endSection() ?>
 
@@ -105,7 +105,7 @@ $e = ViewRenderer::e(...);
                 <i class="bi bi-gear me-2"></i>Acciones
             </div>
             <div class="list-group list-group-flush">
-                <a href="/perfil/password" class="list-group-item list-group-item-action">
+                <a href="<?= $view->url('/perfil/password') ?>" class="list-group-item list-group-item-action">
                     <i class="bi bi-key me-2 text-primary"></i>Cambiar contraseña
                 </a>
             </div>

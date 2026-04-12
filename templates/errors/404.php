@@ -1,6 +1,7 @@
 <?php
-/** @var \DigiSecure\Kernel\View\ViewRenderer $view */
+/** @var \DigiSecure\Kernel\View\ViewRenderer|null $view */
 $e = \DigiSecure\Kernel\View\ViewRenderer::e(...);
+$dashboardUrl = \DigiSecure\Kernel\Http\BasePath::prepend('/dashboard');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -22,7 +23,7 @@ $e = \DigiSecure\Kernel\View\ViewRenderer::e(...);
         <div class="error-icon"><i class="bi bi-compass"></i></div>
         <h1 class="h2 mt-3">404 — Página no encontrada</h1>
         <p class="text-muted mt-2">La página que buscas no existe o fue movida.</p>
-        <a href="/dashboard" class="btn btn-primary mt-3">
+        <a href="<?= $e($dashboardUrl) ?>" class="btn btn-primary mt-3">
             <i class="bi bi-arrow-left me-1"></i>Volver al inicio
         </a>
     </div>

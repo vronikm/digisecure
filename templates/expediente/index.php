@@ -124,7 +124,7 @@ $titulo = $titulo ?? 'Expedientes Documentales';
                         <?php endif ?>
                     </td>
                     <td class="text-end">
-                        <a href="/guardias/<?= $e($exp['ficha_id']) ?>/expediente" class="btn btn-sm btn-outline-primary">
+                        <a href="<?= $view->url('/guardias/' . $exp['ficha_id'] . '/expediente') ?>" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-folder2-open me-1"></i>Ver
                         </a>
                     </td>

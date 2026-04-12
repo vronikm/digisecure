@@ -393,11 +393,15 @@ final class ExpedienteRepository extends BaseRepository
         return $this->db->fetchAll(
             "SELECT ed.*, dt.nombre AS tipo_nombre, dt.codigo AS tipo_codigo,
                     f.correlativo, f.nombres, f.apellidos,
+                    f.email AS guardia_email, f.celular AS guardia_telefono,
+                    t.email_contacto AS admin_email, t.telefono AS admin_telefono,
+                    COALESCE(t.nombre_comercial, t.razon_social) AS tenant_nombre,
                     DATEDIFF(ed.fecha_vencimiento, CURDATE()) AS dias_restantes
              FROM expediente_documentos ed
              INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
              INNER JOIN expedientes e ON e.id = ed.expediente_id
              INNER JOIN fichas f ON f.id = e.ficha_id
+             INNER JOIN tenants t ON t.id = ed.tenant_id
              WHERE ed.tenant_id = :tid
                AND ed.estado = 'ACEPTADO'
                AND ed.fecha_vencimiento IS NOT NULL
@@ -417,8 +421,17 @@ final class ExpedienteRepository extends BaseRepository
         $tenantId = $this->tenantContext->requireTenantId();
 
         return $this->db->fetchAll(
-            "SELECT ed.id, ed.expediente_id, ed.documento_tipo_id, ed.fecha_vencimiento
+            "SELECT ed.id, ed.expediente_id, ed.documento_tipo_id, ed.fecha_vencimiento,
+                    dt.nombre AS tipo_nombre, dt.codigo AS tipo_codigo,
+                    f.correlativo, f.nombres, f.apellidos,
+                    f.email AS guardia_email, f.celular AS guardia_telefono,
+                    t.email_contacto AS admin_email, t.telefono AS admin_telefono,
+                    COALESCE(t.nombre_comercial, t.razon_social) AS tenant_nombre
              FROM expediente_documentos ed
+             INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
+             INNER JOIN expedientes e ON e.id = ed.expediente_id
+             INNER JOIN fichas f ON f.id = e.ficha_id
+             INNER JOIN tenants t ON t.id = ed.tenant_id
              WHERE ed.tenant_id = :tid
                AND ed.estado = 'ACEPTADO'
                AND ed.fecha_vencimiento IS NOT NULL

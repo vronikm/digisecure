@@ -22,7 +22,7 @@ $fichaId = $ficha['id'];
 <?php $view->section('title') ?>Ficha <?= $e($ficha['correlativo']) ?> — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="/guardias">Guardias</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
 <li class="breadcrumb-item active"><?= $e($ficha['correlativo']) ?></li>
 <?php $view->endSection() ?>
 
@@ -56,20 +56,20 @@ $fichaId = $ficha['id'];
     </div>
     <div class="d-flex gap-2">
         <?php if ($user->tienePermiso('fichas.editar') && in_array($estado, [EstadoFicha::BORRADOR, EstadoFicha::EN_REVISION])): ?>
-        <a href="/guardias/<?= $e($fichaId) ?>/editar" class="btn btn-outline-primary">
+        <a href="<?= $view->url('/guardias/' . $fichaId . '/editar') ?>" class="btn btn-outline-primary">
             <i class="bi bi-pencil me-1"></i>Editar
         </a>
         <?php endif ?>
         <?php if ($user->tienePermiso('fichas.completar') && $estado === EstadoFicha::EN_REVISION): ?>
-        <form method="post" action="/guardias/<?= $e($fichaId) ?>/completar" class="d-inline">
-            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+        <form method="post" action="<?= $view->url('/guardias/' . $fichaId . '/completar') ?>" class="d-inline">
+            <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
             <button type="submit" class="btn btn-success"
                     onclick="return confirm('¿Marcar esta ficha como COMPLETA? Esta acción validará los requisitos básicos.')">
                 <i class="bi bi-check-circle me-1"></i>Completar
             </button>
         </form>
         <?php endif ?>
-        <a href="/guardias" class="btn btn-outline-secondary">
+        <a href="<?= $view->url('/guardias') ?>" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Volver
         </a>
     </div>

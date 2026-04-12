@@ -31,8 +31,8 @@ foreach ($fichasCursos as $fc) {
 <?php $view->section('title') ?>Editar <?= $e($ficha['correlativo']) ?> — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="/guardias">Guardias</a></li>
-<li class="breadcrumb-item"><a href="/guardias/<?= $e($fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
 <li class="breadcrumb-item active">Editar</li>
 <?php $view->endSection() ?>
 
@@ -42,7 +42,7 @@ foreach ($fichasCursos as $fc) {
         <h4 class="mb-1"><i class="bi bi-pencil-square me-2"></i>Editar Ficha <?= $e($ficha['correlativo']) ?></h4>
         <span class="badge <?= $estado->badgeClass() ?>"><?= $e($estado->label()) ?></span>
     </div>
-    <a href="/guardias/<?= $e($fichaId) ?>" class="btn btn-outline-secondary btn-sm">
+    <a href="<?= $view->url('/guardias/' . $fichaId) ?>" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Volver al detalle
     </a>
 </div>
@@ -51,8 +51,8 @@ foreach ($fichasCursos as $fc) {
 <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?= $e($error) ?></div>
 <?php endif ?>
 
-<form method="post" action="/guardias/<?= $e($fichaId) ?>/editar" id="fichaForm">
-    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+<form method="post" action="<?= $view->url('/guardias/' . $fichaId . '/editar') ?>" id="fichaForm">
+    <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <!-- Datos Personales -->
     <div class="card shadow-sm mb-4">
@@ -335,7 +335,7 @@ foreach ($fichasCursos as $fc) {
 
     <!-- Botones -->
     <div class="d-flex justify-content-end gap-2 mb-5">
-        <a href="/guardias/<?= $e($fichaId) ?>" class="btn btn-outline-secondary">Cancelar</a>
+        <a href="<?= $view->url('/guardias/' . $fichaId) ?>" class="btn btn-outline-secondary">Cancelar</a>
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-save me-1"></i>Guardar Cambios
         </button>

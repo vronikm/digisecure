@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Kernel\View;
 
+use DigiSecure\Kernel\Http\BasePath;
 use DigiSecure\Kernel\Http\Response;
 
 /**
@@ -168,6 +169,17 @@ final class ViewRenderer
     public static function e(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    /**
+     * Helper de URL: prepone el base path detectado a una ruta de la app.
+     * Ej: $view->url('/login') → '/digisecure/public/login'
+     *
+     * Usar SIEMPRE este helper para href/action en las vistas.
+     */
+    public function url(string $path): string
+    {
+        return BasePath::prepend($path);
     }
 
     private function resolveViewPath(string $view): string

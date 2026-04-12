@@ -34,8 +34,12 @@ use DigiSecure\Security\Auth\Controller\LoginController;
 use DigiSecure\Security\Auth\Controller\LogoutController;
 use DigiSecure\Tenant\Domain\TenantContext;
 use DigiSecure\User\Controller\ProfileController;
+use DigiSecure\User\Controller\UserController;
 use DigiSecure\Ficha\Controller\FichaController;
 use DigiSecure\Expediente\Controller\ExpedienteController;
+use DigiSecure\Reporting\Controller\KpiController;
+use DigiSecure\Security\Audit\Controller\AuditoriaController;
+use DigiSecure\Security\Rbac\Controller\RoleController;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -217,12 +221,86 @@ final class Bootstrap
             ),
         );
 
-        // 13. Router con rutas registradas
+        // 13. Módulo Reporting (KPIs / Dashboard Stats)
+        $container->singleton(
+            \DigiSecure\Reporting\Application\DashboardStatsService::class,
+            static fn(Container $c) => new \DigiSecure\Reporting\Application\DashboardStatsService(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+
+        // 14. Módulo Notification (Fase 4)
+        $container->singleton(
+            \DigiSecure\Notification\Infrastructure\NotificacionRepository::class,
+            static fn(Container $c) => new \DigiSecure\Notification\Infrastructure\NotificacionRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Notification\Application\EncolarNotificacionService::class,
+            static fn(Container $c) => new \DigiSecure\Notification\Application\EncolarNotificacionService(
+                $c->get(\DigiSecure\Notification\Infrastructure\NotificacionRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        // Sobrescribir VerificarVencimientosService para inyectar EncolarNotificacionService
+        $container->singleton(
+            \DigiSecure\Expediente\Application\VerificarVencimientosService::class,
+            static fn(Container $c) => new \DigiSecure\Expediente\Application\VerificarVencimientosService(
+                $c->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class),
+                $c->get(AuditLogger::class),
+                $c->get(\DigiSecure\Notification\Application\EncolarNotificacionService::class),
+                $c->get(Config::class)->string('whatsapp.phone_number_id', '') !== ''
+                    && $c->get(Config::class)->string('whatsapp.access_token', '') !== '',
+            ),
+        );
+
+        // 15. Módulo User Admin (Fase 4)
+        $container->singleton(
+            \DigiSecure\User\Infrastructure\UserRepository::class,
+            static fn(Container $c) => new \DigiSecure\User\Infrastructure\UserRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\User\Application\AdministrarUsuariosService::class,
+            static fn(Container $c) => new \DigiSecure\User\Application\AdministrarUsuariosService(
+                $c->get(\DigiSecure\User\Infrastructure\UserRepository::class),
+                $c->get(PdoConnection::class),
+                $c->get(Hasher::class),
+                $c->get(AuditLogger::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+
+        // 16. Módulo Auditoría (Fase 4 — solo lectura)
+        $container->singleton(
+            \DigiSecure\Security\Audit\AuditoriaRepository::class,
+            static fn(Container $c) => new \DigiSecure\Security\Audit\AuditoriaRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+
+        // 17. Módulo Roles (Fase 4 — solo lectura)
+        $container->singleton(
+            \DigiSecure\Security\Rbac\RoleRepository::class,
+            static fn(Container $c) => new \DigiSecure\Security\Rbac\RoleRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+
+        // 14. Router con rutas registradas
         $router = new Router();
         $this->registerRoutes($router);
         $container->instance(Router::class, $router);
 
-        // 7. Request desde superglobales
+        // 7. Detectar base path y crear Request
+        \DigiSecure\Kernel\Http\BasePath::detect();
         $request = Request::fromGlobals();
 
         // 8. Pipeline de middlewares globales
@@ -300,6 +378,14 @@ final class Bootstrap
                 'from_address' => $envVars['MAIL_FROM_ADDRESS'] ?? '',
                 'from_name' => $envVars['MAIL_FROM_NAME'] ?? '',
             ],
+            'whatsapp' => [
+                'driver' => $envVars['WHATSAPP_DRIVER'] ?? 'meta_cloud',
+                'phone_number_id' => $envVars['WHATSAPP_PHONE_NUMBER_ID'] ?? '',
+                'business_account_id' => $envVars['WHATSAPP_BUSINESS_ACCOUNT_ID'] ?? '',
+                'access_token' => $envVars['WHATSAPP_ACCESS_TOKEN'] ?? '',
+                'verify_token' => $envVars['WHATSAPP_VERIFY_TOKEN'] ?? '',
+                'timeout_seconds' => $envVars['WHATSAPP_TIMEOUT_SECONDS'] ?? '15',
+            ],
             'log' => [
                 'path' => $envVars['LOG_PATH'] ?? 'var/logs/digisecure.log',
                 'level' => $envVars['LOG_LEVEL'] ?? 'info',
@@ -353,6 +439,26 @@ final class Bootstrap
         $router->get('/expedientes/documento/{docId}', [ExpedienteController::class, 'showDocumento'], name: 'expedientes.documento.show');
         $router->post('/expedientes/documento/{docId}/revisar', [ExpedienteController::class, 'revisar'], name: 'expedientes.documento.revisar');
 
+        // Reportes y KPIs (Fase 3)
+        $router->get('/reportes/kpis', [KpiController::class, 'dashboard'], name: 'reportes.kpis');
+        $router->get('/reportes/exportar', [KpiController::class, 'exportar'], name: 'reportes.exportar');
+
+        // Administración de usuarios (Fase 4)
+        $router->get('/usuarios', [UserController::class, 'index'], name: 'usuarios.index');
+        $router->get('/usuarios/crear', [UserController::class, 'create'], name: 'usuarios.create');
+        $router->post('/usuarios/crear', [UserController::class, 'store'], name: 'usuarios.store');
+        $router->get('/usuarios/{id}/editar', [UserController::class, 'edit'], name: 'usuarios.edit');
+        $router->post('/usuarios/{id}/editar', [UserController::class, 'update'], name: 'usuarios.update');
+        $router->post('/usuarios/{id}/estado', [UserController::class, 'cambiarEstado'], name: 'usuarios.estado');
+        $router->post('/usuarios/{id}/password', [UserController::class, 'resetPassword'], name: 'usuarios.password');
+
+        // Auditoría (Fase 4 — read-only)
+        $router->get('/auditoria', [AuditoriaController::class, 'index'], name: 'auditoria.index');
+
+        // Roles y permisos (Fase 4 — read-only)
+        $router->get('/roles', [RoleController::class, 'index'], name: 'roles.index');
+        $router->get('/roles/{id}', [RoleController::class, 'show'], name: 'roles.show');
+
         // --- Healthcheck y smoke tests (mantener para monitoreo) ---
         $router->get('/healthcheck', static fn(
             SessionManager $session,
@@ -361,7 +467,7 @@ final class Bootstrap
         ) => \DigiSecure\Kernel\Http\Response::json([
             'status' => 'ok',
             'service' => 'DigiSecure',
-            'phase' => '1.0',
+            'phase' => '5.0',
             'timestamp' => date('c'),
             'php' => PHP_VERSION,
             'session_active' => $session->isStarted(),

@@ -27,7 +27,7 @@ $e = ViewRenderer::e(...);
         <p class="text-muted mb-0"><?= $total ?> registro<?= $total !== 1 ? 's' : '' ?> encontrado<?= $total !== 1 ? 's' : '' ?></p>
     </div>
     <?php if ($user->tienePermiso('fichas.crear')): ?>
-    <a href="/guardias/crear" class="btn btn-primary">
+    <a href="<?= $view->url('/guardias/crear') ?>" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i>Nueva Ficha
     </a>
     <?php endif ?>
@@ -36,7 +36,7 @@ $e = ViewRenderer::e(...);
 <!-- Filtros -->
 <div class="card shadow-sm mb-4">
     <div class="card-body py-3">
-        <form method="get" action="/guardias" class="row g-2 align-items-end">
+        <form method="get" action="<?= $view->url('/guardias') ?>" class="row g-2 align-items-end">
             <div class="col-md-3">
                 <label class="form-label small text-muted">Buscar</label>
                 <input type="text" name="q" class="form-control form-control-sm"
@@ -72,7 +72,7 @@ $e = ViewRenderer::e(...);
             </div>
             <?php if ($filters): ?>
             <div class="col-md-2">
-                <a href="/guardias" class="btn btn-sm btn-outline-secondary w-100">
+                <a href="<?= $view->url('/guardias') ?>" class="btn btn-sm btn-outline-secondary w-100">
                     <i class="bi bi-x-lg me-1"></i>Limpiar
                 </a>
             </div>
@@ -128,11 +128,11 @@ $e = ViewRenderer::e(...);
                     <td><?= $f['fecha_emision'] ? date('d/m/Y', strtotime($f['fecha_emision'])) : '—' ?></td>
                     <td><?= $e($f['celular'] ?? '—') ?></td>
                     <td class="text-end">
-                        <a href="/guardias/<?= $e($f['id']) ?>" class="btn btn-sm btn-outline-primary" title="Ver">
+                        <a href="<?= $view->url('/guardias/' . $f['id']) ?>" class="btn btn-sm btn-outline-primary" title="Ver">
                             <i class="bi bi-eye"></i>
                         </a>
                         <?php if ($user->tienePermiso('fichas.editar') && in_array($f['estado'], ['BORRADOR', 'EN_REVISION'])): ?>
-                        <a href="/guardias/<?= $e($f['id']) ?>/editar" class="btn btn-sm btn-outline-secondary" title="Editar">
+                        <a href="<?= $view->url('/guardias/' . $f['id'] . '/editar') ?>" class="btn btn-sm btn-outline-secondary" title="Editar">
                             <i class="bi bi-pencil"></i>
                         </a>
                         <?php endif ?>
@@ -157,17 +157,17 @@ $e = ViewRenderer::e(...);
                 $qsPrefix = $qs ? "&{$qs}" : '';
                 ?>
                 <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="/guardias?page=<?= $page - 1 ?><?= $qsPrefix ?>">
+                    <a class="page-link" href="<?= $view->url('/guardias') ?>?page=<?= $page - 1 ?><?= $qsPrefix ?>">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
                 <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
                 <li class="page-item <?= $p === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="/guardias?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
+                    <a class="page-link" href="<?= $view->url('/guardias') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
                 </li>
                 <?php endfor ?>
                 <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                    <a class="page-link" href="/guardias?page=<?= $page + 1 ?><?= $qsPrefix ?>">
+                    <a class="page-link" href="<?= $view->url('/guardias') ?>?page=<?= $page + 1 ?><?= $qsPrefix ?>">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                 </li>

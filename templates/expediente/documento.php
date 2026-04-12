@@ -21,9 +21,9 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
 <?php $view->section('title') ?>Documento — <?= $e($doc['tipo_nombre']) ?><?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="/guardias">Guardias</a></li>
-<li class="breadcrumb-item"><a href="/guardias/<?= $e($fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
-<li class="breadcrumb-item"><a href="/guardias/<?= $e($fichaId) ?>/expediente">Expediente</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>">Expediente</a></li>
 <li class="breadcrumb-item active"><?= $e($doc['tipo_nombre']) ?></li>
 <?php $view->endSection() ?>
 
@@ -46,7 +46,7 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
             <span class="badge bg-light text-dark border"><?= $e($doc['bloque'] === 'A' ? 'Bloque A' : 'Bloque B') ?></span>
         </div>
     </div>
-    <a href="/guardias/<?= $e($fichaId) ?>/expediente" class="btn btn-outline-secondary btn-sm">
+    <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Volver al expediente
     </a>
 </div>
@@ -169,8 +169,8 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
                 <?php endif ?>
 
                 <?php if ($puedeRevisar && $user->tienePermiso('expedientes.revisar')): ?>
-                <form method="post" action="/expedientes/documento/<?= $e($doc['id']) ?>/revisar">
-                    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+                <form method="post" action="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/revisar') ?>">
+                    <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <div class="mb-3">
                         <label class="form-label">Observación del revisor</label>
                         <textarea name="observacion" class="form-control" rows="3" placeholder="Opcional: razón del rechazo o comentario..."><?= $e($doc['observacion_revisor'] ?? '') ?></textarea>
