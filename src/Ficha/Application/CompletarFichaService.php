@@ -8,6 +8,7 @@ use DigiSecure\Ficha\Domain\Enum\EstadoFicha;
 use DigiSecure\Ficha\Domain\Enum\Genero;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Security\Audit\AuditLogger;
+use DigiSecure\Security\Lopdp\Application\ConsentManager;
 use DigiSecure\Shared\Domain\DomainException;
 
 /**
@@ -27,6 +28,7 @@ final class CompletarFichaService
     public function __construct(
         private readonly FichaRepository $fichaRepo,
         private readonly AuditLogger $audit,
+        private readonly ?ConsentManager $consentManager = null,
     ) {
     }
 
@@ -128,6 +130,18 @@ final class CompletarFichaService
         $trabajos = $this->fichaRepo->getTrabajosAnteriores($fichaId);
         if ($trabajos === []) {
             $incumplimientos[] = 'No se registró ningún trabajo anterior (mínimo 1 año de experiencia).';
+        }
+
+        // 5. Consentimiento LOPDP vigente (Art. 7 LOPDP Ecuador)
+        if ($this->consentManager !== null) {
+            $tieneConsent = $this->consentManager->tieneConsentimientoVigente(
+                'guardia',
+                $fichaId,
+                'tratamiento_datos_basico',
+            );
+            if (!$tieneConsent) {
+                $incumplimientos[] = 'El guardia no ha firmado el consentimiento LOPDP de tratamiento de datos personales.';
+            }
         }
 
         return $incumplimientos;

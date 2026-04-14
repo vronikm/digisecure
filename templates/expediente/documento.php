@@ -46,9 +46,19 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
             <span class="badge bg-light text-dark border"><?= $e($doc['bloque'] === 'A' ? 'Bloque A' : 'Bloque B') ?></span>
         </div>
     </div>
-    <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i>Volver al expediente
-    </a>
+    <div class="d-flex gap-2">
+        <?php if (!empty($doc['archivo_nombre_storage'])): ?>
+        <?php $inline = in_array($doc['archivo_mime'] ?? '', ['application/pdf','image/jpeg','image/png','image/webp'], true); ?>
+        <a href="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/descargar') ?>"
+           class="btn btn-primary btn-sm" <?= $inline ? 'target="_blank" rel="noopener"' : '' ?>>
+            <i class="bi <?= $inline ? 'bi-eye' : 'bi-download' ?> me-1"></i>
+            <?= $inline ? 'Ver archivo' : 'Descargar' ?>
+        </a>
+        <?php endif ?>
+        <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al expediente
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">
@@ -71,6 +81,14 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
                     <tr><th class="text-muted">Subido por</th><td><?= $e($doc['subido_por'] ?? '—') ?></td></tr>
                     <tr><th class="text-muted">Fecha subida</th><td><?= $doc['subido_at'] ? date('d/m/Y H:i', strtotime($doc['subido_at'])) : '—' ?></td></tr>
                 </table>
+                <?php if (!empty($doc['archivo_nombre_storage'])): ?>
+                <div class="mt-3 pt-3 border-top">
+                    <a href="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/descargar') ?>"
+                       class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-cloud-download me-1"></i>Descargar archivo original
+                    </a>
+                </div>
+                <?php endif ?>
             </div>
         </div>
     </div>

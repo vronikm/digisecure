@@ -40,6 +40,11 @@ use DigiSecure\Expediente\Controller\ExpedienteController;
 use DigiSecure\Reporting\Controller\KpiController;
 use DigiSecure\Security\Audit\Controller\AuditoriaController;
 use DigiSecure\Security\Rbac\Controller\RoleController;
+use DigiSecure\Security\Lopdp\Controller\LopdpController;
+use DigiSecure\Tenant\Controller\TenantController;
+use DigiSecure\Notification\Controller\NotificacionController;
+use DigiSecure\Expediente\Controller\DocumentoTipoController;
+use DigiSecure\User\Controller\PasswordResetController;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -187,6 +192,7 @@ final class Bootstrap
             static fn(Container $c) => new \DigiSecure\Ficha\Application\CompletarFichaService(
                 $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
                 $c->get(AuditLogger::class),
+                $c->get(\DigiSecure\Security\Lopdp\Application\ConsentManager::class),
             ),
         );
 
@@ -220,6 +226,15 @@ final class Bootstrap
                 $c->get(AuditLogger::class),
             ),
         );
+        // Fase 10: servicio de descarga de documentos
+        $container->singleton(
+            \DigiSecure\Expediente\Application\DescargarDocumentoService::class,
+            fn(Container $c) => new \DigiSecure\Expediente\Application\DescargarDocumentoService(
+                $c->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class),
+                $c->get(AuditLogger::class),
+                "{$this->rootPath}/var/storage/documentos",
+            ),
+        );
 
         // 13. Módulo Reporting (KPIs / Dashboard Stats)
         $container->singleton(
@@ -227,6 +242,15 @@ final class Bootstrap
             static fn(Container $c) => new \DigiSecure\Reporting\Application\DashboardStatsService(
                 $c->get(PdoConnection::class),
                 $c->get(TenantContext::class),
+            ),
+        );
+        // Fase 10: servicio de exportación de reportes CSV
+        $container->singleton(
+            \DigiSecure\Reporting\Application\ExportarReporteService::class,
+            static fn(Container $c) => new \DigiSecure\Reporting\Application\ExportarReporteService(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+                $c->get(AuditLogger::class),
             ),
         );
 
@@ -285,11 +309,134 @@ final class Bootstrap
             ),
         );
 
-        // 17. Módulo Roles (Fase 4 — solo lectura)
+        // 17. Módulo Roles (Fase 4 lectura + Fase 9 CRUD)
         $container->singleton(
             \DigiSecure\Security\Rbac\RoleRepository::class,
             static fn(Container $c) => new \DigiSecure\Security\Rbac\RoleRepository(
                 $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Security\Rbac\Application\GestionarRolesService::class,
+            static fn(Container $c) => new \DigiSecure\Security\Rbac\Application\GestionarRolesService(
+                $c->get(\DigiSecure\Security\Rbac\RoleRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 18. Módulo LOPDP (Fase 6)
+        $container->singleton(
+            \DigiSecure\Security\Lopdp\Infrastructure\SolicitudArcopRepository::class,
+            static fn(Container $c) => new \DigiSecure\Security\Lopdp\Infrastructure\SolicitudArcopRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Security\Lopdp\Infrastructure\ConsentimientoRepository::class,
+            static fn(Container $c) => new \DigiSecure\Security\Lopdp\Infrastructure\ConsentimientoRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Security\Lopdp\Application\RegistrarSolicitudArcopService::class,
+            static fn(Container $c) => new \DigiSecure\Security\Lopdp\Application\RegistrarSolicitudArcopService(
+                $c->get(\DigiSecure\Security\Lopdp\Infrastructure\SolicitudArcopRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Security\Lopdp\Application\ResponderSolicitudArcopService::class,
+            static fn(Container $c) => new \DigiSecure\Security\Lopdp\Application\ResponderSolicitudArcopService(
+                $c->get(\DigiSecure\Security\Lopdp\Infrastructure\SolicitudArcopRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Security\Lopdp\Application\ConsentManager::class,
+            static fn(Container $c) => new \DigiSecure\Security\Lopdp\Application\ConsentManager(
+                $c->get(\DigiSecure\Security\Lopdp\Infrastructure\ConsentimientoRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 19. PDFs del Guardia (Fase 6)
+        $container->singleton(
+            \DigiSecure\Ficha\Application\GenerarDeclaracionLealtadService::class,
+            fn(Container $c) => new \DigiSecure\Ficha\Application\GenerarDeclaracionLealtadService(
+                $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+                $c->get(Encryption::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Ficha\Application\GenerarFormatoHuellasService::class,
+            fn(Container $c) => new \DigiSecure\Ficha\Application\GenerarFormatoHuellasService(
+                $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+                $c->get(Encryption::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 20. Módulo Tenant self-management (Fase 7)
+        $container->singleton(
+            \DigiSecure\Tenant\Infrastructure\TenantRepository::class,
+            static fn(Container $c) => new \DigiSecure\Tenant\Infrastructure\TenantRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Tenant\Application\ActualizarTenantService::class,
+            static fn(Container $c) => new \DigiSecure\Tenant\Application\ActualizarTenantService(
+                $c->get(\DigiSecure\Tenant\Infrastructure\TenantRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 21. Módulo Notificaciones — Controller (Fase 8)
+        // NotificacionRepository ya está en módulo 14; solo falta el controller DI
+        // (autowiring lo resuelve, pero lo dejamos explícito para claridad)
+
+        // 22. Módulo Documento Tipos — Catálogo configurable (Fase 8)
+        $container->singleton(
+            \DigiSecure\Expediente\Infrastructure\DocumentoTipoRepository::class,
+            static fn(Container $c) => new \DigiSecure\Expediente\Infrastructure\DocumentoTipoRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Expediente\Application\ConfigurarDocumentoTipoService::class,
+            static fn(Container $c) => new \DigiSecure\Expediente\Application\ConfigurarDocumentoTipoService(
+                $c->get(\DigiSecure\Expediente\Infrastructure\DocumentoTipoRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 23. Módulo Password Reset (Fase 10 — flujo público de recuperación)
+        $container->singleton(
+            \DigiSecure\User\Application\RequestPasswordResetService::class,
+            static fn(Container $c) => new \DigiSecure\User\Application\RequestPasswordResetService(
+                $c->get(PdoConnection::class),
+                $c->get(\DigiSecure\Notification\Application\EncolarNotificacionService::class),
+                $c->get(AuditLogger::class),
+                $c->get(TenantContext::class),
+                $c->get(Config::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\User\Application\ResetPasswordService::class,
+            static fn(Container $c) => new \DigiSecure\User\Application\ResetPasswordService(
+                $c->get(PdoConnection::class),
+                $c->get(Hasher::class),
+                $c->get(AuditLogger::class),
                 $c->get(TenantContext::class),
             ),
         );
@@ -311,6 +458,7 @@ final class Bootstrap
         //  - CSRF debe ejecutarse antes del handler para abortar requests inválidos.
         //  - Authentication carga el usuario de sesión y protege rutas.
         //  - TenantContext establece el tenant_id para BaseRepository.
+        //  - RouteResolver resuelve la ruta y expone _route_permission ANTES de Authorization.
         //  - Authorization verifica permisos de ruta.
         //  - Audit registra operaciones de escritura.
         $globalMiddlewares = [
@@ -320,6 +468,7 @@ final class Bootstrap
             CsrfMiddleware::class,
             AuthenticationMiddleware::class,
             TenantContextMiddleware::class,
+            \DigiSecure\Kernel\Middleware\RouteResolverMiddleware::class,
             AuthorizationMiddleware::class,
             AuditMiddleware::class,
         ];
@@ -412,6 +561,12 @@ final class Bootstrap
         $router->get('/login', [LoginController::class, 'showForm'], name: 'login');
         $router->post('/login', [LoginController::class, 'processLogin'], name: 'login.process');
 
+        // Fase 10: recuperación de contraseña (rutas públicas)
+        $router->get('/password/forgot', [PasswordResetController::class, 'showForgotForm'], name: 'password.forgot');
+        $router->post('/password/forgot', [PasswordResetController::class, 'processForgot'], name: 'password.forgot.process');
+        $router->get('/password/reset/{token}', [PasswordResetController::class, 'showResetForm'], name: 'password.reset');
+        $router->post('/password/reset/{token}', [PasswordResetController::class, 'processReset'], name: 'password.reset.process');
+
         // --- Rutas protegidas ---
         $router->post('/logout', [LogoutController::class, 'logout'], name: 'logout');
         $router->get('/dashboard', [DashboardController::class, 'index'], name: 'dashboard');
@@ -422,42 +577,83 @@ final class Bootstrap
         $router->post('/perfil/password', [ProfileController::class, 'changePassword'], name: 'perfil.password.change');
 
         // Fichas de guardia (Fase 1)
-        $router->get('/guardias', [FichaController::class, 'index'], name: 'fichas.index');
-        $router->get('/guardias/crear', [FichaController::class, 'create'], name: 'fichas.create');
-        $router->post('/guardias/crear', [FichaController::class, 'store'], name: 'fichas.store');
-        $router->get('/guardias/{id}', [FichaController::class, 'show'], name: 'fichas.show');
-        $router->get('/guardias/{id}/editar', [FichaController::class, 'edit'], name: 'fichas.edit');
-        $router->post('/guardias/{id}/editar', [FichaController::class, 'update'], name: 'fichas.update');
-        $router->post('/guardias/{id}/completar', [FichaController::class, 'completar'], name: 'fichas.completar');
+        $router->get('/guardias', [FichaController::class, 'index'], name: 'fichas.index', permission: 'guardias.ver');
+        $router->get('/guardias/crear', [FichaController::class, 'create'], name: 'fichas.create', permission: 'guardias.crear');
+        $router->post('/guardias/crear', [FichaController::class, 'store'], name: 'fichas.store', permission: 'guardias.crear');
+        $router->get('/guardias/{id}', [FichaController::class, 'show'], name: 'fichas.show', permission: 'guardias.ver');
+        $router->get('/guardias/{id}/editar', [FichaController::class, 'edit'], name: 'fichas.edit', permission: 'guardias.editar');
+        $router->post('/guardias/{id}/editar', [FichaController::class, 'update'], name: 'fichas.update', permission: 'guardias.editar');
+        $router->post('/guardias/{id}/completar', [FichaController::class, 'completar'], name: 'fichas.completar', permission: 'guardias.editar');
+
+        // PDFs de guardia (Fase 6)
+        $router->get('/guardias/{id}/declaracion-lealtad.pdf', [FichaController::class, 'descargarDeclaracionLealtad'], name: 'fichas.pdf.declaracion', permission: 'guardias.ver');
+        $router->get('/guardias/{id}/formato-huellas.pdf', [FichaController::class, 'descargarFormatoHuellas'], name: 'fichas.pdf.huellas', permission: 'guardias.ver');
 
         // Expediente documental (Fase 2)
-        $router->get('/expedientes', [ExpedienteController::class, 'index'], name: 'expedientes.index');
-        $router->get('/expedientes/pendientes', [ExpedienteController::class, 'pendientes'], name: 'expedientes.pendientes');
-        $router->get('/guardias/{fichaId}/expediente', [ExpedienteController::class, 'dashboard'], name: 'expedientes.dashboard');
-        $router->get('/expedientes/{id}/documento/{tipoId}', [ExpedienteController::class, 'showUploadForm'], name: 'expedientes.documento.upload.form');
-        $router->post('/expedientes/{id}/documento/{tipoId}', [ExpedienteController::class, 'upload'], name: 'expedientes.documento.upload');
-        $router->get('/expedientes/documento/{docId}', [ExpedienteController::class, 'showDocumento'], name: 'expedientes.documento.show');
-        $router->post('/expedientes/documento/{docId}/revisar', [ExpedienteController::class, 'revisar'], name: 'expedientes.documento.revisar');
+        $router->get('/expedientes', [ExpedienteController::class, 'index'], name: 'expedientes.index', permission: 'expedientes.ver');
+        $router->get('/expedientes/pendientes', [ExpedienteController::class, 'pendientes'], name: 'expedientes.pendientes', permission: 'expedientes.validar');
+        $router->get('/guardias/{fichaId}/expediente', [ExpedienteController::class, 'dashboard'], name: 'expedientes.dashboard', permission: 'expedientes.ver');
+        $router->get('/expedientes/{id}/documento/{tipoId}', [ExpedienteController::class, 'showUploadForm'], name: 'expedientes.documento.upload.form', permission: 'expedientes.cargar');
+        $router->post('/expedientes/{id}/documento/{tipoId}', [ExpedienteController::class, 'upload'], name: 'expedientes.documento.upload', permission: 'expedientes.cargar');
+        // Fase 10: descarga de archivo físico (debe ir antes de /documento/{docId} para no conflictuar)
+        $router->get('/expedientes/documento/{docId}/descargar', [ExpedienteController::class, 'descargarDocumento'], name: 'expedientes.documento.descargar', permission: 'expedientes.ver');
+        $router->get('/expedientes/documento/{docId}', [ExpedienteController::class, 'showDocumento'], name: 'expedientes.documento.show', permission: 'expedientes.ver');
+        $router->post('/expedientes/documento/{docId}/revisar', [ExpedienteController::class, 'revisar'], name: 'expedientes.documento.revisar', permission: 'expedientes.validar');
 
         // Reportes y KPIs (Fase 3)
-        $router->get('/reportes/kpis', [KpiController::class, 'dashboard'], name: 'reportes.kpis');
-        $router->get('/reportes/exportar', [KpiController::class, 'exportar'], name: 'reportes.exportar');
+        $router->get('/reportes/kpis', [KpiController::class, 'dashboard'], name: 'reportes.kpis', permission: 'reportes.ver');
+        // Fase 10: exportaciones CSV (rutas específicas antes de la base)
+        $router->get('/reportes/exportar/fichas', [KpiController::class, 'exportarFichas'], name: 'reportes.exportar.fichas', permission: 'reportes.exportar');
+        $router->get('/reportes/exportar/expedientes', [KpiController::class, 'exportarExpedientes'], name: 'reportes.exportar.expedientes', permission: 'reportes.exportar');
+        $router->get('/reportes/exportar/vencimientos', [KpiController::class, 'exportarVencimientos'], name: 'reportes.exportar.vencimientos', permission: 'reportes.exportar');
+        $router->get('/reportes/exportar', [KpiController::class, 'exportar'], name: 'reportes.exportar', permission: 'reportes.exportar');
 
         // Administración de usuarios (Fase 4)
-        $router->get('/usuarios', [UserController::class, 'index'], name: 'usuarios.index');
-        $router->get('/usuarios/crear', [UserController::class, 'create'], name: 'usuarios.create');
-        $router->post('/usuarios/crear', [UserController::class, 'store'], name: 'usuarios.store');
-        $router->get('/usuarios/{id}/editar', [UserController::class, 'edit'], name: 'usuarios.edit');
-        $router->post('/usuarios/{id}/editar', [UserController::class, 'update'], name: 'usuarios.update');
-        $router->post('/usuarios/{id}/estado', [UserController::class, 'cambiarEstado'], name: 'usuarios.estado');
-        $router->post('/usuarios/{id}/password', [UserController::class, 'resetPassword'], name: 'usuarios.password');
+        $router->get('/usuarios', [UserController::class, 'index'], name: 'usuarios.index', permission: 'usuarios.ver');
+        $router->get('/usuarios/crear', [UserController::class, 'create'], name: 'usuarios.create', permission: 'usuarios.crear');
+        $router->post('/usuarios/crear', [UserController::class, 'store'], name: 'usuarios.store', permission: 'usuarios.crear');
+        $router->get('/usuarios/{id}/editar', [UserController::class, 'edit'], name: 'usuarios.edit', permission: 'usuarios.editar');
+        $router->post('/usuarios/{id}/editar', [UserController::class, 'update'], name: 'usuarios.update', permission: 'usuarios.editar');
+        $router->post('/usuarios/{id}/estado', [UserController::class, 'cambiarEstado'], name: 'usuarios.estado', permission: 'usuarios.bloquear');
+        $router->post('/usuarios/{id}/password', [UserController::class, 'resetPassword'], name: 'usuarios.password', permission: 'usuarios.editar');
 
-        // Auditoría (Fase 4 — read-only)
-        $router->get('/auditoria', [AuditoriaController::class, 'index'], name: 'auditoria.index');
+        // Auditoría (Fase 4 read + Fase 9 export)
+        $router->get('/auditoria', [AuditoriaController::class, 'index'], name: 'auditoria.index', permission: 'auditoria.ver');
+        $router->get('/auditoria/exportar', [AuditoriaController::class, 'exportar'], name: 'auditoria.exportar', permission: 'auditoria.exportar');
 
-        // Roles y permisos (Fase 4 — read-only)
-        $router->get('/roles', [RoleController::class, 'index'], name: 'roles.index');
-        $router->get('/roles/{id}', [RoleController::class, 'show'], name: 'roles.show');
+        // Roles y permisos (Fase 4 read + Fase 9 CRUD)
+        $router->get('/roles', [RoleController::class, 'index'], name: 'roles.index', permission: 'roles.ver');
+        $router->get('/roles/crear', [RoleController::class, 'createForm'], name: 'roles.create', permission: 'roles.crear');
+        $router->post('/roles/crear', [RoleController::class, 'store'], name: 'roles.store', permission: 'roles.crear');
+        $router->get('/roles/{id}', [RoleController::class, 'show'], name: 'roles.show', permission: 'roles.ver');
+        $router->get('/roles/{id}/editar', [RoleController::class, 'editForm'], name: 'roles.edit', permission: 'roles.editar');
+        $router->post('/roles/{id}/editar', [RoleController::class, 'update'], name: 'roles.update', permission: 'roles.editar');
+        $router->post('/roles/{id}/eliminar', [RoleController::class, 'destroy'], name: 'roles.destroy', permission: 'roles.eliminar');
+
+        // Empresa / Tenant (Fase 7)
+        $router->get('/empresa', [TenantController::class, 'show'], name: 'tenant.show', permission: 'tenants.ver');
+        $router->get('/empresa/editar', [TenantController::class, 'edit'], name: 'tenant.edit', permission: 'tenants.editar');
+        $router->post('/empresa/editar', [TenantController::class, 'update'], name: 'tenant.update', permission: 'tenants.editar');
+
+        // Notificaciones (Fase 8)
+        $router->get('/notificaciones', [NotificacionController::class, 'index'], name: 'notificaciones.index', permission: 'notificaciones.ver');
+        $router->get('/notificaciones/{id}', [NotificacionController::class, 'show'], name: 'notificaciones.show', permission: 'notificaciones.ver');
+        $router->post('/notificaciones/{id}/retry', [NotificacionController::class, 'retry'], name: 'notificaciones.retry', permission: 'notificaciones.gestionar');
+
+        // Configuración — Tipos de documento (Fase 8)
+        $router->get('/configuracion/documentos', [DocumentoTipoController::class, 'index'], name: 'doctipo.index', permission: 'configuracion.documentos');
+        $router->get('/configuracion/documentos/{codigo}', [DocumentoTipoController::class, 'edit'], name: 'doctipo.edit', permission: 'configuracion.documentos');
+        $router->post('/configuracion/documentos/{codigo}', [DocumentoTipoController::class, 'update'], name: 'doctipo.update', permission: 'configuracion.documentos');
+        $router->post('/configuracion/documentos/{codigo}/toggle', [DocumentoTipoController::class, 'toggle'], name: 'doctipo.toggle', permission: 'configuracion.documentos');
+
+        // LOPDP — Protección de datos personales (Fase 6)
+        $router->get('/lopdp', [LopdpController::class, 'dashboard'], name: 'lopdp.index', permission: 'lopdp.gestionar');
+        $router->get('/lopdp/solicitudes', [LopdpController::class, 'listarSolicitudes'], name: 'lopdp.solicitudes.index', permission: 'lopdp.gestionar');
+        $router->get('/lopdp/solicitudes/crear', [LopdpController::class, 'crearSolicitudForm'], name: 'lopdp.solicitudes.create', permission: 'lopdp.gestionar');
+        $router->post('/lopdp/solicitudes/crear', [LopdpController::class, 'crearSolicitud'], name: 'lopdp.solicitudes.store', permission: 'lopdp.gestionar');
+        $router->get('/lopdp/solicitudes/{id}', [LopdpController::class, 'verSolicitud'], name: 'lopdp.solicitudes.show', permission: 'lopdp.gestionar');
+        $router->post('/lopdp/solicitudes/{id}/responder', [LopdpController::class, 'responderSolicitud'], name: 'lopdp.solicitudes.responder', permission: 'lopdp.gestionar');
+        $router->get('/lopdp/consentimientos', [LopdpController::class, 'listarConsentimientos'], name: 'lopdp.consentimientos.index', permission: 'lopdp.gestionar');
 
         // --- Healthcheck y smoke tests (mantener para monitoreo) ---
         $router->get('/healthcheck', static fn(
@@ -467,7 +663,7 @@ final class Bootstrap
         ) => \DigiSecure\Kernel\Http\Response::json([
             'status' => 'ok',
             'service' => 'DigiSecure',
-            'phase' => '5.0',
+            'phase' => '10.0',
             'timestamp' => date('c'),
             'php' => PHP_VERSION,
             'session_active' => $session->isStarted(),

@@ -17,29 +17,29 @@ final class Router
     /** @var list<Route> */
     private array $routes = [];
 
-    public function get(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null): Route
+    public function get(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null, ?string $permission = null): Route
     {
-        return $this->add(new Route('GET', $path, $handler, $middleware, $name));
+        return $this->add(new Route('GET', $path, $handler, $middleware, $name, $permission));
     }
 
-    public function post(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null): Route
+    public function post(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null, ?string $permission = null): Route
     {
-        return $this->add(new Route('POST', $path, $handler, $middleware, $name));
+        return $this->add(new Route('POST', $path, $handler, $middleware, $name, $permission));
     }
 
-    public function put(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null): Route
+    public function put(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null, ?string $permission = null): Route
     {
-        return $this->add(new Route('PUT', $path, $handler, $middleware, $name));
+        return $this->add(new Route('PUT', $path, $handler, $middleware, $name, $permission));
     }
 
-    public function patch(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null): Route
+    public function patch(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null, ?string $permission = null): Route
     {
-        return $this->add(new Route('PATCH', $path, $handler, $middleware, $name));
+        return $this->add(new Route('PATCH', $path, $handler, $middleware, $name, $permission));
     }
 
-    public function delete(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null): Route
+    public function delete(string $path, array|\Closure $handler, array $middleware = [], ?string $name = null, ?string $permission = null): Route
     {
-        return $this->add(new Route('DELETE', $path, $handler, $middleware, $name));
+        return $this->add(new Route('DELETE', $path, $handler, $middleware, $name, $permission));
     }
 
     private function add(Route $route): Route

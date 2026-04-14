@@ -47,10 +47,21 @@ foreach ($permisos as $p) {
             <span class="badge bg-secondary"><?= count($permisos) ?> permiso<?= count($permisos) !== 1 ? 's' : '' ?></span>
         </div>
     </div>
-    <a href="<?= $view->url('/roles') ?>" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i>Volver
-    </a>
+    <div class="d-flex gap-2">
+        <?php if ((int)$rol['es_sistema'] === 0 && $user->tienePermiso('roles.editar')): ?>
+        <a href="<?= $view->url('/roles/' . $e((string)$rol['id']) . '/editar') ?>" class="btn btn-warning btn-sm">
+            <i class="bi bi-pencil me-1"></i>Editar
+        </a>
+        <?php endif ?>
+        <a href="<?= $view->url('/roles') ?>" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
 </div>
+
+<?php if (!empty($_GET['error'] ?? null)): ?>
+<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i><?= $e((string)$_GET['error']) ?></div>
+<?php endif ?>
 
 <?php if ($rol['descripcion']): ?>
 <div class="alert alert-light border">

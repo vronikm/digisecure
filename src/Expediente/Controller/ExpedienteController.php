@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Expediente\Controller;
 
+use DigiSecure\Expediente\Application\DescargarDocumentoService;
 use DigiSecure\Expediente\Application\RevisarDocumentoService;
 use DigiSecure\Expediente\Application\SubirDocumentoService;
 use DigiSecure\Expediente\Domain\Enum\EstadoExpediente;
@@ -36,7 +37,62 @@ final class ExpedienteController
         private readonly FichaRepository $fichaRepo,
         private readonly SubirDocumentoService $subirService,
         private readonly RevisarDocumentoService $revisarService,
+        private readonly DescargarDocumentoService $descargarService,
     ) {
+    }
+
+    // ======================== DESCARGAR DOCUMENTO ========================
+
+    /**
+     * GET /expedientes/documento/{docId}/descargar
+     *
+     * Sirve el archivo físico del documento al usuario autenticado,
+     * siempre dentro del contexto del tenant. Audita cada descarga.
+     */
+    public function descargarDocumento(Request $request, string $docId): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        try {
+            $file = $this->descargarService->execute($docId, $user->id, $request->clientIp());
+        } catch (DomainException $e) {
+            return $this->view->response('errors/404', [
+                'mensaje' => $e->getMessage(),
+            ], 404);
+        }
+
+        // Si el cliente ya tiene la versión correcta (cache), no reenviar
+        $ifNoneMatch = $request->header('if-none-match');
+        if ($ifNoneMatch !== null && trim($ifNoneMatch) === $file['etag']) {
+            return new Response(
+                status: Response::STATUS_NOT_MODIFIED,
+                body: '',
+                headers: ['ETag' => $file['etag']],
+            );
+        }
+
+        $contenido = @file_get_contents($file['path']);
+        if ($contenido === false) {
+            return $this->view->response('errors/500', [], 500);
+        }
+
+        $nombreDescarga = addslashes($file['nombre_descarga']);
+        $inline = in_array($file['mime'], ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'], true);
+        $disposition = ($inline ? 'inline' : 'attachment') . "; filename=\"{$nombreDescarga}\"";
+
+        return new Response(
+            status: Response::STATUS_OK,
+            body: $contenido,
+            headers: [
+                'Content-Type' => $file['mime'],
+                'Content-Length' => (string) $file['tamano'],
+                'Content-Disposition' => $disposition,
+                'ETag' => $file['etag'],
+                'Cache-Control' => 'private, max-age=300, must-revalidate',
+                'X-Content-Type-Options' => 'nosniff',
+            ],
+        );
     }
 
     // ======================== LISTADO GENERAL ========================

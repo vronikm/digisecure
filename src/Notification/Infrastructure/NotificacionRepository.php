@@ -243,4 +243,50 @@ final class NotificacionRepository extends BaseRepository
 
         return $this->tenantCount(implode(' AND ', $where), $bindings);
     }
+
+    /**
+     * Devuelve una notificación con su historial de intentos de envío.
+     *
+     * @return array{notificacion: array<string, mixed>, intentos: list<array<string, mixed>>}|null
+     */
+    public function findByIdWithLog(string $id): ?array
+    {
+        $notif = $this->tenantQueryOne(
+            'SELECT * FROM notificaciones WHERE id = :id',
+            ['id' => $id],
+        );
+
+        if ($notif === null) {
+            return null;
+        }
+
+        $intentos = $this->db->fetchAll(
+            'SELECT * FROM notificaciones_log
+             WHERE notificacion_id = :nid AND tenant_id = :tid
+             ORDER BY intentado_at DESC',
+            [
+                'nid' => $id,
+                'tid' => $this->tenantContext->requireTenantId(),
+            ],
+        );
+
+        return [
+            'notificacion' => $notif,
+            'intentos' => $intentos,
+        ];
+    }
+
+    /**
+     * Reinicia una notificación FALLIDA para que vuelva a procesarse.
+     */
+    public function resetForRetry(string $id): void
+    {
+        $now = Clock::nowString();
+        $this->tenantUpdate($id, [
+            'estado' => EstadoNotificacion::PENDIENTE->value,
+            'intentos' => 0,
+            'ultimo_error' => null,
+            'updated_at' => $now,
+        ]);
+    }
 }

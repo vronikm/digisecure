@@ -91,4 +91,152 @@ final class RoleRepository
         }
         return $byRecurso;
     }
+
+    /**
+     * Busca un rol por código dentro del tenant actual.
+     */
+    public function findByCodigo(string $codigo): ?array
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+        return $this->db->fetchOne(
+            'SELECT * FROM roles
+             WHERE codigo = :codigo AND (tenant_id = :tid OR tenant_id IS NULL)',
+            ['codigo' => $codigo, 'tid' => $tenantId],
+        );
+    }
+
+    /**
+     * Crea un rol propio del tenant.
+     *
+     * @return string ID del rol creado
+     */
+    public function create(string $id, string $codigo, string $nombre, ?string $descripcion): string
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+        $now = \DigiSecure\Shared\Infrastructure\Clock::nowString();
+
+        $this->db->execute(
+            'INSERT INTO roles (id, tenant_id, codigo, nombre, descripcion, es_sistema, created_at, updated_at)
+             VALUES (:id, :tid, :codigo, :nombre, :desc, 0, :now, :now2)',
+            [
+                'id' => $id,
+                'tid' => $tenantId,
+                'codigo' => $codigo,
+                'nombre' => $nombre,
+                'desc' => $descripcion,
+                'now' => $now,
+                'now2' => $now,
+            ],
+        );
+
+        return $id;
+    }
+
+    /**
+     * Actualiza nombre y descripción de un rol del tenant (no sistema).
+     */
+    public function update(string $id, string $nombre, ?string $descripcion): void
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+        $now = \DigiSecure\Shared\Infrastructure\Clock::nowString();
+
+        $this->db->execute(
+            'UPDATE roles SET nombre = :nombre, descripcion = :desc, updated_at = :now
+             WHERE id = :id AND tenant_id = :tid AND es_sistema = 0',
+            [
+                'id' => $id,
+                'tid' => $tenantId,
+                'nombre' => $nombre,
+                'desc' => $descripcion,
+                'now' => $now,
+            ],
+        );
+    }
+
+    /**
+     * Elimina un rol del tenant (no sistema y sin usuarios asignados).
+     */
+    public function delete(string $id): bool
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+
+        // Primero eliminar permisos asociados
+        $this->db->execute(
+            'DELETE FROM roles_permisos WHERE role_id = :rid',
+            ['rid' => $id],
+        );
+
+        return $this->db->affectedRows(
+            'DELETE FROM roles WHERE id = :id AND tenant_id = :tid AND es_sistema = 0',
+            ['id' => $id, 'tid' => $tenantId],
+        ) > 0;
+    }
+
+    /**
+     * Cuenta usuarios que tienen asignado un rol.
+     */
+    public function countUsuariosByRoleId(string $roleId): int
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM usuarios_roles ur
+             INNER JOIN usuarios u ON u.id = ur.usuario_id
+             WHERE ur.role_id = :rid AND u.tenant_id = :tid',
+            ['rid' => $roleId, 'tid' => $tenantId],
+        );
+    }
+
+    /**
+     * Sincroniza los permisos de un rol: elimina todos y reasigna.
+     *
+     * @param list<string> $permisoIds  IDs de permisos a asignar
+     */
+    public function syncPermisos(string $roleId, array $permisoIds): void
+    {
+        $now = \DigiSecure\Shared\Infrastructure\Clock::nowString();
+
+        // Eliminar actuales
+        $this->db->execute(
+            'DELETE FROM roles_permisos WHERE role_id = :rid',
+            ['rid' => $roleId],
+        );
+
+        // Insertar nuevos
+        foreach ($permisoIds as $pid) {
+            $this->db->execute(
+                'INSERT INTO roles_permisos (role_id, permiso_id, granted_at)
+                 VALUES (:rid, :pid, :now)',
+                ['rid' => $roleId, 'pid' => $pid, 'now' => $now],
+            );
+        }
+    }
+
+    /**
+     * Devuelve IDs de permisos asignados a un rol.
+     *
+     * @return list<string>
+     */
+    public function permisoIdsByRoleId(string $roleId): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT permiso_id FROM roles_permisos WHERE role_id = :rid',
+            ['rid' => $roleId],
+        );
+        return array_column($rows, 'permiso_id');
+    }
+
+    /**
+     * Catálogo plano de permisos (para forms de checkboxes).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catalogoPermisos(): array
+    {
+        return $this->db->fetchAll(
+            'SELECT id, codigo, recurso, accion, descripcion
+             FROM permisos
+             ORDER BY recurso, accion',
+        );
+    }
 }

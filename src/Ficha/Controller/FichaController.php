@@ -7,6 +7,8 @@ namespace DigiSecure\Ficha\Controller;
 use DigiSecure\Ficha\Application\ActualizarFichaService;
 use DigiSecure\Ficha\Application\CompletarFichaService;
 use DigiSecure\Ficha\Application\CrearFichaService;
+use DigiSecure\Ficha\Application\GenerarDeclaracionLealtadService;
+use DigiSecure\Ficha\Application\GenerarFormatoHuellasService;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Http\Request;
@@ -37,6 +39,8 @@ final class FichaController
         private readonly CrearFichaService $crearService,
         private readonly ActualizarFichaService $actualizarService,
         private readonly CompletarFichaService $completarService,
+        private readonly GenerarDeclaracionLealtadService $declaracionLealtadService,
+        private readonly GenerarFormatoHuellasService $formatoHuellasService,
         private readonly Encryption $encryption,
         private readonly PdoConnection $db,
     ) {
@@ -243,6 +247,56 @@ final class FichaController
         } catch (DomainException $e) {
             return Response::redirect("/guardias/{$id}");
         }
+    }
+
+    // ======================== PDFs ========================
+
+    public function descargarDeclaracionLealtad(Request $request, string $id): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        try {
+            $result = $this->declaracionLealtadService->execute($id, $user->id, $request->clientIp());
+        } catch (DomainException) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        return new Response(
+            status: Response::STATUS_OK,
+            body: $result['pdf'],
+            headers: [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $result['filename'] . '"',
+                'Content-Length' => (string)strlen($result['pdf']),
+                'Cache-Control' => 'private, no-store',
+                'Pragma' => 'no-cache',
+            ],
+        );
+    }
+
+    public function descargarFormatoHuellas(Request $request, string $id): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        try {
+            $result = $this->formatoHuellasService->execute($id, $user->id, $request->clientIp());
+        } catch (DomainException) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        return new Response(
+            status: Response::STATUS_OK,
+            body: $result['pdf'],
+            headers: [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $result['filename'] . '"',
+                'Content-Length' => (string)strlen($result['pdf']),
+                'Cache-Control' => 'private, no-store',
+                'Pragma' => 'no-cache',
+            ],
+        );
     }
 
     // ======================== HELPERS ========================

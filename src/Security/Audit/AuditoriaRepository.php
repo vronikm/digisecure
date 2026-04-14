@@ -84,6 +84,32 @@ final class AuditoriaRepository
     }
 
     /**
+     * Devuelve un cursor de eventos para exportación CSV (sin límite de paginación).
+     * Máximo 10000 registros para evitar abusos de memoria.
+     *
+     * @param array<string, mixed> $filters
+     * @return list<array<string, mixed>>
+     */
+    public function exportByTenant(array $filters = [], int $maxRows = 10000): array
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+        [$where, $bindings] = $this->buildWhere($tenantId, $filters);
+        $bindings['limit'] = $maxRows;
+
+        return $this->db->fetchAll(
+            "SELECT a.created_at, a.nivel, a.evento, a.entidad_tipo, a.entidad_id,
+                    INET6_NTOA(a.ip) AS ip_text, a.detalles_json,
+                    u.email AS usuario_email, u.nombres AS usuario_nombres, u.apellidos AS usuario_apellidos
+             FROM auditoria a
+             LEFT JOIN usuarios u ON u.id = a.usuario_id
+             WHERE {$where}
+             ORDER BY a.created_at DESC
+             LIMIT :limit",
+            $bindings,
+        );
+    }
+
+    /**
      * @return array{0:string, 1:array<string, scalar|null>}
      */
     private function buildWhere(string $tenantId, array $filters): array

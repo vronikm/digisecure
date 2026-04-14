@@ -21,6 +21,7 @@ final readonly class MenuItem
      * @param list<MenuItem> $children  Hijos del submenú
      * @param string|null $badge     Texto del badge (ej: conteo de pendientes)
      * @param string $badgeClass     Clase CSS del badge
+     * @param string|null $description Texto de apoyo para clarificar el objetivo del item
      */
     public function __construct(
         public string $label,
@@ -30,6 +31,7 @@ final readonly class MenuItem
         public array $children = [],
         public ?string $badge = null,
         public string $badgeClass = 'bg-primary',
+        public ?string $description = null,
     ) {
     }
 

@@ -31,6 +31,11 @@ $nivelBadge = static fn(string $nivel) => match ($nivel) {
         <h4 class="mb-1"><i class="bi bi-shield-check me-2"></i>Registro de Auditoría</h4>
         <p class="text-muted mb-0"><?= $total ?> evento<?= $total !== 1 ? 's' : '' ?> registrado<?= $total !== 1 ? 's' : '' ?></p>
     </div>
+    <?php if ($user->tienePermiso('auditoria.exportar')): ?>
+    <a href="<?= $view->url('/auditoria/exportar?' . http_build_query($filters)) ?>" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-download me-1"></i>Exportar CSV
+    </a>
+    <?php endif ?>
 </div>
 
 <!-- Filtros -->

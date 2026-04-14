@@ -9,19 +9,27 @@ use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Csrf\CsrfGuard;
+use DigiSecure\Security\Rbac\Application\GestionarRolesService;
 use DigiSecure\Security\Rbac\RoleRepository;
+use DigiSecure\Shared\Domain\DomainException;
 
 /**
- * Visor de roles y permisos (read-only).
+ * CRUD de roles y permisos.
  *
- * GET /roles            → listado
- * GET /roles/{id}       → detalle del rol con permisos asignados
+ * GET  /roles              → listado
+ * GET  /roles/crear        → form de creación
+ * POST /roles/crear        → crear rol
+ * GET  /roles/{id}         → detalle (read-only con matriz de permisos)
+ * GET  /roles/{id}/editar  → form de edición
+ * POST /roles/{id}/editar  → actualizar rol + permisos
+ * POST /roles/{id}/eliminar → eliminar rol
  */
 final class RoleController
 {
     public function __construct(
         private readonly ViewRenderer $view,
         private readonly RoleRepository $repo,
+        private readonly GestionarRolesService $gestionarService,
     ) {
     }
 
@@ -65,5 +73,110 @@ final class RoleController
             'permisos' => $permisos,
             'catalogo' => $catalogo,
         ]);
+    }
+
+    public function createForm(Request $request, CsrfGuard $csrf): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        $catalogo = $this->repo->catalogoPermisosByRecurso();
+
+        return $this->view->response('roles/create', [
+            'user' => $user,
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'catalogo' => $catalogo,
+        ]);
+    }
+
+    public function store(Request $request, CsrfGuard $csrf): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        try {
+            $id = $this->gestionarService->crear($request->post, $user->id, $request->clientIp());
+            return Response::redirect("/roles/{$id}");
+        } catch (DomainException $e) {
+            $catalogo = $this->repo->catalogoPermisosByRecurso();
+            return $this->view->response('roles/create', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/roles/crear',
+                'catalogo' => $catalogo,
+                'input' => $request->post,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function editForm(Request $request, CsrfGuard $csrf): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+        $id = (string) $request->attribute('route.id');
+
+        $rol = $this->repo->findById($id);
+        if ($rol === null) {
+            return $this->view->response('errors/404', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => $request->path,
+            ], 404);
+        }
+
+        $catalogo = $this->repo->catalogoPermisosByRecurso();
+        $asignadoIds = $this->repo->permisoIdsByRoleId($id);
+
+        return $this->view->response('roles/edit', [
+            'user' => $user,
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'rol' => $rol,
+            'catalogo' => $catalogo,
+            'asignadoIds' => $asignadoIds,
+        ]);
+    }
+
+    public function update(Request $request, CsrfGuard $csrf): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+        $id = (string) $request->attribute('route.id');
+
+        try {
+            $this->gestionarService->actualizar($id, $request->post, $user->id, $request->clientIp());
+            return Response::redirect("/roles/{$id}");
+        } catch (DomainException $e) {
+            $rol = $this->repo->findById($id);
+            $catalogo = $this->repo->catalogoPermisosByRecurso();
+            $asignadoIds = $this->repo->permisoIdsByRoleId($id);
+
+            return $this->view->response('roles/edit', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => "/roles/{$id}/editar",
+                'rol' => $rol !== null ? array_merge($rol, $request->post) : $request->post,
+                'catalogo' => $catalogo,
+                'asignadoIds' => $asignadoIds,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function destroy(Request $request, CsrfGuard $csrf): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+        $id = (string) $request->attribute('route.id');
+
+        try {
+            $this->gestionarService->eliminar($id, $user->id, $request->clientIp());
+            return Response::redirect('/roles');
+        } catch (DomainException $e) {
+            // Redirigir al show con error via query param
+            return Response::redirect("/roles/{$id}?error=" . urlencode($e->getMessage()));
+        }
     }
 }

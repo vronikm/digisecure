@@ -69,6 +69,23 @@ $fichaId = $ficha['id'];
             </button>
         </form>
         <?php endif ?>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Documentos PDF
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item" href="<?= $view->url('/guardias/' . $fichaId . '/declaracion-lealtad.pdf') ?>" target="_blank" rel="noopener">
+                        <i class="bi bi-file-earmark-text me-1"></i>Declaración de Lealtad
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="<?= $view->url('/guardias/' . $fichaId . '/formato-huellas.pdf') ?>" target="_blank" rel="noopener">
+                        <i class="bi bi-fingerprint me-1"></i>Formato de Huellas (tinta)
+                    </a>
+                </li>
+            </ul>
+        </div>
         <a href="<?= $view->url('/guardias') ?>" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Volver
         </a>

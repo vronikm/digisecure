@@ -24,6 +24,11 @@ $e = ViewRenderer::e(...);
         <h4 class="mb-1"><i class="bi bi-shield-lock me-2"></i>Roles y Permisos</h4>
         <p class="text-muted mb-0"><?= count($roles) ?> rol<?= count($roles) !== 1 ? 'es' : '' ?> disponible<?= count($roles) !== 1 ? 's' : '' ?></p>
     </div>
+    <?php if ($user->tienePermiso('roles.crear')): ?>
+    <a href="<?= $view->url('/roles/crear') ?>" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Crear rol
+    </a>
+    <?php endif ?>
 </div>
 
 <div class="card shadow-sm">
@@ -71,21 +76,21 @@ $e = ViewRenderer::e(...);
                         <span class="badge bg-light text-dark border"><?= (int) $rol['usuarios_count'] ?></span>
                     </td>
                     <td class="text-end">
-                        <a href="<?= $view->url('/roles/' . $rol['id']) ?>" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye me-1"></i>Ver
-                        </a>
+                        <div class="d-flex gap-1 justify-content-end">
+                            <a href="<?= $view->url('/roles/' . $rol['id']) ?>" class="btn btn-sm btn-outline-primary" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <?php if ((int) $rol['es_sistema'] === 0 && $user->tienePermiso('roles.editar')): ?>
+                            <a href="<?= $view->url('/roles/' . $rol['id'] . '/editar') ?>" class="btn btn-sm btn-outline-warning" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <?php endif ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>
             </tbody>
         </table>
     </div>
-</div>
-
-<div class="alert alert-info mt-4">
-    <i class="bi bi-info-circle me-2"></i>
-    Los roles del sistema son comunes a toda la plataforma y no pueden modificarse.
-    En esta versión los roles son de solo lectura — la creación y edición de roles
-    propios del tenant llegará en una próxima fase.
 </div>
 <?php $view->endSection() ?>

@@ -24,14 +24,16 @@ final class RouteDispatcher implements RequestHandlerInterface
 
     public function handle(Request $request): Response
     {
-        $match = $this->router->match($request);
-
-        // Inyectar parámetros de ruta como atributos del request
-        $request = $request->withAttribute('route', $match->route);
-        foreach ($match->params as $name => $value) {
-            $request = $request->withAttribute("route.{$name}", $value);
+        // Reutilizar el match si RouteResolverMiddleware ya lo resolvió
+        $match = $request->attribute('_resolved_route');
+        if ($match === null) {
+            $match = $this->router->match($request);
+            $request = $request->withAttribute('route', $match->route);
+            foreach ($match->params as $name => $value) {
+                $request = $request->withAttribute("route.{$name}", $value);
+            }
+            $request = $request->withAttribute('route.params', $match->params);
         }
-        $request = $request->withAttribute('route.params', $match->params);
 
         // Si la ruta tiene middlewares propios, encadenarlos
         if ($match->route->middleware !== []) {

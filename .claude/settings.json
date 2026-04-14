@@ -17,7 +17,8 @@
       "Bash(/c/wamp64/bin/mysql/mysql8.2.0/bin/mysql.exe -u root digisecure -e \"SELECT COUNT\\(*\\) AS tenants FROM tenants; SELECT COUNT\\(*\\) AS usuarios FROM usuarios; SELECT COUNT\\(*\\) AS fichas FROM fichas; SELECT COUNT\\(*\\) AS expedientes FROM expedientes; SELECT COUNT\\(*\\) AS docs FROM expediente_documentos; SELECT COUNT\\(*\\) AS roles FROM roles; SELECT COUNT\\(*\\) AS perms FROM permisos;\")",
       "Bash(/c/wamp64/bin/php/php8.3.0/php.exe bin/notify-expirations.php --dry-run --dias=15)",
       "Bash(/c/wamp64/bin/mysql/mysql8.2.0/bin/mysql.exe -u root digisecure -e \"DESCRIBE tenants;\")",
-      "Bash(/c/wamp64/bin/php/php8.3.0/php.exe bin/notify-expirations.php --dias=15)"
+      "Bash(/c/wamp64/bin/php/php8.3.0/php.exe bin/notify-expirations.php --dias=15)",
+      "Bash(git -C c:/wamp64/www/digisecure log --oneline --all)"
     ]
   }
 }

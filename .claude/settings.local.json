@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer install:*)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe \"c:/ProgramData/ComposerSetup/bin/composer.phar\" install --dev)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe c:/ProgramData/ComposerSetup/bin/composer install --dev)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -r ':*)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Kernel/Bootstrap.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Security/Lopdp/Controller/LopdpController.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Security/Lopdp/Application/RegistrarSolicitudArcopService.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Security/Lopdp/Application/ResponderSolicitudArcopService.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Security/Lopdp/Application/ConsentManager.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/lopdp/index.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/lopdp/solicitudes/index.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/lopdp/solicitudes/create.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/lopdp/solicitudes/show.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/lopdp/consentimientos/index.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe vendor/bin/phpunit --colors=always)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Kernel/Routing/RouteDispatcher.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Kernel/Middleware/RouteResolverMiddleware.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Tenant/Infrastructure/TenantRepository.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Tenant/Application/ActualizarTenantService.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Tenant/Controller/TenantController.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/tenant/show.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/tenant/edit.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Notification/Controller/NotificacionController.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Expediente/Infrastructure/DocumentoTipoRepository.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Expediente/Application/ConfigurarDocumentoTipoService.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Expediente/Controller/DocumentoTipoController.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Kernel/View/Menu/MenuBuilder.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/notificaciones/index.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/notificaciones/show.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l templates/documento-tipos/index.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe bin/migrate.php status)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe bin/migrate.php migrate)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe bin/seed-dev.php)",
+      "Bash(find /c/wamp64/www/digisecure -type f -name \"*.php\" -exec grep -l \"forgot\\\\|reset.*password\\\\|forgot.*password\" {} \\\\;)",
+      "Bash(find /c/wamp64/www/digisecure -type f \\\\\\( -name \"*.php\" -o -name \"*.html\" \\\\\\) -exec grep -l \"TODO\\\\|FIXME\\\\|próxima\\\\|coming soon\\\\|fase.*10\\\\|Fase.*10\" {} \\\\;)",
+      "Bash(ls -lrt /c/wamp64/www/digisecure/docs/memory/*.md)",
+      "Bash(grep -l \"token_recuperacion\" c:/wamp64/www/digisecure/migrations/*.sql)"
+    ]
+  }
+}

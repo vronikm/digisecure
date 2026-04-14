@@ -31,6 +31,7 @@ final class Route
         public readonly array|\Closure $handler,
         public readonly array $middleware = [],
         public readonly ?string $name = null,
+        public readonly ?string $permission = null,
     ) {
         [$this->regex, $this->paramNames] = $this->compile($path);
     }

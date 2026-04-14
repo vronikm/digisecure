@@ -28,6 +28,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
     /** Rutas que NO requieren autenticación */
     private const PUBLIC_ROUTES = [
         '/login',
+        '/password/forgot',
         '/healthcheck',
         '/_smoke/session',
     ];
@@ -35,6 +36,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
     /** Prefijos públicos (si la ruta empieza con estos) */
     private const PUBLIC_PREFIXES = [
         '/assets/',
+        '/password/reset/',
     ];
 
     public function __construct(
