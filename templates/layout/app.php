@@ -27,6 +27,7 @@ $sectionMetaMap = [
     'Control' => ['icon' => 'bi-activity', 'accent' => '#f2994a', 'soft' => 'rgba(242, 153, 74, 0.18)'],
     'Configuracion' => ['icon' => 'bi-sliders2', 'accent' => '#00a86b', 'soft' => 'rgba(0, 168, 107, 0.18)'],
     'Privacidad' => ['icon' => 'bi-shield-lock', 'accent' => '#e76f51', 'soft' => 'rgba(231, 111, 81, 0.18)'],
+    'Plataforma' => ['icon' => 'bi-grid-1x2-fill', 'accent' => '#6f42c1', 'soft' => 'rgba(111, 66, 193, 0.18)'],
 ];
 
 $menuSections = [];
@@ -127,64 +128,158 @@ $roleLabels = array_values(array_filter(array_map(
             align-items: center;
             gap: 1rem;
             padding: 0 1.25rem;
-            background: rgba(13, 31, 54, 0.94);
+            background: linear-gradient(90deg, rgba(13,31,54,.97), rgba(16,36,63,.95));
             backdrop-filter: blur(16px);
             color: #fff;
             z-index: 1045;
-            box-shadow: 0 10px 24px rgba(5, 16, 30, 0.18);
+            box-shadow: 0 2px 20px rgba(5,16,30,.22);
         }
 
         .ds-topbar .brand {
             display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: .75rem;
             color: inherit;
             font-weight: 700;
-            letter-spacing: 0.02em;
+            letter-spacing: .02em;
             text-decoration: none;
         }
+        .ds-topbar .brand:hover { color: inherit; }
 
         .ds-brand-mark {
-            width: 42px;
-            height: 42px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 14px;
-            background: linear-gradient(135deg, rgba(47, 128, 237, 0.95), rgba(14, 165, 164, 0.9));
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            width: 40px; height: 40px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2f80ed, #0ea5a4);
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(47,128,237,.35);
         }
 
+        .ds-brand-copy { line-height: 1.2; }
         .ds-brand-copy small {
             display: block;
-            color: rgba(255, 255, 255, 0.62);
-            font-size: 0.72rem;
-            font-weight: 500;
+            color: rgba(255,255,255,.5);
+            font-size: .7rem;
+            font-weight: 400;
+            letter-spacing: .02em;
         }
 
         .ds-topbar-right {
             margin-left: auto;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: .5rem;
         }
 
-        .ds-topbar-context {
+        .ds-topbar-tenant {
             display: none;
-            text-align: right;
-            line-height: 1.15;
+            align-items: center;
+            gap: .6rem;
+            padding: .45rem .85rem;
+            border-radius: 10px;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.06);
+            line-height: 1.2;
+            margin-right: .35rem;
+        }
+        .ds-topbar-tenant .tt-icon {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            background: rgba(47,128,237,.2);
+            color: #6ab0f3;
+            font-size: .9rem;
+        }
+        .ds-topbar-tenant .tt-name {
+            font-size: .8rem;
+            font-weight: 600;
+            color: rgba(255,255,255,.88);
+        }
+        .ds-topbar-tenant .tt-sub {
+            font-size: .68rem;
+            color: rgba(255,255,255,.42);
         }
 
-        .ds-topbar-context .tenant-name {
-            display: block;
-            font-size: 0.82rem;
-            color: rgba(255, 255, 255, 0.72);
+        .ds-topbar-sep {
+            display: none;
+            width: 1px; height: 28px;
+            background: rgba(255,255,255,.12);
+            margin: 0 .2rem;
         }
 
-        .ds-topbar-context .module-count {
-            display: block;
-            font-size: 0.72rem;
-            color: rgba(255, 255, 255, 0.5);
+        /* User dropdown button */
+        .ds-user-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            padding: .4rem .65rem .4rem .45rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,.08);
+            background: rgba(255,255,255,.06);
+            color: #fff;
+            font-size: .85rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .ds-user-btn:hover, .ds-user-btn:focus { background: rgba(255,255,255,.12); color: #fff; }
+        .ds-user-btn::after { display: none; } /* hide default caret */
+
+        .ds-user-avatar {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #2f80ed, #0ea5a4);
+            font-size: .85rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: .5px;
+        }
+        .ds-user-btn .ds-user-caret {
+            font-size: .65rem;
+            opacity: .55;
+            transition: transform .2s;
+        }
+        .ds-user-btn[aria-expanded="true"] .ds-user-caret { transform: rotate(180deg); }
+
+        /* Dropdown menu styling override */
+        .ds-user-menu {
+            min-width: 240px;
+            padding: .5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,.08);
+            box-shadow: 0 12px 36px rgba(0,0,0,.15);
+            animation: dsDropIn .15s ease;
+        }
+        @keyframes dsDropIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        .ds-user-menu .dropdown-item {
+            padding: .55rem .85rem;
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 500;
+            color: var(--ds-text);
+        }
+        .ds-user-menu .dropdown-item:hover { background: var(--ds-surface); }
+        .ds-user-menu .dropdown-item i { width: 1.3rem; text-align: center; }
+        .ds-user-menu .ds-dm-header {
+            padding: .65rem .85rem .55rem;
+            border-bottom: 1px solid #eef1f5;
+            margin-bottom: .35rem;
+        }
+        .ds-user-menu .ds-dm-header .ds-dm-name {
+            font-weight: 700;
+            font-size: .88rem;
+            color: var(--ds-text);
+        }
+        .ds-user-menu .ds-dm-header .ds-dm-email {
+            font-size: .76rem;
+            color: var(--ds-text-soft);
+        }
+        .ds-user-menu .ds-dm-footer {
+            border-top: 1px solid #eef1f5;
+            margin-top: .35rem;
+            padding-top: .35rem;
         }
 
         .ds-sidebar {
@@ -511,9 +606,8 @@ $roleLabels = array_values(array_filter(array_map(
         }
 
         @media (min-width: 992px) {
-            .ds-topbar-context {
-                display: block;
-            }
+            .ds-topbar-tenant { display: flex; }
+            .ds-topbar-sep { display: block; }
         }
 
         @media (max-width: 991.98px) {
@@ -539,6 +633,10 @@ $roleLabels = array_values(array_filter(array_map(
     <?= $view->yieldSection('head') ?>
 </head>
 <body>
+<?php
+    $initials = mb_strtoupper(mb_substr($user->nombres, 0, 1) . mb_substr($user->apellidos, 0, 1));
+    $rolPrincipal = $roleLabels[0] ?? 'Usuario';
+?>
 <nav class="ds-topbar">
     <button class="btn btn-link text-white d-lg-none p-0" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
         <i class="bi bi-list fs-3"></i>
@@ -548,37 +646,48 @@ $roleLabels = array_values(array_filter(array_map(
         <span class="ds-brand-mark"><i class="bi bi-shield-lock-fill"></i></span>
         <span class="ds-brand-copy">
             DigiSecure
-            <small>Gestion clara para seguridad privada</small>
+            <small>Seguridad privada</small>
         </span>
     </a>
 
     <div class="ds-topbar-right">
-        <div class="ds-topbar-context">
-            <span class="tenant-name"><i class="bi bi-building me-1"></i><?= $e($user->tenantNombre) ?></span>
-            <span class="module-count"><?= $visibleModules ?> modulos visibles segun tu rol</span>
+        <div class="ds-topbar-tenant">
+            <span class="tt-icon"><i class="bi bi-building"></i></span>
+            <span>
+                <span class="tt-name"><?= $e($user->tenantNombre) ?></span>
+                <span class="tt-sub d-block"><?= $e($rolPrincipal) ?></span>
+            </span>
         </div>
 
+        <span class="ds-topbar-sep"></span>
+
         <div class="dropdown">
-            <button class="btn btn-link text-white text-decoration-none dropdown-toggle p-0" type="button"
+            <button class="ds-user-btn dropdown-toggle" type="button"
                     data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-person-circle me-1"></i>
-                <span class="d-none d-sm-inline"><?= $e($user->nombreCompleto()) ?></span>
+                <span class="ds-user-avatar"><?= $e($initials) ?></span>
+                <span class="d-none d-sm-inline"><?= $e($user->nombres) ?></span>
+                <i class="bi bi-chevron-down ds-user-caret"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                <li><span class="dropdown-item-text small text-muted"><?= $e($user->email) ?></span></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="<?= $view->url('/perfil') ?>"><i class="bi bi-person me-2"></i>Mi perfil</a></li>
-                <li><a class="dropdown-item" href="<?= $view->url('/perfil/password') ?>"><i class="bi bi-key me-2"></i>Cambiar contrase&ntilde;a</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form method="POST" action="<?= $view->url('/logout') ?>" class="d-inline">
+            <div class="dropdown-menu dropdown-menu-end ds-user-menu">
+                <div class="ds-dm-header">
+                    <div class="ds-dm-name"><?= $e($user->nombreCompleto()) ?></div>
+                    <div class="ds-dm-email"><?= $e($user->email) ?></div>
+                </div>
+                <a class="dropdown-item" href="<?= $view->url('/perfil') ?>">
+                    <i class="bi bi-person me-2 text-muted"></i>Mi perfil
+                </a>
+                <a class="dropdown-item" href="<?= $view->url('/perfil/password') ?>">
+                    <i class="bi bi-key me-2 text-muted"></i>Cambiar contrase&ntilde;a
+                </a>
+                <div class="ds-dm-footer">
+                    <form method="POST" action="<?= $view->url('/logout') ?>">
                         <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                         <button type="submit" class="dropdown-item text-danger">
                             <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesion
                         </button>
                     </form>
-                </li>
-            </ul>
+                </div>
+            </div>
         </div>
     </div>
 </nav>

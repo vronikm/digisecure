@@ -123,6 +123,13 @@ $returnTo = $returnTo ?? null;
                         <i class="bi bi-question-circle me-1"></i>¿Olvidaste tu contraseña?
                     </a>
                 </div>
+                <hr class="my-3">
+                <div class="text-center">
+                    <small class="text-muted">¿Tu empresa aún no está en DigiSecure?</small><br>
+                    <a href="<?= $view->url('/registro') ?>" class="text-decoration-none small fw-semibold">
+                        <i class="bi bi-building-add me-1"></i>Registra tu empresa
+                    </a>
+                </div>
             </form>
         </div>
     </div>

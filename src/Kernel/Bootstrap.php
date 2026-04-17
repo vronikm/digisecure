@@ -45,6 +45,9 @@ use DigiSecure\Tenant\Controller\TenantController;
 use DigiSecure\Notification\Controller\NotificacionController;
 use DigiSecure\Expediente\Controller\DocumentoTipoController;
 use DigiSecure\User\Controller\PasswordResetController;
+use DigiSecure\Subscription\Controller\SuscripcionController;
+use DigiSecure\Tenant\Controller\RegistroController;
+use DigiSecure\Superadmin\Controller\SuperadminController;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -441,6 +444,110 @@ final class Bootstrap
             ),
         );
 
+        // 24. Módulo Subscription / Planes (Fase 11)
+        $container->singleton(
+            \DigiSecure\Subscription\Infrastructure\PlanRepository::class,
+            static fn(Container $c) => new \DigiSecure\Subscription\Infrastructure\PlanRepository(
+                $c->get(PdoConnection::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Subscription\Infrastructure\SuscripcionCicloRepository::class,
+            static fn(Container $c) => new \DigiSecure\Subscription\Infrastructure\SuscripcionCicloRepository(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Subscription\Application\CalcularUsoService::class,
+            static fn(Container $c) => new \DigiSecure\Subscription\Application\CalcularUsoService(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Subscription\Application\VerificarLimiteService::class,
+            static fn(Container $c) => new \DigiSecure\Subscription\Application\VerificarLimiteService(
+                $c->get(\DigiSecure\Tenant\Infrastructure\TenantRepository::class),
+                $c->get(\DigiSecure\Subscription\Application\CalcularUsoService::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Subscription\Application\ConsultarSuscripcionService::class,
+            static fn(Container $c) => new \DigiSecure\Subscription\Application\ConsultarSuscripcionService(
+                $c->get(\DigiSecure\Tenant\Infrastructure\TenantRepository::class),
+                $c->get(\DigiSecure\Subscription\Infrastructure\PlanRepository::class),
+                $c->get(\DigiSecure\Subscription\Infrastructure\SuscripcionCicloRepository::class),
+                $c->get(\DigiSecure\Subscription\Application\CalcularUsoService::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Subscription\Application\RegistrarCicloService::class,
+            static fn(Container $c) => new \DigiSecure\Subscription\Application\RegistrarCicloService(
+                $c->get(PdoConnection::class),
+                $c->get(\DigiSecure\Subscription\Infrastructure\PlanRepository::class),
+                $c->get(\DigiSecure\Subscription\Infrastructure\SuscripcionCicloRepository::class),
+                $c->get(TenantContext::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 25. Módulo Registro público de tenants (Fase 12)
+        $container->singleton(
+            \DigiSecure\Tenant\Infrastructure\RegistroEmpresaRepository::class,
+            static fn(Container $c) => new \DigiSecure\Tenant\Infrastructure\RegistroEmpresaRepository(
+                $c->get(PdoConnection::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Tenant\Application\RegistrarTenantService::class,
+            static fn(Container $c) => new \DigiSecure\Tenant\Application\RegistrarTenantService(
+                $c->get(PdoConnection::class),
+                $c->get(Hasher::class),
+                $c->get(\DigiSecure\Subscription\Infrastructure\PlanRepository::class),
+                $c->get(\DigiSecure\Subscription\Infrastructure\SuscripcionCicloRepository::class),
+                $c->get(\DigiSecure\Tenant\Infrastructure\RegistroEmpresaRepository::class),
+                $c->get(\DigiSecure\Notification\Application\EncolarNotificacionService::class),
+                $c->get(TenantContext::class),
+                $c->get(Config::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Tenant\Application\ActivarTenantService::class,
+            static fn(Container $c) => new \DigiSecure\Tenant\Application\ActivarTenantService(
+                $c->get(PdoConnection::class),
+                $c->get(\DigiSecure\Tenant\Infrastructure\RegistroEmpresaRepository::class),
+            ),
+        );
+        $container->singleton(
+            RegistroController::class,
+            static fn(Container $c) => new RegistroController(
+                $c->get(ViewRenderer::class),
+                $c->get(\DigiSecure\Tenant\Application\RegistrarTenantService::class),
+                $c->get(\DigiSecure\Tenant\Application\ActivarTenantService::class),
+                $c->get(\DigiSecure\Subscription\Infrastructure\PlanRepository::class),
+            ),
+        );
+
+        // 26. Módulo Superadmin (Fase 13)
+        $container->singleton(
+            \DigiSecure\Superadmin\Infrastructure\SuperadminRepository::class,
+            static fn(Container $c) => new \DigiSecure\Superadmin\Infrastructure\SuperadminRepository(
+                $c->get(PdoConnection::class),
+            ),
+        );
+        $container->singleton(
+            SuperadminController::class,
+            static fn(Container $c) => new SuperadminController(
+                $c->get(ViewRenderer::class),
+                $c->get(\DigiSecure\Superadmin\Infrastructure\SuperadminRepository::class),
+                $c->get(\DigiSecure\Subscription\Infrastructure\PlanRepository::class),
+                $c->get(PdoConnection::class),
+                $c->get(AuditLogger::class),
+                $c->get(TenantContext::class),
+            ),
+        );
+
         // 14. Router con rutas registradas
         $router = new Router();
         $this->registerRoutes($router);
@@ -635,6 +742,11 @@ final class Bootstrap
         $router->get('/empresa/editar', [TenantController::class, 'edit'], name: 'tenant.edit', permission: 'tenants.editar');
         $router->post('/empresa/editar', [TenantController::class, 'update'], name: 'tenant.update', permission: 'tenants.editar');
 
+        // Suscripción y planes (Fase 11)
+        $router->get('/suscripcion', [SuscripcionController::class, 'show'], name: 'suscripcion.show', permission: 'suscripcion.ver');
+        $router->get('/suscripcion/ciclo/nuevo', [SuscripcionController::class, 'nuevoCicloForm'], name: 'suscripcion.ciclo.form', permission: 'suscripcion.gestionar');
+        $router->post('/suscripcion/ciclo/nuevo', [SuscripcionController::class, 'nuevoCiclo'], name: 'suscripcion.ciclo.store', permission: 'suscripcion.gestionar');
+
         // Notificaciones (Fase 8)
         $router->get('/notificaciones', [NotificacionController::class, 'index'], name: 'notificaciones.index', permission: 'notificaciones.ver');
         $router->get('/notificaciones/{id}', [NotificacionController::class, 'show'], name: 'notificaciones.show', permission: 'notificaciones.ver');
@@ -655,6 +767,19 @@ final class Bootstrap
         $router->post('/lopdp/solicitudes/{id}/responder', [LopdpController::class, 'responderSolicitud'], name: 'lopdp.solicitudes.responder', permission: 'lopdp.gestionar');
         $router->get('/lopdp/consentimientos', [LopdpController::class, 'listarConsentimientos'], name: 'lopdp.consentimientos.index', permission: 'lopdp.gestionar');
 
+        // Panel Superadmin (Fase 13)
+        $router->get('/admin', [SuperadminController::class, 'dashboard'], name: 'admin.dashboard', permission: 'superadmin.panel');
+        $router->get('/admin/tenants', [SuperadminController::class, 'tenants'], name: 'admin.tenants', permission: 'superadmin.tenants.ver');
+        $router->get('/admin/tenants/{id}', [SuperadminController::class, 'tenantDetalle'], name: 'admin.tenants.detalle', permission: 'superadmin.tenants.ver');
+        $router->post('/admin/tenants/{id}/estado', [SuperadminController::class, 'cambiarEstado'], name: 'admin.tenants.estado', permission: 'superadmin.tenants.gestionar');
+        $router->post('/admin/tenants/{id}/plan', [SuperadminController::class, 'cambiarPlan'], name: 'admin.tenants.plan', permission: 'superadmin.tenants.gestionar');
+        $router->get('/admin/registros', [SuperadminController::class, 'registros'], name: 'admin.registros', permission: 'superadmin.registros.ver');
+
+        // Registro público y activación (Fase 12) — rutas públicas, sin permission
+        $router->get('/registro', [RegistroController::class, 'showForm'], name: 'registro.form');
+        $router->post('/registro', [RegistroController::class, 'procesarForm'], name: 'registro.store');
+        $router->get('/activar/{token}', [RegistroController::class, 'activar'], name: 'registro.activar');
+
         // --- Healthcheck y smoke tests (mantener para monitoreo) ---
         $router->get('/healthcheck', static fn(
             SessionManager $session,
@@ -663,7 +788,7 @@ final class Bootstrap
         ) => \DigiSecure\Kernel\Http\Response::json([
             'status' => 'ok',
             'service' => 'DigiSecure',
-            'phase' => '10.0',
+            'phase' => '13.0',
             'timestamp' => date('c'),
             'php' => PHP_VERSION,
             'session_active' => $session->isStarted(),

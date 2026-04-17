@@ -29,6 +29,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
     private const PUBLIC_ROUTES = [
         '/login',
         '/password/forgot',
+        '/registro',
         '/healthcheck',
         '/_smoke/session',
     ];
@@ -37,6 +38,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
     private const PUBLIC_PREFIXES = [
         '/assets/',
         '/password/reset/',
+        '/activar/',
     ];
 
     public function __construct(

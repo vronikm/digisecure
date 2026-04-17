@@ -11,6 +11,7 @@ use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Shared\Domain\DomainException;
+use DigiSecure\Subscription\Application\VerificarLimiteService;
 use DigiSecure\Tenant\Domain\TenantContext;
 use DigiSecure\User\Application\AdministrarUsuariosService;
 use DigiSecure\User\Infrastructure\UserRepository;
@@ -35,6 +36,7 @@ final class UserController
         private readonly AdministrarUsuariosService $service,
         private readonly PdoConnection $db,
         private readonly TenantContext $tenantContext,
+        private readonly VerificarLimiteService $verificarLimite,
     ) {
     }
 
@@ -91,6 +93,7 @@ final class UserController
         $input = $request->post;
 
         try {
+            $this->verificarLimite->verificarCrearUsuario();
             $this->service->crear($input, $user->id, $request->clientIp());
             return Response::redirect('/usuarios');
         } catch (DomainException $e) {

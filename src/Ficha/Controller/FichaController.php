@@ -18,6 +18,7 @@ use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Shared\Domain\DomainException;
+use DigiSecure\Subscription\Application\VerificarLimiteService;
 
 /**
  * Controller CRUD de Fichas del Guardia.
@@ -43,6 +44,7 @@ final class FichaController
         private readonly GenerarFormatoHuellasService $formatoHuellasService,
         private readonly Encryption $encryption,
         private readonly PdoConnection $db,
+        private readonly VerificarLimiteService $verificarLimite,
     ) {
     }
 
@@ -103,6 +105,7 @@ final class FichaController
         $input = $request->post;
 
         try {
+            $this->verificarLimite->verificarCrearGuardia();
             $result = $this->crearService->execute($input, $user->id, $request->clientIp());
             // Redirigir al detalle de la ficha creada
             return Response::redirect("/guardias/{$result['id']}");
