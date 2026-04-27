@@ -1,6 +1,6 @@
 <?php
 /**
- * Visor de auditoría — listado filtrable.
+ * Visor de auditoria — listado filtrable.
  *
  * Variables: $user, $csrfToken, $currentPath, $eventos, $total, $page, $totalPages, $filters, $eventosDisponibles
  */
@@ -11,39 +11,62 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
-$nivelBadge = static fn(string $nivel) => match ($nivel) {
-    'critical' => 'bg-danger',
-    'warning' => 'bg-warning text-dark',
-    'info' => 'bg-info text-dark',
-    default => 'bg-secondary',
+$nivelTone = static fn(string $nivel) => match ($nivel) {
+    'critical' => 'tone-danger',
+    'warning'  => 'tone-warning',
+    'info'     => 'tone-info',
+    default    => 'tone-muted',
 };
+
+$hasFilters = !empty($filters['evento'] ?? null)
+    || !empty($filters['nivel'] ?? null)
+    || !empty($filters['desde'] ?? null)
+    || !empty($filters['hasta'] ?? null);
+
+$qs = http_build_query(array_filter([
+    'evento' => $filters['evento'] ?? '',
+    'nivel' => $filters['nivel'] ?? '',
+    'desde' => $filters['desde'] ?? '',
+    'hasta' => $filters['hasta'] ?? '',
+    'usuario_id' => $filters['usuario_id'] ?? '',
+    'entidad_tipo' => $filters['entidad_tipo'] ?? '',
+]));
+$qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
-<?php $view->section('title') ?>Auditoría — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Auditoria — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item active"><i class="bi bi-shield-check me-1"></i>Auditoría</li>
+<li class="breadcrumb-item active"><i class="bi bi-shield-check me-1"></i>Auditoria</li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1"><i class="bi bi-shield-check me-2"></i>Registro de Auditoría</h4>
-        <p class="text-muted mb-0"><?= $total ?> evento<?= $total !== 1 ? 's' : '' ?> registrado<?= $total !== 1 ? 's' : '' ?></p>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-shield-check"></i></span>
+        <div>
+            <h1>Registro de auditoria</h1>
+            <small><?= $total ?> evento<?= $total !== 1 ? 's' : '' ?> registrado<?= $total !== 1 ? 's' : '' ?></small>
+        </div>
     </div>
     <?php if ($user->tienePermiso('auditoria.exportar')): ?>
-    <a href="<?= $view->url('/auditoria/exportar?' . http_build_query($filters)) ?>" class="btn btn-outline-success btn-sm">
-        <i class="bi bi-download me-1"></i>Exportar CSV
+    <a href="<?= $view->url('/auditoria/exportar?' . http_build_query($filters)) ?>"
+       class="ds-btn ds-btn-success ds-btn-sm">
+        <i class="bi bi-download"></i>Exportar CSV
     </a>
     <?php endif ?>
 </div>
 
 <!-- Filtros -->
-<div class="card shadow-sm mb-4">
-    <div class="card-body py-3">
-        <form method="get" action="<?= $view->url('/auditoria') ?>" class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small text-muted">Evento</label>
+<div class="ds-filter-bar">
+    <form method="get" action="<?= $view->url('/auditoria') ?>" class="ds-filter-row">
+        <div class="ds-filter-summary">
+            <i class="bi bi-funnel"></i>
+            <strong>Filtrar:</strong>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Evento</label>
                 <input type="text" name="evento" class="form-control form-control-sm" list="eventos-list"
                        value="<?= $e($filters['evento'] ?? '') ?>" placeholder="ej: auth.login_ok">
                 <datalist id="eventos-list">
@@ -52,8 +75,10 @@ $nivelBadge = static fn(string $nivel) => match ($nivel) {
                     <?php endforeach ?>
                 </datalist>
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted">Nivel</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Nivel</label>
                 <select name="nivel" class="form-select form-select-sm">
                     <option value="">Todos</option>
                     <?php foreach (['info','warning','critical'] as $niv): ?>
@@ -63,37 +88,53 @@ $nivelBadge = static fn(string $nivel) => match ($nivel) {
                     <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted">Desde</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Desde</label>
                 <input type="date" name="desde" class="form-control form-control-sm"
                        value="<?= $e($filters['desde'] ?? '') ?>">
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted">Hasta</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Hasta</label>
                 <input type="date" name="hasta" class="form-control form-control-sm"
                        value="<?= $e($filters['hasta'] ?? '') ?>">
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-sm btn-outline-primary w-100">
-                    <i class="bi bi-search me-1"></i>Filtrar
-                </button>
-            </div>
-            <?php if ($filters): ?>
-            <div class="col-md-1">
-                <a href="<?= $view->url('/auditoria') ?>" class="btn btn-sm btn-outline-secondary w-100" title="Limpiar">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-            </div>
+        </div>
+        <div class="ds-filter-actions">
+            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                <i class="bi bi-search"></i>Aplicar
+            </button>
+            <?php if ($hasFilters): ?>
+            <a href="<?= $view->url('/auditoria') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                <i class="bi bi-x-lg"></i>Limpiar
+            </a>
             <?php endif ?>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
 
-<!-- Tabla -->
-<div class="card shadow-sm">
+<?php if ($eventos === []): ?>
+<div class="ds-table-card">
+    <div class="ds-empty-state">
+        <div class="ds-empty-icon"><i class="bi bi-journal-text"></i></div>
+        <h3>No hay eventos en auditoria</h3>
+        <p>
+            <?php if ($hasFilters): ?>
+                Ningun evento coincide con los filtros aplicados. Ajusta los criterios o limpia los filtros.
+            <?php else: ?>
+                Los eventos se registran automaticamente cuando los usuarios realizan acciones en el sistema.
+            <?php endif ?>
+        </p>
+    </div>
+</div>
+<?php else: ?>
+<div class="ds-table-card">
     <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="ds-table">
+            <thead>
                 <tr>
                     <th>Fecha</th>
                     <th>Nivel</th>
@@ -105,48 +146,36 @@ $nivelBadge = static fn(string $nivel) => match ($nivel) {
                 </tr>
             </thead>
             <tbody>
-                <?php if ($eventos === []): ?>
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-5">
-                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                        No hay eventos que coincidan.
-                    </td>
-                </tr>
-                <?php endif ?>
                 <?php foreach ($eventos as $ev): ?>
                 <tr>
-                    <td class="text-nowrap">
-                        <small><?= date('d/m/Y H:i:s', strtotime($ev['created_at'])) ?></small>
-                    </td>
+                    <td><span class="ds-cell-mono"><?= date('d/m/Y H:i:s', strtotime($ev['created_at'])) ?></span></td>
+                    <td><span class="ds-badge <?= $nivelTone($ev['nivel']) ?>"><?= $e(ucfirst($ev['nivel'])) ?></span></td>
+                    <td><span class="ds-cell-mono"><?= $e($ev['evento']) ?></span></td>
                     <td>
-                        <span class="badge <?= $nivelBadge($ev['nivel']) ?>"><?= $e(ucfirst($ev['nivel'])) ?></span>
-                    </td>
-                    <td><code class="small"><?= $e($ev['evento']) ?></code></td>
-                    <td>
-                        <?php if ($ev['usuario_email']): ?>
-                        <small><?= $e($ev['usuario_apellidos'] ?? '') ?> <?= $e($ev['usuario_nombres'] ?? '') ?></small><br>
-                        <small class="text-muted"><?= $e($ev['usuario_email']) ?></small>
+                        <?php if (!empty($ev['usuario_email'])): ?>
+                        <div class="ds-cell-name"><?= $e($ev['usuario_apellidos'] ?? '') ?> <?= $e($ev['usuario_nombres'] ?? '') ?></div>
+                        <div class="ds-cell-sub"><?= $e($ev['usuario_email']) ?></div>
                         <?php else: ?>
-                        <small class="text-muted">—</small>
+                        <span class="ds-cell-sub">—</span>
                         <?php endif ?>
                     </td>
                     <td>
-                        <?php if ($ev['entidad_tipo']): ?>
-                        <small><span class="badge bg-light text-dark border"><?= $e($ev['entidad_tipo']) ?></span></small><br>
-                        <small class="text-muted"><code><?= $e($ev['entidad_id'] ?? '') ?></code></small>
+                        <?php if (!empty($ev['entidad_tipo'])): ?>
+                        <span class="ds-chip"><i class="bi bi-tag"></i><?= $e($ev['entidad_tipo']) ?></span>
+                        <div class="ds-cell-sub" style="margin-top:.2rem;"><span class="ds-cell-mono"><?= $e($ev['entidad_id'] ?? '') ?></span></div>
                         <?php else: ?>
-                        <small class="text-muted">—</small>
+                        <span class="ds-cell-sub">—</span>
                         <?php endif ?>
                     </td>
-                    <td><small class="text-muted"><?= $e($ev['ip_text'] ?? '—') ?></small></td>
+                    <td><span class="ds-cell-mono"><?= $e($ev['ip_text'] ?? '—') ?></span></td>
                     <td>
-                        <?php if ($ev['detalles_json']): ?>
+                        <?php if (!empty($ev['detalles_json'])): ?>
                         <details>
-                            <summary class="small text-primary" style="cursor:pointer">Ver</summary>
-                            <pre class="small mb-0 mt-1" style="max-width:400px;white-space:pre-wrap"><?= $e(json_encode(json_decode((string)$ev['detalles_json'], true), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?></pre>
+                            <summary style="cursor:pointer; color:#2563eb; font-size:.78rem; font-weight:600;">Ver JSON</summary>
+                            <pre style="background:#0f172a; color:#e2e8f0; padding:.6rem .75rem; border-radius:8px; max-width:400px; max-height:240px; overflow:auto; font-size:.72rem; margin:.4rem 0 0; white-space:pre-wrap; word-break:break-word;"><?= $e(json_encode(json_decode((string) $ev['detalles_json'], true), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?></pre>
                         </details>
                         <?php else: ?>
-                        <small class="text-muted">—</small>
+                        <span class="ds-cell-sub">—</span>
                         <?php endif ?>
                     </td>
                 </tr>
@@ -156,39 +185,30 @@ $nivelBadge = static fn(string $nivel) => match ($nivel) {
     </div>
 
     <?php if ($totalPages > 1): ?>
-    <div class="card-footer d-flex justify-content-between align-items-center">
-        <small class="text-muted">Página <?= $page ?> de <?= $totalPages ?></small>
-        <nav>
-            <ul class="pagination pagination-sm mb-0">
-                <?php
-                $qs = http_build_query(array_filter([
-                    'evento' => $filters['evento'] ?? '',
-                    'nivel' => $filters['nivel'] ?? '',
-                    'desde' => $filters['desde'] ?? '',
-                    'hasta' => $filters['hasta'] ?? '',
-                    'usuario_id' => $filters['usuario_id'] ?? '',
-                    'entidad_tipo' => $filters['entidad_tipo'] ?? '',
-                ]));
-                $qsPrefix = $qs ? "&{$qs}" : '';
-                ?>
-                <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/auditoria') ?>?page=<?= $page - 1 ?><?= $qsPrefix ?>">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                </li>
-                <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
-                <li class="page-item <?= $p === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/auditoria') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
-                </li>
-                <?php endfor ?>
-                <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/auditoria') ?>?page=<?= $page + 1 ?><?= $qsPrefix ?>">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+    <div class="ds-table-foot">
+        <span>Pagina <strong><?= $page ?></strong> de <?= $totalPages ?> &middot; <?= $total ?> evento<?= $total !== 1 ? 's' : '' ?></span>
+        <ul class="ds-pagination">
+            <li>
+                <a class="ds-page <?= $page <= 1 ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/auditoria') ?>?page=<?= max(1, $page - 1) ?><?= $qsPrefix ?>" aria-label="Anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+            <li>
+                <a class="ds-page <?= $p === $page ? 'is-active' : '' ?>"
+                   href="<?= $view->url('/auditoria') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
+            </li>
+            <?php endfor ?>
+            <li>
+                <a class="ds-page <?= $page >= $totalPages ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/auditoria') ?>?page=<?= min($totalPages, $page + 1) ?><?= $qsPrefix ?>" aria-label="Siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
     </div>
     <?php endif ?>
 </div>
+<?php endif ?>
 <?php $view->endSection() ?>

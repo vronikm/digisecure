@@ -10,6 +10,7 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+$total = count($roles);
 ?>
 
 <?php $view->section('title') ?>Roles — DigiSecure<?php $view->endSection() ?>
@@ -19,69 +20,78 @@ $e = ViewRenderer::e(...);
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1"><i class="bi bi-shield-lock me-2"></i>Roles y Permisos</h4>
-        <p class="text-muted mb-0"><?= count($roles) ?> rol<?= count($roles) !== 1 ? 'es' : '' ?> disponible<?= count($roles) !== 1 ? 's' : '' ?></p>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-shield-lock"></i></span>
+        <div>
+            <h1>Roles y permisos</h1>
+            <small><?= $total ?> rol<?= $total !== 1 ? 'es' : '' ?> disponible<?= $total !== 1 ? 's' : '' ?></small>
+        </div>
     </div>
     <?php if ($user->tienePermiso('roles.crear')): ?>
-    <a href="<?= $view->url('/roles/crear') ?>" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i>Crear rol
+    <a href="<?= $view->url('/roles/crear') ?>" class="ds-btn ds-btn-primary">
+        <i class="bi bi-plus-lg"></i>Crear rol
     </a>
     <?php endif ?>
 </div>
 
-<div class="card shadow-sm">
+<?php if ($roles === []): ?>
+<div class="ds-table-card">
+    <div class="ds-empty-state">
+        <div class="ds-empty-icon"><i class="bi bi-shield-lock"></i></div>
+        <h3>No hay roles disponibles</h3>
+        <p>Crea tu primer rol para definir los permisos que se asignaran a los usuarios.</p>
+        <?php if ($user->tienePermiso('roles.crear')): ?>
+        <a href="<?= $view->url('/roles/crear') ?>" class="ds-btn ds-btn-primary">
+            <i class="bi bi-plus-lg"></i>Crear el primer rol
+        </a>
+        <?php endif ?>
+    </div>
+</div>
+<?php else: ?>
+<div class="ds-table-card">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="ds-table">
+            <thead>
                 <tr>
                     <th>Rol</th>
-                    <th>Código</th>
+                    <th>Codigo</th>
                     <th>Tipo</th>
-                    <th class="text-center">Permisos</th>
-                    <th class="text-center">Usuarios</th>
-                    <th class="text-end">Acciones</th>
+                    <th class="ds-cell-end">Permisos</th>
+                    <th class="ds-cell-end">Usuarios</th>
+                    <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <?php if ($roles === []): ?>
-                <tr>
-                    <td colspan="6" class="text-center text-muted py-5">
-                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                        No hay roles disponibles.
-                    </td>
-                </tr>
-                <?php endif ?>
                 <?php foreach ($roles as $rol): ?>
                 <tr>
                     <td>
-                        <div class="fw-semibold"><?= $e($rol['nombre']) ?></div>
-                        <?php if ($rol['descripcion']): ?>
-                        <small class="text-muted"><?= $e($rol['descripcion']) ?></small>
+                        <div class="ds-cell-name"><?= $e($rol['nombre']) ?></div>
+                        <?php if (!empty($rol['descripcion'])): ?>
+                        <div class="ds-cell-sub"><?= $e($rol['descripcion']) ?></div>
                         <?php endif ?>
                     </td>
-                    <td><code><?= $e($rol['codigo']) ?></code></td>
+                    <td><span class="ds-cell-mono"><?= $e($rol['codigo']) ?></span></td>
                     <td>
                         <?php if ((int) $rol['es_sistema'] === 1): ?>
-                        <span class="badge bg-primary"><i class="bi bi-gear-fill me-1"></i>Sistema</span>
+                            <span class="ds-badge tone-purple"><i class="bi bi-gear-fill"></i>Sistema</span>
                         <?php else: ?>
-                        <span class="badge bg-info text-dark">Empresa</span>
+                            <span class="ds-badge tone-info">Empresa</span>
                         <?php endif ?>
                     </td>
-                    <td class="text-center">
-                        <span class="badge bg-secondary"><?= (int) $rol['permisos_count'] ?></span>
+                    <td class="ds-cell-end">
+                        <span class="ds-chip"><i class="bi bi-key"></i><?= (int) $rol['permisos_count'] ?></span>
                     </td>
-                    <td class="text-center">
-                        <span class="badge bg-light text-dark border"><?= (int) $rol['usuarios_count'] ?></span>
+                    <td class="ds-cell-end">
+                        <span class="ds-chip"><i class="bi bi-people"></i><?= (int) $rol['usuarios_count'] ?></span>
                     </td>
-                    <td class="text-end">
-                        <div class="d-flex gap-1 justify-content-end">
-                            <a href="<?= $view->url('/roles/' . $rol['id']) ?>" class="btn btn-sm btn-outline-primary" title="Ver">
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <a href="<?= $view->url('/roles/' . $rol['id']) ?>" class="ds-icon-btn" title="Ver detalle">
                                 <i class="bi bi-eye"></i>
                             </a>
                             <?php if ((int) $rol['es_sistema'] === 0 && $user->tienePermiso('roles.editar')): ?>
-                            <a href="<?= $view->url('/roles/' . $rol['id'] . '/editar') ?>" class="btn btn-sm btn-outline-warning" title="Editar">
+                            <a href="<?= $view->url('/roles/' . $rol['id'] . '/editar') ?>" class="ds-icon-btn" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <?php endif ?>
@@ -93,4 +103,5 @@ $e = ViewRenderer::e(...);
         </table>
     </div>
 </div>
+<?php endif ?>
 <?php $view->endSection() ?>

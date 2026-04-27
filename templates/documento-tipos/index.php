@@ -1,6 +1,6 @@
 <?php
 /**
- * Catálogo de tipos de documento del tenant.
+ * Catalogo de tipos de documento del tenant.
  *
  * Variables: $user, $csrfToken, $currentPath, $tipos, $kpis, $bloqueFilter
  */
@@ -15,156 +15,175 @@ $e = ViewRenderer::e(...);
 <?php $view->section('title') ?>Tipos de documento — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="<?= $view->url('/configuracion/documentos') ?>">Configuración</a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/configuracion/documentos') ?>">Configuracion</a></li>
 <li class="breadcrumb-item active">Tipos de documento</li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0"><i class="bi bi-file-earmark-ruled me-2"></i>Tipos de documento</h4>
-    <span class="text-muted small">Catálogo configurado para su empresa</span>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-file-earmark-ruled"></i></span>
+        <div>
+            <h1>Tipos de documento</h1>
+            <small>Catalogo de documentos exigidos por su empresa</small>
+        </div>
+    </div>
 </div>
 
 <!-- KPIs -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-start border-primary border-4">
-            <div class="card-body py-3">
-                <div class="text-muted small text-uppercase fw-bold">Activos</div>
-                <div class="fs-4 fw-bold text-primary"><?= $kpis['activos'] ?> <span class="fs-6 fw-normal text-muted">/ <?= $kpis['total'] ?></span></div>
-            </div>
+<div class="ds-kpi-grid">
+    <div class="ds-kpi-card">
+        <span class="ds-kpi-icon"><i class="bi bi-toggle-on"></i></span>
+        <div>
+            <div class="ds-kpi-label">Activos</div>
+            <div class="ds-kpi-value"><?= $kpis['activos'] ?> <span style="font-size:.95rem;font-weight:500;color:var(--ds-text-soft);">/ <?= $kpis['total'] ?></span></div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-start border-info border-4">
-            <div class="card-body py-3">
-                <div class="text-muted small text-uppercase fw-bold">Bloque A (Pre-empleo)</div>
-                <div class="fs-4 fw-bold text-info"><?= $kpis['bloque_a'] ?></div>
-            </div>
+    <div class="ds-kpi-card tone-info">
+        <span class="ds-kpi-icon"><i class="bi bi-1-square"></i></span>
+        <div>
+            <div class="ds-kpi-label">Bloque A &middot; Pre-empleo</div>
+            <div class="ds-kpi-value"><?= $kpis['bloque_a'] ?></div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-start border-warning border-4">
-            <div class="card-body py-3">
-                <div class="text-muted small text-uppercase fw-bold">Bloque B (Post-vincul.)</div>
-                <div class="fs-4 fw-bold text-warning"><?= $kpis['bloque_b'] ?></div>
-            </div>
+    <div class="ds-kpi-card tone-warning">
+        <span class="ds-kpi-icon"><i class="bi bi-2-square"></i></span>
+        <div>
+            <div class="ds-kpi-label">Bloque B &middot; Post-vinculacion</div>
+            <div class="ds-kpi-value"><?= $kpis['bloque_b'] ?></div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-start border-danger border-4">
-            <div class="card-body py-3">
-                <div class="text-muted small text-uppercase fw-bold">Con vencimiento</div>
-                <div class="fs-4 fw-bold text-danger"><?= $kpis['con_vencimiento'] ?></div>
-            </div>
+    <div class="ds-kpi-card tone-danger">
+        <span class="ds-kpi-icon"><i class="bi bi-clock-history"></i></span>
+        <div>
+            <div class="ds-kpi-label">Con vencimiento</div>
+            <div class="ds-kpi-value"><?= $kpis['con_vencimiento'] ?></div>
         </div>
     </div>
 </div>
 
 <!-- Filtro de bloque -->
-<div class="d-flex gap-2 mb-3">
+<div class="ds-filter-bar" style="display: flex; flex-direction: row; align-items: center; gap: .75rem; flex-wrap: wrap; padding: .85rem 1.1rem;">
+    <div class="ds-filter-summary">
+        <i class="bi bi-funnel"></i>
+        <strong>Filtrar por bloque:</strong>
+    </div>
     <a href="<?= $view->url('/configuracion/documentos') ?>"
-       class="btn btn-sm <?= $bloqueFilter === null ? 'btn-primary' : 'btn-outline-primary' ?>">Todos</a>
+       class="ds-btn ds-btn-sm <?= $bloqueFilter === null ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
+        Todos
+    </a>
     <a href="<?= $view->url('/configuracion/documentos?bloque=A') ?>"
-       class="btn btn-sm <?= $bloqueFilter === 'A' ? 'btn-info' : 'btn-outline-info' ?>">Bloque A — Pre-empleo</a>
+       class="ds-btn ds-btn-sm <?= $bloqueFilter === 'A' ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
+        <i class="bi bi-1-square"></i>Bloque A &middot; Pre-empleo
+    </a>
     <a href="<?= $view->url('/configuracion/documentos?bloque=B') ?>"
-       class="btn btn-sm <?= $bloqueFilter === 'B' ? 'btn-warning' : 'btn-outline-warning' ?>">Bloque B — Post-vinculación</a>
+       class="ds-btn ds-btn-sm <?= $bloqueFilter === 'B' ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
+        <i class="bi bi-2-square"></i>Bloque B &middot; Post-vinculacion
+    </a>
 </div>
 
-<div class="alert alert-info small">
-    <i class="bi bi-info-circle me-1"></i>
-    El catálogo base viene del sistema. Su empresa puede <strong>activar/desactivar</strong> tipos,
-    ajustar <strong>vigencias</strong> y cambiar la <strong>obligatoriedad</strong>. Los cambios solo afectan a su empresa.
+<div class="login-info" style="margin-bottom: 1.25rem;">
+    <i class="bi bi-info-circle"></i>
+    <div>
+        <strong>Personalizable por empresa</strong>
+        El catalogo base viene del sistema. Tu empresa puede activar/desactivar tipos,
+        ajustar vigencias y cambiar la obligatoriedad. Los cambios solo afectan a tu empresa.
+    </div>
 </div>
 
-<!-- Tabla -->
-<div class="card shadow-sm">
+<?php if (empty($tipos)): ?>
+<div class="ds-table-card">
+    <div class="ds-empty-state">
+        <div class="ds-empty-icon"><i class="bi bi-files"></i></div>
+        <h3>No hay tipos configurados</h3>
+        <p>El catalogo se construye desde la base del sistema. Si no ves tipos, contacta a soporte.</p>
+    </div>
+</div>
+<?php else: ?>
+<div class="ds-table-card">
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
-            <thead class="table-light">
+        <table class="ds-table">
+            <thead>
                 <tr>
                     <th style="width:50px">#</th>
-                    <th>Código</th>
+                    <th>Codigo</th>
                     <th>Nombre</th>
-                    <th class="text-center">Bloque</th>
-                    <th class="text-center">Oblig.</th>
-                    <th class="text-center">Vigencia</th>
-                    <th class="text-center">Días</th>
-                    <th class="text-center">Activo</th>
-                    <th class="text-center">Override</th>
-                    <th></th>
+                    <th class="ds-cell-end">Bloque</th>
+                    <th class="ds-cell-end">Oblig.</th>
+                    <th class="ds-cell-end">Vigencia</th>
+                    <th class="ds-cell-end">Dias</th>
+                    <th class="ds-cell-end">Activo</th>
+                    <th class="ds-cell-end">Origen</th>
+                    <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-            <?php if (empty($tipos)): ?>
-                <tr>
-                    <td colspan="10" class="text-center text-muted py-4">
-                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                        No hay tipos de documento configurados.
+                <?php foreach ($tipos as $t):
+                    $esActivo = (int) $t['activo'] === 1;
+                    $esOverride = $t['tenant_id'] !== null;
+                    $bloqueTone = $t['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
+                ?>
+                <tr <?= $esActivo ? '' : 'style="opacity:.55;"' ?>>
+                    <td><span class="ds-cell-sub"><?= (int) $t['orden'] ?></span></td>
+                    <td><span class="ds-cell-mono"><?= $e((string) $t['codigo']) ?></span></td>
+                    <td>
+                        <div class="ds-cell-name" <?= $esActivo ? '' : 'style="text-decoration:line-through;"' ?>>
+                            <?= $e((string) $t['nombre']) ?>
+                        </div>
                     </td>
-                </tr>
-            <?php else: ?>
-                <?php foreach ($tipos as $t): ?>
-                <?php $esActivo = (int)$t['activo'] === 1; ?>
-                <?php $esOverride = $t['tenant_id'] !== null; ?>
-                <tr class="<?= $esActivo ? '' : 'table-secondary text-muted' ?>">
-                    <td class="small"><?= (int)$t['orden'] ?></td>
-                    <td><code class="small"><?= $e((string)$t['codigo']) ?></code></td>
-                    <td class="<?= $esActivo ? '' : 'text-decoration-line-through' ?>"><?= $e((string)$t['nombre']) ?></td>
-                    <td class="text-center">
-                        <span class="badge <?= $t['bloque'] === 'A' ? 'bg-info' : 'bg-warning text-dark' ?>"><?= $e((string)$t['bloque']) ?></span>
+                    <td class="ds-cell-end">
+                        <span class="ds-badge <?= $bloqueTone ?> no-dot">Bloque <?= $e((string) $t['bloque']) ?></span>
                     </td>
-                    <td class="text-center">
-                        <?php if ((int)$t['obligatorio'] === 1): ?>
-                            <i class="bi bi-check-circle-fill text-success"></i>
+                    <td class="ds-cell-end">
+                        <?php if ((int) $t['obligatorio'] === 1): ?>
+                            <i class="bi bi-check-circle-fill" style="color:#059669;"></i>
                         <?php else: ?>
-                            <i class="bi bi-dash-circle text-muted"></i>
+                            <i class="bi bi-dash-circle" style="color:#94a3b8;"></i>
                         <?php endif ?>
                     </td>
-                    <td class="text-center">
-                        <?php if ((int)$t['tiene_vencimiento'] === 1): ?>
-                            <i class="bi bi-clock-fill text-warning"></i>
+                    <td class="ds-cell-end">
+                        <?php if ((int) $t['tiene_vencimiento'] === 1): ?>
+                            <i class="bi bi-clock-fill" style="color:#d97706;"></i>
                         <?php else: ?>
-                            <i class="bi bi-infinity text-muted"></i>
+                            <i class="bi bi-infinity" style="color:#94a3b8;"></i>
                         <?php endif ?>
                     </td>
-                    <td class="text-center small">
-                        <?php if ((int)$t['tiene_vencimiento'] === 1 && $t['dias_vigencia'] !== null): ?>
-                            <?= (int)$t['dias_vigencia'] ?>d
+                    <td class="ds-cell-end">
+                        <?php if ((int) $t['tiene_vencimiento'] === 1 && $t['dias_vigencia'] !== null): ?>
+                            <span class="ds-cell-mono"><?= (int) $t['dias_vigencia'] ?>d</span>
                         <?php else: ?>
-                            —
+                            <span class="ds-cell-sub">—</span>
                         <?php endif ?>
                     </td>
-                    <td class="text-center">
-                        <form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string)$t['codigo']) . '/toggle') ?>" class="d-inline">
+                    <td class="ds-cell-end">
+                        <form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo']) . '/toggle') ?>" style="display:inline-block;">
                             <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                            <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent" title="<?= $esActivo ? 'Desactivar' : 'Activar' ?>">
-                                <?php if ($esActivo): ?>
-                                    <i class="bi bi-toggle-on fs-5 text-success"></i>
-                                <?php else: ?>
-                                    <i class="bi bi-toggle-off fs-5 text-secondary"></i>
-                                <?php endif ?>
+                            <button type="submit" class="ds-icon-btn <?= $esActivo ? 'tone-success' : '' ?>"
+                                    title="<?= $esActivo ? 'Desactivar' : 'Activar' ?>">
+                                <i class="bi <?= $esActivo ? 'bi-toggle-on' : 'bi-toggle-off' ?>" style="font-size:1.1rem;"></i>
                             </button>
                         </form>
                     </td>
-                    <td class="text-center">
+                    <td class="ds-cell-end">
                         <?php if ($esOverride): ?>
-                            <span class="badge bg-primary" title="Configuración propia de su empresa">Propio</span>
+                            <span class="ds-badge tone-info no-dot" title="Configuracion propia de tu empresa">Propio</span>
                         <?php else: ?>
-                            <span class="badge bg-light text-muted border">Sistema</span>
+                            <span class="ds-badge tone-muted no-dot">Sistema</span>
                         <?php endif ?>
                     </td>
-                    <td>
-                        <a href="<?= $view->url('/configuracion/documentos/' . $e((string)$t['codigo'])) ?>"
-                           class="btn btn-outline-primary btn-sm py-0 px-2" title="Configurar">
-                            <i class="bi bi-gear"></i>
-                        </a>
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <a href="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo'])) ?>"
+                               class="ds-icon-btn" title="Configurar">
+                                <i class="bi bi-gear"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>
-            <?php endif ?>
             </tbody>
         </table>
     </div>
 </div>
+<?php endif ?>
 <?php $view->endSection() ?>

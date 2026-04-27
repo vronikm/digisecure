@@ -72,7 +72,26 @@
       "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -r 'require '\\\\''vendor/autoload.php'\\\\''; $env = DigiSecure\\\\Kernel\\\\Config\\\\EnvLoader::load\\('\\\\''.env'\\\\''\\); $c = DigiSecure\\\\Infrastructure\\\\Persistence\\\\PdoConnection::fromConfig\\(new DigiSecure\\\\Kernel\\\\Config\\\\Config\\(['\\\\''db'\\\\'' => ['\\\\''host'\\\\'' => $env['\\\\''DB_HOST'\\\\''], '\\\\''port'\\\\'' => $env['\\\\''DB_PORT'\\\\''], '\\\\''database'\\\\'' => $env['\\\\''DB_DATABASE'\\\\''], '\\\\''username'\\\\'' => $env['\\\\''DB_USERNAME'\\\\''], '\\\\''password'\\\\'' => $env['\\\\''DB_PASSWORD'\\\\''], '\\\\''charset'\\\\'' => '\\\\''utf8mb4'\\\\'', '\\\\''collation'\\\\'' => '\\\\''utf8mb4_0900_ai_ci'\\\\'']]\\)\\); $runner = new DigiSecure\\\\Infrastructure\\\\Persistence\\\\MigrationRunner\\($c, '\\\\''c:/wamp64/www/digisecure/migrations'\\\\''\\); $runner->run\\(\\);')",
       "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -r 'require '\\\\''vendor/autoload.php'\\\\''; $env = DigiSecure\\\\Kernel\\\\Config\\\\EnvLoader::load\\('\\\\''.env'\\\\''\\); $c = DigiSecure\\\\Infrastructure\\\\Persistence\\\\PdoConnection::fromConfig\\(new DigiSecure\\\\Kernel\\\\Config\\\\Config\\(['\\\\''db'\\\\'' => ['\\\\''host'\\\\'' => $env['\\\\''DB_HOST'\\\\''], '\\\\''port'\\\\'' => $env['\\\\''DB_PORT'\\\\''], '\\\\''database'\\\\'' => $env['\\\\''DB_DATABASE'\\\\''], '\\\\''username'\\\\'' => $env['\\\\''DB_USERNAME'\\\\''], '\\\\''password'\\\\'' => $env['\\\\''DB_PASSWORD'\\\\''], '\\\\''charset'\\\\'' => '\\\\''utf8mb4'\\\\'', '\\\\''collation'\\\\'' => '\\\\''utf8mb4_0900_ai_ci'\\\\'']]\\)\\); $runner = new DigiSecure\\\\Infrastructure\\\\Persistence\\\\MigrationRunner\\($c, '\\\\''c:/wamp64/www/digisecure/migrations'\\\\''\\); $result = $runner->migrate\\(\\); foreach \\($result as $m\\) echo $m->name . '\\\\'' => '\\\\'' . $m->status . PHP_EOL;')",
       "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -r 'require '\\\\''vendor/autoload.php'\\\\''; $env = DigiSecure\\\\Kernel\\\\Config\\\\EnvLoader::load\\('\\\\''.env'\\\\''\\); $c = DigiSecure\\\\Infrastructure\\\\Persistence\\\\PdoConnection::fromConfig\\(new DigiSecure\\\\Kernel\\\\Config\\\\Config\\(['\\\\''db'\\\\'' => ['\\\\''host'\\\\'' => $env['\\\\''DB_HOST'\\\\''], '\\\\''port'\\\\'' => $env['\\\\''DB_PORT'\\\\''], '\\\\''database'\\\\'' => $env['\\\\''DB_DATABASE'\\\\''], '\\\\''username'\\\\'' => $env['\\\\''DB_USERNAME'\\\\''], '\\\\''password'\\\\'' => $env['\\\\''DB_PASSWORD'\\\\''], '\\\\''charset'\\\\'' => '\\\\''utf8mb4'\\\\'', '\\\\''collation'\\\\'' => '\\\\''utf8mb4_0900_ai_ci'\\\\'']]\\)\\); echo $c->fetchScalar\\(\"SELECT COUNT\\(*\\) FROM permisos WHERE codigo LIKE '\\\\''superadmin.%'\\\\''\"\\) . PHP_EOL;')",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost/digisecure/public/healthcheck)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l c:/wamp64/www/digisecure/templates/layout/app.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe vendor/bin/phpunit --colors=never)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -r 'preg_match_all\\(\"/new \\(\\\\w+Middleware\\)/\", file_get_contents\\(\"src/Kernel/Bootstrap.php\"\\), $m\\); print_r\\($m[1]\\);')",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l src/Kernel/Bootstrap.php src/Kernel/View/ViewRenderer.php src/Kernel/Middleware/AlertasLayoutMiddleware.php src/Notification/Application/AlertasCentroService.php templates/layout/app.php)",
+      "Bash(curl -s -o /dev/null -w \"status:%{http_code} size:%{size_download} type:%{content_type}\\\\n\" http://localhost/digisecure/public/assets/css/ds-system.css)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l c:/wamp64/www/digisecure/templates/user/create.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l c:/wamp64/www/digisecure/templates/user/index.php)",
+      "Bash(curl -s -o /dev/null -w \"css:%{http_code} size:%{size_download}\\\\n\" http://localhost/digisecure/public/assets/css/ds-system.css)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -r 'echo count\\(file\\(\"c:/wamp64/www/digisecure/templates/auth/login.php\"\\)\\) . \" lineas\" . PHP_EOL;')",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l c:/wamp64/www/digisecure/templates/auth/login.php)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l c:/wamp64/www/digisecure/templates/auth/login.php c:/wamp64/www/digisecure/templates/auth/forgot-password.php c:/wamp64/www/digisecure/templates/auth/reset-password.php)",
+      "Bash(curl -s -o /dev/null -w \"css:%{http_code} login:%{http_code}\\\\n\" http://localhost/digisecure/public/assets/css/ds-auth.css)",
+      "Bash(curl -s -o /dev/null -w \"login:%{http_code}\\\\nforgot:%{http_code}\\\\nreset:%{http_code}\\\\n\" http://localhost/digisecure/public/login -w \"\\\\n\")",
+      "Bash(curl -s -o /dev/null -w \"forgot:%{http_code}\\\\n\" http://localhost/digisecure/public/password/forgot)",
+      "Bash(curl -s -o /dev/null -w \"reset:%{http_code}\\\\n\" http://localhost/digisecure/public/password/reset/abc)",
+      "Bash(curl -s http://localhost/digisecure/public/password/forgot)",
+      "Bash(curl -s http://localhost/digisecure/public/password/reset/abc)",
+      "Bash(c:/wamp64/bin/php/php8.3.28/php.exe -l c:/wamp64/www/digisecure/templates/registro/formulario.php)"
     ]
   }
 }

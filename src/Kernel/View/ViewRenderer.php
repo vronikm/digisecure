@@ -32,6 +32,9 @@ final class ViewRenderer
     /** @var string|null Layout que la vista solicita */
     private ?string $layoutFile = null;
 
+    /** @var array<string, mixed> Datos compartidos por middlewares para todas las vistas del request */
+    private array $shared = [];
+
     public function __construct(string $templatesPath)
     {
         $this->templatesPath = rtrim($templatesPath, '/\\');
@@ -150,6 +153,24 @@ final class ViewRenderer
     public function yieldSection(string $name, string $default = ''): string
     {
         return $this->sections[$name] ?? $default;
+    }
+
+    /**
+     * Comparte un valor con cualquier vista/layout del request actual.
+     * Pensado para que un middleware inyecte datos transversales
+     * (alertas, notificaciones no leidas, etc.) sin tocar cada controlador.
+     */
+    public function share(string $key, mixed $value): void
+    {
+        $this->shared[$key] = $value;
+    }
+
+    /**
+     * Recupera un valor compartido previamente con share().
+     */
+    public function shared(string $key, mixed $default = null): mixed
+    {
+        return $this->shared[$key] ?? $default;
     }
 
     /**

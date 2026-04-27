@@ -1,6 +1,6 @@
 <?php
 /**
- * Listado de fichas de guardia con paginación y filtros.
+ * Listado de fichas de guardia con paginacion y filtros.
  *
  * Variables: $user, $csrfToken, $currentPath, $fichas, $total, $page, $totalPages, $filters
  */
@@ -12,6 +12,24 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+
+$estadoTone = [
+    'BORRADOR'    => 'tone-muted',
+    'EN_REVISION' => 'tone-warning',
+    'COMPLETA'    => 'tone-success',
+    'ANULADA'     => 'tone-danger',
+];
+
+$hasFilters = !empty($filters['estado'] ?? null)
+    || !empty($filters['tipo_ficha'] ?? null)
+    || !empty($filters['busqueda'] ?? null);
+
+$qs = http_build_query(array_filter([
+    'estado' => $filters['estado'] ?? '',
+    'tipo_ficha' => $filters['tipo_ficha'] ?? '',
+    'q' => $filters['busqueda'] ?? '',
+]));
+$qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
 <?php $view->section('title') ?>Guardias — DigiSecure<?php $view->endSection() ?>
@@ -21,32 +39,41 @@ $e = ViewRenderer::e(...);
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1"><i class="bi bi-person-badge me-2"></i>Fichas de Guardia</h4>
-        <p class="text-muted mb-0"><?= $total ?> registro<?= $total !== 1 ? 's' : '' ?> encontrado<?= $total !== 1 ? 's' : '' ?></p>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-person-badge"></i></span>
+        <div>
+            <h1>Fichas de guardia</h1>
+            <small><?= $total ?> registro<?= $total !== 1 ? 's' : '' ?> encontrado<?= $total !== 1 ? 's' : '' ?></small>
+        </div>
     </div>
     <?php if ($user->tienePermiso('fichas.crear')): ?>
-    <a href="<?= $view->url('/guardias/crear') ?>" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Nueva Ficha
+    <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary">
+        <i class="bi bi-plus-lg"></i>Nueva ficha
     </a>
     <?php endif ?>
 </div>
 
 <!-- Filtros -->
-<div class="card shadow-sm mb-4">
-    <div class="card-body py-3">
-        <form method="get" action="<?= $view->url('/guardias') ?>" class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small text-muted">Buscar</label>
+<div class="ds-filter-bar">
+    <form method="get" action="<?= $view->url('/guardias') ?>" class="ds-filter-row">
+        <div class="ds-filter-summary">
+            <i class="bi bi-funnel"></i>
+            <strong>Filtrar:</strong>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Buscar</label>
                 <input type="text" name="q" class="form-control form-control-sm"
                        placeholder="Nombre, apellido o correlativo..."
                        value="<?= $e($filters['busqueda'] ?? '') ?>">
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted">Estado</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Estado</label>
                 <select name="estado" class="form-select form-select-sm">
-                    <option value="">Todos</option>
+                    <option value="">Todos los estados</option>
                     <?php foreach (EstadoFicha::cases() as $est): ?>
                     <option value="<?= $est->value ?>" <?= ($filters['estado'] ?? '') === $est->value ? 'selected' : '' ?>>
                         <?= $e($est->label()) ?>
@@ -54,10 +81,12 @@ $e = ViewRenderer::e(...);
                     <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted">Tipo</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Tipo</label>
                 <select name="tipo_ficha" class="form-select form-select-sm">
-                    <option value="">Todos</option>
+                    <option value="">Todos los tipos</option>
                     <?php foreach (TipoFicha::cases() as $tipo): ?>
                     <option value="<?= $tipo->value ?>" <?= ($filters['tipo_ficha'] ?? '') === $tipo->value ? 'selected' : '' ?>>
                         <?= $e($tipo->label()) ?>
@@ -65,77 +94,97 @@ $e = ViewRenderer::e(...);
                     <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-sm btn-outline-primary w-100">
-                    <i class="bi bi-search me-1"></i>Filtrar
-                </button>
-            </div>
-            <?php if ($filters): ?>
-            <div class="col-md-2">
-                <a href="<?= $view->url('/guardias') ?>" class="btn btn-sm btn-outline-secondary w-100">
-                    <i class="bi bi-x-lg me-1"></i>Limpiar
-                </a>
-            </div>
+        </div>
+        <div class="ds-filter-actions">
+            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                <i class="bi bi-search"></i>Aplicar
+            </button>
+            <?php if ($hasFilters): ?>
+            <a href="<?= $view->url('/guardias') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                <i class="bi bi-x-lg"></i>Limpiar
+            </a>
             <?php endif ?>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
 
-<!-- Tabla -->
-<div class="card shadow-sm">
+<?php if ($fichas === []): ?>
+<div class="ds-table-card">
+    <div class="ds-empty-state">
+        <div class="ds-empty-icon"><i class="bi bi-person-badge"></i></div>
+        <h3>No hay fichas para mostrar</h3>
+        <p>
+            <?php if ($hasFilters): ?>
+                Ninguna ficha coincide con los criterios seleccionados. Ajusta los filtros o limpia los criterios.
+            <?php else: ?>
+                Crea la primera ficha para empezar a registrar a los guardias de tu empresa.
+            <?php endif ?>
+        </p>
+        <?php if ($user->tienePermiso('fichas.crear') && !$hasFilters): ?>
+        <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary">
+            <i class="bi bi-plus-lg"></i>Crear la primera ficha
+        </a>
+        <?php endif ?>
+    </div>
+</div>
+<?php else: ?>
+<div class="ds-table-card">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="ds-table">
+            <thead>
                 <tr>
                     <th>Correlativo</th>
-                    <th>Apellidos y Nombres</th>
+                    <th>Guardia</th>
                     <th>Tipo</th>
                     <th>Estado</th>
-                    <th>Fecha Emisión</th>
+                    <th>Fecha emision</th>
                     <th>Celular</th>
-                    <th class="text-end">Acciones</th>
+                    <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <?php if ($fichas === []): ?>
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-5">
-                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                        No se encontraron fichas.
-                    </td>
-                </tr>
-                <?php endif ?>
                 <?php foreach ($fichas as $f):
                     $estado = EstadoFicha::from($f['estado']);
                     $tipoF = TipoFicha::from($f['tipo_ficha']);
+                    $tone = $estadoTone[$f['estado']] ?? 'tone-muted';
                 ?>
                 <tr>
+                    <td><span class="ds-cell-mono" style="font-weight:700;color:var(--ds-text);"><?= $e($f['correlativo']) ?></span></td>
                     <td>
-                        <code class="fw-bold"><?= $e($f['correlativo']) ?></code>
-                    </td>
-                    <td>
-                        <div class="fw-semibold"><?= $e($f['apellidos']) ?> <?= $e($f['nombres']) ?></div>
+                        <div class="ds-cell-name"><?= $e($f['apellidos']) ?> <?= $e($f['nombres']) ?></div>
                         <?php if ($f['email']): ?>
-                        <small class="text-muted"><?= $e($f['email']) ?></small>
+                        <div class="ds-cell-sub"><?= $e($f['email']) ?></div>
+                        <?php endif ?>
+                    </td>
+                    <td><span class="ds-chip"><i class="bi bi-tag"></i><?= $e($tipoF->label()) ?></span></td>
+                    <td><span class="ds-badge <?= $tone ?>"><?= $e($estado->label()) ?></span></td>
+                    <td>
+                        <?php if ($f['fecha_emision']): ?>
+                        <span class="ds-cell-mono"><?= date('d/m/Y', strtotime($f['fecha_emision'])) ?></span>
+                        <?php else: ?>
+                        <span class="ds-cell-sub">—</span>
                         <?php endif ?>
                     </td>
                     <td>
-                        <span class="badge bg-info text-dark"><?= $e($tipoF->label()) ?></span>
-                    </td>
-                    <td>
-                        <span class="badge <?= $estado->badgeClass() ?>"><?= $e($estado->label()) ?></span>
-                    </td>
-                    <td><?= $f['fecha_emision'] ? date('d/m/Y', strtotime($f['fecha_emision'])) : '—' ?></td>
-                    <td><?= $e($f['celular'] ?? '—') ?></td>
-                    <td class="text-end">
-                        <a href="<?= $view->url('/guardias/' . $f['id']) ?>" class="btn btn-sm btn-outline-primary" title="Ver">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                        <?php if ($user->tienePermiso('fichas.editar') && in_array($f['estado'], ['BORRADOR', 'EN_REVISION'])): ?>
-                        <a href="<?= $view->url('/guardias/' . $f['id'] . '/editar') ?>" class="btn btn-sm btn-outline-secondary" title="Editar">
-                            <i class="bi bi-pencil"></i>
-                        </a>
+                        <?php if (!empty($f['celular'])): ?>
+                        <span class="ds-cell-mono"><?= $e($f['celular']) ?></span>
+                        <?php else: ?>
+                        <span class="ds-cell-sub">—</span>
                         <?php endif ?>
+                    </td>
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <a href="<?= $view->url('/guardias/' . $f['id']) ?>"
+                               class="ds-icon-btn" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <?php if ($user->tienePermiso('fichas.editar') && in_array($f['estado'], ['BORRADOR', 'EN_REVISION'], true)): ?>
+                            <a href="<?= $view->url('/guardias/' . $f['id'] . '/editar') ?>"
+                               class="ds-icon-btn" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <?php endif ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>
@@ -144,36 +193,30 @@ $e = ViewRenderer::e(...);
     </div>
 
     <?php if ($totalPages > 1): ?>
-    <div class="card-footer d-flex justify-content-between align-items-center">
-        <small class="text-muted">Página <?= $page ?> de <?= $totalPages ?></small>
-        <nav>
-            <ul class="pagination pagination-sm mb-0">
-                <?php
-                $qs = http_build_query(array_filter([
-                    'estado' => $filters['estado'] ?? '',
-                    'tipo_ficha' => $filters['tipo_ficha'] ?? '',
-                    'q' => $filters['busqueda'] ?? '',
-                ]));
-                $qsPrefix = $qs ? "&{$qs}" : '';
-                ?>
-                <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/guardias') ?>?page=<?= $page - 1 ?><?= $qsPrefix ?>">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                </li>
-                <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
-                <li class="page-item <?= $p === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/guardias') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
-                </li>
-                <?php endfor ?>
-                <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/guardias') ?>?page=<?= $page + 1 ?><?= $qsPrefix ?>">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+    <div class="ds-table-foot">
+        <span>Pagina <strong><?= $page ?></strong> de <?= $totalPages ?> &middot; <?= $total ?> registro<?= $total !== 1 ? 's' : '' ?></span>
+        <ul class="ds-pagination">
+            <li>
+                <a class="ds-page <?= $page <= 1 ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/guardias') ?>?page=<?= max(1, $page - 1) ?><?= $qsPrefix ?>" aria-label="Anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+            <li>
+                <a class="ds-page <?= $p === $page ? 'is-active' : '' ?>"
+                   href="<?= $view->url('/guardias') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
+            </li>
+            <?php endfor ?>
+            <li>
+                <a class="ds-page <?= $page >= $totalPages ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/guardias') ?>?page=<?= min($totalPages, $page + 1) ?><?= $qsPrefix ?>" aria-label="Siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
     </div>
     <?php endif ?>
 </div>
+<?php endif ?>
 <?php $view->endSection() ?>

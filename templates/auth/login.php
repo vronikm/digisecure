@@ -1,6 +1,6 @@
 <?php
 /**
- * Página de login (standalone, sin layout de sidebar).
+ * Pagina de login (standalone, sin layout de sidebar).
  *
  * Variables: $csrfToken, $error, $email, $returnTo
  */
@@ -18,80 +18,49 @@ $returnTo = $returnTo ?? null;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>DigiSecure — Iniciar sesión</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
+    <title>Iniciar sesion — DigiSecure</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
-        :root {
-            --ds-primary: #1a3a5c;
-            --ds-accent: #2e86de;
-        }
-        body {
-            background: linear-gradient(135deg, var(--ds-primary) 0%, #0f2744 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        }
-        .login-card {
-            width: 100%;
-            max-width: 420px;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        .login-header {
-            background: var(--ds-primary);
-            color: white;
-            border-radius: 12px 12px 0 0;
-            padding: 2rem;
-            text-align: center;
-        }
-        .login-header h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: 1px;
-        }
-        .login-header .subtitle {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            margin-top: 0.25rem;
-        }
-        .login-body {
-            padding: 2rem;
-            background: #fff;
-            border-radius: 0 0 12px 12px;
-        }
-        .form-floating > .form-control:focus {
-            border-color: var(--ds-accent);
-            box-shadow: 0 0 0 0.2rem rgba(46, 134, 222, 0.25);
-        }
-        .btn-login {
-            background: var(--ds-accent);
-            border: none;
-            padding: 0.75rem;
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 0.5px;
-        }
-        .btn-login:hover { background: #1e6fbf; }
-        .shield-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-    </style>
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>">
 </head>
 <body>
-    <div class="login-card">
-        <div class="login-header">
-            <div class="shield-icon"><i class="bi bi-shield-lock-fill"></i></div>
-            <h1>DigiSecure</h1>
-            <div class="subtitle">Sistema de Gestión de Seguridad</div>
-        </div>
-        <div class="login-body">
+    <div class="login-shell">
+        <aside class="login-aside">
+            <div class="login-brand">
+                <span class="mark"><i class="bi bi-shield-lock-fill"></i></span>
+                <div>
+                    <strong>DigiSecure</strong>
+                    <small>Plataforma de seguridad privada</small>
+                </div>
+            </div>
+
+            <div>
+                <h2>Gestiona a tu equipo de seguridad con confianza</h2>
+                <p class="lead">
+                    Fichas, expedientes, vencimientos, auditoria y cumplimiento LOPDP en un solo lugar.
+                </p>
+                <ul class="login-features">
+                    <li><i class="bi bi-shield-check"></i>Cumplimiento LOPDP Ecuador</li>
+                    <li><i class="bi bi-clock-history"></i>Alertas de vencimientos automaticas</li>
+                    <li><i class="bi bi-people"></i>Multi-tenant aislado por empresa</li>
+                </ul>
+            </div>
+
+            <div class="login-foot">
+                &copy; <?= date('Y') ?> DigiSecure &middot; Todos los derechos reservados
+            </div>
+        </aside>
+
+        <section class="login-form">
+            <h1>Bienvenido de vuelta</h1>
+            <div class="subtitle">Ingresa tus credenciales para acceder al panel.</div>
+
             <?php if ($error !== null): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i><?= $e($error) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="login-error" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                    <div>
+                        <strong>No se pudo iniciar sesion</strong>
+                        <?= $e($error) ?>
+                    </div>
                 </div>
             <?php endif; ?>
 
@@ -101,40 +70,45 @@ $returnTo = $returnTo ?? null;
                     <input type="hidden" name="return_to" value="<?= $e($returnTo) ?>">
                 <?php endif; ?>
 
-                <div class="form-floating mb-3">
-                    <input type="email" class="form-control" id="email" name="email"
-                           placeholder="correo@empresa.com" value="<?= $e($email) ?>"
-                           required autofocus autocomplete="email">
-                    <label for="email"><i class="bi bi-envelope me-1"></i>Correo electrónico</label>
+                <div class="login-field">
+                    <label for="email">Correo electronico</label>
+                    <div class="login-input-wrap">
+                        <i class="bi bi-envelope field-icon"></i>
+                        <input type="email" class="login-input" id="email" name="email"
+                               placeholder="correo@empresa.com" value="<?= $e($email) ?>"
+                               required autofocus autocomplete="email">
+                    </div>
                 </div>
 
-                <div class="form-floating mb-4">
-                    <input type="password" class="form-control" id="password" name="password"
-                           placeholder="Contraseña" required autocomplete="current-password">
-                    <label for="password"><i class="bi bi-key me-1"></i>Contraseña</label>
+                <div class="login-field">
+                    <label for="password">Contrasena</label>
+                    <div class="login-input-wrap">
+                        <i class="bi bi-key field-icon"></i>
+                        <input type="password" class="login-input" id="password" name="password"
+                               placeholder="Tu contrasena" required autocomplete="current-password">
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-login btn-primary w-100 mb-3">
-                    <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                <button type="submit" class="login-submit">
+                    <i class="bi bi-box-arrow-in-right"></i>Iniciar sesion
                 </button>
 
-                <div class="text-center">
-                    <a href="<?= $view->url('/password/forgot') ?>" class="text-decoration-none small text-muted">
-                        <i class="bi bi-question-circle me-1"></i>¿Olvidaste tu contraseña?
+                <div class="login-links">
+                    <a href="<?= $view->url('/password/forgot') ?>">
+                        <i class="bi bi-question-circle"></i> Olvide mi contrasena
                     </a>
                 </div>
-                <hr class="my-3">
-                <div class="text-center">
-                    <small class="text-muted">¿Tu empresa aún no está en DigiSecure?</small><br>
-                    <a href="<?= $view->url('/registro') ?>" class="text-decoration-none small fw-semibold">
-                        <i class="bi bi-building-add me-1"></i>Registra tu empresa
+
+                <div class="login-divider">o</div>
+
+                <div class="login-links">
+                    <span class="muted">Tu empresa aun no esta en DigiSecure?</span><br>
+                    <a href="<?= $view->url('/registro') ?>">
+                        <i class="bi bi-building-add"></i> Registra tu empresa
                     </a>
                 </div>
             </form>
-        </div>
+        </section>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

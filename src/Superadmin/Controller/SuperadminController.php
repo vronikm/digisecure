@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Superadmin\Controller;
 
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -33,6 +34,7 @@ final class SuperadminController
         private readonly PdoConnection $db,
         private readonly AuditLogger $audit,
         private readonly TenantContext $tenantContext,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -110,15 +112,20 @@ final class SuperadminController
         $estadosValidos = ['activo', 'suspendido', 'cancelado', 'pendiente'];
 
         if (!in_array($nuevoEstado, $estadosValidos, true)) {
+            $this->flash->error('Estado invalido.', 'No se pudo actualizar el tenant');
             return Response::redirect("/admin/tenants/{$id}");
         }
 
         $tenant = $this->repo->findTenant($id);
         if ($tenant === null) {
+            $this->flash->error('El tenant indicado no existe.');
             return Response::redirect('/admin/tenants');
         }
 
         $this->repo->cambiarEstadoTenant($id, $nuevoEstado);
+        $this->flash->success(
+            "Estado actualizado a {$nuevoEstado} para {$tenant['razon_social']}.",
+        );
 
         $user = $request->attribute('auth_user');
         $this->audit->log(
@@ -147,11 +154,13 @@ final class SuperadminController
 
         $plan = $this->planRepo->findByCodigo($planCodigo);
         if ($plan === null || !$plan->activo) {
+            $this->flash->error('El plan seleccionado no existe o esta inactivo.');
             return Response::redirect("/admin/tenants/{$id}");
         }
 
         $tenant = $this->repo->findTenant($id);
         if ($tenant === null) {
+            $this->flash->error('El tenant indicado no existe.');
             return Response::redirect('/admin/tenants');
         }
 
@@ -205,6 +214,11 @@ final class SuperadminController
             ],
             nivel: 'warning',
             ip: $request->clientIp(),
+        );
+
+        $this->flash->success(
+            "Plan actualizado a {$plan->nombre} ({$meses} mes" . ($meses === 1 ? '' : 'es') . ").",
+            $tenant['razon_social'],
         );
 
         return Response::redirect("/admin/tenants/{$id}");

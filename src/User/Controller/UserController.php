@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\User\Controller;
 
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -37,6 +38,7 @@ final class UserController
         private readonly PdoConnection $db,
         private readonly TenantContext $tenantContext,
         private readonly VerificarLimiteService $verificarLimite,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -95,6 +97,7 @@ final class UserController
         try {
             $this->verificarLimite->verificarCrearUsuario();
             $this->service->crear($input, $user->id, $request->clientIp());
+            $this->flash->success('Usuario creado correctamente.');
             return Response::redirect('/usuarios');
         } catch (DomainException $e) {
             return $this->view->response('user/create', [
@@ -143,6 +146,7 @@ final class UserController
 
         try {
             $this->service->actualizar($id, $input, $user->id, $request->clientIp());
+            $this->flash->success('Usuario actualizado correctamente.');
             return Response::redirect('/usuarios');
         } catch (DomainException $e) {
             $usuario = $this->repo->findUserById($id);
@@ -168,9 +172,9 @@ final class UserController
 
         try {
             $this->service->cambiarEstado($id, $nuevoEstado, $user->id, $request->clientIp());
+            $this->flash->success("Estado actualizado a {$nuevoEstado}.");
         } catch (DomainException $e) {
-            // En caso de error, redirigir con flash sería ideal; usamos redirect simple
-            return Response::redirect('/usuarios?error=' . urlencode($e->getMessage()));
+            $this->flash->error($e->getMessage(), 'No se pudo cambiar el estado');
         }
         return Response::redirect('/usuarios');
     }
@@ -183,8 +187,10 @@ final class UserController
 
         try {
             $this->service->resetearPassword($id, $newPassword, $user->id, $request->clientIp());
+            $this->flash->success('Contrasena restablecida correctamente.');
         } catch (DomainException $e) {
-            return Response::redirect("/usuarios/{$id}/editar?error=" . urlencode($e->getMessage()));
+            $this->flash->error($e->getMessage(), 'No se pudo restablecer la contrasena');
+            return Response::redirect("/usuarios/{$id}/editar");
         }
         return Response::redirect('/usuarios');
     }

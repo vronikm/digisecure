@@ -12,21 +12,25 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
-$estadoBadge = static fn(string $estado) => match ($estado) {
-    'PENDIENTE' => 'bg-secondary',
-    'ENVIADA' => 'bg-success',
-    'FALLIDA' => 'bg-danger',
-    'CANCELADA' => 'bg-warning text-dark',
-    default => 'bg-dark',
+$estadoTone = static fn(string $estado) => match ($estado) {
+    'PENDIENTE' => 'tone-muted',
+    'ENVIADA'   => 'tone-success',
+    'FALLIDA'   => 'tone-danger',
+    'CANCELADA' => 'tone-warning',
+    default     => 'tone-muted',
 };
 
 $canalIcon = static fn(string $canal) => match ($canal) {
-    'EMAIL' => 'bi-envelope',
+    'EMAIL'    => 'bi-envelope',
     'WHATSAPP' => 'bi-whatsapp',
-    'SMS' => 'bi-chat-dots',
-    'PUSH' => 'bi-bell',
-    default => 'bi-send',
+    'SMS'      => 'bi-chat-dots',
+    'PUSH'     => 'bi-bell',
+    default    => 'bi-send',
 };
+
+$hasFilters = !empty($filters['estado'] ?? null)
+    || !empty($filters['canal'] ?? null)
+    || !empty($filters['evento'] ?? null);
 ?>
 
 <?php $view->section('title') ?>Notificaciones — DigiSecure<?php $view->endSection() ?>
@@ -36,53 +40,58 @@ $canalIcon = static fn(string $canal) => match ($canal) {
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0"><i class="bi bi-bell me-2"></i>Notificaciones</h4>
-    <span class="text-muted small"><?= $total ?> registros</span>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-bell-fill"></i></span>
+        <div>
+            <h1>Notificaciones</h1>
+            <small><?= $total ?> registro<?= $total !== 1 ? 's' : '' ?> en total</small>
+        </div>
+    </div>
 </div>
 
 <!-- KPIs -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-start border-secondary border-4">
-            <div class="card-body py-3">
-                <div class="text-muted small text-uppercase fw-bold">Pendientes</div>
-                <div class="fs-4 fw-bold text-secondary"><?= (int)$kpis['pendientes'] ?></div>
-            </div>
+<div class="ds-kpi-grid">
+    <div class="ds-kpi-card tone-muted">
+        <span class="ds-kpi-icon"><i class="bi bi-hourglass-split"></i></span>
+        <div>
+            <div class="ds-kpi-label">Pendientes</div>
+            <div class="ds-kpi-value"><?= (int) $kpis['pendientes'] ?></div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-start border-success border-4">
-            <div class="card-body py-3">
-                <div class="text-muted small text-uppercase fw-bold">Enviadas</div>
-                <div class="fs-4 fw-bold text-success"><?= (int)$kpis['enviadas'] ?></div>
-            </div>
+    <div class="ds-kpi-card tone-success">
+        <span class="ds-kpi-icon"><i class="bi bi-check2-circle"></i></span>
+        <div>
+            <div class="ds-kpi-label">Enviadas</div>
+            <div class="ds-kpi-value"><?= (int) $kpis['enviadas'] ?></div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-start border-danger border-4">
-            <div class="card-body py-3">
-                <div class="text-muted small text-uppercase fw-bold">Fallidas</div>
-                <div class="fs-4 fw-bold text-danger"><?= (int)$kpis['fallidas'] ?></div>
-            </div>
+    <div class="ds-kpi-card tone-danger">
+        <span class="ds-kpi-icon"><i class="bi bi-x-octagon-fill"></i></span>
+        <div>
+            <div class="ds-kpi-label">Fallidas</div>
+            <div class="ds-kpi-value"><?= (int) $kpis['fallidas'] ?></div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card shadow-sm h-100 border-start border-primary border-4">
-            <div class="card-body py-3">
-                <div class="text-muted small text-uppercase fw-bold">Total</div>
-                <div class="fs-4 fw-bold text-primary"><?= (int)$kpis['total'] ?></div>
-            </div>
+    <div class="ds-kpi-card tone-info">
+        <span class="ds-kpi-icon"><i class="bi bi-collection"></i></span>
+        <div>
+            <div class="ds-kpi-label">Total</div>
+            <div class="ds-kpi-value"><?= (int) $kpis['total'] ?></div>
         </div>
     </div>
 </div>
 
 <!-- Filtros -->
-<form method="get" action="<?= $view->url('/notificaciones') ?>" class="card shadow-sm mb-4">
-    <div class="card-body py-2">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small mb-1">Estado</label>
+<div class="ds-filter-bar">
+    <form method="get" action="<?= $view->url('/notificaciones') ?>" class="ds-filter-row">
+        <div class="ds-filter-summary">
+            <i class="bi bi-funnel"></i>
+            <strong>Filtrar:</strong>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Estado</label>
                 <select name="estado" class="form-select form-select-sm">
                     <option value="">Todos</option>
                     <?php foreach (['PENDIENTE', 'ENVIADA', 'FALLIDA', 'CANCELADA'] as $est): ?>
@@ -90,8 +99,10 @@ $canalIcon = static fn(string $canal) => match ($canal) {
                     <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label small mb-1">Canal</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Canal</label>
                 <select name="canal" class="form-select form-select-sm">
                     <option value="">Todos</option>
                     <?php foreach (['EMAIL', 'WHATSAPP', 'SMS'] as $canal): ?>
@@ -99,28 +110,46 @@ $canalIcon = static fn(string $canal) => match ($canal) {
                     <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label small mb-1">Evento</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Evento</label>
                 <input type="text" name="evento" class="form-control form-control-sm"
                        value="<?= $e($filters['evento'] ?? '') ?>" placeholder="Ej: doc.vencido">
             </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary btn-sm flex-fill">
-                    <i class="bi bi-search me-1"></i>Filtrar
-                </button>
-                <a href="<?= $view->url('/notificaciones') ?>" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-            </div>
         </div>
-    </div>
-</form>
+        <div class="ds-filter-actions">
+            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                <i class="bi bi-search"></i>Aplicar
+            </button>
+            <?php if ($hasFilters): ?>
+            <a href="<?= $view->url('/notificaciones') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                <i class="bi bi-x-lg"></i>Limpiar
+            </a>
+            <?php endif ?>
+        </div>
+    </form>
+</div>
 
-<!-- Tabla -->
-<div class="card shadow-sm">
+<?php if (empty($notificaciones)): ?>
+<div class="ds-table-card">
+    <div class="ds-empty-state">
+        <div class="ds-empty-icon"><i class="bi bi-bell-slash"></i></div>
+        <h3>No hay notificaciones</h3>
+        <p>
+            <?php if ($hasFilters): ?>
+                No se encontraron notificaciones con los filtros aplicados.
+            <?php else: ?>
+                Las notificaciones se generan automaticamente al ocurrir eventos del sistema (vencimientos, registros, etc.).
+            <?php endif ?>
+        </p>
+    </div>
+</div>
+<?php else: ?>
+<div class="ds-table-card">
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
-            <thead class="table-light">
+        <table class="ds-table">
+            <thead>
                 <tr>
                     <th>Fecha</th>
                     <th>Evento</th>
@@ -128,72 +157,65 @@ $canalIcon = static fn(string $canal) => match ($canal) {
                     <th>Destinatario</th>
                     <th>Asunto</th>
                     <th>Estado</th>
-                    <th class="text-center">Int.</th>
-                    <th></th>
+                    <th class="ds-cell-end">Intentos</th>
+                    <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-            <?php if (empty($notificaciones)): ?>
-                <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
-                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                        No hay notificaciones registradas.
-                    </td>
-                </tr>
-            <?php else: ?>
                 <?php foreach ($notificaciones as $n): ?>
                 <tr>
-                    <td class="small text-nowrap"><?= $e(substr((string)$n['created_at'], 0, 16)) ?></td>
-                    <td><code class="small"><?= $e((string)$n['evento']) ?></code></td>
+                    <td><span class="ds-cell-mono"><?= $e(substr((string) $n['created_at'], 0, 16)) ?></span></td>
+                    <td><span class="ds-cell-mono"><?= $e((string) $n['evento']) ?></span></td>
+                    <td><span class="ds-chip"><i class="bi <?= $canalIcon((string) $n['canal']) ?>"></i><?= $e((string) $n['canal']) ?></span></td>
+                    <td class="ds-cell-mono"><?= $e((string) ($n['destinatario_email'] ?? $n['destinatario_telefono'] ?? '—')) ?></td>
                     <td>
-                        <i class="bi <?= $canalIcon((string)$n['canal']) ?> me-1"></i>
-                        <span class="small"><?= $e((string)$n['canal']) ?></span>
+                        <div style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= $e((string) $n['asunto']) ?>">
+                            <?= $e((string) $n['asunto']) ?>
+                        </div>
                     </td>
-                    <td class="small"><?= $e((string)($n['destinatario_email'] ?? $n['destinatario_telefono'] ?? '—')) ?></td>
-                    <td class="small text-truncate" style="max-width:200px"><?= $e((string)$n['asunto']) ?></td>
-                    <td>
-                        <span class="badge <?= $estadoBadge((string)$n['estado']) ?>"><?= $e((string)$n['estado']) ?></span>
+                    <td><span class="ds-badge <?= $estadoTone((string) $n['estado']) ?>"><?= $e((string) $n['estado']) ?></span></td>
+                    <td class="ds-cell-end">
+                        <span class="ds-cell-sub"><?= (int) $n['intentos'] ?>/<?= (int) $n['max_intentos'] ?></span>
                     </td>
-                    <td class="text-center small"><?= (int)$n['intentos'] ?>/<?= (int)$n['max_intentos'] ?></td>
-                    <td>
-                        <a href="<?= $view->url('/notificaciones/' . $e((string)$n['id'])) ?>"
-                           class="btn btn-outline-primary btn-sm py-0 px-2" title="Ver detalle">
-                            <i class="bi bi-eye"></i>
-                        </a>
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <a href="<?= $view->url('/notificaciones/' . $e((string) $n['id'])) ?>"
+                               class="ds-icon-btn" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>
-            <?php endif ?>
             </tbody>
         </table>
     </div>
 
     <?php if ($totalPages > 1): ?>
-    <div class="card-footer d-flex justify-content-between align-items-center">
-        <small class="text-muted">Página <?= $page ?> de <?= $totalPages ?></small>
-        <nav>
-            <ul class="pagination pagination-sm mb-0">
-                <?php if ($page > 1): ?>
-                <li class="page-item">
-                    <a class="page-link" href="<?= $view->url('/notificaciones?' . http_build_query(array_merge($filters, ['page' => $page - 1]))) ?>">&laquo;</a>
-                </li>
-                <?php endif ?>
-                <?php
-                $start = max(1, $page - 2);
-                $end = min($totalPages, $page + 2);
-                for ($p = $start; $p <= $end; $p++): ?>
-                <li class="page-item <?= $p === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/notificaciones?' . http_build_query(array_merge($filters, ['page' => $p]))) ?>"><?= $p ?></a>
-                </li>
-                <?php endfor ?>
-                <?php if ($page < $totalPages): ?>
-                <li class="page-item">
-                    <a class="page-link" href="<?= $view->url('/notificaciones?' . http_build_query(array_merge($filters, ['page' => $page + 1]))) ?>">&raquo;</a>
-                </li>
-                <?php endif ?>
-            </ul>
-        </nav>
+    <div class="ds-table-foot">
+        <span>Pagina <strong><?= $page ?></strong> de <?= $totalPages ?> &middot; <?= $total ?> registro<?= $total !== 1 ? 's' : '' ?></span>
+        <ul class="ds-pagination">
+            <li>
+                <a class="ds-page <?= $page <= 1 ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/notificaciones?' . http_build_query(array_merge($filters, ['page' => max(1, $page - 1)]))) ?>" aria-label="Anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+            <li>
+                <a class="ds-page <?= $p === $page ? 'is-active' : '' ?>"
+                   href="<?= $view->url('/notificaciones?' . http_build_query(array_merge($filters, ['page' => $p]))) ?>"><?= $p ?></a>
+            </li>
+            <?php endfor ?>
+            <li>
+                <a class="ds-page <?= $page >= $totalPages ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/notificaciones?' . http_build_query(array_merge($filters, ['page' => min($totalPages, $page + 1)]))) ?>" aria-label="Siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
     </div>
     <?php endif ?>
 </div>
+<?php endif ?>
 <?php $view->endSection() ?>

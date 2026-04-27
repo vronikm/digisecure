@@ -14,136 +14,189 @@ $e = ViewRenderer::e(...);
 
 $totalPaginas = (int) ceil($total / $porPagina);
 
-$estadoBadge = [
-    'activo'     => 'bg-success',
-    'pendiente'  => 'bg-warning text-dark',
-    'suspendido' => 'bg-danger',
-    'cancelado'  => 'bg-secondary',
+$estadoTone = [
+    'activo'     => 'tone-success',
+    'pendiente'  => 'tone-warning',
+    'suspendido' => 'tone-danger',
+    'cancelado'  => 'tone-muted',
 ];
+
+$hasFilters = !empty($busqueda) || !empty($estadoFiltro) || !empty($planFiltro);
+
+$baseParams = array_filter([
+    'q' => $busqueda ?? '',
+    'estado' => $estadoFiltro ?? '',
+    'plan' => $planFiltro ?? '',
+]);
 ?>
 
 <?php $view->section('title') ?>Empresas | Superadmin<?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h4 class="fw-bold mb-0"><i class="bi bi-buildings me-2 text-primary"></i>Empresas</h4>
-        <small class="text-muted"><?= $total ?> empresa<?= $total !== 1 ? 's' : '' ?> registrada<?= $total !== 1 ? 's' : '' ?></small>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-buildings"></i></span>
+        <div>
+            <h1>Empresas</h1>
+            <small><?= $total ?> empresa<?= $total !== 1 ? 's' : '' ?> registrada<?= $total !== 1 ? 's' : '' ?></small>
+        </div>
     </div>
+    <a href="<?= $view->url('/admin') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+        <i class="bi bi-arrow-left"></i>Volver al panel
+    </a>
 </div>
 
 <!-- Filtros -->
-<form method="GET" action="<?= $view->url('/admin/tenants') ?>" class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small mb-1">Buscar</label>
-                <input type="text" class="form-control form-control-sm" name="q" placeholder="Razón social, RUC o email..."
+<div class="ds-filter-bar">
+    <form method="GET" action="<?= $view->url('/admin/tenants') ?>" class="ds-filter-row">
+        <div class="ds-filter-summary">
+            <i class="bi bi-funnel"></i>
+            <strong>Filtrar:</strong>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Buscar</label>
+                <input type="text" class="form-control form-control-sm" name="q"
+                       placeholder="Razon social, RUC o email..."
                        value="<?= $e((string) ($busqueda ?? '')) ?>">
             </div>
-            <div class="col-md-2">
-                <label class="form-label small mb-1">Estado</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Estado</label>
                 <select class="form-select form-select-sm" name="estado">
                     <option value="">Todos</option>
                     <?php foreach (['activo','pendiente','suspendido','cancelado'] as $est): ?>
                         <option value="<?= $est ?>" <?= ($estadoFiltro ?? '') === $est ? 'selected' : '' ?>><?= ucfirst($est) ?></option>
-                    <?php endforeach; ?>
+                    <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label small mb-1">Plan</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Plan</label>
                 <select class="form-select form-select-sm" name="plan">
                     <option value="">Todos</option>
                     <?php foreach ($planes as $p): ?>
                         <option value="<?= $e($p->codigo) ?>" <?= ($planFiltro ?? '') === $p->codigo ? 'selected' : '' ?>><?= $e($p->nombre) ?></option>
-                    <?php endforeach; ?>
+                    <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="bi bi-search me-1"></i>Filtrar
-                </button>
-            </div>
-            <div class="col-md-2">
-                <a href="<?= $view->url('/admin/tenants') ?>" class="btn btn-outline-secondary btn-sm w-100">Limpiar</a>
-            </div>
         </div>
-    </div>
-</form>
+        <div class="ds-filter-actions">
+            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                <i class="bi bi-search"></i>Aplicar
+            </button>
+            <?php if ($hasFilters): ?>
+            <a href="<?= $view->url('/admin/tenants') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                <i class="bi bi-x-lg"></i>Limpiar
+            </a>
+            <?php endif ?>
+        </div>
+    </form>
+</div>
 
-<!-- Tabla -->
 <?php if ($tenants === []): ?>
-    <div class="card border-0 shadow-sm">
-        <div class="card-body text-center py-5 text-muted">
-            <i class="bi bi-building-slash fs-1 d-block mb-2 opacity-50"></i>
-            No se encontraron empresas con los filtros aplicados.
-        </div>
+<div class="ds-table-card">
+    <div class="ds-empty-state">
+        <div class="ds-empty-icon"><i class="bi bi-building-slash"></i></div>
+        <h3>No hay empresas para mostrar</h3>
+        <p>
+            <?php if ($hasFilters): ?>
+                Ninguna empresa coincide con los filtros aplicados.
+            <?php else: ?>
+                Cuando una empresa complete el registro publico, aparecera en este listado.
+            <?php endif ?>
+        </p>
     </div>
+</div>
 <?php else: ?>
-    <div class="card border-0 shadow-sm">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Empresa</th>
-                        <th>RUC</th>
-                        <th>Plan</th>
-                        <th class="text-center">Usuarios</th>
-                        <th class="text-center">Fichas</th>
-                        <th>Vencimiento</th>
-                        <th>Estado</th>
-                        <th>Alta</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($tenants as $t): ?>
-                        <?php
-                            $venc = $t['plan_vencimiento'] ?? null;
-                            $diasRest = $venc ? (int)(( strtotime($venc) - time() ) / 86400) : null;
-                            $vencClass = $diasRest !== null && $diasRest <= 0 ? 'text-danger fw-semibold' : ($diasRest !== null && $diasRest <= 15 ? 'text-warning' : '');
-                        ?>
-                        <tr>
-                            <td>
-                                <a href="<?= $view->url('/admin/tenants/' . $e((string) $t['id'])) ?>" class="text-decoration-none fw-semibold">
-                                    <?= $e((string) $t['razon_social']) ?>
-                                </a>
-                                <br><small class="text-muted"><?= $e((string) $t['email_contacto']) ?></small>
-                            </td>
-                            <td class="font-monospace small"><?= $e((string) $t['ruc']) ?></td>
-                            <td><span class="badge bg-primary-subtle text-primary"><?= $e((string) $t['plan_codigo']) ?></span></td>
-                            <td class="text-center"><?= (int) ($t['usuarios_activos'] ?? 0) ?> / <?= (int) ($t['max_usuarios'] ?? 0) ?></td>
-                            <td class="text-center"><?= (int) ($t['total_fichas'] ?? 0) ?> / <?= (int) ($t['max_guardias'] ?? 0) ?></td>
-                            <td class="small <?= $vencClass ?>"><?= $venc ? $e(substr($venc, 0, 10)) : '—' ?></td>
-                            <td><span class="badge <?= $estadoBadge[(string) $t['estado']] ?? 'bg-secondary' ?>"><?= $e((string) $t['estado']) ?></span></td>
-                            <td class="small text-muted"><?= $e(substr((string) ($t['created_at'] ?? ''), 0, 10)) ?></td>
-                            <td>
-                                <a href="<?= $view->url('/admin/tenants/' . $e((string) $t['id'])) ?>" class="btn btn-sm btn-outline-primary" title="Ver detalle">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+<div class="ds-table-card">
+    <div class="table-responsive">
+        <table class="ds-table">
+            <thead>
+                <tr>
+                    <th>Empresa</th>
+                    <th>RUC</th>
+                    <th>Plan</th>
+                    <th class="ds-cell-end">Usuarios</th>
+                    <th class="ds-cell-end">Fichas</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                    <th>Alta</th>
+                    <th class="ds-cell-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($tenants as $t):
+                    $venc = $t['plan_vencimiento'] ?? null;
+                    $diasRest = $venc ? (int) ((strtotime($venc) - time()) / 86400) : null;
+                    $vencCls = '';
+                    if ($diasRest !== null) {
+                        if ($diasRest <= 0) { $vencCls = 'tone-danger'; }
+                        elseif ($diasRest <= 15) { $vencCls = 'tone-warning'; }
+                    }
+                    $tone = $estadoTone[(string) $t['estado']] ?? 'tone-muted';
+                ?>
+                <tr>
+                    <td>
+                        <a href="<?= $view->url('/admin/tenants/' . $e((string) $t['id'])) ?>"
+                           class="ds-cell-name" style="text-decoration: none;">
+                            <?= $e((string) $t['razon_social']) ?>
+                        </a>
+                        <div class="ds-cell-sub"><?= $e((string) $t['email_contacto']) ?></div>
+                    </td>
+                    <td><span class="ds-cell-mono"><?= $e((string) $t['ruc']) ?></span></td>
+                    <td><span class="ds-chip"><i class="bi bi-gem"></i><?= $e((string) $t['plan_codigo']) ?></span></td>
+                    <td class="ds-cell-end">
+                        <span class="ds-cell-sub"><?= (int) ($t['usuarios_activos'] ?? 0) ?> / <?= (int) ($t['max_usuarios'] ?? 0) ?></span>
+                    </td>
+                    <td class="ds-cell-end">
+                        <span class="ds-cell-sub"><?= (int) ($t['total_fichas'] ?? 0) ?> / <?= (int) ($t['max_guardias'] ?? 0) ?></span>
+                    </td>
+                    <td>
+                        <?php if ($venc): ?>
+                            <?php if ($vencCls !== ''): ?>
+                                <span class="ds-badge <?= $vencCls ?> no-dot"><?= $e(substr($venc, 0, 10)) ?></span>
+                            <?php else: ?>
+                                <span class="ds-cell-mono"><?= $e(substr($venc, 0, 10)) ?></span>
+                            <?php endif ?>
+                        <?php else: ?>
+                            <span class="ds-cell-sub">—</span>
+                        <?php endif ?>
+                    </td>
+                    <td><span class="ds-badge <?= $tone ?>"><?= $e((string) $t['estado']) ?></span></td>
+                    <td><span class="ds-cell-mono"><?= $e(substr((string) ($t['created_at'] ?? ''), 0, 10)) ?></span></td>
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <a href="<?= $view->url('/admin/tenants/' . $e((string) $t['id'])) ?>"
+                               class="ds-icon-btn" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
     </div>
 
-    <!-- Paginación -->
     <?php if ($totalPaginas > 1): ?>
-        <nav class="mt-3">
-            <ul class="pagination pagination-sm justify-content-center">
-                <?php for ($p = 1; $p <= $totalPaginas; $p++): ?>
-                    <?php
-                        $params = array_filter(['q' => $busqueda, 'estado' => $estadoFiltro, 'plan' => $planFiltro, 'pagina' => $p > 1 ? $p : null]);
-                        $qs = $params !== [] ? '?' . http_build_query($params) : '';
-                    ?>
-                    <li class="page-item <?= $p === $pagina ? 'active' : '' ?>">
-                        <a class="page-link" href="<?= $view->url('/admin/tenants') . $qs ?>"><?= $p ?></a>
-                    </li>
-                <?php endfor; ?>
-            </ul>
-        </nav>
-    <?php endif; ?>
-<?php endif; ?>
+    <div class="ds-table-foot">
+        <span>Pagina <strong><?= $pagina ?></strong> de <?= $totalPaginas ?> &middot; <?= $total ?> empresa<?= $total !== 1 ? 's' : '' ?></span>
+        <ul class="ds-pagination">
+            <?php for ($p = 1; $p <= $totalPaginas; $p++):
+                $params = array_filter($baseParams + ['pagina' => $p > 1 ? $p : null]);
+                $qs = $params !== [] ? '?' . http_build_query($params) : '';
+            ?>
+            <li>
+                <a class="ds-page <?= $p === $pagina ? 'is-active' : '' ?>"
+                   href="<?= $view->url('/admin/tenants') . $qs ?>"><?= $p ?></a>
+            </li>
+            <?php endfor ?>
+        </ul>
+    </div>
+    <?php endif ?>
+</div>
+<?php endif ?>
 <?php $view->endSection() ?>

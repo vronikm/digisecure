@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Layout principal.
  *
@@ -93,550 +93,42 @@ $roleLabels = array_values(array_filter(array_map(
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <style>
-        :root {
-            --ds-primary: #15304f;
-            --ds-primary-dark: #0d1f36;
-            --ds-surface: #f4f7fb;
-            --ds-border: rgba(21, 48, 79, 0.1);
-            --ds-text: #16324f;
-            --ds-text-soft: #5f7288;
-            --ds-sidebar-w: 310px;
-            --ds-topbar-h: 70px;
-            --ds-shadow: 0 18px 48px rgba(9, 29, 53, 0.12);
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(47, 128, 237, 0.12), transparent 32%),
-                radial-gradient(circle at bottom right, rgba(14, 165, 164, 0.10), transparent 30%),
-                var(--ds-surface);
-            color: var(--ds-text);
-            overflow-x: hidden;
-        }
-
-        .ds-topbar {
-            position: fixed;
-            inset: 0 0 auto 0;
-            height: var(--ds-topbar-h);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0 1.25rem;
-            background: linear-gradient(90deg, rgba(13,31,54,.97), rgba(16,36,63,.95));
-            backdrop-filter: blur(16px);
-            color: #fff;
-            z-index: 1045;
-            box-shadow: 0 2px 20px rgba(5,16,30,.22);
-        }
-
-        .ds-topbar .brand {
-            display: inline-flex;
-            align-items: center;
-            gap: .75rem;
-            color: inherit;
-            font-weight: 700;
-            letter-spacing: .02em;
-            text-decoration: none;
-        }
-        .ds-topbar .brand:hover { color: inherit; }
-
-        .ds-brand-mark {
-            width: 40px; height: 40px;
-            display: inline-flex; align-items: center; justify-content: center;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #2f80ed, #0ea5a4);
-            font-size: 1.1rem;
-            box-shadow: 0 4px 12px rgba(47,128,237,.35);
-        }
-
-        .ds-brand-copy { line-height: 1.2; }
-        .ds-brand-copy small {
-            display: block;
-            color: rgba(255,255,255,.5);
-            font-size: .7rem;
-            font-weight: 400;
-            letter-spacing: .02em;
-        }
-
-        .ds-topbar-right {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-        }
-
-        .ds-topbar-tenant {
-            display: none;
-            align-items: center;
-            gap: .6rem;
-            padding: .45rem .85rem;
-            border-radius: 10px;
-            background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.06);
-            line-height: 1.2;
-            margin-right: .35rem;
-        }
-        .ds-topbar-tenant .tt-icon {
-            width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 8px;
-            background: rgba(47,128,237,.2);
-            color: #6ab0f3;
-            font-size: .9rem;
-        }
-        .ds-topbar-tenant .tt-name {
-            font-size: .8rem;
-            font-weight: 600;
-            color: rgba(255,255,255,.88);
-        }
-        .ds-topbar-tenant .tt-sub {
-            font-size: .68rem;
-            color: rgba(255,255,255,.42);
-        }
-
-        .ds-topbar-sep {
-            display: none;
-            width: 1px; height: 28px;
-            background: rgba(255,255,255,.12);
-            margin: 0 .2rem;
-        }
-
-        /* User dropdown button */
-        .ds-user-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: .55rem;
-            padding: .4rem .65rem .4rem .45rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,.08);
-            background: rgba(255,255,255,.06);
-            color: #fff;
-            font-size: .85rem;
-            font-weight: 500;
-            text-decoration: none;
-            cursor: pointer;
-            transition: background .15s;
-        }
-        .ds-user-btn:hover, .ds-user-btn:focus { background: rgba(255,255,255,.12); color: #fff; }
-        .ds-user-btn::after { display: none; } /* hide default caret */
-
-        .ds-user-avatar {
-            width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #2f80ed, #0ea5a4);
-            font-size: .85rem;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: .5px;
-        }
-        .ds-user-btn .ds-user-caret {
-            font-size: .65rem;
-            opacity: .55;
-            transition: transform .2s;
-        }
-        .ds-user-btn[aria-expanded="true"] .ds-user-caret { transform: rotate(180deg); }
-
-        /* Dropdown menu styling override */
-        .ds-user-menu {
-            min-width: 240px;
-            padding: .5rem;
-            border-radius: 12px;
-            border: 1px solid rgba(0,0,0,.08);
-            box-shadow: 0 12px 36px rgba(0,0,0,.15);
-            animation: dsDropIn .15s ease;
-        }
-        @keyframes dsDropIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-        .ds-user-menu .dropdown-item {
-            padding: .55rem .85rem;
-            border-radius: 8px;
-            font-size: .85rem;
-            font-weight: 500;
-            color: var(--ds-text);
-        }
-        .ds-user-menu .dropdown-item:hover { background: var(--ds-surface); }
-        .ds-user-menu .dropdown-item i { width: 1.3rem; text-align: center; }
-        .ds-user-menu .ds-dm-header {
-            padding: .65rem .85rem .55rem;
-            border-bottom: 1px solid #eef1f5;
-            margin-bottom: .35rem;
-        }
-        .ds-user-menu .ds-dm-header .ds-dm-name {
-            font-weight: 700;
-            font-size: .88rem;
-            color: var(--ds-text);
-        }
-        .ds-user-menu .ds-dm-header .ds-dm-email {
-            font-size: .76rem;
-            color: var(--ds-text-soft);
-        }
-        .ds-user-menu .ds-dm-footer {
-            border-top: 1px solid #eef1f5;
-            margin-top: .35rem;
-            padding-top: .35rem;
-        }
-
-        .ds-sidebar {
-            position: fixed;
-            top: var(--ds-topbar-h);
-            left: 0;
-            bottom: 0;
-            width: var(--ds-sidebar-w);
-            padding: 1rem 1rem 1.25rem;
-            background: linear-gradient(180deg, #10243f 0%, #0d1f36 100%);
-            color: #fff;
-            z-index: 1035;
-            overflow: hidden;
-            transition: transform 0.28s ease;
-            box-shadow: 24px 0 42px rgba(9, 29, 53, 0.14);
-        }
-
-        .ds-sidebar-inner {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .ds-sidebar-profile {
-            padding: 1rem;
-            border-radius: 24px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.04));
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .ds-sidebar-caption {
-            margin-bottom: 0.35rem;
-            font-size: 0.68rem;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.54);
-        }
-
-        .ds-sidebar-company {
-            margin-bottom: 0.65rem;
-            font-size: 1.02rem;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .ds-role-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.45rem;
-            margin-bottom: 0.9rem;
-        }
-
-        .ds-role-chip {
-            padding: 0.32rem 0.6rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.82);
-            font-size: 0.76rem;
-            font-weight: 600;
-        }
-
-        .ds-search-wrap {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            padding: 0.7rem 0.8rem;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .ds-search-wrap i {
-            color: rgba(255, 255, 255, 0.55);
-        }
-
-        .ds-search-wrap input {
-            width: 100%;
-            padding: 0;
-            border: 0;
-            outline: 0;
-            background: transparent;
-            color: #fff;
-            font-size: 0.9rem;
-        }
-
-        .ds-search-wrap input::placeholder {
-            color: rgba(255, 255, 255, 0.45);
-        }
-
-        .ds-menu-scroll {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 0.2rem;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
-        }
-
-        .ds-menu-scroll::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .ds-menu-scroll::-webkit-scrollbar-thumb {
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.16);
-        }
-
-        .ds-menu-section + .ds-menu-section {
-            margin-top: 1rem;
-        }
-
-        .ds-menu-header {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            margin-bottom: 0.7rem;
-            padding: 0 0.35rem;
-            color: rgba(255, 255, 255, 0.82);
-        }
-
-        .ds-menu-header-mark {
-            width: 34px;
-            height: 34px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            background: var(--ds-section-soft);
-            color: var(--ds-section-accent);
-        }
-
-        .ds-menu-header-copy {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .ds-menu-header-copy strong {
-            font-size: 0.82rem;
-            font-weight: 700;
-        }
-
-        .ds-menu-header-copy span {
-            font-size: 0.72rem;
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .ds-menu-node + .ds-menu-node {
-            margin-top: 0.55rem;
-        }
-
-        .ds-menu-item,
-        .ds-submenu-item {
-            width: 100%;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            padding: 0.88rem 0.9rem;
-            border-radius: 18px;
-            border: 1px solid transparent;
-            color: rgba(255, 255, 255, 0.82);
-            text-decoration: none;
-            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-        }
-
-        .ds-menu-item:hover,
-        .ds-submenu-item:hover {
-            color: #fff;
-            transform: translateX(2px);
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        .ds-menu-item.active,
-        .ds-submenu-item.active {
-            color: #fff;
-            background: linear-gradient(135deg, var(--ds-section-soft), rgba(255, 255, 255, 0.06));
-            border-color: rgba(255, 255, 255, 0.08);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
-        }
-
-        .ds-menu-icon,
-        .ds-submenu-icon {
-            flex: 0 0 auto;
-            width: 38px;
-            height: 38px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 14px;
-            background: var(--ds-section-soft);
-            color: var(--ds-section-accent);
-            font-size: 1rem;
-        }
-
-        .ds-submenu-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 12px;
-            font-size: 0.88rem;
-        }
-
-        .ds-menu-copy,
-        .ds-submenu-copy {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .ds-menu-label,
-        .ds-submenu-label {
-            font-size: 0.92rem;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .ds-menu-description,
-        .ds-submenu-description {
-            margin-top: 0.2rem;
-            font-size: 0.76rem;
-            line-height: 1.4;
-            color: rgba(255, 255, 255, 0.58);
-        }
-
-        .ds-menu-chevron,
-        .ds-menu-badge {
-            margin-left: auto;
-            flex: 0 0 auto;
-            align-self: center;
-        }
-
-        .ds-menu-chevron {
-            color: rgba(255, 255, 255, 0.48);
-            transition: transform 0.18s ease;
-        }
-
-        .ds-menu-item[aria-expanded="true"] .ds-menu-chevron {
-            transform: rotate(90deg);
-        }
-
-        .ds-submenu {
-            margin-top: 0.45rem;
-            padding-left: 1rem;
-            border-left: 1px dashed rgba(255, 255, 255, 0.12);
-        }
-
-        .ds-submenu-item {
-            padding: 0.72rem 0.8rem;
-            border-radius: 16px;
-        }
-
-        .ds-menu-empty {
-            padding: 1rem;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px dashed rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.84rem;
-            text-align: center;
-        }
-
-        .ds-sidebar-footer {
-            padding: 0.9rem 1rem;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.72);
-        }
-
-        .ds-sidebar-footer strong {
-            display: block;
-            color: #fff;
-            font-size: 0.86rem;
-        }
-
-        .ds-sidebar-footer span {
-            font-size: 0.76rem;
-            color: rgba(255, 255, 255, 0.52);
-        }
-
-        .ds-main {
-            margin-left: var(--ds-sidebar-w);
-            margin-top: var(--ds-topbar-h);
-            min-height: calc(100vh - var(--ds-topbar-h));
-            padding: 1.6rem;
-        }
-
-        .ds-shell {
-            min-height: calc(100vh - var(--ds-topbar-h) - 3.2rem);
-            padding: 1.4rem;
-            border-radius: 28px;
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: var(--ds-shadow);
-            backdrop-filter: blur(16px);
-        }
-
-        .ds-breadcrumb {
-            margin-bottom: 1rem;
-            padding: 0;
-            background: transparent;
-        }
-
-        .ds-footer {
-            margin-top: 1.6rem;
-            text-align: center;
-            color: var(--ds-text-soft);
-            font-size: 0.82rem;
-        }
-
-        .ds-sidebar-overlay {
-            position: fixed;
-            inset: var(--ds-topbar-h) 0 0 0;
-            background: rgba(8, 17, 29, 0.5);
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
-            z-index: 1030;
-        }
-
-        .ds-sidebar-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        @media (min-width: 992px) {
-            .ds-topbar-tenant { display: flex; }
-            .ds-topbar-sep { display: block; }
-        }
-
-        @media (max-width: 991.98px) {
-            .ds-sidebar {
-                transform: translateX(-100%);
-            }
-
-            .ds-sidebar.show {
-                transform: translateX(0);
-            }
-
-            .ds-main {
-                margin-left: 0;
-                padding: 1rem;
-            }
-
-            .ds-shell {
-                padding: 1rem;
-                border-radius: 22px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>">
     <?= $view->yieldSection('head') ?>
 </head>
 <body>
 <?php
     $initials = mb_strtoupper(mb_substr($user->nombres, 0, 1) . mb_substr($user->apellidos, 0, 1));
     $rolPrincipal = $roleLabels[0] ?? 'Usuario';
+    $alertas = $view->shared('alertas', ['items' => [], 'total' => 0, 'criticas' => 0]);
+    $alertCount = (int) ($alertas['total'] ?? 0);
+    $alertCriticas = (int) ($alertas['criticas'] ?? 0);
+    $flashes = $view->shared('flashes', []);
+    $toastIconMap = [
+        'success' => 'bi-check-circle-fill',
+        'error'   => 'bi-exclamation-octagon-fill',
+        'warning' => 'bi-exclamation-triangle-fill',
+        'info'    => 'bi-info-circle-fill',
+    ];
 ?>
+
+<?php if (!empty($flashes)): ?>
+<div class="ds-toast-stack" id="ds-toast-stack" aria-live="polite" aria-atomic="true">
+    <?php foreach ($flashes as $f): ?>
+        <?php $tipo = (string) ($f['tipo'] ?? 'info'); ?>
+        <div class="ds-toast tone-<?= $e($tipo) ?>" role="status" data-ds-toast>
+            <span class="ds-toast-icon"><i class="bi <?= $e($toastIconMap[$tipo] ?? 'bi-info-circle-fill') ?>"></i></span>
+            <div class="ds-toast-body">
+                <?php if (!empty($f['titulo'])): ?>
+                    <div class="ds-toast-title"><?= $e((string) $f['titulo']) ?></div>
+                <?php endif; ?>
+                <div><?= $e((string) $f['mensaje']) ?></div>
+            </div>
+            <button type="button" class="ds-toast-close" aria-label="Cerrar" data-ds-toast-close>&times;</button>
+        </div>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
 <nav class="ds-topbar">
     <button class="btn btn-link text-white d-lg-none p-0" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
         <i class="bi bi-list fs-3"></i>
@@ -660,6 +152,55 @@ $roleLabels = array_values(array_filter(array_map(
         </div>
 
         <span class="ds-topbar-sep"></span>
+
+        <div class="dropdown">
+            <button class="ds-bell-btn dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-expanded="false" aria-label="Centro de alertas">
+                <i class="bi bi-bell"></i>
+                <?php if ($alertCount > 0): ?>
+                    <span class="ds-bell-badge<?= $alertCriticas === 0 ? ' is-high' : '' ?>">
+                        <?= $alertCount > 9 ? '9+' : (string) $alertCount ?>
+                    </span>
+                <?php endif; ?>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end ds-bell-menu">
+                <div class="ds-bm-header">
+                    <span class="ds-bm-title"><i class="bi bi-bell me-1"></i>Centro de alertas</span>
+                    <span class="ds-bm-count">
+                        <?php if ($alertCount === 0): ?>
+                            Sin pendientes
+                        <?php elseif ($alertCriticas > 0): ?>
+                            <?= $alertCriticas ?> urgente<?= $alertCriticas === 1 ? '' : 's' ?>
+                        <?php else: ?>
+                            <?= $alertCount ?> item<?= $alertCount === 1 ? '' : 's' ?>
+                        <?php endif; ?>
+                    </span>
+                </div>
+                <div class="ds-bm-body">
+                    <?php if ($alertCount === 0): ?>
+                        <div class="ds-bell-empty">
+                            <i class="bi bi-check2-circle"></i>
+                            Todo en orden. No hay pendientes por ahora.
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($alertas['items'] as $item): ?>
+                            <a href="<?= $view->url((string) $item['url']) ?>" class="ds-bell-item">
+                                <span class="ds-bi-icon severidad-<?= $e((string) $item['severidad']) ?>">
+                                    <i class="bi <?= $e((string) $item['icon']) ?>"></i>
+                                </span>
+                                <span class="ds-bi-body">
+                                    <span class="ds-bi-title d-block"><?= $e((string) $item['titulo']) ?></span>
+                                    <span class="ds-bi-detail"><?= $e((string) $item['detalle']) ?></span>
+                                </span>
+                                <?php if (!empty($item['cantidad']) && (int) $item['cantidad'] > 1): ?>
+                                    <span class="ds-bi-qty"><?= (int) $item['cantidad'] > 99 ? '99+' : (int) $item['cantidad'] ?></span>
+                                <?php endif; ?>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
         <div class="dropdown">
             <button class="ds-user-btn dropdown-toggle" type="button"
@@ -832,6 +373,18 @@ $roleLabels = array_values(array_filter(array_map(
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
+(() => {
+    const toasts = document.querySelectorAll('[data-ds-toast]');
+    toasts.forEach((toast) => {
+        const dismiss = () => {
+            if (toast.classList.contains('is-hiding')) return;
+            toast.classList.add('is-hiding');
+            setTimeout(() => toast.remove(), 220);
+        };
+        toast.querySelector('[data-ds-toast-close]')?.addEventListener('click', dismiss);
+        setTimeout(dismiss, 5500);
+    });
+})();
 (() => {
     const sidebar = document.querySelector('.ds-sidebar');
     const overlay = document.getElementById('sidebar-overlay');

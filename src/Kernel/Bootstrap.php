@@ -272,6 +272,35 @@ final class Bootstrap
                 $c->get(AuditLogger::class),
             ),
         );
+        // Centro de alertas del topbar (Fase 14): agrega pendientes accionables
+        // sin persistir estado de lectura — es una vista de situacion en vivo.
+        $container->singleton(
+            \DigiSecure\Notification\Application\AlertasCentroService::class,
+            static fn(Container $c) => new \DigiSecure\Notification\Application\AlertasCentroService(
+                $c->get(PdoConnection::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Kernel\Middleware\AlertasLayoutMiddleware::class,
+            static fn(Container $c) => new \DigiSecure\Kernel\Middleware\AlertasLayoutMiddleware(
+                $c->get(\DigiSecure\Notification\Application\AlertasCentroService::class),
+                $c->get(ViewRenderer::class),
+            ),
+        );
+        // Fase 15: Flash messages (post-redirect-get) + toasts en el layout.
+        $container->singleton(
+            \DigiSecure\Kernel\Http\FlashBag::class,
+            static fn(Container $c) => new \DigiSecure\Kernel\Http\FlashBag(
+                $c->get(SessionManager::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Kernel\Middleware\FlashMiddleware::class,
+            static fn(Container $c) => new \DigiSecure\Kernel\Middleware\FlashMiddleware(
+                $c->get(\DigiSecure\Kernel\Http\FlashBag::class),
+                $c->get(ViewRenderer::class),
+            ),
+        );
         // Sobrescribir VerificarVencimientosService para inyectar EncolarNotificacionService
         $container->singleton(
             \DigiSecure\Expediente\Application\VerificarVencimientosService::class,
@@ -545,6 +574,7 @@ final class Bootstrap
                 $c->get(PdoConnection::class),
                 $c->get(AuditLogger::class),
                 $c->get(TenantContext::class),
+                $c->get(\DigiSecure\Kernel\Http\FlashBag::class),
             ),
         );
 
@@ -577,6 +607,8 @@ final class Bootstrap
             TenantContextMiddleware::class,
             \DigiSecure\Kernel\Middleware\RouteResolverMiddleware::class,
             AuthorizationMiddleware::class,
+            \DigiSecure\Kernel\Middleware\AlertasLayoutMiddleware::class,
+            \DigiSecure\Kernel\Middleware\FlashMiddleware::class,
             AuditMiddleware::class,
         ];
 
@@ -788,7 +820,7 @@ final class Bootstrap
         ) => \DigiSecure\Kernel\Http\Response::json([
             'status' => 'ok',
             'service' => 'DigiSecure',
-            'phase' => '13.0',
+            'phase' => '15.0',
             'timestamp' => date('c'),
             'php' => PHP_VERSION,
             'session_active' => $session->isStarted(),
