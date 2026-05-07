@@ -179,6 +179,194 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
             position: static;
         }
     }
+
+    /* ====== Estilos del formulario alineados con ds-system ====== */
+    /* Scoped al form para no afectar otros componentes de la pagina */
+
+    #fichaForm .card {
+        background: #fff;
+        border: 1px solid rgba(21, 48, 79, 0.08);
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(9, 29, 53, 0.06);
+        overflow: hidden;
+        margin-bottom: 1.25rem;
+    }
+    #fichaForm .card.ds-step-nav-card {
+        /* la stepper card mantiene su propio look mas redondeado */
+        border-radius: 24px;
+        box-shadow: 0 16px 30px rgba(18, 45, 77, 0.08);
+    }
+
+    #fichaForm .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.85rem 1.15rem;
+        background: linear-gradient(180deg, #fbfcfe, #f6f8fb);
+        border-bottom: 1px solid #eef1f5;
+        font-weight: 700;
+        font-size: 0.92rem;
+        color: #16324f;
+    }
+    #fichaForm .card-header > i.bi {
+        width: 32px; height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: rgba(47, 128, 237, 0.12);
+        color: #2f80ed;
+        font-size: 1rem;
+        margin-right: 0.45rem;
+    }
+
+    #fichaForm .card-body {
+        padding: 1.1rem 1.25rem 1.25rem;
+        background: #fff;
+    }
+
+    /* Espaciado vertical entre campos del grid (col-md-*) */
+    #fichaForm .row > [class*="col-"] {
+        margin-bottom: 0.85rem;
+    }
+    #fichaForm .row > [class*="col-"]:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Labels y campos */
+    #fichaForm .form-label {
+        display: block; /* etiqueta en su propia linea */
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #16324f;
+        margin-bottom: 0.35rem;
+    }
+    #fichaForm .form-label .text-danger {
+        color: #dc2626 !important;
+        font-weight: 700;
+        margin-left: 0.15rem;
+    }
+
+    #fichaForm .form-control,
+    #fichaForm .form-select {
+        display: block;
+        width: 100%;
+        border: 1px solid #d8dfe7;
+        border-radius: 10px;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.88rem;
+        color: #16324f;
+        background: #fff;
+        transition: border-color .15s, box-shadow .15s;
+        box-shadow: 0 1px 0 rgba(21, 48, 79, 0.02);
+    }
+    #fichaForm .form-control:focus,
+    #fichaForm .form-select:focus {
+        border-color: #2f80ed;
+        box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.15);
+        outline: 0;
+    }
+    #fichaForm .form-control:disabled,
+    #fichaForm .form-select:disabled {
+        background: #f4f7fb;
+        color: #5f7288;
+    }
+    #fichaForm .form-control.is-invalid:not(:focus) {
+        border-color: #dc2626;
+    }
+    #fichaForm .form-text {
+        font-size: 0.72rem;
+        color: #5f7288;
+        margin-top: 0.25rem;
+    }
+
+    /* Botones del form: usar el look del sistema */
+    #fichaForm .btn {
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        transition: transform .12s, box-shadow .12s;
+    }
+    #fichaForm .btn:not(:disabled):hover {
+        transform: translateY(-1px);
+    }
+    #fichaForm .btn-primary {
+        background: linear-gradient(135deg, #2f80ed, #1e63c5);
+        border: 0;
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(47, 128, 237, 0.32);
+    }
+    #fichaForm .btn-primary:hover {
+        box-shadow: 0 8px 20px rgba(47, 128, 237, 0.42);
+    }
+    #fichaForm .btn-outline-secondary {
+        background: #fff;
+        color: #16324f;
+        border: 1px solid #d8dfe7;
+    }
+    #fichaForm .btn-outline-secondary:hover {
+        background: #f4f7fb;
+        color: #16324f;
+        border-color: #c4cdd9;
+    }
+    #fichaForm .btn-outline-primary {
+        background: transparent;
+        color: #2f80ed;
+        border: 1px solid rgba(47, 128, 237, 0.4);
+    }
+    #fichaForm .btn-outline-primary:hover {
+        background: rgba(47, 128, 237, 0.08);
+        color: #1e63c5;
+        border-color: #2f80ed;
+    }
+    #fichaForm .btn-outline-danger {
+        background: transparent;
+        color: #dc2626;
+        border: 1px solid rgba(220, 38, 38, 0.3);
+    }
+    #fichaForm .btn-outline-danger:hover {
+        background: rgba(220, 38, 38, 0.08);
+        color: #b91c1c;
+    }
+    #fichaForm .btn-sm {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.78rem;
+        border-radius: 8px;
+    }
+
+    /* Bottom action bar override (override del .ds-form-actions del top) */
+    #fichaForm .ds-form-actions {
+        margin-top: 1rem;
+        padding: 1rem 0;
+        border-top: 1px solid #eef1f5;
+    }
+
+    /* Tablas internas (cursos) */
+    #fichaForm table.table {
+        font-size: 0.85rem;
+    }
+    #fichaForm table.table th,
+    #fichaForm table.table td {
+        padding: 0.55rem 0.65rem;
+        vertical-align: middle;
+    }
+
+    /* Sub-tarjetas para repeticiones (trabajos, hijos, referencias) */
+    #fichaForm .trabajo-row,
+    #fichaForm .hijo-row,
+    #fichaForm .ref-row {
+        padding: 0.85rem;
+        border: 1px solid #eef1f5;
+        border-radius: 12px;
+        background: #fbfcfe;
+        margin-bottom: 0.65rem;
+    }
+
+    /* Sidebar de resumen */
+    .ds-summary-card .progress-bar {
+        background: linear-gradient(90deg, #2f80ed, #1e63c5);
+    }
 </style>
 <?php $view->endSection() ?>
 

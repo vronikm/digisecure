@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Security\Lopdp\Controller;
 
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -31,6 +32,7 @@ final class LopdpController
         private readonly ConsentimientoRepository $consentRepo,
         private readonly RegistrarSolicitudArcopService $registrarService,
         private readonly ResponderSolicitudArcopService $responderService,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -111,6 +113,7 @@ final class LopdpController
 
         try {
             $id = $this->registrarService->execute($input, $user->id, $request->clientIp());
+            $this->flash->success('Solicitud ARCO-P registrada correctamente.');
             return Response::redirect("/lopdp/solicitudes/{$id}");
         } catch (DomainException $e) {
             return $this->view->response('lopdp/solicitudes/create', [
@@ -148,6 +151,9 @@ final class LopdpController
 
         try {
             $this->responderService->execute($id, $request->post, $user->id, $request->clientIp());
+            $estado = (string) ($request->post['estado'] ?? 'RESPONDIDA');
+            $msg = $estado === 'DENEGADA' ? 'Solicitud denegada y registrada en auditoria.' : 'Solicitud respondida correctamente.';
+            $this->flash->success($msg);
             return Response::redirect("/lopdp/solicitudes/{$id}");
         } catch (DomainException $e) {
             $solicitud = $this->solicitudRepo->findById($id);

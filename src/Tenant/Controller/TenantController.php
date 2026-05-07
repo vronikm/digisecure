@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Tenant\Controller;
 
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -26,6 +27,7 @@ final class TenantController
         private readonly ViewRenderer $view,
         private readonly TenantRepository $tenantRepo,
         private readonly ActualizarTenantService $actualizarService,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -66,6 +68,7 @@ final class TenantController
 
         try {
             $this->actualizarService->execute($request->post, $user->id, $request->clientIp());
+            $this->flash->success('Datos de la empresa actualizados correctamente.');
             return Response::redirect('/empresa');
         } catch (DomainException $e) {
             $tenant = $this->tenantRepo->findCurrent();

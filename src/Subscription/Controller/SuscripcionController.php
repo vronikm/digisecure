@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Subscription\Controller;
 
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -27,6 +28,7 @@ final class SuscripcionController
         private readonly ViewRenderer $view,
         private readonly ConsultarSuscripcionService $consultar,
         private readonly RegistrarCicloService $registrar,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -77,6 +79,7 @@ final class SuscripcionController
 
         try {
             $this->registrar->execute($request->post, $user->id, $request->clientIp());
+            $this->flash->success('Ciclo de suscripcion registrado correctamente.');
             return Response::redirect('/suscripcion');
         } catch (DomainException $e) {
             $data = $this->consultar->execute();

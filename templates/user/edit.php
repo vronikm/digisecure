@@ -1,6 +1,6 @@
 <?php
 /**
- * Formulario de edición de usuario.
+ * Formulario de edicion de usuario.
  *
  * Variables: $user, $csrfToken, $currentPath, $usuario, $roles, $rolActualId, $input
  * Opcionales: $error
@@ -23,98 +23,132 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1"><i class="bi bi-pencil me-2"></i>Editar usuario</h4>
-        <p class="text-muted mb-0"><?= $e($usuario['apellidos']) ?> <?= $e($usuario['nombres']) ?></p>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-pencil-square"></i></span>
+        <div>
+            <h1>Editar usuario</h1>
+            <small><?= $e($usuario['apellidos']) ?> <?= $e($usuario['nombres']) ?> &middot; <span class="ds-cell-mono"><?= $e($usuario['email']) ?></span></small>
+        </div>
     </div>
-    <a href="<?= $view->url('/usuarios') ?>" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i>Volver
+    <a href="<?= $view->url('/usuarios') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+        <i class="bi bi-arrow-left"></i>Volver al listado
     </a>
 </div>
 
 <?php if (!empty($error)): ?>
-<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?= $e($error) ?></div>
-<?php endif ?>
-<?php if (!empty($_GET['error'])): ?>
-<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?= $e($_GET['error']) ?></div>
+<div class="ds-card" style="border-left: 4px solid #dc2626; margin-bottom: 1rem;">
+    <div class="ds-card-body" style="display: flex; gap: .75rem; align-items: flex-start;">
+        <span style="color: #dc2626; font-size: 1.25rem; line-height: 1;"><i class="bi bi-exclamation-octagon-fill"></i></span>
+        <div>
+            <div style="font-weight: 700; color: #dc2626; margin-bottom: .15rem;">No se pudo guardar el usuario</div>
+            <div style="color: var(--ds-text-soft); font-size: .85rem;"><?= $e($error) ?></div>
+        </div>
+    </div>
+</div>
 <?php endif ?>
 
 <form method="post" action="<?= $view->url('/usuarios/' . $usuario['id'] . '/editar') ?>">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-person me-2"></i>Datos del usuario</div>
-        <div class="card-body">
+    <div class="ds-card">
+        <div class="ds-card-header">
+            <span class="ds-card-mark"><i class="bi bi-person"></i></span>
+            <div>
+                <div class="ds-card-title">Datos del usuario</div>
+                <div class="ds-card-subtitle">Informacion personal y de contacto</div>
+            </div>
+        </div>
+        <div class="ds-card-body">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Nombres <span class="text-danger">*</span></label>
-                    <input type="text" name="nombres" class="form-control" required maxlength="120"
-                           value="<?= $e($valor('nombres')) ?>">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Nombres <span class="ds-required">*</span></label>
+                        <input type="text" name="nombres" class="form-control" required maxlength="120"
+                               value="<?= $e($valor('nombres')) ?>">
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Apellidos <span class="text-danger">*</span></label>
-                    <input type="text" name="apellidos" class="form-control" required maxlength="120"
-                           value="<?= $e($valor('apellidos')) ?>">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Apellidos <span class="ds-required">*</span></label>
+                        <input type="text" name="apellidos" class="form-control" required maxlength="120"
+                               value="<?= $e($valor('apellidos')) ?>">
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Email <span class="text-danger">*</span></label>
-                    <input type="email" name="email" class="form-control" required maxlength="190"
-                           value="<?= $e($valor('email')) ?>">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Email <span class="ds-required">*</span></label>
+                        <input type="email" name="email" class="form-control" required maxlength="190"
+                               value="<?= $e($valor('email')) ?>">
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Cargo</label>
-                    <input type="text" name="cargo" class="form-control" maxlength="120"
-                           value="<?= $e($valor('cargo')) ?>">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Cargo</label>
+                        <input type="text" name="cargo" class="form-control" maxlength="120"
+                               value="<?= $e($valor('cargo')) ?>">
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Teléfono</label>
-                    <input type="text" name="telefono" class="form-control" maxlength="30"
-                           value="<?= $e($valor('telefono')) ?>">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Telefono</label>
+                        <input type="text" name="telefono" class="form-control" maxlength="30"
+                               value="<?= $e($valor('telefono')) ?>">
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Rol asignado</label>
-                    <select name="role_id" class="form-select">
-                        <option value="">— Mantener actual —</option>
-                        <?php foreach ($roles as $r): ?>
-                        <option value="<?= $e($r['id']) ?>" <?= ($input['role_id'] ?? $rolActualId) === $r['id'] ? 'selected' : '' ?>>
-                            <?= $e($r['nombre']) ?>
-                        </option>
-                        <?php endforeach ?>
-                    </select>
-                    <div class="form-text">Reemplaza todos los roles del usuario por el seleccionado.</div>
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Rol asignado</label>
+                        <select name="role_id" class="form-select">
+                            <option value="">— Mantener actual —</option>
+                            <?php foreach ($roles as $r): ?>
+                            <option value="<?= $e($r['id']) ?>" <?= ($input['role_id'] ?? $rolActualId) === $r['id'] ? 'selected' : '' ?>>
+                                <?= $e($r['nombre']) ?>
+                            </option>
+                            <?php endforeach ?>
+                        </select>
+                        <span class="ds-form-help">Reemplaza todos los roles del usuario por el seleccionado.</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="d-flex justify-content-end gap-2 mb-4">
-        <a href="<?= $view->url('/usuarios') ?>" class="btn btn-outline-secondary">Cancelar</a>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-lg me-1"></i>Guardar cambios
+    <div class="ds-form-actions">
+        <a href="<?= $view->url('/usuarios') ?>" class="ds-btn ds-btn-outline">Cancelar</a>
+        <button type="submit" class="ds-btn ds-btn-primary">
+            <i class="bi bi-check-lg"></i>Guardar cambios
         </button>
     </div>
 </form>
 
 <?php if ($user->tienePermiso('usuarios.editar')): ?>
-<div class="card shadow-sm border-warning mb-5">
-    <div class="card-header bg-warning bg-opacity-10">
-        <i class="bi bi-shield-lock me-2"></i>Resetear contraseña
+<div class="ds-card" style="border-left: 4px solid #f59e0b;">
+    <div class="ds-card-header tone-warning">
+        <span class="ds-card-mark"><i class="bi bi-shield-lock"></i></span>
+        <div>
+            <div class="ds-card-title">Resetear contrasena</div>
+            <div class="ds-card-subtitle">Establece una contrasena temporal &mdash; el usuario debera cambiarla al iniciar sesion</div>
+        </div>
     </div>
-    <div class="card-body">
-        <p class="text-muted small">
-            Establece una nueva contraseña para este usuario. Será obligado a cambiarla en su próximo login.
-        </p>
-        <form method="post" action="<?= $view->url('/usuarios/' . $usuario['id'] . '/password') ?>" class="row g-2"
-              onsubmit="return confirm('¿Resetear la contraseña de este usuario?');">
+    <div class="ds-card-body">
+        <form method="post" action="<?= $view->url('/usuarios/' . $usuario['id'] . '/password') ?>"
+              onsubmit="return confirm('Resetear la contrasena de este usuario?');">
             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-            <div class="col-md-6">
-                <input type="text" name="new_password" class="form-control" placeholder="Nueva contraseña" required minlength="8">
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-warning w-100">
-                    <i class="bi bi-key me-1"></i>Resetear
-                </button>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-7">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Nueva contrasena temporal</label>
+                        <input type="text" name="new_password" class="form-control"
+                               placeholder="Minimo 8 caracteres" required minlength="8">
+                        <span class="ds-form-help">Anota la contrasena para entregarla al usuario por un canal seguro.</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="ds-btn ds-btn-danger" style="width: 100%;">
+                        <i class="bi bi-key"></i>Resetear
+                    </button>
+                </div>
             </div>
         </form>
     </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Security\Rbac\Controller;
 
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -30,6 +31,7 @@ final class RoleController
         private readonly ViewRenderer $view,
         private readonly RoleRepository $repo,
         private readonly GestionarRolesService $gestionarService,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -97,6 +99,7 @@ final class RoleController
 
         try {
             $id = $this->gestionarService->crear($request->post, $user->id, $request->clientIp());
+            $this->flash->success('Rol creado correctamente.');
             return Response::redirect("/roles/{$id}");
         } catch (DomainException $e) {
             $catalogo = $this->repo->catalogoPermisosByRecurso();
@@ -147,6 +150,7 @@ final class RoleController
 
         try {
             $this->gestionarService->actualizar($id, $request->post, $user->id, $request->clientIp());
+            $this->flash->success('Rol actualizado correctamente.');
             return Response::redirect("/roles/{$id}");
         } catch (DomainException $e) {
             $rol = $this->repo->findById($id);
@@ -173,10 +177,11 @@ final class RoleController
 
         try {
             $this->gestionarService->eliminar($id, $user->id, $request->clientIp());
+            $this->flash->success('Rol eliminado correctamente.');
             return Response::redirect('/roles');
         } catch (DomainException $e) {
-            // Redirigir al show con error via query param
-            return Response::redirect("/roles/{$id}?error=" . urlencode($e->getMessage()));
+            $this->flash->error($e->getMessage(), 'No se pudo eliminar el rol');
+            return Response::redirect("/roles/{$id}");
         }
     }
 }

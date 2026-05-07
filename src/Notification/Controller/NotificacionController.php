@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Notification\Controller;
 
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -25,6 +26,7 @@ final class NotificacionController
     public function __construct(
         private readonly ViewRenderer $view,
         private readonly NotificacionRepository $repo,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -97,6 +99,7 @@ final class NotificacionController
         $id = $request->attribute('route.id');
 
         $this->repo->resetForRetry((string) $id);
+        $this->flash->success('Notificacion encolada para reintento.');
 
         return Response::redirect("/notificaciones/{$id}");
     }

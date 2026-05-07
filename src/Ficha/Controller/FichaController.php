@@ -11,6 +11,7 @@ use DigiSecure\Ficha\Application\GenerarDeclaracionLealtadService;
 use DigiSecure\Ficha\Application\GenerarFormatoHuellasService;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -45,6 +46,7 @@ final class FichaController
         private readonly Encryption $encryption,
         private readonly PdoConnection $db,
         private readonly VerificarLimiteService $verificarLimite,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -107,7 +109,7 @@ final class FichaController
         try {
             $this->verificarLimite->verificarCrearGuardia();
             $result = $this->crearService->execute($input, $user->id, $request->clientIp());
-            // Redirigir al detalle de la ficha creada
+            $this->flash->success('Ficha de guardia creada correctamente.');
             return Response::redirect("/guardias/{$result['id']}");
         } catch (DomainException $e) {
             $cursos = $this->loadCatalogoCursos();
@@ -198,6 +200,7 @@ final class FichaController
 
         try {
             $this->actualizarService->execute($id, $input, $user->id, $request->clientIp());
+            $this->flash->success('Ficha actualizada correctamente.');
             return Response::redirect("/guardias/{$id}");
         } catch (DomainException $e) {
             $ficha = $this->fichaRepo->findFichaById($id) ?? [];
@@ -246,8 +249,10 @@ final class FichaController
                 ]);
             }
 
+            $this->flash->success('Ficha marcada como COMPLETA.');
             return Response::redirect("/guardias/{$id}");
         } catch (DomainException $e) {
+            $this->flash->error($e->getMessage(), 'No se pudo completar la ficha');
             return Response::redirect("/guardias/{$id}");
         }
     }

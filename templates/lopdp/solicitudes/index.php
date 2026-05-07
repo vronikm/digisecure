@@ -11,15 +11,26 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
-$estadoBadge = static fn(string $estado) => match ($estado) {
-    'RECIBIDA' => 'bg-info text-dark',
-    'EN_PROCESO' => 'bg-warning text-dark',
-    'RESPONDIDA' => 'bg-success',
-    'DENEGADA' => 'bg-secondary',
-    default => 'bg-light text-dark',
+$estadoTone = static fn(string $estado) => match ($estado) {
+    'RECIBIDA'   => 'tone-info',
+    'EN_PROCESO' => 'tone-warning',
+    'RESPONDIDA' => 'tone-success',
+    'DENEGADA'   => 'tone-muted',
+    default      => 'tone-muted',
 };
 
 $today = date('Y-m-d');
+
+$hasFilters = !empty($filters['estado'] ?? null)
+    || !empty($filters['tipo'] ?? null)
+    || !empty($filters['busqueda'] ?? null);
+
+$qs = http_build_query(array_filter([
+    'estado' => $filters['estado'] ?? '',
+    'tipo' => $filters['tipo'] ?? '',
+    'q' => $filters['busqueda'] ?? '',
+]));
+$qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
 <?php $view->section('title') ?>Solicitudes ARCO-P — LOPDP<?php $view->endSection() ?>
@@ -30,22 +41,29 @@ $today = date('Y-m-d');
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1"><i class="bi bi-list-check me-2"></i>Solicitudes ARCO-P</h4>
-        <p class="text-muted mb-0"><?= (int)$total ?> solicitud<?= $total !== 1 ? 'es' : '' ?></p>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-list-check"></i></span>
+        <div>
+            <h1>Solicitudes ARCO-P</h1>
+            <small><?= (int) $total ?> solicitud<?= $total !== 1 ? 'es' : '' ?> registrada<?= $total !== 1 ? 's' : '' ?></small>
+        </div>
     </div>
-    <a href="<?= $view->url('/lopdp/solicitudes/crear') ?>" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Nueva solicitud
+    <a href="<?= $view->url('/lopdp/solicitudes/crear') ?>" class="ds-btn ds-btn-primary">
+        <i class="bi bi-plus-lg"></i>Nueva solicitud
     </a>
 </div>
 
 <!-- Filtros -->
-<div class="card shadow-sm mb-4">
-    <div class="card-body py-3">
-        <form method="get" action="<?= $view->url('/lopdp/solicitudes') ?>" class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small text-muted">Estado</label>
+<div class="ds-filter-bar">
+    <form method="get" action="<?= $view->url('/lopdp/solicitudes') ?>" class="ds-filter-row">
+        <div class="ds-filter-summary">
+            <i class="bi bi-funnel"></i>
+            <strong>Filtrar:</strong>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Estado</label>
                 <select name="estado" class="form-select form-select-sm">
                     <option value="">Todos</option>
                     <?php foreach (['RECIBIDA','EN_PROCESO','RESPONDIDA','DENEGADA'] as $st): ?>
@@ -53,8 +71,10 @@ $today = date('Y-m-d');
                     <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label small text-muted">Tipo</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Tipo</label>
                 <select name="tipo" class="form-select form-select-sm">
                     <option value="">Todos</option>
                     <?php foreach (['acceso','rectificacion','cancelacion','oposicion','portabilidad'] as $tp): ?>
@@ -62,89 +82,119 @@ $today = date('Y-m-d');
                     <?php endforeach ?>
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label small text-muted">Búsqueda</label>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Busqueda</label>
                 <input type="text" name="q" class="form-control form-control-sm"
-                       value="<?= $e($filters['busqueda'] ?? '') ?>" placeholder="Nombre, cédula o email">
+                       value="<?= $e($filters['busqueda'] ?? '') ?>" placeholder="Nombre, cedula o email">
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-sm btn-outline-primary w-100">
-                    <i class="bi bi-search me-1"></i>Filtrar
-                </button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="ds-filter-actions">
+            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                <i class="bi bi-search"></i>Aplicar
+            </button>
+            <?php if ($hasFilters): ?>
+            <a href="<?= $view->url('/lopdp/solicitudes') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                <i class="bi bi-x-lg"></i>Limpiar
+            </a>
+            <?php endif ?>
+        </div>
+    </form>
 </div>
 
-<!-- Tabla -->
-<div class="card shadow-sm">
+<?php if ($solicitudes === []): ?>
+<div class="ds-table-card">
+    <div class="ds-empty-state">
+        <div class="ds-empty-icon"><i class="bi bi-file-earmark-lock"></i></div>
+        <h3>No hay solicitudes registradas</h3>
+        <p>
+            <?php if ($hasFilters): ?>
+                Ninguna solicitud coincide con los filtros aplicados.
+            <?php else: ?>
+                Cuando un titular ejerza sus derechos ARCO-P, podras registrar la solicitud aqui.
+            <?php endif ?>
+        </p>
+        <?php if (!$hasFilters): ?>
+        <a href="<?= $view->url('/lopdp/solicitudes/crear') ?>" class="ds-btn ds-btn-primary">
+            <i class="bi bi-plus-lg"></i>Registrar primera solicitud
+        </a>
+        <?php endif ?>
+    </div>
+</div>
+<?php else: ?>
+<div class="ds-table-card">
     <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="ds-table">
+            <thead>
                 <tr>
                     <th>Tipo</th>
                     <th>Titular</th>
-                    <th>Recepción</th>
+                    <th>Recepcion</th>
                     <th>Vence</th>
                     <th>Estado</th>
-                    <th></th>
+                    <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <?php if ($solicitudes === []): ?>
-                <tr><td colspan="6" class="text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay solicitudes.</td></tr>
-                <?php endif ?>
-                <?php foreach ($solicitudes as $s): ?>
-                <?php
-                $vencida = $s['estado'] !== 'RESPONDIDA' && $s['estado'] !== 'DENEGADA' && $s['fecha_limite'] < $today;
+                <?php foreach ($solicitudes as $s):
+                    $vencida = $s['estado'] !== 'RESPONDIDA' && $s['estado'] !== 'DENEGADA' && $s['fecha_limite'] < $today;
+                    $tone = $estadoTone((string) $s['estado']);
                 ?>
-                <tr<?= $vencida ? ' class="table-danger"' : '' ?>>
-                    <td><span class="badge bg-light text-dark border"><?= $e(ucfirst((string)$s['tipo'])) ?></span></td>
+                <tr <?= $vencida ? 'style="background:rgba(220,38,38,.04);"' : '' ?>>
+                    <td><span class="ds-chip"><i class="bi bi-tag"></i><?= $e(ucfirst((string) $s['tipo'])) ?></span></td>
                     <td>
-                        <small class="d-block fw-semibold"><?= $e((string)$s['titular_nombre']) ?></small>
-                        <small class="text-muted"><?= $e((string)($s['titular_cedula'] ?? '—')) ?> · <?= $e((string)$s['titular_tipo']) ?></small>
+                        <div class="ds-cell-name"><?= $e((string) $s['titular_nombre']) ?></div>
+                        <div class="ds-cell-sub"><?= $e((string) ($s['titular_cedula'] ?? '—')) ?> &middot; <?= $e((string) $s['titular_tipo']) ?></div>
                     </td>
-                    <td><small><?= $e((string)$s['fecha_recepcion']) ?></small></td>
+                    <td><span class="ds-cell-mono"><?= $e((string) $s['fecha_recepcion']) ?></span></td>
                     <td>
-                        <small class="<?= $vencida ? 'text-danger fw-bold' : '' ?>">
-                            <?= $e((string)$s['fecha_limite']) ?>
-                        </small>
+                        <?php if ($vencida): ?>
+                            <span class="ds-badge tone-danger no-dot"><i class="bi bi-exclamation-triangle"></i><?= $e((string) $s['fecha_limite']) ?></span>
+                        <?php else: ?>
+                            <span class="ds-cell-mono"><?= $e((string) $s['fecha_limite']) ?></span>
+                        <?php endif ?>
                     </td>
-                    <td><span class="badge <?= $estadoBadge((string)$s['estado']) ?>"><?= $e((string)$s['estado']) ?></span></td>
-                    <td>
-                        <a href="<?= $view->url('/lopdp/solicitudes/' . $s['id']) ?>" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i>
-                        </a>
+                    <td><span class="ds-badge <?= $tone ?>"><?= $e((string) $s['estado']) ?></span></td>
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <a href="<?= $view->url('/lopdp/solicitudes/' . $s['id']) ?>"
+                               class="ds-icon-btn" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>
             </tbody>
         </table>
     </div>
+
     <?php if ($totalPages > 1): ?>
-    <div class="card-footer d-flex justify-content-between align-items-center">
-        <small class="text-muted">Página <?= $page ?> de <?= $totalPages ?></small>
-        <nav>
-            <ul class="pagination pagination-sm mb-0">
-                <?php $qs = http_build_query(array_filter([
-                    'estado' => $filters['estado'] ?? '',
-                    'tipo' => $filters['tipo'] ?? '',
-                    'q' => $filters['busqueda'] ?? '',
-                ])); $qsPrefix = $qs ? "&{$qs}" : ''; ?>
-                <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/lopdp/solicitudes') ?>?page=<?= $page - 1 ?><?= $qsPrefix ?>">«</a>
-                </li>
-                <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
-                <li class="page-item <?= $p === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/lopdp/solicitudes') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
-                </li>
-                <?php endfor ?>
-                <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= $view->url('/lopdp/solicitudes') ?>?page=<?= $page + 1 ?><?= $qsPrefix ?>">»</a>
-                </li>
-            </ul>
-        </nav>
+    <div class="ds-table-foot">
+        <span>Pagina <strong><?= $page ?></strong> de <?= $totalPages ?> &middot; <?= $total ?> solicitud<?= $total !== 1 ? 'es' : '' ?></span>
+        <ul class="ds-pagination">
+            <li>
+                <a class="ds-page <?= $page <= 1 ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/lopdp/solicitudes') ?>?page=<?= max(1, $page - 1) ?><?= $qsPrefix ?>" aria-label="Anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+            <li>
+                <a class="ds-page <?= $p === $page ? 'is-active' : '' ?>"
+                   href="<?= $view->url('/lopdp/solicitudes') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
+            </li>
+            <?php endfor ?>
+            <li>
+                <a class="ds-page <?= $page >= $totalPages ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/lopdp/solicitudes') ?>?page=<?= min($totalPages, $page + 1) ?><?= $qsPrefix ?>" aria-label="Siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
     </div>
     <?php endif ?>
 </div>
+<?php endif ?>
 <?php $view->endSection() ?>

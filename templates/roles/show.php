@@ -11,16 +11,9 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
-// Indexar permisos asignados por código para chequeos rápidos
 $asignados = [];
 foreach ($permisos as $p) {
     $asignados[$p['codigo']] = true;
-}
-
-// Agrupar permisos asignados por recurso para resumen
-$asignadosByRecurso = [];
-foreach ($permisos as $p) {
-    $asignadosByRecurso[$p['recurso']][] = $p;
 }
 ?>
 
@@ -32,63 +25,69 @@ foreach ($permisos as $p) {
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        <h4 class="mb-1">
-            <i class="bi bi-shield-lock me-2"></i><?= $e($rol['nombre']) ?>
-        </h4>
-        <div class="d-flex gap-2 align-items-center">
-            <code><?= $e($rol['codigo']) ?></code>
-            <?php if ((int) $rol['es_sistema'] === 1): ?>
-            <span class="badge bg-primary"><i class="bi bi-gear-fill me-1"></i>Rol del sistema</span>
-            <?php else: ?>
-            <span class="badge bg-info text-dark">Rol de empresa</span>
-            <?php endif ?>
-            <span class="badge bg-secondary"><?= count($permisos) ?> permiso<?= count($permisos) !== 1 ? 's' : '' ?></span>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-shield-lock"></i></span>
+        <div>
+            <h1><?= $e($rol['nombre']) ?></h1>
+            <small style="display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;">
+                <span class="ds-cell-mono"><?= $e($rol['codigo']) ?></span>
+                <?php if ((int) $rol['es_sistema'] === 1): ?>
+                    <span class="ds-badge tone-purple"><i class="bi bi-gear-fill"></i>Sistema</span>
+                <?php else: ?>
+                    <span class="ds-badge tone-info">Empresa</span>
+                <?php endif ?>
+                <span class="ds-chip"><i class="bi bi-key"></i><?= count($permisos) ?> permiso<?= count($permisos) !== 1 ? 's' : '' ?></span>
+            </small>
         </div>
     </div>
-    <div class="d-flex gap-2">
-        <?php if ((int)$rol['es_sistema'] === 0 && $user->tienePermiso('roles.editar')): ?>
-        <a href="<?= $view->url('/roles/' . $e((string)$rol['id']) . '/editar') ?>" class="btn btn-warning btn-sm">
-            <i class="bi bi-pencil me-1"></i>Editar
+    <div style="display: flex; gap: .5rem;">
+        <?php if ((int) $rol['es_sistema'] === 0 && $user->tienePermiso('roles.editar')): ?>
+        <a href="<?= $view->url('/roles/' . $e((string) $rol['id']) . '/editar') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
+            <i class="bi bi-pencil"></i>Editar
         </a>
         <?php endif ?>
-        <a href="<?= $view->url('/roles') ?>" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver
+        <a href="<?= $view->url('/roles') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+            <i class="bi bi-arrow-left"></i>Volver
         </a>
     </div>
 </div>
 
-<?php if (!empty($_GET['error'] ?? null)): ?>
-<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i><?= $e((string)$_GET['error']) ?></div>
-<?php endif ?>
-
-<?php if ($rol['descripcion']): ?>
-<div class="alert alert-light border">
-    <i class="bi bi-info-circle me-2"></i><?= $e($rol['descripcion']) ?>
+<?php if (!empty($rol['descripcion'])): ?>
+<div class="login-info" style="margin-bottom: 1.25rem;">
+    <i class="bi bi-info-circle"></i>
+    <div>
+        <strong>Descripcion del rol</strong>
+        <?= $e($rol['descripcion']) ?>
+    </div>
 </div>
 <?php endif ?>
 
-<div class="card shadow-sm">
-    <div class="card-header"><i class="bi bi-key me-2"></i>Permisos del catálogo</div>
-    <div class="card-body">
-        <p class="text-muted small mb-3">
-            Marcados los permisos que están asignados a este rol. Los demás aparecen para mostrar el alcance total
-            del catálogo de permisos del sistema.
-        </p>
+<div class="ds-card">
+    <div class="ds-card-header">
+        <span class="ds-card-mark"><i class="bi bi-key"></i></span>
+        <div>
+            <div class="ds-card-title">Permisos del catalogo</div>
+            <div class="ds-card-subtitle">Los marcados estan asignados a este rol. Los demas muestran el alcance total del sistema.</div>
+        </div>
+    </div>
+    <div class="ds-card-body">
         <?php foreach ($catalogo as $recurso => $permisosRecurso): ?>
-        <div class="mb-3">
-            <h6 class="text-uppercase text-muted small mb-2"><?= $e($recurso) ?></h6>
+        <div style="margin-bottom: 1.25rem;">
+            <h6 style="font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ds-text-soft); margin: 0 0 .65rem; padding-bottom: .35rem; border-bottom: 1px solid #eef1f5;">
+                <i class="bi bi-folder me-1"></i><?= $e($recurso) ?>
+            </h6>
             <div class="row g-2">
-                <?php foreach ($permisosRecurso as $p): ?>
-                <?php $tiene = isset($asignados[$p['codigo']]); ?>
+                <?php foreach ($permisosRecurso as $p):
+                    $tiene = isset($asignados[$p['codigo']]);
+                ?>
                 <div class="col-md-6 col-lg-4">
-                    <div class="d-flex align-items-start gap-2 p-2 rounded <?= $tiene ? 'bg-success bg-opacity-10' : 'bg-light' ?>">
-                        <i class="bi <?= $tiene ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted' ?> mt-1"></i>
-                        <div>
-                            <code class="small"><?= $e($p['codigo']) ?></code>
-                            <?php if ($p['descripcion']): ?>
-                            <div class="small text-muted"><?= $e($p['descripcion']) ?></div>
+                    <div style="display: flex; gap: .55rem; align-items: flex-start; padding: .65rem .75rem; border-radius: 10px; background: <?= $tiene ? 'rgba(5,150,105,.08)' : '#f4f7fb' ?>; border: 1px solid <?= $tiene ? 'rgba(5,150,105,.18)' : '#e2e8f0' ?>;">
+                        <i class="bi <?= $tiene ? 'bi-check-circle-fill' : 'bi-circle' ?>" style="color: <?= $tiene ? '#059669' : '#94a3b8' ?>; font-size: 1rem; margin-top: .15rem; flex-shrink: 0;"></i>
+                        <div style="flex: 1; min-width: 0;">
+                            <span class="ds-cell-mono" style="font-weight: 600; color: <?= $tiene ? '#047857' : 'var(--ds-text)' ?>;"><?= $e($p['codigo']) ?></span>
+                            <?php if (!empty($p['descripcion'])): ?>
+                            <div class="ds-cell-sub" style="margin-top: .15rem;"><?= $e($p['descripcion']) ?></div>
                             <?php endif ?>
                         </div>
                     </div>

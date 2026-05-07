@@ -93,7 +93,7 @@ $roleLabels = array_values(array_filter(array_map(
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=18.5">
     <?= $view->yieldSection('head') ?>
 </head>
 <body>
@@ -204,27 +204,38 @@ $roleLabels = array_values(array_filter(array_map(
 
         <div class="dropdown">
             <button class="ds-user-btn dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown" aria-expanded="false">
+                    data-bs-toggle="dropdown" aria-expanded="false"
+                    aria-label="Menu de usuario"
+                    title="<?= $e($user->nombreCompleto()) ?>">
                 <span class="ds-user-avatar"><?= $e($initials) ?></span>
-                <span class="d-none d-sm-inline"><?= $e($user->nombres) ?></span>
                 <i class="bi bi-chevron-down ds-user-caret"></i>
             </button>
             <div class="dropdown-menu dropdown-menu-end ds-user-menu">
                 <div class="ds-dm-header">
-                    <div class="ds-dm-name"><?= $e($user->nombreCompleto()) ?></div>
-                    <div class="ds-dm-email"><?= $e($user->email) ?></div>
+                    <span class="ds-dm-avatar"><?= $e($initials) ?></span>
+                    <div class="ds-dm-info">
+                        <div class="ds-dm-name"><?= $e($user->nombreCompleto()) ?></div>
+                        <div class="ds-dm-email"><?= $e($user->email) ?></div>
+                        <span class="ds-dm-role"><i class="bi bi-shield-check"></i><?= $e($rolPrincipal) ?></span>
+                    </div>
                 </div>
+                <div class="ds-dm-section">Mi cuenta</div>
                 <a class="dropdown-item" href="<?= $view->url('/perfil') ?>">
-                    <i class="bi bi-person me-2 text-muted"></i>Mi perfil
+                    <i class="bi bi-person"></i>
+                    <span>Mi perfil</span>
+                    <i class="bi bi-chevron-right item-arrow"></i>
                 </a>
                 <a class="dropdown-item" href="<?= $view->url('/perfil/password') ?>">
-                    <i class="bi bi-key me-2 text-muted"></i>Cambiar contrase&ntilde;a
+                    <i class="bi bi-key"></i>
+                    <span>Cambiar contrase&ntilde;a</span>
+                    <i class="bi bi-chevron-right item-arrow"></i>
                 </a>
                 <div class="ds-dm-footer">
                     <form method="POST" action="<?= $view->url('/logout') ?>">
                         <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-                        <button type="submit" class="dropdown-item text-danger">
-                            <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesion
+                        <button type="submit" class="dropdown-item">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Cerrar sesi&oacute;n</span>
                         </button>
                     </form>
                 </div>
@@ -307,17 +318,14 @@ $roleLabels = array_values(array_filter(array_map(
                                 <a href="#<?= $subId ?>"
                                    class="ds-menu-item<?= $isActive ? ' active' : '' ?>"
                                    data-bs-toggle="collapse"
-                                   aria-expanded="<?= $isActive ? 'true' : 'false' ?>">
+                                   aria-expanded="false">
                                     <span class="ds-menu-icon"><i class="bi <?= $e($item->icon) ?>"></i></span>
                                     <span class="ds-menu-copy">
                                         <span class="ds-menu-label"><?= $e($item->label) ?></span>
-                                        <?php if ($item->description !== null): ?>
-                                            <span class="ds-menu-description"><?= $e($item->description) ?></span>
-                                        <?php endif; ?>
                                     </span>
                                     <span class="ds-menu-chevron"><i class="bi bi-chevron-right"></i></span>
                                 </a>
-                                <div class="collapse ds-submenu<?= $isActive ? ' show' : '' ?>" id="<?= $subId ?>">
+                                <div class="collapse ds-submenu" id="<?= $subId ?>">
                                     <?php foreach ($item->children as $child): ?>
                                         <?php if (!$child->isVisibleFor($user->permisos)) continue; ?>
                                         <?php $childActive = $child->isActive($currentPath); ?>

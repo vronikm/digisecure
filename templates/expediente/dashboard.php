@@ -25,6 +25,24 @@ $aceptB = (int) $expediente['bloque_b_aceptados'];
 $pctA = $totalA > 0 ? round(($aceptA / $totalA) * 100) : 0;
 $pctB = $totalB > 0 ? round(($aceptB / $totalB) * 100) : 0;
 $bloqueado = !$expediente['bloque_b_desbloqueado'];
+
+$expEstadoTone = match ($expediente['estado']) {
+    'INCOMPLETO'        => 'tone-warning',
+    'BLOQUE_A_COMPLETO' => 'tone-info',
+    'COMPLETO'          => 'tone-success',
+    default             => 'tone-muted',
+};
+
+$docTone = static fn(EstadoDocumento $d): string => match ($d) {
+    EstadoDocumento::PENDIENTE   => 'tone-muted',
+    EstadoDocumento::EN_REVISION => 'tone-warning',
+    EstadoDocumento::ACEPTADO    => 'tone-success',
+    EstadoDocumento::RECHAZADO   => 'tone-danger',
+    EstadoDocumento::VENCIDO     => 'tone-danger',
+};
+
+$toneA = $pctA === 100 ? 'tone-success' : ($pctA >= 50 ? '' : 'tone-warning');
+$toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
 ?>
 
 <?php $view->section('title') ?>Expediente — <?= $e($ficha['correlativo']) ?><?php $view->endSection() ?>
@@ -36,101 +54,122 @@ $bloqueado = !$expediente['bloque_b_desbloqueado'];
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-
-<!-- Cabecera -->
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        <h4 class="mb-1">
-            <i class="bi bi-folder2-open me-2"></i>Expediente Documental
-        </h4>
-        <div class="d-flex gap-2 align-items-center">
-            <span class="fw-semibold"><?= $e($ficha['apellidos']) ?> <?= $e($ficha['nombres']) ?></span>
-            <code><?= $e($ficha['correlativo']) ?></code>
-            <span class="badge <?= $estado->badgeClass() ?>"><?= $e($estado->label()) ?></span>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-folder2-open"></i></span>
+        <div>
+            <h1>Expediente documental</h1>
+            <small style="display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;">
+                <strong style="color: var(--ds-text);"><?= $e($ficha['apellidos']) ?> <?= $e($ficha['nombres']) ?></strong>
+                <span class="ds-cell-mono" style="font-weight: 700;"><?= $e($ficha['correlativo']) ?></span>
+                <span class="ds-badge <?= $expEstadoTone ?>"><?= $e($estado->label()) ?></span>
+            </small>
         </div>
     </div>
-    <a href="<?= $view->url('/guardias/' . $fichaId) ?>" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i>Volver a ficha
+    <a href="<?= $view->url('/guardias/' . $fichaId) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+        <i class="bi bi-arrow-left"></i>Volver a ficha
     </a>
 </div>
 
-<!-- Alertas de documentos por vencer -->
 <?php if ($porVencer !== []): ?>
-<div class="alert alert-warning shadow-sm">
-    <h6 class="alert-heading mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Documentos próximos a vencer</h6>
-    <ul class="mb-0">
-        <?php foreach ($porVencer as $pv): ?>
-        <li>
-            <strong><?= $e($pv['tipo_nombre']) ?></strong> — vence el
-            <?= date('d/m/Y', strtotime($pv['fecha_vencimiento'])) ?>
-            (<?= (int) $pv['dias_restantes'] ?> día<?= (int) $pv['dias_restantes'] !== 1 ? 's' : '' ?>)
-        </li>
-        <?php endforeach ?>
-    </ul>
+<div class="ds-card" style="border-left: 4px solid #d97706; margin-bottom: 1.25rem;">
+    <div class="ds-card-body" style="display: flex; gap: .85rem; align-items: flex-start;">
+        <span style="color: #d97706; font-size: 1.4rem; line-height: 1;"><i class="bi bi-exclamation-triangle-fill"></i></span>
+        <div style="flex: 1;">
+            <div style="font-weight: 700; color: #b45309; margin-bottom: .35rem;">Documentos proximos a vencer</div>
+            <ul style="margin: 0; padding-left: 1.1rem; color: var(--ds-text-soft); font-size: .85rem; line-height: 1.6;">
+                <?php foreach ($porVencer as $pv): ?>
+                <li>
+                    <strong style="color: var(--ds-text);"><?= $e($pv['tipo_nombre']) ?></strong>
+                    &mdash; vence el <span class="ds-cell-mono"><?= date('d/m/Y', strtotime($pv['fecha_vencimiento'])) ?></span>
+                    <span style="color: #b45309; font-weight: 600;">(<?= (int) $pv['dias_restantes'] ?> dia<?= (int) $pv['dias_restantes'] !== 1 ? 's' : '' ?>)</span>
+                </li>
+                <?php endforeach ?>
+            </ul>
+        </div>
+    </div>
 </div>
 <?php endif ?>
 
 <!-- Resumen de progreso -->
-<div class="row g-3 mb-4">
+<div class="row g-3" style="margin-bottom: 1.25rem;">
     <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0"><i class="bi bi-shield-check me-2"></i>Bloque A — Admisibilidad</h6>
-                    <span class="badge <?= $pctA === 100 ? 'bg-success' : 'bg-primary' ?>"><?= $aceptA ?>/<?= $totalA ?></span>
+        <div class="ds-card" style="margin-bottom: 0; height: 100%;">
+            <div class="ds-card-header">
+                <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
+                <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                    <div>
+                        <div class="ds-card-title">Bloque A &middot; Admisibilidad</div>
+                        <div class="ds-card-subtitle">26 documentos pre-empleo</div>
+                    </div>
+                    <span class="ds-badge <?= $pctA === 100 ? 'tone-success' : 'tone-info' ?> no-dot"><?= $aceptA ?>/<?= $totalA ?></span>
                 </div>
-                <div class="progress mb-1" style="height:10px">
-                    <div class="progress-bar <?= $pctA === 100 ? 'bg-success' : 'bg-primary' ?>" style="width:<?= $pctA ?>%"></div>
+            </div>
+            <div class="ds-card-body">
+                <div class="ds-progress-row">
+                    <div class="ds-progress" style="height: 10px;">
+                        <div class="ds-progress-bar <?= $toneA ?>" style="width: <?= $pctA ?>%"></div>
+                    </div>
+                    <small><strong><?= $pctA ?>%</strong></small>
                 </div>
-                <small class="text-muted"><?= $pctA ?>% completado — 26 documentos pre-empleo</small>
+                <div class="ds-cell-sub" style="margin-top: .5rem;"><?= $pctA ?>% completado del bloque pre-empleo</div>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card shadow-sm h-100 <?= $bloqueado ? 'border-secondary' : '' ?>">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0">
-                        <?php if ($bloqueado): ?>
-                        <i class="bi bi-lock me-2 text-muted"></i>
-                        <?php else: ?>
-                        <i class="bi bi-unlock me-2 text-success"></i>
-                        <?php endif ?>
-                        Bloque B — Vinculación Laboral
-                    </h6>
+        <div class="ds-card <?= $bloqueado ? 'is-locked' : '' ?>" style="margin-bottom: 0; height: 100%; <?= $bloqueado ? 'opacity: .85;' : '' ?>">
+            <div class="ds-card-header <?= $bloqueado ? '' : 'tone-success' ?>">
+                <span class="ds-card-mark">
+                    <i class="bi <?= $bloqueado ? 'bi-lock' : 'bi-unlock-fill' ?>"></i>
+                </span>
+                <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                    <div>
+                        <div class="ds-card-title">Bloque B &middot; Vinculacion laboral</div>
+                        <div class="ds-card-subtitle"><?= $bloqueado ? 'Bloqueado &mdash; pendiente Bloque A' : '4 documentos post-contratacion' ?></div>
+                    </div>
                     <?php if (!$bloqueado): ?>
-                    <span class="badge <?= $pctB === 100 ? 'bg-success' : 'bg-info' ?>"><?= $aceptB ?>/<?= $totalB ?></span>
+                        <span class="ds-badge <?= $pctB === 100 ? 'tone-success' : 'tone-info' ?> no-dot"><?= $aceptB ?>/<?= $totalB ?></span>
                     <?php endif ?>
                 </div>
+            </div>
+            <div class="ds-card-body">
                 <?php if ($bloqueado): ?>
-                <p class="text-muted small mb-0">
-                    <i class="bi bi-info-circle me-1"></i>Se desbloquea cuando el Bloque A esté 100% aceptado.
-                </p>
-                <?php else: ?>
-                <div class="progress mb-1" style="height:10px">
-                    <div class="progress-bar bg-info" style="width:<?= $pctB ?>%"></div>
+                <div class="ds-cell-sub" style="display: flex; gap: .45rem; align-items: flex-start;">
+                    <i class="bi bi-info-circle" style="color: #2563eb; font-size: 1rem;"></i>
+                    <span>Se desbloquea cuando el Bloque A este 100% aceptado.</span>
                 </div>
-                <small class="text-muted"><?= $pctB ?>% completado — 4 documentos post-contratación</small>
+                <?php else: ?>
+                <div class="ds-progress-row">
+                    <div class="ds-progress" style="height: 10px;">
+                        <div class="ds-progress-bar <?= $toneB ?>" style="width: <?= $pctB ?>%"></div>
+                    </div>
+                    <small><strong><?= $pctB ?>%</strong></small>
+                </div>
+                <div class="ds-cell-sub" style="margin-top: .5rem;"><?= $pctB ?>% completado &mdash; documentos post-contratacion</div>
                 <?php endif ?>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Bloque A: Lista de documentos -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <i class="bi bi-shield-check me-2"></i>Bloque A — Documentos de Admisibilidad (Pre-empleo)
+<!-- Bloque A: Documentos -->
+<div class="ds-card" style="margin-bottom: 1.25rem;">
+    <div class="ds-card-header">
+        <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
+        <div>
+            <div class="ds-card-title">Bloque A &middot; Documentos de admisibilidad</div>
+            <div class="ds-card-subtitle">Pre-empleo &mdash; carga obligatoria antes de la vinculacion</div>
+        </div>
     </div>
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="ds-table">
+            <thead>
                 <tr>
-                    <th style="width:30px">#</th>
+                    <th style="width:50px">#</th>
                     <th>Documento</th>
                     <th>Estado</th>
                     <th>Vencimiento</th>
-                    <th class="text-end">Acciones</th>
+                    <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -139,54 +178,61 @@ $bloqueado = !$expediente['bloque_b_desbloqueado'];
                     $docEstado = $doc ? EstadoDocumento::from($doc['estado']) : null;
                 ?>
                 <tr>
-                    <td class="text-muted"><?= (int) $tipo['orden'] ?></td>
+                    <td><span class="ds-cell-sub"><?= (int) $tipo['orden'] ?></span></td>
                     <td>
-                        <div class="fw-semibold"><?= $e($tipo['nombre']) ?></div>
-                        <small class="text-muted">
-                            <?php if ($tipo['obligatorio']): ?><span class="text-danger">Obligatorio</span><?php else: ?>Opcional<?php endif ?>
-                            <?php if ($tipo['requiere_validacion_externa']): ?> | <i class="bi bi-globe me-1"></i>Validación externa<?php endif ?>
-                            <?php if ($tipo['tiene_vencimiento']): ?> | <i class="bi bi-calendar-event me-1"></i><?= $tipo['dias_vigencia'] ?> días<?php endif ?>
-                        </small>
+                        <div class="ds-cell-name"><?= $e($tipo['nombre']) ?></div>
+                        <div class="ds-cell-sub" style="display: flex; flex-wrap: wrap; gap: .45rem;">
+                            <?php if ($tipo['obligatorio']): ?>
+                                <span style="color: #dc2626; font-weight: 600;">Obligatorio</span>
+                            <?php else: ?>
+                                <span>Opcional</span>
+                            <?php endif ?>
+                            <?php if ($tipo['requiere_validacion_externa']): ?>
+                                <span><i class="bi bi-globe"></i> Validacion externa</span>
+                            <?php endif ?>
+                            <?php if ($tipo['tiene_vencimiento']): ?>
+                                <span><i class="bi bi-calendar-event"></i> <?= $tipo['dias_vigencia'] ?>d vigencia</span>
+                            <?php endif ?>
+                        </div>
                     </td>
                     <td>
                         <?php if ($doc): ?>
-                        <span class="badge <?= $docEstado->badgeClass() ?>">
-                            <i class="bi <?= $docEstado->iconClass() ?> me-1"></i><?= $e($docEstado->label()) ?>
-                        </span>
+                            <span class="ds-badge <?= $docTone($docEstado) ?>"><i class="bi <?= $docEstado->iconClass() ?>"></i><?= $e($docEstado->label()) ?></span>
                         <?php else: ?>
-                        <span class="badge bg-light text-dark border">
-                            <i class="bi bi-dash-circle me-1"></i>Sin subir
-                        </span>
+                            <span class="ds-badge tone-muted no-dot"><i class="bi bi-dash-circle"></i>Sin subir</span>
                         <?php endif ?>
                     </td>
                     <td>
-                        <?php if ($doc && $doc['fecha_vencimiento']): ?>
-                            <?php
+                        <?php if ($doc && $doc['fecha_vencimiento']):
                             $vence = new DateTimeImmutable($doc['fecha_vencimiento']);
                             $hoy = new DateTimeImmutable('today');
                             $diasR = (int) $hoy->diff($vence)->format('%r%a');
-                            $claseVenc = $diasR < 0 ? 'text-danger fw-bold' : ($diasR <= 30 ? 'text-warning' : 'text-muted');
-                            ?>
-                            <span class="<?= $claseVenc ?>">
-                                <?= $vence->format('d/m/Y') ?>
-                                <?php if ($diasR < 0): ?> (vencido)<?php elseif ($diasR <= 30): ?> (<?= $diasR ?>d)<?php endif ?>
-                            </span>
+                        ?>
+                            <?php if ($diasR < 0): ?>
+                                <span class="ds-badge tone-danger no-dot"><i class="bi bi-exclamation-triangle"></i><?= $vence->format('d/m/Y') ?> &middot; vencido</span>
+                            <?php elseif ($diasR <= 30): ?>
+                                <span class="ds-badge tone-warning no-dot"><?= $vence->format('d/m/Y') ?> &middot; <?= $diasR ?>d</span>
+                            <?php else: ?>
+                                <span class="ds-cell-mono"><?= $vence->format('d/m/Y') ?></span>
+                            <?php endif ?>
                         <?php else: ?>
-                        <span class="text-muted">—</span>
+                            <span class="ds-cell-sub">—</span>
                         <?php endif ?>
                     </td>
-                    <td class="text-end">
-                        <?php if ($doc): ?>
-                        <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="btn btn-sm btn-outline-primary" title="Ver">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                        <?php endif ?>
-                        <?php if ($user->tienePermiso('expedientes.subir')): ?>
-                        <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
-                           class="btn btn-sm btn-outline-secondary" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
-                            <i class="bi bi-upload"></i>
-                        </a>
-                        <?php endif ?>
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <?php if ($doc): ?>
+                            <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="ds-icon-btn" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <?php endif ?>
+                            <?php if ($user->tienePermiso('expedientes.subir')): ?>
+                            <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
+                               class="ds-icon-btn" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
+                                <i class="bi bi-upload"></i>
+                            </a>
+                            <?php endif ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>
@@ -195,27 +241,35 @@ $bloqueado = !$expediente['bloque_b_desbloqueado'];
     </div>
 </div>
 
-<!-- Bloque B: Lista de documentos -->
-<div class="card shadow-sm mb-4 <?= $bloqueado ? 'opacity-50' : '' ?>">
-    <div class="card-header">
-        <?php if ($bloqueado): ?><i class="bi bi-lock me-2"></i><?php else: ?><i class="bi bi-unlock me-2"></i><?php endif ?>
-        Bloque B — Documentos de Vinculación Laboral (Post-contratación)
+<!-- Bloque B: Documentos -->
+<div class="ds-card" style="<?= $bloqueado ? 'opacity: .55;' : '' ?>">
+    <div class="ds-card-header <?= $bloqueado ? '' : 'tone-success' ?>">
+        <span class="ds-card-mark">
+            <i class="bi <?= $bloqueado ? 'bi-lock' : 'bi-unlock-fill' ?>"></i>
+        </span>
+        <div>
+            <div class="ds-card-title">Bloque B &middot; Documentos de vinculacion laboral</div>
+            <div class="ds-card-subtitle">Post-contratacion &mdash; <?= $bloqueado ? 'pendiente desbloqueo' : 'documentos del contrato' ?></div>
+        </div>
     </div>
     <?php if ($bloqueado): ?>
-    <div class="card-body text-center text-muted py-4">
-        <i class="bi bi-lock fs-1 d-block mb-2"></i>
-        Complete el 100% del Bloque A para desbloquear el Bloque B.
+    <div class="ds-card-body">
+        <div class="ds-empty-state" style="padding: 1.75rem 1rem;">
+            <div class="ds-empty-icon" style="background: rgba(100,116,139,.1); color: #64748b;"><i class="bi bi-lock-fill"></i></div>
+            <h3>Bloque bloqueado</h3>
+            <p>Completa el 100% del Bloque A para desbloquear los documentos post-contratacion.</p>
+        </div>
     </div>
     <?php else: ?>
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="ds-table">
+            <thead>
                 <tr>
-                    <th style="width:30px">#</th>
+                    <th style="width:50px">#</th>
                     <th>Documento</th>
                     <th>Estado</th>
                     <th>Vencimiento</th>
-                    <th class="text-end">Acciones</th>
+                    <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -224,32 +278,39 @@ $bloqueado = !$expediente['bloque_b_desbloqueado'];
                     $docEstado = $doc ? EstadoDocumento::from($doc['estado']) : null;
                 ?>
                 <tr>
-                    <td class="text-muted"><?= (int) $tipo['orden'] ?></td>
+                    <td><span class="ds-cell-sub"><?= (int) $tipo['orden'] ?></span></td>
                     <td>
-                        <div class="fw-semibold"><?= $e($tipo['nombre']) ?></div>
-                        <small class="text-muted">
-                            <?php if ($tipo['obligatorio']): ?><span class="text-danger">Obligatorio</span><?php else: ?>Opcional<?php endif ?>
-                        </small>
+                        <div class="ds-cell-name"><?= $e($tipo['nombre']) ?></div>
+                        <div class="ds-cell-sub">
+                            <?php if ($tipo['obligatorio']): ?>
+                                <span style="color: #dc2626; font-weight: 600;">Obligatorio</span>
+                            <?php else: ?>
+                                Opcional
+                            <?php endif ?>
+                        </div>
                     </td>
                     <td>
                         <?php if ($doc): ?>
-                        <span class="badge <?= $docEstado->badgeClass() ?>">
-                            <i class="bi <?= $docEstado->iconClass() ?> me-1"></i><?= $e($docEstado->label()) ?>
-                        </span>
+                            <span class="ds-badge <?= $docTone($docEstado) ?>"><i class="bi <?= $docEstado->iconClass() ?>"></i><?= $e($docEstado->label()) ?></span>
                         <?php else: ?>
-                        <span class="badge bg-light text-dark border"><i class="bi bi-dash-circle me-1"></i>Sin subir</span>
+                            <span class="ds-badge tone-muted no-dot"><i class="bi bi-dash-circle"></i>Sin subir</span>
                         <?php endif ?>
                     </td>
-                    <td><span class="text-muted">—</span></td>
-                    <td class="text-end">
-                        <?php if ($doc): ?>
-                        <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
-                        <?php endif ?>
-                        <?php if ($user->tienePermiso('expedientes.subir')): ?>
-                        <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-upload"></i>
-                        </a>
-                        <?php endif ?>
+                    <td><span class="ds-cell-sub">—</span></td>
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <?php if ($doc): ?>
+                            <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="ds-icon-btn" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <?php endif ?>
+                            <?php if ($user->tienePermiso('expedientes.subir')): ?>
+                            <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
+                               class="ds-icon-btn" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
+                                <i class="bi bi-upload"></i>
+                            </a>
+                            <?php endif ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>

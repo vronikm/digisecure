@@ -6,6 +6,7 @@ namespace DigiSecure\Expediente\Controller;
 
 use DigiSecure\Expediente\Application\ConfigurarDocumentoTipoService;
 use DigiSecure\Expediente\Infrastructure\DocumentoTipoRepository;
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -28,6 +29,7 @@ final class DocumentoTipoController
         private readonly ViewRenderer $view,
         private readonly DocumentoTipoRepository $tipoRepo,
         private readonly ConfigurarDocumentoTipoService $configurarService,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -95,6 +97,7 @@ final class DocumentoTipoController
                 $user->id,
                 $request->clientIp(),
             );
+            $this->flash->success('Configuracion de tipo de documento guardada.');
             return Response::redirect('/configuracion/documentos');
         } catch (DomainException $e) {
             $tipo = $this->tipoRepo->findByCodigo($codigo);
@@ -128,8 +131,9 @@ final class DocumentoTipoController
                 $user->id,
                 $request->clientIp(),
             );
-        } catch (DomainException) {
-            // Silenciar — toggle es best-effort
+            $this->flash->success($nuevoActivo === 1 ? 'Tipo de documento activado.' : 'Tipo de documento desactivado.');
+        } catch (DomainException $e) {
+            $this->flash->error($e->getMessage(), 'No se pudo cambiar el estado del tipo');
         }
 
         return Response::redirect('/configuracion/documentos');

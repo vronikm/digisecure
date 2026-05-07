@@ -277,7 +277,7 @@ $roles = array_values(array_filter(array_map(
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-5">
     <div class="col-xl-8">
         <section class="card ds-hero-card border-0 shadow-sm">
             <div class="card-body p-4 p-lg-5">
@@ -346,71 +346,58 @@ $roles = array_values(array_filter(array_map(
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <article class="card ds-metric-card">
-            <div class="card-body">
-                <div class="ds-metric-top">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-primary">Guardias activos</div>
-                        <div class="display-6 fw-semibold mb-0"><?= $guardiasActivos ?></div>
-                    </div>
-                    <span class="ds-metric-icon" style="background: rgba(47, 128, 237, 0.12); color: #2f80ed;">
-                        <i class="bi bi-person-badge"></i>
-                    </span>
-                </div>
-                <div class="ds-metric-note"><?= $fichasRevision ?> en revision y <?= $fichasBorrador ?> en borrador.</div>
+<div class="ds-kpi-grid mb-5">
+    <a href="<?= $view->url('/guardias') ?>" class="ds-kpi-card" style="text-decoration: none;">
+        <span class="ds-kpi-icon"><i class="bi bi-person-badge-fill"></i></span>
+        <div style="flex:1; min-width:0;">
+            <div class="ds-kpi-label">Guardias activos</div>
+            <div class="ds-kpi-value"><?= $guardiasActivos ?></div>
+            <div class="ds-cell-sub" style="margin-top:.25rem; display:flex; gap:.35rem; flex-wrap:wrap;">
+                <?php if ($fichasRevision > 0): ?>
+                <span class="ds-badge tone-warning no-dot" style="font-size:.65rem;"><?= $fichasRevision ?> en revision</span>
+                <?php endif ?>
+                <?php if ($fichasBorrador > 0): ?>
+                <span class="ds-badge tone-muted no-dot" style="font-size:.65rem;"><?= $fichasBorrador ?> borrador</span>
+                <?php endif ?>
+                <?php if ($fichasRevision === 0 && $fichasBorrador === 0): ?>
+                <span style="color: var(--ds-text-soft);">Sin pendientes</span>
+                <?php endif ?>
             </div>
-        </article>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <article class="card ds-metric-card">
-            <div class="card-body">
-                <div class="ds-metric-top">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-warning">Por vencer</div>
-                        <div class="display-6 fw-semibold mb-0"><?= $docsPorVencer ?></div>
-                    </div>
-                    <span class="ds-metric-icon" style="background: rgba(242, 153, 74, 0.14); color: #f2994a;">
-                        <i class="bi bi-hourglass-split"></i>
-                    </span>
-                </div>
-                <div class="ds-metric-note">Documentos con vencimiento dentro de los proximos 30 dias.</div>
+        </div>
+    </a>
+
+    <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-warning" style="text-decoration: none;">
+        <span class="ds-kpi-icon"><i class="bi bi-hourglass-split"></i></span>
+        <div style="flex:1; min-width:0;">
+            <div class="ds-kpi-label">Por vencer (30 dias)</div>
+            <div class="ds-kpi-value"><?= $docsPorVencer ?></div>
+            <div class="ds-cell-sub" style="margin-top:.25rem;">Documentos por renovar pronto</div>
+        </div>
+    </a>
+
+    <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-danger" style="text-decoration: none;">
+        <span class="ds-kpi-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
+        <div style="flex:1; min-width:0;">
+            <div class="ds-kpi-label">Vencidos</div>
+            <div class="ds-kpi-value"><?= $docsVencidos ?></div>
+            <div class="ds-cell-sub" style="margin-top:.25rem;"><?= $docsVencidos === 0 ? 'Todo al dia' : 'Requieren accion inmediata' ?></div>
+        </div>
+    </a>
+
+    <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-success" style="text-decoration: none;">
+        <span class="ds-kpi-icon"><i class="bi bi-check2-circle"></i></span>
+        <div style="flex:1; min-width:0;">
+            <div class="ds-kpi-label">Expedientes completos</div>
+            <div class="ds-kpi-value"><?= $expedientesCompletos ?></div>
+            <div class="ds-cell-sub" style="margin-top:.25rem;">
+                <?php if ($expedientesIncompletos > 0): ?>
+                    <?= $expedientesIncompletos ?> aun por completar
+                <?php else: ?>
+                    Todos los expedientes cerrados
+                <?php endif ?>
             </div>
-        </article>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <article class="card ds-metric-card">
-            <div class="card-body">
-                <div class="ds-metric-top">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-danger">Vencidos</div>
-                        <div class="display-6 fw-semibold mb-0"><?= $docsVencidos ?></div>
-                    </div>
-                    <span class="ds-metric-icon" style="background: rgba(231, 76, 60, 0.14); color: #e74c3c;">
-                        <i class="bi bi-exclamation-octagon"></i>
-                    </span>
-                </div>
-                <div class="ds-metric-note">Carga documental con impacto directo en cumplimiento.</div>
-            </div>
-        </article>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <article class="card ds-metric-card">
-            <div class="card-body">
-                <div class="ds-metric-top">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-success">Expedientes completos</div>
-                        <div class="display-6 fw-semibold mb-0"><?= $expedientesCompletos ?></div>
-                    </div>
-                    <span class="ds-metric-icon" style="background: rgba(39, 174, 96, 0.14); color: #27ae60;">
-                        <i class="bi bi-check2-circle"></i>
-                    </span>
-                </div>
-                <div class="ds-metric-note"><?= $expedientesIncompletos ?> expedientes todavia necesitan gestion.</div>
-            </div>
-        </article>
-    </div>
+        </div>
+    </a>
 </div>
 
 <div class="row g-4">
@@ -458,7 +445,7 @@ $roles = array_values(array_filter(array_map(
     </div>
 
     <div class="col-lg-4">
-        <section class="card ds-surface-card mb-4">
+        <section class="card ds-surface-card mb-4 mb-lg-5">
             <div class="card-header">
                 <div>
                     <h2 class="h5 mb-1"><i class="bi bi-lightning-charge me-2 text-warning"></i>Acciones rapidas</h2>
@@ -499,7 +486,7 @@ $roles = array_values(array_filter(array_map(
             </div>
         </section>
 
-        <section class="card ds-surface-card mb-4">
+        <section class="card ds-surface-card mb-4 mb-lg-5">
             <div class="card-header">
                 <div>
                     <h2 class="h5 mb-1"><i class="bi bi-heart-pulse me-2 text-success"></i>Salud operativa</h2>

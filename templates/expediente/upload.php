@@ -17,9 +17,10 @@ $fichaId = $ficha['id'];
 $expId = $expediente['id'];
 $tipoId = $tipo['id'];
 $esReemplazo = $docExistente !== null;
+$bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
 ?>
 
-<?php $view->section('title') ?>Subir Documento — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
@@ -29,41 +30,85 @@ $esReemplazo = $docExistente !== null;
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1">
-            <i class="bi bi-upload me-2"></i><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> Documento
-        </h4>
-        <p class="text-muted mb-0"><?= $e($tipo['nombre']) ?></p>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-cloud-upload"></i></span>
+        <div>
+            <h1><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento</h1>
+            <small style="display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;">
+                <span class="ds-badge <?= $bloqueTone ?> no-dot">Bloque <?= $e((string) $tipo['bloque']) ?></span>
+                <strong style="color: var(--ds-text);"><?= $e($tipo['nombre']) ?></strong>
+                <span>&middot;</span>
+                <span><?= $e($ficha['apellidos']) ?> <?= $e($ficha['nombres']) ?></span>
+            </small>
+        </div>
     </div>
-    <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i>Volver al expediente
+    <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+        <i class="bi bi-arrow-left"></i>Volver al expediente
     </a>
 </div>
 
 <?php if (!empty($error)): ?>
-<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?= $e($error) ?></div>
+<div class="ds-card" style="border-left: 4px solid #dc2626; margin-bottom: 1rem;">
+    <div class="ds-card-body" style="display: flex; gap: .75rem; align-items: flex-start;">
+        <span style="color: #dc2626; font-size: 1.25rem; line-height: 1;"><i class="bi bi-exclamation-octagon-fill"></i></span>
+        <div>
+            <div style="font-weight: 700; color: #dc2626; margin-bottom: .15rem;">No se pudo subir el documento</div>
+            <div style="color: var(--ds-text-soft); font-size: .85rem;"><?= $e($error) ?></div>
+        </div>
+    </div>
+</div>
 <?php endif ?>
 
-<!-- Info del tipo de documento -->
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-8">
-                <h6><?= $e($tipo['nombre']) ?></h6>
-                <?php if ($tipo['descripcion']): ?>
-                <p class="text-muted small mb-2"><?= $e($tipo['descripcion']) ?></p>
+<?php if ($esReemplazo): ?>
+<div class="login-info" style="margin-bottom: 1.25rem;">
+    <i class="bi bi-info-circle"></i>
+    <div>
+        <strong>Reemplazo de documento</strong>
+        Ya existe un documento de este tipo (<span class="ds-cell-mono"><?= $e($docExistente['archivo_nombre_original'] ?? 'archivo') ?></span>, estado: <?= $e(EstadoDocumento::from($docExistente['estado'])->label()) ?>). Al subir uno nuevo se reemplazara el anterior.
+    </div>
+</div>
+<?php endif ?>
+
+<!-- Info del tipo -->
+<div class="ds-card">
+    <div class="ds-card-header">
+        <span class="ds-card-mark"><i class="bi bi-file-earmark-text"></i></span>
+        <div>
+            <div class="ds-card-title">Especificaciones del documento</div>
+            <div class="ds-card-subtitle">Lo que el sistema acepta y procesa</div>
+        </div>
+    </div>
+    <div class="ds-card-body">
+        <div class="row g-3">
+            <div class="col-md-7">
+                <?php if (!empty($tipo['descripcion'])): ?>
+                <p style="color: var(--ds-text); font-size: .92rem; line-height: 1.55; margin: 0;"><?= $e($tipo['descripcion']) ?></p>
+                <?php else: ?>
+                <p class="ds-cell-sub" style="margin: 0;">Sin descripcion adicional. Sigue las especificaciones tecnicas del lado derecho.</p>
                 <?php endif ?>
             </div>
-            <div class="col-md-4">
-                <ul class="list-unstyled small mb-0">
-                    <li><i class="bi bi-file-earmark me-1"></i>Formatos: <strong><?= $e($tipo['formatos_permitidos']) ?></strong></li>
-                    <li><i class="bi bi-hdd me-1"></i>Tamaño máx: <strong><?= $tipo['tamano_maximo_mb'] ?> MB</strong></li>
+            <div class="col-md-5">
+                <ul style="list-style: none; padding: 0; margin: 0; font-size: .82rem;">
+                    <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
+                        <i class="bi bi-file-earmark" style="width: 1rem;"></i>
+                        Formatos: <strong style="color: var(--ds-text);"><?= $e($tipo['formatos_permitidos']) ?></strong>
+                    </li>
+                    <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
+                        <i class="bi bi-hdd" style="width: 1rem;"></i>
+                        Tamano max: <strong style="color: var(--ds-text);"><?= $tipo['tamano_maximo_mb'] ?> MB</strong>
+                    </li>
                     <?php if ($tipo['tiene_vencimiento']): ?>
-                    <li><i class="bi bi-calendar-event me-1"></i>Vigencia: <strong><?= $tipo['dias_vigencia'] ?> días</strong></li>
+                    <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
+                        <i class="bi bi-calendar-event" style="width: 1rem;"></i>
+                        Vigencia: <strong style="color: var(--ds-text);"><?= $tipo['dias_vigencia'] ?> dias</strong>
+                    </li>
                     <?php endif ?>
                     <?php if ($tipo['requiere_validacion_externa']): ?>
-                    <li><i class="bi bi-globe me-1"></i><strong class="text-info">Requiere validación externa</strong></li>
+                    <li style="padding: .35rem 0; color: #1d4d8f; display: flex; gap: .45rem;">
+                        <i class="bi bi-globe" style="width: 1rem;"></i>
+                        <strong>Requiere validacion externa</strong>
+                    </li>
                     <?php endif ?>
                 </ul>
             </div>
@@ -71,81 +116,92 @@ $esReemplazo = $docExistente !== null;
     </div>
 </div>
 
-<?php if ($esReemplazo): ?>
-<div class="alert alert-info">
-    <i class="bi bi-info-circle me-2"></i>
-    Ya existe un documento de este tipo (<strong><?= $e($docExistente['archivo_nombre_original'] ?? 'archivo') ?></strong>,
-    estado: <?= $e(EstadoDocumento::from($docExistente['estado'])->label()) ?>).
-    Al subir uno nuevo se reemplazará el anterior.
-</div>
-<?php endif ?>
-
 <form method="post" action="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipoId) ?>" enctype="multipart/form-data">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-paperclip me-2"></i>Archivo</div>
-        <div class="card-body">
+    <div class="ds-card">
+        <div class="ds-card-header tone-success">
+            <span class="ds-card-mark"><i class="bi bi-paperclip"></i></span>
+            <div>
+                <div class="ds-card-title">Archivo</div>
+                <div class="ds-card-subtitle">Selecciona el documento desde tu equipo</div>
+            </div>
+        </div>
+        <div class="ds-card-body">
             <div class="row g-3">
                 <div class="col-md-8">
-                    <label class="form-label">Seleccionar archivo <span class="text-danger">*</span></label>
-                    <input type="file" name="archivo" class="form-control" required
-                           accept="<?= $e(implode(',', array_map(fn($f) => '.' . trim($f), explode(',', $tipo['formatos_permitidos'])))) ?>">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Seleccionar archivo <span class="ds-required">*</span></label>
+                        <input type="file" name="archivo" class="form-control" required
+                               accept="<?= $e(implode(',', array_map(fn($f) => '.' . trim($f), explode(',', $tipo['formatos_permitidos'])))) ?>">
+                        <span class="ds-form-help">Solo se aceptan los formatos indicados arriba.</span>
+                    </div>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Fecha emisión del documento</label>
-                    <input type="date" name="fecha_emision_documento" class="form-control"
-                           value="<?= $e($docExistente['fecha_emision_documento'] ?? '') ?>">
-                    <?php if ($tipo['tiene_vencimiento']): ?>
-                    <div class="form-text">El vencimiento se calcula automáticamente (+<?= $tipo['dias_vigencia'] ?> días)</div>
-                    <?php endif ?>
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Fecha emision del documento</label>
+                        <input type="date" name="fecha_emision_documento" class="form-control"
+                               value="<?= $e($docExistente['fecha_emision_documento'] ?? '') ?>">
+                        <?php if ($tipo['tiene_vencimiento']): ?>
+                        <span class="ds-form-help">El vencimiento se calcula automaticamente (+<?= $tipo['dias_vigencia'] ?> dias).</span>
+                        <?php endif ?>
+                    </div>
                 </div>
 
                 <?php if ($tipo['tiene_vencimiento']): ?>
                 <div class="col-md-4">
-                    <label class="form-label">Fecha vencimiento (manual)</label>
-                    <input type="date" name="fecha_vencimiento" class="form-control"
-                           value="<?= $e($docExistente['fecha_vencimiento'] ?? '') ?>">
-                    <div class="form-text">Sobreescribe el cálculo automático</div>
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Fecha vencimiento (manual)</label>
+                        <input type="date" name="fecha_vencimiento" class="form-control"
+                               value="<?= $e($docExistente['fecha_vencimiento'] ?? '') ?>">
+                        <span class="ds-form-help">Sobreescribe el calculo automatico.</span>
+                    </div>
                 </div>
                 <?php endif ?>
 
                 <div class="col-md-4">
-                    <label class="form-label">Fecha objetivo actualización</label>
-                    <input type="date" name="fecha_objetivo_actualizacion" class="form-control"
-                           value="<?= $e($docExistente['fecha_objetivo_actualizacion'] ?? '') ?>">
-                    <div class="form-text">Recordatorio de renovación</div>
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Fecha objetivo actualizacion</label>
+                        <input type="date" name="fecha_objetivo_actualizacion" class="form-control"
+                               value="<?= $e($docExistente['fecha_objetivo_actualizacion'] ?? '') ?>">
+                        <span class="ds-form-help">Recordatorio para renovar antes del vencimiento.</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <?php if ($tipo['requiere_validacion_externa']): ?>
-    <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-globe me-2"></i>Validación Externa</div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label">URL del sitio donde se verificó</label>
-                    <input type="url" name="validacion_url" class="form-control"
-                           placeholder="https://..."
-                           value="<?= $e($docExistente['validacion_url'] ?? '') ?>">
-                </div>
-                <div class="col-12">
-                    <p class="text-muted small">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Los screenshots de verificación se suben desde el detalle del documento una vez cargado.
-                    </p>
+    <div class="ds-card">
+        <div class="ds-card-header tone-purple">
+            <span class="ds-card-mark"><i class="bi bi-globe"></i></span>
+            <div>
+                <div class="ds-card-title">Validacion externa</div>
+                <div class="ds-card-subtitle">Verificacion del documento en sitio web oficial</div>
+            </div>
+        </div>
+        <div class="ds-card-body">
+            <div class="ds-form-field" style="margin-bottom: 1rem;">
+                <label class="ds-form-label">URL del sitio donde se verifico</label>
+                <input type="url" name="validacion_url" class="form-control"
+                       placeholder="https://..."
+                       value="<?= $e($docExistente['validacion_url'] ?? '') ?>">
+            </div>
+            <div class="login-info" style="margin: 0;">
+                <i class="bi bi-info-circle"></i>
+                <div>
+                    <strong>Capturas de verificacion</strong>
+                    Las capturas de pantalla del proceso de verificacion se suben desde el detalle del documento una vez cargado.
                 </div>
             </div>
         </div>
     </div>
     <?php endif ?>
 
-    <div class="d-flex justify-content-end gap-2 mb-5">
-        <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="btn btn-outline-secondary">Cancelar</a>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-upload me-1"></i><?= $esReemplazo ? 'Reemplazar Documento' : 'Subir Documento' ?>
+    <div class="ds-form-actions">
+        <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="ds-btn ds-btn-outline">Cancelar</a>
+        <button type="submit" class="ds-btn ds-btn-primary">
+            <i class="bi bi-cloud-upload"></i><?= $esReemplazo ? 'Reemplazar documento' : 'Subir documento' ?>
         </button>
     </div>
 </form>

@@ -10,6 +10,7 @@ use DigiSecure\Expediente\Application\SubirDocumentoService;
 use DigiSecure\Expediente\Domain\Enum\EstadoExpediente;
 use DigiSecure\Expediente\Infrastructure\ExpedienteRepository;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
+use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -38,6 +39,7 @@ final class ExpedienteController
         private readonly SubirDocumentoService $subirService,
         private readonly RevisarDocumentoService $revisarService,
         private readonly DescargarDocumentoService $descargarService,
+        private readonly FlashBag $flash,
     ) {
     }
 
@@ -252,6 +254,7 @@ final class ExpedienteController
             $this->subirService->execute($id, $tipoId, $input, $file, $user->id, $request->clientIp());
 
             $expediente = $this->expRepo->findExpedienteById($id);
+            $this->flash->success('Documento subido correctamente.');
             return Response::redirect("/guardias/{$expediente['ficha_id']}/expediente");
         } catch (DomainException $e) {
             $expediente = $this->expRepo->findExpedienteById($id);
@@ -311,6 +314,10 @@ final class ExpedienteController
 
             $doc = $this->expRepo->findDocumentoById($docId);
             $expediente = $this->expRepo->findExpedienteById($doc['expediente_id']);
+            $msg = $accion === 'aceptar'
+                ? 'Documento aceptado.'
+                : ($accion === 'rechazar' ? 'Documento rechazado.' : 'Revision registrada.');
+            $this->flash->success($msg);
             return Response::redirect("/guardias/{$expediente['ficha_id']}/expediente");
         } catch (DomainException $e) {
             $doc = $this->expRepo->findDocumentoById($docId);

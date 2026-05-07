@@ -35,6 +35,56 @@ final class MenuBuilder
             [
                 'type' => 'item',
                 'item' => new MenuItem(
+                    label: 'Clientes',
+                    icon: 'bi-briefcase',
+                    permisos: ['clientes.ver'],
+                    description: 'Empresas a las que prestas servicios',
+                    children: [
+                        new MenuItem(
+                            label: 'Listado de clientes',
+                            icon: 'bi-list-ul',
+                            url: '/clientes',
+                            permisos: ['clientes.ver'],
+                            description: 'Filtros, estados y contactos',
+                        ),
+                        new MenuItem(
+                            label: 'Nuevo cliente',
+                            icon: 'bi-plus-circle',
+                            url: '/clientes/crear',
+                            permisos: ['clientes.crear'],
+                            description: 'Registrar nueva empresa',
+                        ),
+                    ],
+                ),
+            ],
+            [
+                'type' => 'item',
+                'item' => new MenuItem(
+                    label: 'Puestos / Sitios',
+                    icon: 'bi-geo-alt',
+                    permisos: ['puestos.ver'],
+                    description: 'Ubicaciones donde se presta servicio',
+                    children: [
+                        new MenuItem(
+                            label: 'Listado de puestos',
+                            icon: 'bi-list-ul',
+                            url: '/puestos',
+                            permisos: ['puestos.ver'],
+                            description: 'Sitios con plazas y modalidad',
+                        ),
+                        new MenuItem(
+                            label: 'Nuevo puesto',
+                            icon: 'bi-plus-circle',
+                            url: '/puestos/crear',
+                            permisos: ['puestos.crear'],
+                            description: 'Registrar sitio asociado a un cliente',
+                        ),
+                    ],
+                ),
+            ],
+            [
+                'type' => 'item',
+                'item' => new MenuItem(
                     label: 'Guardias',
                     icon: 'bi-person-badge',
                     permisos: ['guardias.ver'],
@@ -53,6 +103,31 @@ final class MenuBuilder
                             url: '/guardias/crear',
                             permisos: ['guardias.crear'],
                             description: 'Registrar un nuevo guardia',
+                        ),
+                    ],
+                ),
+            ],
+            [
+                'type' => 'item',
+                'item' => new MenuItem(
+                    label: 'Asignaciones',
+                    icon: 'bi-link-45deg',
+                    permisos: ['asignaciones.ver'],
+                    description: 'Guardias asignados a puestos',
+                    children: [
+                        new MenuItem(
+                            label: 'Listado',
+                            icon: 'bi-list-ul',
+                            url: '/asignaciones',
+                            permisos: ['asignaciones.ver'],
+                            description: 'Cobertura, periodos y estado',
+                        ),
+                        new MenuItem(
+                            label: 'Nueva asignacion',
+                            icon: 'bi-plus-circle',
+                            url: '/asignaciones/crear',
+                            permisos: ['asignaciones.crear'],
+                            description: 'Vincular guardia a puesto',
                         ),
                     ],
                 ),

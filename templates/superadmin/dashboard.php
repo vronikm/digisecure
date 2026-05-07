@@ -27,113 +27,96 @@ $usuariosActivos = $stats['usuarios_activos'] ?? 0;
 $totalFichas = $stats['total_fichas'] ?? 0;
 $totalRegistros = $stats['total_registros'] ?? 0;
 
-$eventoBadge = [
-    'creado'    => 'bg-primary',
-    'activado'  => 'bg-success',
-    'expirado'  => 'bg-warning text-dark',
-    'reenviado' => 'bg-info text-dark',
-    'fallo'     => 'bg-danger',
+$eventoTone = [
+    'creado'    => 'tone-info',
+    'activado'  => 'tone-success',
+    'expirado'  => 'tone-warning',
+    'reenviado' => 'tone-info',
+    'fallo'     => 'tone-danger',
 ];
 ?>
 
 <?php $view->section('title') ?>Panel Superadmin | DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="mb-4">
-    <h4 class="fw-bold mb-1"><i class="bi bi-grid-1x2-fill me-2 text-primary"></i>Panel del Operador</h4>
-    <p class="text-muted mb-0">Vista global de la plataforma DigiSecure.</p>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-grid-1x2-fill"></i></span>
+        <div>
+            <h1>Panel del operador</h1>
+            <small>Vista global de la plataforma DigiSecure</small>
+        </div>
+    </div>
 </div>
 
 <!-- KPI Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px;height:42px;background:rgba(47,128,237,.12)">
-                        <i class="bi bi-buildings-fill text-primary fs-5"></i>
-                    </div>
-                    <div class="ms-auto text-end">
-                        <div class="fs-3 fw-bold"><?= $totalTenants ?></div>
-                        <small class="text-muted">Empresas</small>
-                    </div>
-                </div>
-                <div class="d-flex gap-2 small">
-                    <span class="badge bg-success-subtle text-success"><?= $activos ?> activas</span>
-                    <span class="badge bg-warning-subtle text-warning"><?= $pendientes ?> pendientes</span>
-                    <?php if ($suspendidos > 0): ?>
-                        <span class="badge bg-danger-subtle text-danger"><?= $suspendidos ?> susp.</span>
-                    <?php endif; ?>
-                </div>
+<div class="ds-kpi-grid">
+    <div class="ds-kpi-card">
+        <span class="ds-kpi-icon"><i class="bi bi-buildings-fill"></i></span>
+        <div style="flex: 1;">
+            <div class="ds-kpi-label">Empresas</div>
+            <div class="ds-kpi-value"><?= $totalTenants ?></div>
+            <div style="display: flex; gap: .25rem; flex-wrap: wrap; margin-top: .35rem;">
+                <span class="ds-badge tone-success no-dot" style="font-size: .65rem;"><?= $activos ?> activas</span>
+                <?php if ($pendientes > 0): ?>
+                    <span class="ds-badge tone-warning no-dot" style="font-size: .65rem;"><?= $pendientes ?> pendientes</span>
+                <?php endif ?>
+                <?php if ($suspendidos > 0): ?>
+                    <span class="ds-badge tone-danger no-dot" style="font-size: .65rem;"><?= $suspendidos ?> susp.</span>
+                <?php endif ?>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px;height:42px;background:rgba(14,165,164,.12)">
-                        <i class="bi bi-people-fill fs-5" style="color:#0ea5a4"></i>
-                    </div>
-                    <div class="ms-auto text-end">
-                        <div class="fs-3 fw-bold"><?= $totalUsuarios ?></div>
-                        <small class="text-muted">Usuarios</small>
-                    </div>
-                </div>
-                <span class="badge bg-success-subtle text-success small"><?= $usuariosActivos ?> activos</span>
-            </div>
+    <div class="ds-kpi-card tone-success">
+        <span class="ds-kpi-icon"><i class="bi bi-people-fill"></i></span>
+        <div>
+            <div class="ds-kpi-label">Usuarios</div>
+            <div class="ds-kpi-value"><?= $totalUsuarios ?></div>
+            <div class="ds-cell-sub" style="margin-top: .25rem;"><?= $usuariosActivos ?> activos</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px;height:42px;background:rgba(39,174,96,.12)">
-                        <i class="bi bi-person-badge-fill text-success fs-5"></i>
-                    </div>
-                    <div class="ms-auto text-end">
-                        <div class="fs-3 fw-bold"><?= $totalFichas ?></div>
-                        <small class="text-muted">Fichas de guardias</small>
-                    </div>
-                </div>
-            </div>
+    <div class="ds-kpi-card tone-purple">
+        <span class="ds-kpi-icon"><i class="bi bi-person-badge-fill"></i></span>
+        <div>
+            <div class="ds-kpi-label">Fichas de guardias</div>
+            <div class="ds-kpi-value"><?= $totalFichas ?></div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px;height:42px;background:rgba(242,153,74,.12)">
-                        <i class="bi bi-rocket-takeoff-fill fs-5" style="color:#f2994a"></i>
-                    </div>
-                    <div class="ms-auto text-end">
-                        <div class="fs-3 fw-bold"><?= $totalRegistros ?></div>
-                        <small class="text-muted">Registros públicos</small>
-                    </div>
-                </div>
-            </div>
+    <div class="ds-kpi-card tone-warning">
+        <span class="ds-kpi-icon"><i class="bi bi-rocket-takeoff-fill"></i></span>
+        <div>
+            <div class="ds-kpi-label">Registros publicos</div>
+            <div class="ds-kpi-value"><?= $totalRegistros ?></div>
         </div>
     </div>
 </div>
 
 <!-- Charts row -->
-<div class="row g-3 mb-4">
+<div class="row g-4" style="margin-bottom: 0;">
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-transparent border-0 pb-0">
-                <h6 class="fw-semibold mb-0"><i class="bi bi-pie-chart-fill text-primary me-1"></i>Empresas por plan</h6>
+        <div class="ds-card" style="margin-bottom: 1.25rem;">
+            <div class="ds-card-header">
+                <span class="ds-card-mark"><i class="bi bi-pie-chart-fill"></i></span>
+                <div>
+                    <div class="ds-card-title">Empresas por plan</div>
+                    <div class="ds-card-subtitle">Distribucion del catalogo</div>
+                </div>
             </div>
-            <div class="card-body d-flex align-items-center justify-content-center" style="min-height:260px">
+            <div class="ds-card-body" style="display: flex; align-items: center; justify-content: center; min-height: 280px;">
                 <canvas id="chartPlan" width="260" height="260"></canvas>
             </div>
         </div>
     </div>
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-transparent border-0 pb-0">
-                <h6 class="fw-semibold mb-0"><i class="bi bi-graph-up-arrow text-success me-1"></i>Registros últimos 30 días</h6>
+        <div class="ds-card" style="margin-bottom: 1.25rem;">
+            <div class="ds-card-header tone-success">
+                <span class="ds-card-mark"><i class="bi bi-graph-up-arrow"></i></span>
+                <div>
+                    <div class="ds-card-title">Registros ultimos 30 dias</div>
+                    <div class="ds-card-subtitle">Intentos de auto-registro por dia</div>
+                </div>
             </div>
-            <div class="card-body" style="min-height:260px">
+            <div class="ds-card-body" style="min-height: 280px;">
                 <canvas id="chartRegistros"></canvas>
             </div>
         </div>
@@ -141,66 +124,94 @@ $eventoBadge = [
 </div>
 
 <!-- Registros recientes -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-transparent border-0 d-flex align-items-center justify-content-between">
-        <h6 class="fw-semibold mb-0"><i class="bi bi-clock-history text-info me-1"></i>Registros recientes</h6>
-        <a href="<?= $view->url('/admin/registros') ?>" class="btn btn-sm btn-outline-primary">Ver todos</a>
-    </div>
-    <div class="card-body p-0">
-        <?php if ($registrosRecientes === []): ?>
-            <div class="text-center text-muted py-4">
-                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
-                Aún no hay registros de empresa.
+<div class="ds-card">
+    <div class="ds-card-header">
+        <span class="ds-card-mark"><i class="bi bi-clock-history"></i></span>
+        <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <div>
+                <div class="ds-card-title">Registros recientes</div>
+                <div class="ds-card-subtitle">Ultimos intentos desde el portal publico</div>
             </div>
-        <?php else: ?>
-            <div class="table-responsive">
-                <table class="table table-hover table-sm mb-0 align-middle">
-                    <thead class="table-light">
-                        <tr><th>Fecha</th><th>Empresa</th><th>RUC</th><th>Email</th><th>Evento</th></tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($registrosRecientes as $r): ?>
-                            <tr>
-                                <td class="text-muted small"><?= $e(substr((string) $r['created_at'], 0, 16)) ?></td>
-                                <td class="fw-semibold"><?= $e((string) $r['razon_social']) ?></td>
-                                <td class="font-monospace small"><?= $e((string) $r['ruc']) ?></td>
-                                <td class="small"><?= $e((string) $r['email_admin']) ?></td>
-                                <td><span class="badge <?= $eventoBadge[(string) $r['evento']] ?? 'bg-secondary' ?>"><?= $e((string) $r['evento']) ?></span></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
+            <a href="<?= $view->url('/admin/registros') ?>" class="ds-btn ds-btn-outline ds-btn-sm">
+                Ver todos<i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
     </div>
+    <?php if ($registrosRecientes === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state" style="padding: 1.75rem 1rem;">
+            <div class="ds-empty-icon"><i class="bi bi-inbox"></i></div>
+            <p>Aun no hay registros de empresa.</p>
+        </div>
+    </div>
+    <?php else: ?>
+    <div class="table-responsive">
+        <table class="ds-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Empresa</th>
+                    <th>RUC</th>
+                    <th>Email</th>
+                    <th>Evento</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($registrosRecientes as $r):
+                    $tone = $eventoTone[(string) $r['evento']] ?? 'tone-muted';
+                ?>
+                <tr>
+                    <td><span class="ds-cell-mono"><?= $e(substr((string) $r['created_at'], 0, 16)) ?></span></td>
+                    <td><div class="ds-cell-name"><?= $e((string) $r['razon_social']) ?></div></td>
+                    <td><span class="ds-cell-mono"><?= $e((string) $r['ruc']) ?></span></td>
+                    <td><span class="ds-cell-mono"><?= $e((string) $r['email_admin']) ?></span></td>
+                    <td><span class="ds-badge <?= $tone ?>"><?= $e((string) $r['evento']) ?></span></td>
+                </tr>
+                <?php endforeach ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif ?>
 </div>
 
 <!-- Quick links -->
-<div class="row g-3 mb-4">
+<div class="row g-4" style="margin-top: .25rem;">
     <div class="col-md-4">
-        <a href="<?= $view->url('/admin/tenants') ?>" class="card border-0 shadow-sm text-decoration-none h-100">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-buildings fs-2 text-primary d-block mb-2"></i>
-                <div class="fw-semibold">Gestionar empresas</div>
-                <small class="text-muted">Listado, filtros y acciones</small>
+        <a href="<?= $view->url('/admin/tenants') ?>" class="ds-card" style="text-decoration: none; display: block; height: 100%; transition: transform .15s, box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 30px rgba(9,29,53,.12)';"
+           onmouseout="this.style.transform='';this.style.boxShadow='';">
+            <div class="ds-card-body" style="text-align: center; padding: 1.75rem 1.25rem;">
+                <span style="width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: rgba(47,128,237,.12); color: #2f80ed; font-size: 1.6rem; margin-bottom: .75rem;">
+                    <i class="bi bi-buildings"></i>
+                </span>
+                <div style="font-weight: 700; color: var(--ds-text); font-size: 1rem;">Gestionar empresas</div>
+                <div class="ds-cell-sub" style="margin-top: .25rem;">Listado, filtros y acciones</div>
             </div>
         </a>
     </div>
     <div class="col-md-4">
-        <a href="<?= $view->url('/admin/registros') ?>" class="card border-0 shadow-sm text-decoration-none h-100">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-journal-text fs-2 text-info d-block mb-2"></i>
-                <div class="fw-semibold">Log de registros</div>
-                <small class="text-muted">Intentos de auto-registro</small>
+        <a href="<?= $view->url('/admin/registros') ?>" class="ds-card" style="text-decoration: none; display: block; height: 100%; transition: transform .15s, box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 30px rgba(9,29,53,.12)';"
+           onmouseout="this.style.transform='';this.style.boxShadow='';">
+            <div class="ds-card-body" style="text-align: center; padding: 1.75rem 1.25rem;">
+                <span style="width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: rgba(37,99,235,.12); color: #2563eb; font-size: 1.6rem; margin-bottom: .75rem;">
+                    <i class="bi bi-journal-text"></i>
+                </span>
+                <div style="font-weight: 700; color: var(--ds-text); font-size: 1rem;">Log de registros</div>
+                <div class="ds-cell-sub" style="margin-top: .25rem;">Intentos de auto-registro</div>
             </div>
         </a>
     </div>
     <div class="col-md-4">
-        <a href="<?= $view->url('/auditoria') ?>" class="card border-0 shadow-sm text-decoration-none h-100">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-shield-exclamation fs-2 text-warning d-block mb-2"></i>
-                <div class="fw-semibold">Auditoría global</div>
-                <small class="text-muted">Eventos del sistema</small>
+        <a href="<?= $view->url('/auditoria') ?>" class="ds-card" style="text-decoration: none; display: block; height: 100%; transition: transform .15s, box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 30px rgba(9,29,53,.12)';"
+           onmouseout="this.style.transform='';this.style.boxShadow='';">
+            <div class="ds-card-body" style="text-align: center; padding: 1.75rem 1.25rem;">
+                <span style="width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: rgba(217,119,6,.14); color: #d97706; font-size: 1.6rem; margin-bottom: .75rem;">
+                    <i class="bi bi-shield-exclamation"></i>
+                </span>
+                <div style="font-weight: 700; color: var(--ds-text); font-size: 1rem;">Auditoria global</div>
+                <div class="ds-cell-sub" style="margin-top: .25rem;">Eventos del sistema</div>
             </div>
         </a>
     </div>
@@ -208,35 +219,33 @@ $eventoBadge = [
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
-(function(){
-    const colors = ['#2f80ed','#0ea5a4','#27ae60','#f2994a','#e74c3c','#9b59b6','#7f8c8d'];
+(function () {
+    const colors = ['#2f80ed', '#0ea5a4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
 
-    // Doughnut: tenants por plan
     const planLabels = <?= json_encode(array_map(fn($r) => $r['plan_codigo'], $tenantsPorPlan)) ?>;
-    const planData = <?= json_encode(array_map(fn($r) => (int)$r['cantidad'], $tenantsPorPlan)) ?>;
+    const planData = <?= json_encode(array_map(fn($r) => (int) $r['cantidad'], $tenantsPorPlan)) ?>;
     new Chart(document.getElementById('chartPlan'), {
         type: 'doughnut',
         data: {
             labels: planLabels,
-            datasets: [{ data: planData, backgroundColor: colors.slice(0, planLabels.length), borderWidth: 2, hoverOffset: 6 }]
+            datasets: [{ data: planData, backgroundColor: colors.slice(0, planLabels.length), borderWidth: 2, hoverOffset: 6 }],
         },
-        options: { responsive: true, maintainAspectRatio: true, cutout: '58%', plugins: { legend: { position:'bottom', labels:{padding:14} } } }
+        options: { responsive: true, maintainAspectRatio: true, cutout: '58%', plugins: { legend: { position: 'bottom', labels: { padding: 14 } } } },
     });
 
-    // Bar: registros por día
     const regLabels = <?= json_encode(array_map(fn($r) => $r['dia'], $registrosPorDia)) ?>;
-    const regData = <?= json_encode(array_map(fn($r) => (int)$r['cantidad'], $registrosPorDia)) ?>;
+    const regData = <?= json_encode(array_map(fn($r) => (int) $r['cantidad'], $registrosPorDia)) ?>;
     new Chart(document.getElementById('chartRegistros'), {
         type: 'bar',
         data: {
-            labels: regLabels.map(d => { const p = d.split('-'); return p[2]+'/'+p[1]; }),
-            datasets: [{ label:'Registros', data: regData, backgroundColor:'rgba(47,128,237,.6)', borderRadius:4, barPercentage:.7 }]
+            labels: regLabels.map(d => { const p = d.split('-'); return p[2] + '/' + p[1]; }),
+            datasets: [{ label: 'Registros', data: regData, backgroundColor: 'rgba(47,128,237,.6)', borderRadius: 6, barPercentage: .7 }],
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend:{ display:false } },
-            scales: { y:{ beginAtZero:true, ticks:{ stepSize:1, precision:0 } }, x:{ grid:{ display:false } } }
-        }
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }, x: { grid: { display: false } } },
+        },
     });
 })();
 </script>

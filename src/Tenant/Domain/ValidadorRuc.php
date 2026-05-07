@@ -51,6 +51,41 @@ final class ValidadorRuc
         return self::tipo($ruc) !== null;
     }
 
+    /**
+     * Valida una cedula ecuatoriana (10 digitos) con el algoritmo Modulo 10
+     * del Registro Civil. Aplica los mismos pasos que la persona natural
+     * pero sin requerir el sufijo "001" del establecimiento.
+     */
+    public static function esCedulaValida(string $cedula): bool
+    {
+        if (!preg_match('/^\d{10}$/', $cedula)) {
+            return false;
+        }
+
+        $provincia = (int) substr($cedula, 0, 2);
+        if (($provincia < 1 || $provincia > 24) && $provincia !== 30) {
+            return false;
+        }
+
+        $tercer = (int) $cedula[2];
+        if ($tercer >= 6) {
+            return false;
+        }
+
+        $coef = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+        $suma = 0;
+        for ($i = 0; $i < 9; $i++) {
+            $producto = (int) $cedula[$i] * $coef[$i];
+            if ($producto >= 10) {
+                $producto -= 9;
+            }
+            $suma += $producto;
+        }
+
+        $verificador = (10 - ($suma % 10)) % 10;
+        return $verificador === (int) $cedula[9];
+    }
+
     private static function formatoValido(string $ruc): bool
     {
         if (!preg_match('/^\d{13}$/', $ruc)) {

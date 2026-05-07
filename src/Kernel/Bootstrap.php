@@ -48,6 +48,9 @@ use DigiSecure\User\Controller\PasswordResetController;
 use DigiSecure\Subscription\Controller\SuscripcionController;
 use DigiSecure\Tenant\Controller\RegistroController;
 use DigiSecure\Superadmin\Controller\SuperadminController;
+use DigiSecure\Cliente\Controller\ClienteController;
+use DigiSecure\Puesto\Controller\PuestoController;
+use DigiSecure\Asignacion\Controller\AsignacionController;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -799,6 +802,33 @@ final class Bootstrap
         $router->post('/lopdp/solicitudes/{id}/responder', [LopdpController::class, 'responderSolicitud'], name: 'lopdp.solicitudes.responder', permission: 'lopdp.gestionar');
         $router->get('/lopdp/consentimientos', [LopdpController::class, 'listarConsentimientos'], name: 'lopdp.consentimientos.index', permission: 'lopdp.gestionar');
 
+        // Clientes (Fase 16)
+        $router->get('/clientes', [ClienteController::class, 'index'], name: 'clientes.index', permission: 'clientes.ver');
+        $router->get('/clientes/crear', [ClienteController::class, 'create'], name: 'clientes.create', permission: 'clientes.crear');
+        $router->post('/clientes/crear', [ClienteController::class, 'store'], name: 'clientes.store', permission: 'clientes.crear');
+        $router->get('/clientes/{id}', [ClienteController::class, 'show'], name: 'clientes.show', permission: 'clientes.ver');
+        $router->get('/clientes/{id}/editar', [ClienteController::class, 'edit'], name: 'clientes.edit', permission: 'clientes.editar');
+        $router->post('/clientes/{id}/editar', [ClienteController::class, 'update'], name: 'clientes.update', permission: 'clientes.editar');
+        $router->post('/clientes/{id}/estado', [ClienteController::class, 'cambiarEstado'], name: 'clientes.estado', permission: 'clientes.archivar');
+
+        // Puestos / Sitios (Fase 17)
+        $router->get('/puestos', [PuestoController::class, 'index'], name: 'puestos.index', permission: 'puestos.ver');
+        $router->get('/puestos/crear', [PuestoController::class, 'create'], name: 'puestos.create', permission: 'puestos.crear');
+        $router->post('/puestos/crear', [PuestoController::class, 'store'], name: 'puestos.store', permission: 'puestos.crear');
+        $router->get('/puestos/{id}', [PuestoController::class, 'show'], name: 'puestos.show', permission: 'puestos.ver');
+        $router->get('/puestos/{id}/editar', [PuestoController::class, 'edit'], name: 'puestos.edit', permission: 'puestos.editar');
+        $router->post('/puestos/{id}/editar', [PuestoController::class, 'update'], name: 'puestos.update', permission: 'puestos.editar');
+        $router->post('/puestos/{id}/estado', [PuestoController::class, 'cambiarEstado'], name: 'puestos.estado', permission: 'puestos.archivar');
+
+        // Asignaciones guardia <-> puesto (Fase 18)
+        $router->get('/asignaciones', [AsignacionController::class, 'index'], name: 'asignaciones.index', permission: 'asignaciones.ver');
+        $router->get('/asignaciones/crear', [AsignacionController::class, 'create'], name: 'asignaciones.create', permission: 'asignaciones.crear');
+        $router->post('/asignaciones/crear', [AsignacionController::class, 'store'], name: 'asignaciones.store', permission: 'asignaciones.crear');
+        $router->get('/asignaciones/{id}', [AsignacionController::class, 'show'], name: 'asignaciones.show', permission: 'asignaciones.ver');
+        $router->get('/asignaciones/{id}/editar', [AsignacionController::class, 'edit'], name: 'asignaciones.edit', permission: 'asignaciones.editar');
+        $router->post('/asignaciones/{id}/editar', [AsignacionController::class, 'update'], name: 'asignaciones.update', permission: 'asignaciones.editar');
+        $router->post('/asignaciones/{id}/cerrar', [AsignacionController::class, 'cerrar'], name: 'asignaciones.cerrar', permission: 'asignaciones.finalizar');
+
         // Panel Superadmin (Fase 13)
         $router->get('/admin', [SuperadminController::class, 'dashboard'], name: 'admin.dashboard', permission: 'superadmin.panel');
         $router->get('/admin/tenants', [SuperadminController::class, 'tenants'], name: 'admin.tenants', permission: 'superadmin.tenants.ver');
@@ -820,7 +850,7 @@ final class Bootstrap
         ) => \DigiSecure\Kernel\Http\Response::json([
             'status' => 'ok',
             'service' => 'DigiSecure',
-            'phase' => '15.0',
+            'phase' => '18.0',
             'timestamp' => date('c'),
             'php' => PHP_VERSION,
             'session_active' => $session->isStarted(),

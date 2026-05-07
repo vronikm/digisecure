@@ -1,6 +1,6 @@
 <?php
 /**
- * Detalle de un documento del expediente + formulario de revisión.
+ * Detalle de un documento del expediente + formulario de revision.
  *
  * Variables: $user, $csrfToken, $currentPath, $doc, $expediente, $ficha
  * Opcionales: $error (string)
@@ -16,6 +16,19 @@ $e = ViewRenderer::e(...);
 $fichaId = $ficha['id'];
 $docEstado = EstadoDocumento::from($doc['estado']);
 $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocumento::RECHAZADO, EstadoDocumento::VENCIDO]);
+
+$docTone = match ($docEstado) {
+    EstadoDocumento::PENDIENTE   => 'tone-muted',
+    EstadoDocumento::EN_REVISION => 'tone-warning',
+    EstadoDocumento::ACEPTADO    => 'tone-success',
+    EstadoDocumento::RECHAZADO   => 'tone-danger',
+    EstadoDocumento::VENCIDO     => 'tone-danger',
+};
+
+$bloqueTone = $doc['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
+
+$ds_dt = 'font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ds-text-soft); margin-bottom: .15rem;';
+$ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
 ?>
 
 <?php $view->section('title') ?>Documento — <?= $e($doc['tipo_nombre']) ?><?php $view->endSection() ?>
@@ -30,33 +43,40 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
 <?php $view->section('content') ?>
 
 <?php if (!empty($error)): ?>
-<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?= $e($error) ?></div>
-<?php endif ?>
-
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        <h4 class="mb-1">
-            <i class="bi bi-file-earmark-text me-2"></i><?= $e($doc['tipo_nombre']) ?>
-        </h4>
-        <div class="d-flex gap-2 align-items-center">
-            <code><?= $e($doc['tipo_codigo']) ?></code>
-            <span class="badge <?= $docEstado->badgeClass() ?>">
-                <i class="bi <?= $docEstado->iconClass() ?> me-1"></i><?= $e($docEstado->label()) ?>
-            </span>
-            <span class="badge bg-light text-dark border"><?= $e($doc['bloque'] === 'A' ? 'Bloque A' : 'Bloque B') ?></span>
+<div class="ds-card" style="border-left: 4px solid #dc2626; margin-bottom: 1rem;">
+    <div class="ds-card-body" style="display: flex; gap: .75rem; align-items: flex-start;">
+        <span style="color: #dc2626; font-size: 1.25rem; line-height: 1;"><i class="bi bi-exclamation-octagon-fill"></i></span>
+        <div>
+            <div style="font-weight: 700; color: #dc2626; margin-bottom: .15rem;">Error en la operacion</div>
+            <div style="color: var(--ds-text-soft); font-size: .85rem;"><?= $e($error) ?></div>
         </div>
     </div>
-    <div class="d-flex gap-2">
-        <?php if (!empty($doc['archivo_nombre_storage'])): ?>
-        <?php $inline = in_array($doc['archivo_mime'] ?? '', ['application/pdf','image/jpeg','image/png','image/webp'], true); ?>
+</div>
+<?php endif ?>
+
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-file-earmark-text"></i></span>
+        <div>
+            <h1><?= $e($doc['tipo_nombre']) ?></h1>
+            <small style="display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;">
+                <span class="ds-cell-mono"><?= $e($doc['tipo_codigo']) ?></span>
+                <span class="ds-badge <?= $docTone ?>"><i class="bi <?= $docEstado->iconClass() ?>"></i><?= $e($docEstado->label()) ?></span>
+                <span class="ds-badge <?= $bloqueTone ?> no-dot">Bloque <?= $e((string) $doc['bloque']) ?></span>
+            </small>
+        </div>
+    </div>
+    <div style="display: flex; gap: .5rem;">
+        <?php if (!empty($doc['archivo_nombre_storage'])):
+            $inline = in_array($doc['archivo_mime'] ?? '', ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'], true);
+        ?>
         <a href="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/descargar') ?>"
-           class="btn btn-primary btn-sm" <?= $inline ? 'target="_blank" rel="noopener"' : '' ?>>
-            <i class="bi <?= $inline ? 'bi-eye' : 'bi-download' ?> me-1"></i>
-            <?= $inline ? 'Ver archivo' : 'Descargar' ?>
+           class="ds-btn ds-btn-primary ds-btn-sm" <?= $inline ? 'target="_blank" rel="noopener"' : '' ?>>
+            <i class="bi <?= $inline ? 'bi-eye' : 'bi-download' ?>"></i><?= $inline ? 'Ver archivo' : 'Descargar' ?>
         </a>
         <?php endif ?>
-        <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver al expediente
+        <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+            <i class="bi bi-arrow-left"></i>Volver al expediente
         </a>
     </div>
 </div>
@@ -64,28 +84,46 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
 <div class="row g-4">
     <!-- Info del archivo -->
     <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header"><i class="bi bi-paperclip me-2"></i>Archivo</div>
-            <div class="card-body">
-                <table class="table table-sm table-borderless mb-0">
-                    <tr><th class="text-muted" style="width:40%">Nombre original</th><td><?= $e($doc['archivo_nombre_original'] ?? '—') ?></td></tr>
-                    <tr><th class="text-muted">Tipo MIME</th><td><code><?= $e($doc['archivo_mime'] ?? '—') ?></code></td></tr>
-                    <tr>
-                        <th class="text-muted">Tamaño</th>
-                        <td>
-                            <?php if ($doc['archivo_tamano_bytes']): ?>
-                            <?= number_format($doc['archivo_tamano_bytes'] / 1024, 1) ?> KB
+        <div class="ds-card" style="margin-bottom: 0; height: 100%;">
+            <div class="ds-card-header">
+                <span class="ds-card-mark"><i class="bi bi-paperclip"></i></span>
+                <div>
+                    <div class="ds-card-title">Archivo</div>
+                    <div class="ds-card-subtitle">Metadatos del documento subido</div>
+                </div>
+            </div>
+            <div class="ds-card-body">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <div style="<?= $ds_dt ?>">Nombre original</div>
+                        <div style="<?= $ds_dd ?>"><?= $e($doc['archivo_nombre_original'] ?? '—') ?></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="<?= $ds_dt ?>">Tipo MIME</div>
+                        <div class="ds-cell-mono"><?= $e($doc['archivo_mime'] ?? '—') ?></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="<?= $ds_dt ?>">Tamano</div>
+                        <div class="ds-cell-mono">
+                            <?php if (!empty($doc['archivo_tamano_bytes'])): ?>
+                                <?= number_format($doc['archivo_tamano_bytes'] / 1024, 1) ?> KB
                             <?php else: ?>—<?php endif ?>
-                        </td>
-                    </tr>
-                    <tr><th class="text-muted">Subido por</th><td><?= $e($doc['subido_por'] ?? '—') ?></td></tr>
-                    <tr><th class="text-muted">Fecha subida</th><td><?= $doc['subido_at'] ? date('d/m/Y H:i', strtotime($doc['subido_at'])) : '—' ?></td></tr>
-                </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="<?= $ds_dt ?>">Subido por</div>
+                        <div style="<?= $ds_dd ?>"><?= $e($doc['subido_por'] ?? '—') ?></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="<?= $ds_dt ?>">Fecha subida</div>
+                        <div class="ds-cell-mono"><?= $doc['subido_at'] ? date('d/m/Y H:i', strtotime($doc['subido_at'])) : '—' ?></div>
+                    </div>
+                </div>
                 <?php if (!empty($doc['archivo_nombre_storage'])): ?>
-                <div class="mt-3 pt-3 border-top">
+                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #eef1f5;">
                     <a href="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/descargar') ?>"
-                       class="btn btn-outline-primary btn-sm w-100">
-                        <i class="bi bi-cloud-download me-1"></i>Descargar archivo original
+                       class="ds-btn ds-btn-outline ds-btn-sm" style="width: 100%;">
+                        <i class="bi bi-cloud-download"></i>Descargar archivo original
                     </a>
                 </div>
                 <?php endif ?>
@@ -95,93 +133,133 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
 
     <!-- Vigencia y fechas -->
     <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header"><i class="bi bi-calendar-event me-2"></i>Vigencia y Fechas</div>
-            <div class="card-body">
-                <table class="table table-sm table-borderless mb-0">
-                    <tr><th class="text-muted" style="width:40%">Fecha emisión doc.</th><td><?= $doc['fecha_emision_documento'] ? date('d/m/Y', strtotime($doc['fecha_emision_documento'])) : '—' ?></td></tr>
-                    <tr>
-                        <th class="text-muted">Fecha vencimiento</th>
-                        <td>
-                            <?php if ($doc['fecha_vencimiento']): ?>
-                                <?php
+        <div class="ds-card" style="margin-bottom: 0; height: 100%;">
+            <div class="ds-card-header tone-warning">
+                <span class="ds-card-mark"><i class="bi bi-calendar-event"></i></span>
+                <div>
+                    <div class="ds-card-title">Vigencia y fechas</div>
+                    <div class="ds-card-subtitle">Caducidad y recordatorios</div>
+                </div>
+            </div>
+            <div class="ds-card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div style="<?= $ds_dt ?>">Fecha emision doc.</div>
+                        <div class="ds-cell-mono"><?= $doc['fecha_emision_documento'] ? date('d/m/Y', strtotime($doc['fecha_emision_documento'])) : '—' ?></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="<?= $ds_dt ?>">Fecha vencimiento</div>
+                        <div>
+                            <?php if (!empty($doc['fecha_vencimiento'])):
                                 $vence = new DateTimeImmutable($doc['fecha_vencimiento']);
                                 $hoy = new DateTimeImmutable('today');
                                 $diasR = (int) $hoy->diff($vence)->format('%r%a');
-                                ?>
-                                <span class="<?= $diasR < 0 ? 'text-danger fw-bold' : ($diasR <= 30 ? 'text-warning' : '') ?>">
-                                    <?= $vence->format('d/m/Y') ?>
-                                    <?php if ($diasR < 0): ?> (vencido hace <?= abs($diasR) ?>d)
-                                    <?php elseif ($diasR <= 30): ?> (<?= $diasR ?>d restantes)
-                                    <?php endif ?>
-                                </span>
-                            <?php else: ?>—<?php endif ?>
-                        </td>
-                    </tr>
-                    <tr><th class="text-muted">Fecha obj. actualización</th><td><?= $doc['fecha_objetivo_actualizacion'] ? date('d/m/Y', strtotime($doc['fecha_objetivo_actualizacion'])) : '—' ?></td></tr>
-                    <tr><th class="text-muted">Vigencia del tipo</th><td><?= $doc['tiene_vencimiento'] ? $doc['dias_vigencia'] . ' días' : 'Sin vencimiento' ?></td></tr>
-                </table>
+                            ?>
+                                <?php if ($diasR < 0): ?>
+                                    <span class="ds-badge tone-danger no-dot"><i class="bi bi-exclamation-triangle"></i><?= $vence->format('d/m/Y') ?> &middot; vencido <?= abs($diasR) ?>d</span>
+                                <?php elseif ($diasR <= 30): ?>
+                                    <span class="ds-badge tone-warning no-dot"><?= $vence->format('d/m/Y') ?> &middot; <?= $diasR ?>d restantes</span>
+                                <?php else: ?>
+                                    <span class="ds-cell-mono" style="font-weight: 700;"><?= $vence->format('d/m/Y') ?></span>
+                                <?php endif ?>
+                            <?php else: ?>
+                                <span class="ds-cell-sub">—</span>
+                            <?php endif ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="<?= $ds_dt ?>">Fecha obj. actualizacion</div>
+                        <div class="ds-cell-mono"><?= $doc['fecha_objetivo_actualizacion'] ? date('d/m/Y', strtotime($doc['fecha_objetivo_actualizacion'])) : '—' ?></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="<?= $ds_dt ?>">Vigencia del tipo</div>
+                        <div style="<?= $ds_dd ?>"><?= $doc['tiene_vencimiento'] ? $doc['dias_vigencia'] . ' dias' : 'Sin vencimiento' ?></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Validación externa -->
+    <!-- Validacion externa -->
     <?php if ($doc['requiere_validacion_externa']): ?>
     <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header"><i class="bi bi-globe me-2"></i>Validación Externa</div>
-            <div class="card-body">
-                <p>
-                    <strong>URL:</strong>
-                    <?php if ($doc['validacion_url']): ?>
-                    <a href="<?= $e($doc['validacion_url']) ?>" target="_blank" rel="noopener"><?= $e($doc['validacion_url']) ?></a>
-                    <?php else: ?><span class="text-muted">No registrada</span><?php endif ?>
-                </p>
+        <div class="ds-card">
+            <div class="ds-card-header tone-purple">
+                <span class="ds-card-mark"><i class="bi bi-globe"></i></span>
+                <div>
+                    <div class="ds-card-title">Validacion externa</div>
+                    <div class="ds-card-subtitle">Verificacion en sitio web oficial + capturas</div>
+                </div>
+            </div>
+            <div class="ds-card-body">
+                <div class="ds-form-field" style="margin-bottom: 1.25rem;">
+                    <label class="ds-form-label">URL del sitio</label>
+                    <?php if (!empty($doc['validacion_url'])): ?>
+                    <a href="<?= $e($doc['validacion_url']) ?>" target="_blank" rel="noopener"
+                       class="ds-cell-mono" style="color: #2563eb; text-decoration: none; word-break: break-all;">
+                        <i class="bi bi-box-arrow-up-right"></i> <?= $e($doc['validacion_url']) ?>
+                    </a>
+                    <?php else: ?>
+                    <span class="ds-cell-sub">No registrada</span>
+                    <?php endif ?>
+                </div>
                 <div class="row g-3">
+                    <?php foreach ([1, 2] as $i):
+                        $key = 'screenshot_' . $i . '_storage';
+                        $tieneShot = !empty($doc[$key]);
+                    ?>
                     <div class="col-md-6">
-                        <label class="form-label small text-muted">Screenshot 1</label>
-                        <?php if ($doc['screenshot_1_storage']): ?>
-                        <div class="border rounded p-2 text-center bg-light">
-                            <i class="bi bi-image fs-3 text-success"></i>
-                            <div class="small"><?= $e($doc['screenshot_1_storage']) ?></div>
+                        <div style="<?= $ds_dt ?>; margin-bottom: .35rem;">Screenshot <?= $i ?></div>
+                        <?php if ($tieneShot): ?>
+                        <div style="display: flex; align-items: center; gap: .65rem; padding: .85rem 1rem; background: rgba(5,150,105,.08); border: 1px solid rgba(5,150,105,.18); border-radius: 10px;">
+                            <span style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(5,150,105,.15); color: #059669; font-size: 1.2rem;">
+                                <i class="bi bi-image"></i>
+                            </span>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: #047857; font-size: .85rem;">Capturado</div>
+                                <div class="ds-cell-mono" style="font-size: .72rem; word-break: break-all;"><?= $e($doc[$key]) ?></div>
+                            </div>
                         </div>
                         <?php else: ?>
-                        <div class="border rounded p-3 text-center text-muted bg-light">
-                            <i class="bi bi-image fs-3 d-block mb-1"></i>No subido
+                        <div style="display: flex; align-items: center; gap: .65rem; padding: .85rem 1rem; background: #f4f7fb; border: 1px dashed #cbd5e1; border-radius: 10px;">
+                            <span style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #e2e8f0; color: #94a3b8; font-size: 1.2rem;">
+                                <i class="bi bi-image"></i>
+                            </span>
+                            <div class="ds-cell-sub">Pendiente de subir</div>
                         </div>
                         <?php endif ?>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small text-muted">Screenshot 2</label>
-                        <?php if ($doc['screenshot_2_storage']): ?>
-                        <div class="border rounded p-2 text-center bg-light">
-                            <i class="bi bi-image fs-3 text-success"></i>
-                            <div class="small"><?= $e($doc['screenshot_2_storage']) ?></div>
-                        </div>
-                        <?php else: ?>
-                        <div class="border rounded p-3 text-center text-muted bg-light">
-                            <i class="bi bi-image fs-3 d-block mb-1"></i>No subido
-                        </div>
-                        <?php endif ?>
-                    </div>
+                    <?php endforeach ?>
                 </div>
             </div>
         </div>
     </div>
     <?php endif ?>
 
-    <!-- Revisión -->
+    <!-- Revision -->
     <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header"><i class="bi bi-clipboard-check me-2"></i>Revisión</div>
-            <div class="card-body">
-                <?php if ($doc['revisado_por']): ?>
-                <div class="mb-3 p-3 bg-light rounded">
-                    <strong>Última revisión:</strong>
-                    <?= $doc['revisado_at'] ? date('d/m/Y H:i', strtotime($doc['revisado_at'])) : '' ?>
-                    por <?= $e($doc['revisado_por']) ?>
-                    <?php if ($doc['observacion_revisor']): ?>
-                    <div class="mt-2 fst-italic">"<?= $e($doc['observacion_revisor']) ?>"</div>
+        <div class="ds-card">
+            <div class="ds-card-header tone-success">
+                <span class="ds-card-mark"><i class="bi bi-clipboard-check"></i></span>
+                <div>
+                    <div class="ds-card-title">Revision</div>
+                    <div class="ds-card-subtitle">Aceptacion o rechazo del revisor</div>
+                </div>
+            </div>
+            <div class="ds-card-body">
+                <?php if (!empty($doc['revisado_por'])): ?>
+                <div style="background: #f4f7fb; border-radius: 12px; padding: 1rem 1.1rem; margin-bottom: 1.25rem; border-left: 3px solid #2f80ed;">
+                    <div style="font-weight: 700; color: var(--ds-text); font-size: .85rem; margin-bottom: .25rem;">
+                        Ultima revision
+                    </div>
+                    <div class="ds-cell-sub" style="margin-bottom: .35rem;">
+                        <span class="ds-cell-mono"><?= $doc['revisado_at'] ? date('d/m/Y H:i', strtotime($doc['revisado_at'])) : '' ?></span>
+                        por <strong style="color: var(--ds-text);"><?= $e($doc['revisado_por']) ?></strong>
+                    </div>
+                    <?php if (!empty($doc['observacion_revisor'])): ?>
+                    <div style="font-style: italic; color: var(--ds-text); font-size: .9rem; padding: .55rem .75rem; background: #fff; border-radius: 8px; margin-top: .5rem;">
+                        &ldquo;<?= $e($doc['observacion_revisor']) ?>&rdquo;
+                    </div>
                     <?php endif ?>
                 </div>
                 <?php endif ?>
@@ -189,26 +267,30 @@ $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocume
                 <?php if ($puedeRevisar && $user->tienePermiso('expedientes.revisar')): ?>
                 <form method="post" action="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/revisar') ?>">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-                    <div class="mb-3">
-                        <label class="form-label">Observación del revisor</label>
-                        <textarea name="observacion" class="form-control" rows="3" placeholder="Opcional: razón del rechazo o comentario..."><?= $e($doc['observacion_revisor'] ?? '') ?></textarea>
+                    <div class="ds-form-field" style="margin-bottom: 1rem;">
+                        <label class="ds-form-label">Observacion del revisor</label>
+                        <textarea name="observacion" class="form-control" rows="3"
+                                  placeholder="Opcional: razon del rechazo o comentario..."><?= $e($doc['observacion_revisor'] ?? '') ?></textarea>
                     </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" name="accion" value="aceptar" class="btn btn-success"
-                                onclick="return confirm('¿Aceptar este documento?')">
-                            <i class="bi bi-check-circle me-1"></i>Aceptar
+                    <div style="display: flex; gap: .55rem; flex-wrap: wrap;">
+                        <button type="submit" name="accion" value="aceptar" class="ds-btn ds-btn-success"
+                                onclick="return confirm('Aceptar este documento?');">
+                            <i class="bi bi-check-circle"></i>Aceptar documento
                         </button>
-                        <button type="submit" name="accion" value="rechazar" class="btn btn-danger"
-                                onclick="return confirm('¿Rechazar este documento?')">
-                            <i class="bi bi-x-circle me-1"></i>Rechazar
+                        <button type="submit" name="accion" value="rechazar" class="ds-btn ds-btn-danger"
+                                onclick="return confirm('Rechazar este documento?');">
+                            <i class="bi bi-x-circle"></i>Rechazar documento
                         </button>
                     </div>
                 </form>
                 <?php elseif (!$puedeRevisar): ?>
-                <p class="text-muted mb-0">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Este documento está en estado <strong><?= $e($docEstado->label()) ?></strong> y no puede revisarse en este momento.
-                </p>
+                <div class="login-info" style="margin: 0;">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        <strong>Documento no revisable</strong>
+                        Este documento esta en estado <strong><?= $e($docEstado->label()) ?></strong> y no puede revisarse en este momento.
+                    </div>
+                </div>
                 <?php endif ?>
             </div>
         </div>

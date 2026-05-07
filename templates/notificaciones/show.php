@@ -1,6 +1,6 @@
 <?php
 /**
- * Detalle de una notificación + historial de intentos.
+ * Detalle de una notificacion + historial de intentos.
  *
  * Variables: $user, $csrfToken, $currentPath, $notificacion, $intentos
  */
@@ -11,24 +11,27 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
-$estadoBadge = static fn(string $estado) => match ($estado) {
-    'PENDIENTE' => 'bg-secondary',
-    'ENVIADA' => 'bg-success',
-    'FALLIDA' => 'bg-danger',
-    'CANCELADA' => 'bg-warning text-dark',
-    default => 'bg-dark',
+$estadoTone = static fn(string $estado) => match ($estado) {
+    'PENDIENTE' => 'tone-muted',
+    'ENVIADA'   => 'tone-success',
+    'FALLIDA'   => 'tone-danger',
+    'CANCELADA' => 'tone-warning',
+    default     => 'tone-muted',
 };
 
 $canalIcon = static fn(string $canal) => match ($canal) {
-    'EMAIL' => 'bi-envelope',
+    'EMAIL'    => 'bi-envelope',
     'WHATSAPP' => 'bi-whatsapp',
-    'SMS' => 'bi-chat-dots',
-    'PUSH' => 'bi-bell',
-    default => 'bi-send',
+    'SMS'      => 'bi-chat-dots',
+    'PUSH'     => 'bi-bell',
+    default    => 'bi-send',
 };
+
+$ds_dt = 'font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ds-text-soft); padding: .55rem 0 .15rem;';
+$ds_dd = 'font-size: .88rem; color: var(--ds-text); padding: 0 0 .55rem; margin: 0; border-bottom: 1px solid #f1f5f9;';
 ?>
 
-<?php $view->section('title') ?>Notificación — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Notificacion — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/notificaciones') ?>">Notificaciones</a></li>
@@ -36,102 +39,123 @@ $canalIcon = static fn(string $canal) => match ($canal) {
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0"><i class="bi bi-bell me-2"></i>Detalle de notificación</h4>
-    <div class="d-flex gap-2">
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-bell-fill"></i></span>
+        <div>
+            <h1>Detalle de notificacion</h1>
+            <small style="display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;">
+                <span class="ds-cell-mono"><?= $e((string) $notificacion['evento']) ?></span>
+                <span class="ds-badge <?= $estadoTone((string) $notificacion['estado']) ?>"><?= $e((string) $notificacion['estado']) ?></span>
+            </small>
+        </div>
+    </div>
+    <div style="display: flex; gap: .5rem;">
         <?php if ($notificacion['estado'] === 'FALLIDA'): ?>
-        <form method="post" action="<?= $view->url('/notificaciones/' . $e((string)$notificacion['id']) . '/retry') ?>">
+        <form method="post" action="<?= $view->url('/notificaciones/' . $e((string) $notificacion['id']) . '/retry') ?>"
+              onsubmit="return confirm('Reintentar el envio de esta notificacion?');" style="display: inline;">
             <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-            <button type="submit" class="btn btn-warning btn-sm"
-                    onclick="return confirm('¿Reintentar el envío de esta notificación?')">
-                <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                <i class="bi bi-arrow-clockwise"></i>Reintentar
             </button>
         </form>
         <?php endif ?>
-        <a href="<?= $view->url('/notificaciones') ?>" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver
+        <a href="<?= $view->url('/notificaciones') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+            <i class="bi bi-arrow-left"></i>Volver
         </a>
     </div>
 </div>
 
-<div class="row g-3">
+<div class="row g-4">
     <!-- Info principal -->
     <div class="col-lg-8">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><strong>Información</strong></div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">ID</dt>
-                    <dd class="col-sm-9"><code class="small"><?= $e((string)$notificacion['id']) ?></code></dd>
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-mark"><i class="bi bi-info-circle"></i></span>
+                <div>
+                    <div class="ds-card-title">Informacion</div>
+                    <div class="ds-card-subtitle">Metadatos y destinatario</div>
+                </div>
+            </div>
+            <div class="ds-card-body">
+                <dl style="margin: 0; display: grid; grid-template-columns: 140px 1fr; gap: 0;">
+                    <dt style="<?= $ds_dt ?>">ID</dt>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) $notificacion['id']) ?></span></dd>
 
-                    <dt class="col-sm-3">Evento</dt>
-                    <dd class="col-sm-9"><code><?= $e((string)$notificacion['evento']) ?></code></dd>
+                    <dt style="<?= $ds_dt ?>">Evento</dt>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) $notificacion['evento']) ?></span></dd>
 
-                    <dt class="col-sm-3">Canal</dt>
-                    <dd class="col-sm-9">
-                        <i class="bi <?= $canalIcon((string)$notificacion['canal']) ?> me-1"></i>
-                        <?= $e((string)$notificacion['canal']) ?>
+                    <dt style="<?= $ds_dt ?>">Canal</dt>
+                    <dd style="<?= $ds_dd ?>">
+                        <span class="ds-chip"><i class="bi <?= $canalIcon((string) $notificacion['canal']) ?>"></i><?= $e((string) $notificacion['canal']) ?></span>
                     </dd>
 
-                    <dt class="col-sm-3">Prioridad</dt>
-                    <dd class="col-sm-9"><?= $e((string)$notificacion['prioridad']) ?></dd>
+                    <dt style="<?= $ds_dt ?>">Prioridad</dt>
+                    <dd style="<?= $ds_dd ?>"><?= $e((string) $notificacion['prioridad']) ?></dd>
 
-                    <dt class="col-sm-3">Estado</dt>
-                    <dd class="col-sm-9">
-                        <span class="badge <?= $estadoBadge((string)$notificacion['estado']) ?>"><?= $e((string)$notificacion['estado']) ?></span>
-                    </dd>
+                    <dt style="<?= $ds_dt ?>">Estado</dt>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-badge <?= $estadoTone((string) $notificacion['estado']) ?>"><?= $e((string) $notificacion['estado']) ?></span></dd>
 
-                    <dt class="col-sm-3">Destinatario</dt>
-                    <dd class="col-sm-9">
+                    <dt style="<?= $ds_dt ?>">Destinatario</dt>
+                    <dd style="<?= $ds_dd ?>">
                         <?php if (!empty($notificacion['destinatario_nombre'])): ?>
-                            <?= $e((string)$notificacion['destinatario_nombre']) ?><br>
+                            <div style="font-weight: 600;"><?= $e((string) $notificacion['destinatario_nombre']) ?></div>
                         <?php endif ?>
                         <?php if (!empty($notificacion['destinatario_email'])): ?>
-                            <i class="bi bi-envelope me-1"></i><?= $e((string)$notificacion['destinatario_email']) ?><br>
+                            <div class="ds-cell-mono"><i class="bi bi-envelope"></i> <?= $e((string) $notificacion['destinatario_email']) ?></div>
                         <?php endif ?>
                         <?php if (!empty($notificacion['destinatario_telefono'])): ?>
-                            <i class="bi bi-telephone me-1"></i><?= $e((string)$notificacion['destinatario_telefono']) ?>
+                            <div class="ds-cell-mono"><i class="bi bi-telephone"></i> <?= $e((string) $notificacion['destinatario_telefono']) ?></div>
                         <?php endif ?>
                     </dd>
 
-                    <dt class="col-sm-3">Asunto</dt>
-                    <dd class="col-sm-9"><?= $e((string)$notificacion['asunto']) ?></dd>
+                    <dt style="<?= $ds_dt ?>">Asunto</dt>
+                    <dd style="<?= $ds_dd ?>"><?= $e((string) $notificacion['asunto']) ?></dd>
 
-                    <dt class="col-sm-3">Creada</dt>
-                    <dd class="col-sm-9"><?= $e((string)$notificacion['created_at']) ?></dd>
+                    <dt style="<?= $ds_dt ?>">Creada</dt>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) $notificacion['created_at']) ?></span></dd>
 
-                    <dt class="col-sm-3">Programada</dt>
-                    <dd class="col-sm-9"><?= $e((string)($notificacion['scheduled_at'] ?? '—')) ?></dd>
+                    <dt style="<?= $ds_dt ?>">Programada</dt>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) ($notificacion['scheduled_at'] ?? '—')) ?></span></dd>
 
-                    <dt class="col-sm-3">Enviada</dt>
-                    <dd class="col-sm-9"><?= $e((string)($notificacion['enviada_at'] ?? '—')) ?></dd>
+                    <dt style="<?= $ds_dt ?>">Enviada</dt>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) ($notificacion['enviada_at'] ?? '—')) ?></span></dd>
 
-                    <dt class="col-sm-3">Intentos</dt>
-                    <dd class="col-sm-9"><?= (int)$notificacion['intentos'] ?> / <?= (int)$notificacion['max_intentos'] ?></dd>
+                    <dt style="<?= $ds_dt ?>">Intentos</dt>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-chip"><?= (int) $notificacion['intentos'] ?> / <?= (int) $notificacion['max_intentos'] ?></span></dd>
 
                     <?php if (!empty($notificacion['ultimo_error'])): ?>
-                    <dt class="col-sm-3">Último error</dt>
-                    <dd class="col-sm-9"><span class="text-danger small"><?= $e((string)$notificacion['ultimo_error']) ?></span></dd>
+                    <dt style="<?= $ds_dt ?>; color: #b91c1c;">Ultimo error</dt>
+                    <dd style="<?= $ds_dd ?>; color: #b91c1c; font-size: .82rem;"><?= $e((string) $notificacion['ultimo_error']) ?></dd>
                     <?php endif ?>
 
                     <?php if (!empty($notificacion['dedupe_key'])): ?>
-                    <dt class="col-sm-3">Dedupe key</dt>
-                    <dd class="col-sm-9"><code class="small"><?= $e((string)$notificacion['dedupe_key']) ?></code></dd>
+                    <dt style="<?= $ds_dt ?>">Dedupe key</dt>
+                    <dd style="<?= $ds_dd ?>; border-bottom: 0;"><span class="ds-cell-mono"><?= $e((string) $notificacion['dedupe_key']) ?></span></dd>
                     <?php endif ?>
                 </dl>
             </div>
         </div>
 
-        <!-- Cuerpo -->
         <?php if (!empty($notificacion['cuerpo_texto']) || !empty($notificacion['cuerpo_html'])): ?>
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><strong>Contenido</strong></div>
-            <div class="card-body">
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-mark"><i class="bi bi-file-text"></i></span>
+                <div>
+                    <div class="ds-card-title">Contenido</div>
+                    <div class="ds-card-subtitle">Cuerpo del mensaje a enviar</div>
+                </div>
+            </div>
+            <div class="ds-card-body">
                 <?php if (!empty($notificacion['cuerpo_texto'])): ?>
-                <pre class="bg-light p-3 rounded small mb-0" style="white-space:pre-wrap"><?= $e((string)$notificacion['cuerpo_texto']) ?></pre>
+                <pre style="background: #0f172a; color: #e2e8f0; padding: 1rem 1.1rem; border-radius: 10px; font-size: .82rem; max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-word; margin: 0;"><?= $e((string) $notificacion['cuerpo_texto']) ?></pre>
                 <?php elseif (!empty($notificacion['cuerpo_html'])): ?>
-                <div class="border rounded p-3 bg-light small">
-                    <em class="text-muted">Contenido HTML — vista previa no disponible por seguridad</em>
+                <div class="login-info" style="margin: 0;">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        <strong>Contenido HTML</strong>
+                        Vista previa no disponible por razones de seguridad.
+                    </div>
                 </div>
                 <?php endif ?>
             </div>
@@ -141,42 +165,45 @@ $canalIcon = static fn(string $canal) => match ($canal) {
 
     <!-- Historial de intentos -->
     <div class="col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-header"><strong>Historial de envío</strong></div>
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-mark"><i class="bi bi-clock-history"></i></span>
+                <div>
+                    <div class="ds-card-title">Historial de envio</div>
+                    <div class="ds-card-subtitle"><?= count($intentos) ?> intento<?= count($intentos) !== 1 ? 's' : '' ?> registrado<?= count($intentos) !== 1 ? 's' : '' ?></div>
+                </div>
+            </div>
             <?php if (empty($intentos)): ?>
-                <div class="card-body text-center text-muted py-4">
-                    <i class="bi bi-clock-history fs-3 d-block mb-2"></i>
-                    Sin intentos de envío registrados.
+            <div class="ds-card-body">
+                <div class="ds-empty-state" style="padding: 1.5rem 1rem;">
+                    <div class="ds-empty-icon" style="width: 56px; height: 56px; font-size: 1.6rem;"><i class="bi bi-clock-history"></i></div>
+                    <p>Sin intentos de envio aun.</p>
                 </div>
+            </div>
             <?php else: ?>
-                <div class="list-group list-group-flush">
-                    <?php foreach ($intentos as $intento): ?>
-                    <div class="list-group-item small">
-                        <div class="d-flex justify-content-between">
-                            <span>
-                                <?php if ($intento['resultado'] === 'OK'): ?>
-                                    <i class="bi bi-check-circle text-success me-1"></i>
-                                <?php else: ?>
-                                    <i class="bi bi-x-circle text-danger me-1"></i>
-                                <?php endif ?>
-                                <?= $e((string)$intento['resultado']) ?>
-                            </span>
-                            <span class="text-muted"><?= $e(substr((string)$intento['intentado_at'], 0, 16)) ?></span>
-                        </div>
-                        <?php if (!empty($intento['codigo_respuesta'])): ?>
-                        <div class="text-muted mt-1">
-                            Código: <code><?= $e((string)$intento['codigo_respuesta']) ?></code>
-                            <?php if ($intento['duracion_ms']): ?>
-                                — <?= (int)$intento['duracion_ms'] ?>ms
-                            <?php endif ?>
-                        </div>
-                        <?php endif ?>
-                        <?php if (!empty($intento['mensaje'])): ?>
-                        <div class="text-muted mt-1 small"><?= $e(mb_substr((string)$intento['mensaje'], 0, 200)) ?></div>
-                        <?php endif ?>
+            <div style="padding: .5rem; max-height: 480px; overflow-y: auto;">
+                <?php foreach ($intentos as $intento):
+                    $ok = $intento['resultado'] === 'OK';
+                ?>
+                <div style="padding: .75rem .85rem; border-radius: 10px; border-left: 3px solid <?= $ok ? '#059669' : '#dc2626' ?>; background: <?= $ok ? 'rgba(5,150,105,.04)' : 'rgba(220,38,38,.04)' ?>; margin-bottom: .5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .25rem;">
+                        <span style="font-weight: 700; font-size: .85rem; color: <?= $ok ? '#047857' : '#b91c1c' ?>; display: inline-flex; align-items: center; gap: .35rem;">
+                            <i class="bi <?= $ok ? 'bi-check-circle-fill' : 'bi-x-circle-fill' ?>"></i><?= $e((string) $intento['resultado']) ?>
+                        </span>
+                        <span class="ds-cell-mono" style="font-size: .72rem;"><?= $e(substr((string) $intento['intentado_at'], 0, 16)) ?></span>
                     </div>
-                    <?php endforeach ?>
+                    <?php if (!empty($intento['codigo_respuesta'])): ?>
+                    <div class="ds-cell-sub" style="margin-top: .15rem;">
+                        Codigo <span class="ds-cell-mono" style="font-weight: 600;"><?= $e((string) $intento['codigo_respuesta']) ?></span>
+                        <?php if ($intento['duracion_ms']): ?> &middot; <?= (int) $intento['duracion_ms'] ?>ms<?php endif ?>
+                    </div>
+                    <?php endif ?>
+                    <?php if (!empty($intento['mensaje'])): ?>
+                    <div class="ds-cell-sub" style="margin-top: .25rem; font-size: .75rem;"><?= $e(mb_substr((string) $intento['mensaje'], 0, 200)) ?></div>
+                    <?php endif ?>
                 </div>
+                <?php endforeach ?>
+            </div>
             <?php endif ?>
         </div>
     </div>

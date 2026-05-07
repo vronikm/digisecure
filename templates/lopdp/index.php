@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard LOPDP — KPIs y accesos rápidos.
+ * Dashboard LOPDP — KPIs y accesos rapidos.
  *
  * Variables: $user, $csrfToken, $currentPath, $urgencia, $recientesSolicitudes,
  *            $consentActivos, $recientesConsentimientos
@@ -11,6 +11,14 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+
+$estadoTone = static fn(string $estado) => match ($estado) {
+    'RECIBIDA'   => 'tone-info',
+    'EN_PROCESO' => 'tone-warning',
+    'RESPONDIDA' => 'tone-success',
+    'DENEGADA'   => 'tone-muted',
+    default      => 'tone-muted',
+};
 ?>
 
 <?php $view->section('title') ?>LOPDP — DigiSecure<?php $view->endSection() ?>
@@ -20,102 +28,98 @@ $e = ViewRenderer::e(...);
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1"><i class="bi bi-file-earmark-lock me-2"></i>LOPDP — Datos Personales</h4>
-        <p class="text-muted mb-0">Cumplimiento Ley Orgánica de Protección de Datos Personales del Ecuador</p>
+<div class="ds-page-header">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-file-earmark-lock"></i></span>
+        <div>
+            <h1>LOPDP &middot; Datos personales</h1>
+            <small>Cumplimiento Ley Organica de Proteccion de Datos Personales del Ecuador</small>
+        </div>
     </div>
-    <a href="<?= $view->url('/lopdp/solicitudes/crear') ?>" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Nueva solicitud ARCO-P
+    <a href="<?= $view->url('/lopdp/solicitudes/crear') ?>" class="ds-btn ds-btn-primary">
+        <i class="bi bi-plus-lg"></i>Nueva solicitud ARCO-P
     </a>
 </div>
 
 <!-- KPIs -->
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <div class="text-muted small text-uppercase">Solicitudes vencidas</div>
-                        <div class="display-6 fw-bold text-danger"><?= (int)$urgencia['vencidas'] ?></div>
-                    </div>
-                    <i class="bi bi-exclamation-octagon-fill text-danger fs-1 opacity-25"></i>
-                </div>
-            </div>
+<div class="ds-kpi-grid">
+    <div class="ds-kpi-card tone-danger">
+        <span class="ds-kpi-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
+        <div>
+            <div class="ds-kpi-label">Solicitudes vencidas</div>
+            <div class="ds-kpi-value"><?= (int) $urgencia['vencidas'] ?></div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <div class="text-muted small text-uppercase">Por vencer (≤3d)</div>
-                        <div class="display-6 fw-bold text-warning"><?= (int)$urgencia['por_vencer'] ?></div>
-                    </div>
-                    <i class="bi bi-hourglass-split text-warning fs-1 opacity-25"></i>
-                </div>
-            </div>
+    <div class="ds-kpi-card tone-warning">
+        <span class="ds-kpi-icon"><i class="bi bi-hourglass-split"></i></span>
+        <div>
+            <div class="ds-kpi-label">Por vencer (3 dias)</div>
+            <div class="ds-kpi-value"><?= (int) $urgencia['por_vencer'] ?></div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <div class="text-muted small text-uppercase">Abiertas</div>
-                        <div class="display-6 fw-bold text-primary"><?= (int)$urgencia['abiertas'] ?></div>
-                    </div>
-                    <i class="bi bi-folder2-open text-primary fs-1 opacity-25"></i>
-                </div>
-            </div>
+    <div class="ds-kpi-card">
+        <span class="ds-kpi-icon"><i class="bi bi-folder2-open"></i></span>
+        <div>
+            <div class="ds-kpi-label">Abiertas</div>
+            <div class="ds-kpi-value"><?= (int) $urgencia['abiertas'] ?></div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <div class="text-muted small text-uppercase">Consentimientos activos</div>
-                        <div class="display-6 fw-bold text-success"><?= (int)$consentActivos ?></div>
-                    </div>
-                    <i class="bi bi-check2-circle text-success fs-1 opacity-25"></i>
-                </div>
-            </div>
+    <div class="ds-kpi-card tone-success">
+        <span class="ds-kpi-icon"><i class="bi bi-shield-check"></i></span>
+        <div>
+            <div class="ds-kpi-label">Consentimientos activos</div>
+            <div class="ds-kpi-value"><?= (int) $consentActivos ?></div>
         </div>
     </div>
 </div>
 
 <!-- Recientes -->
-<div class="row g-3">
+<div class="row g-4">
     <div class="col-lg-7">
-        <div class="card shadow-sm h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="bi bi-clock-history me-1"></i>Solicitudes recientes</h6>
-                <a href="<?= $view->url('/lopdp/solicitudes') ?>" class="small">Ver todas →</a>
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-mark"><i class="bi bi-clock-history"></i></span>
+                <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                    <div>
+                        <div class="ds-card-title">Solicitudes recientes</div>
+                        <div class="ds-card-subtitle">Ultimas solicitudes ARCO-P registradas</div>
+                    </div>
+                    <a href="<?= $view->url('/lopdp/solicitudes') ?>" style="font-size: .82rem; color: #2563eb; text-decoration: none; font-weight: 600;">Ver todas &rarr;</a>
+                </div>
             </div>
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
+                <table class="ds-table">
+                    <thead>
                         <tr>
                             <th>Tipo</th>
                             <th>Titular</th>
                             <th>Estado</th>
                             <th>Vence</th>
-                            <th></th>
+                            <th class="ds-cell-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($recientesSolicitudes === []): ?>
-                        <tr><td colspan="5" class="text-center text-muted py-4">Sin solicitudes registradas.</td></tr>
+                        <tr>
+                            <td colspan="5">
+                                <div class="ds-empty-state" style="padding: 1.75rem 1rem;">
+                                    <div class="ds-empty-icon" style="width: 56px; height: 56px; font-size: 1.6rem;"><i class="bi bi-inbox"></i></div>
+                                    <p>Sin solicitudes registradas todavia.</p>
+                                </div>
+                            </td>
+                        </tr>
                         <?php endif ?>
                         <?php foreach ($recientesSolicitudes as $s): ?>
                         <tr>
-                            <td><span class="badge bg-light text-dark border"><?= $e(ucfirst((string)$s['tipo'])) ?></span></td>
-                            <td><small><?= $e((string)$s['titular_nombre']) ?></small></td>
-                            <td><small><?= $e((string)$s['estado']) ?></small></td>
-                            <td><small><?= $e((string)$s['fecha_limite']) ?></small></td>
-                            <td><a href="<?= $view->url('/lopdp/solicitudes/' . $s['id']) ?>" class="btn btn-sm btn-link p-0">Ver</a></td>
+                            <td><span class="ds-chip"><i class="bi bi-tag"></i><?= $e(ucfirst((string) $s['tipo'])) ?></span></td>
+                            <td><div class="ds-cell-name"><?= $e((string) $s['titular_nombre']) ?></div></td>
+                            <td><span class="ds-badge <?= $estadoTone((string) $s['estado']) ?>"><?= $e((string) $s['estado']) ?></span></td>
+                            <td><span class="ds-cell-mono"><?= $e((string) $s['fecha_limite']) ?></span></td>
+                            <td class="ds-cell-end">
+                                <a href="<?= $view->url('/lopdp/solicitudes/' . $s['id']) ?>" class="ds-icon-btn" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
                         </tr>
                         <?php endforeach ?>
                     </tbody>
@@ -123,38 +127,55 @@ $e = ViewRenderer::e(...);
             </div>
         </div>
     </div>
+
     <div class="col-lg-5">
-        <div class="card shadow-sm h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="bi bi-shield-check me-1"></i>Consentimientos recientes</h6>
-                <a href="<?= $view->url('/lopdp/consentimientos') ?>" class="small">Ver todos →</a>
+        <div class="ds-card">
+            <div class="ds-card-header tone-success">
+                <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
+                <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                    <div>
+                        <div class="ds-card-title">Consentimientos recientes</div>
+                        <div class="ds-card-subtitle">Aceptaciones registradas</div>
+                    </div>
+                    <a href="<?= $view->url('/lopdp/consentimientos') ?>" style="font-size: .82rem; color: #2563eb; text-decoration: none; font-weight: 600;">Ver todos &rarr;</a>
+                </div>
             </div>
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
+                <table class="ds-table">
+                    <thead>
                         <tr>
-                            <th>Propósito</th>
+                            <th>Proposito</th>
                             <th>Estado</th>
                             <th>Fecha</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($recientesConsentimientos === []): ?>
-                        <tr><td colspan="3" class="text-center text-muted py-4">Sin consentimientos.</td></tr>
-                        <?php endif ?>
-                        <?php foreach ($recientesConsentimientos as $c): ?>
                         <tr>
-                            <td><small><?= $e((string)$c['proposito']) ?></small></td>
+                            <td colspan="3">
+                                <div class="ds-empty-state" style="padding: 1.75rem 1rem;">
+                                    <div class="ds-empty-icon" style="width: 56px; height: 56px; font-size: 1.6rem;"><i class="bi bi-shield-check"></i></div>
+                                    <p>Sin consentimientos registrados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif ?>
+                        <?php foreach ($recientesConsentimientos as $c):
+                            $revocado = !empty($c['revocado_at']);
+                            $aceptado = (int) $c['aceptado'] === 1;
+                        ?>
+                        <tr>
+                            <td><div style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= $e((string) $c['proposito']) ?>"><?= $e((string) $c['proposito']) ?></div></td>
                             <td>
-                                <?php if (!empty($c['revocado_at'])): ?>
-                                    <span class="badge bg-secondary">Revocado</span>
-                                <?php elseif ((int)$c['aceptado'] === 1): ?>
-                                    <span class="badge bg-success">Activo</span>
+                                <?php if ($revocado): ?>
+                                    <span class="ds-badge tone-muted">Revocado</span>
+                                <?php elseif ($aceptado): ?>
+                                    <span class="ds-badge tone-success">Activo</span>
                                 <?php else: ?>
-                                    <span class="badge bg-warning text-dark">Rechazado</span>
+                                    <span class="ds-badge tone-warning">Rechazado</span>
                                 <?php endif ?>
                             </td>
-                            <td><small class="text-muted"><?= date('d/m/Y', strtotime((string)$c['aceptado_at'])) ?></small></td>
+                            <td><span class="ds-cell-mono"><?= date('d/m/Y', strtotime((string) $c['aceptado_at'])) ?></span></td>
                         </tr>
                         <?php endforeach ?>
                     </tbody>
