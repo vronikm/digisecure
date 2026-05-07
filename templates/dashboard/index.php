@@ -40,6 +40,19 @@ $roles = array_values(array_filter(array_map(
 
 <?php $view->section('head') ?>
 <style>
+    /* Dashboard: separacion vertical generosa entre secciones */
+    .ds-dashboard-section {
+        margin-bottom: 2.5rem;
+    }
+    .ds-dashboard-section:last-child {
+        margin-bottom: 0;
+    }
+    /* Asegurar que el row interno respete --bs-gutter-x mas amplio */
+    .ds-dashboard-section > .row {
+        --bs-gutter-x: 1.75rem;
+        --bs-gutter-y: 1.75rem;
+    }
+
     .ds-dashboard-eyebrow {
         display: inline-flex;
         align-items: center;
@@ -277,7 +290,8 @@ $roles = array_values(array_filter(array_map(
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="row g-4 mb-5">
+<section class="ds-dashboard-section">
+<div class="row g-4">
     <div class="col-xl-8">
         <section class="card ds-hero-card border-0 shadow-sm">
             <div class="card-body p-4 p-lg-5">
@@ -345,8 +359,10 @@ $roles = array_values(array_filter(array_map(
         </section>
     </div>
 </div>
+</section>
 
-<div class="ds-kpi-grid mb-5">
+<section class="ds-dashboard-section">
+<div class="ds-kpi-grid">
     <a href="<?= $view->url('/guardias') ?>" class="ds-kpi-card" style="text-decoration: none;">
         <span class="ds-kpi-icon"><i class="bi bi-person-badge-fill"></i></span>
         <div style="flex:1; min-width:0;">
@@ -399,7 +415,9 @@ $roles = array_values(array_filter(array_map(
         </div>
     </a>
 </div>
+</section>
 
+<section class="ds-dashboard-section">
 <div class="row g-4">
     <div class="col-lg-8">
         <section class="card ds-surface-card h-100">
@@ -557,6 +575,7 @@ $roles = array_values(array_filter(array_map(
         </section>
     </div>
 </div>
+</section>
 <?php $view->endSection() ?>
 
 <?php $view->section('scripts') ?>

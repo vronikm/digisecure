@@ -48,7 +48,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 
 <!-- Filtros -->
 <div class="ds-filter-bar">
-    <form method="get" action="<?= $e($currentPath) ?>" class="ds-filter-row">
+    <form method="get" action="<?= $view->url($currentPath) ?>" class="ds-filter-row">
         <div class="ds-filter-summary">
             <i class="bi bi-funnel"></i>
             <strong>Filtrar:</strong>
@@ -79,7 +79,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                 <i class="bi bi-search"></i>Aplicar
             </button>
             <?php if ($hasFilters): ?>
-            <a href="<?= $e($currentPath) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+            <a href="<?= $view->url($currentPath) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
                 <i class="bi bi-x-lg"></i>Limpiar
             </a>
             <?php endif ?>

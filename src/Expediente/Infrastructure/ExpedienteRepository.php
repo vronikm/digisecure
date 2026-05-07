@@ -172,7 +172,8 @@ final class ExpedienteRepository extends BaseRepository
     public function getDocumentoTipos(?string $bloque = null): array
     {
         $tenantId = $this->tenantContext->requireTenantId();
-        $bindings = ['tid' => $tenantId];
+        // Nota: PDO sin emulate_prepares no permite reusar :tid en dos lugares.
+        $bindings = ['tid_outer' => $tenantId, 'tid_inner' => $tenantId];
 
         $bloqueFilter = '';
         if ($bloque !== null) {
@@ -183,12 +184,12 @@ final class ExpedienteRepository extends BaseRepository
         // Priorizar override del tenant sobre plantilla global
         return $this->db->fetchAll(
             "SELECT dt.* FROM documento_tipos dt
-             WHERE (dt.tenant_id = :tid OR dt.tenant_id IS NULL)
+             WHERE (dt.tenant_id = :tid_outer OR dt.tenant_id IS NULL)
                AND dt.activo = 1
                {$bloqueFilter}
                AND NOT EXISTS (
                    SELECT 1 FROM documento_tipos dt2
-                   WHERE dt2.tenant_id = :tid
+                   WHERE dt2.tenant_id = :tid_inner
                      AND dt2.codigo = dt.codigo
                      AND dt.tenant_id IS NULL
                )
@@ -233,19 +234,22 @@ final class ExpedienteRepository extends BaseRepository
     {
         $tenantId = $this->tenantContext->requireTenantId();
 
+        // Nota: PDO::ATTR_EMULATE_PREPARES = false no permite reusar el mismo
+        // named placeholder en dos lugares de la query, por eso :tid_outer y :tid_inner
+        // (ambos bindeados al mismo valor).
         $result = $this->db->fetchScalar(
             "SELECT COUNT(*) FROM documento_tipos dt
-             WHERE (dt.tenant_id = :tid OR dt.tenant_id IS NULL)
+             WHERE (dt.tenant_id = :tid_outer OR dt.tenant_id IS NULL)
                AND dt.activo = 1
                AND dt.obligatorio = 1
                AND dt.bloque = :bloque
                AND NOT EXISTS (
                    SELECT 1 FROM documento_tipos dt2
-                   WHERE dt2.tenant_id = :tid
+                   WHERE dt2.tenant_id = :tid_inner
                      AND dt2.codigo = dt.codigo
                      AND dt.tenant_id IS NULL
                )",
-            ['tid' => $tenantId, 'bloque' => $bloque],
+            ['tid_outer' => $tenantId, 'tid_inner' => $tenantId, 'bloque' => $bloque],
         );
 
         return (int) $result;

@@ -804,7 +804,7 @@ body {
 
 .ds-shell {
     min-height: calc(100vh - var(--ds-topbar-h) - 3.2rem);
-    padding: 1.4rem;
+    padding: 1.75rem 2rem 2rem;
     border-radius: 28px;
     background: rgba(255, 255, 255, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.9);
@@ -1283,9 +1283,9 @@ body {
 /* KPI cards rapidos (para summaries en index) */
 .ds-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.25rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 .ds-kpi-card {
     display: flex;
