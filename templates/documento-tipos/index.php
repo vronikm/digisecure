@@ -31,7 +31,7 @@ $e = ViewRenderer::e(...);
 </div>
 
 <!-- KPIs -->
-<div class="ds-kpi-grid">
+<div class="ds-kpi-grid ds-kpi-grid-solid">
     <div class="ds-kpi-card">
         <span class="ds-kpi-icon"><i class="bi bi-toggle-on"></i></span>
         <div>
@@ -63,11 +63,7 @@ $e = ViewRenderer::e(...);
 </div>
 
 <!-- Filtro de bloque -->
-<div class="ds-filter-bar" style="display: flex; flex-direction: row; align-items: center; gap: .75rem; flex-wrap: wrap; padding: .85rem 1.1rem;">
-    <div class="ds-filter-summary">
-        <i class="bi bi-funnel"></i>
-        <strong>Filtrar por bloque:</strong>
-    </div>
+<div class="ds-filter-bar" style="display: flex; flex-direction: row; align-items: center; gap: .75rem; flex-wrap: nowrap; overflow-x: auto; padding: .85rem 1.1rem;">
     <a href="<?= $view->url('/configuracion/documentos') ?>"
        class="ds-btn ds-btn-sm <?= $bloqueFilter === null ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
         Todos

@@ -24,6 +24,8 @@
     --ds-text-soft: #5f7288;
     --ds-sidebar-w: 310px;
     --ds-topbar-h: 70px;
+    --ds-control-h: 42px;
+    --ds-control-h-sm: 38px;
     --ds-shadow: 0 18px 48px rgba(9, 29, 53, 0.12);
 }
 
@@ -829,9 +831,14 @@ body {
     padding: 0 0.25rem;
     display: flex;
     justify-content: flex-end;
+    overflow-x: auto;
 }
 
 .ds-breadcrumb {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    list-style: none;
     margin-bottom: 0;
     padding: 0;
     background: transparent;
@@ -843,8 +850,19 @@ body {
 }
 
 .ds-breadcrumb .breadcrumb-item {
+    display: inline-flex;
+    align-items: center;
+    list-style: none;
+    white-space: nowrap;
     font-size: 0.75rem;
     color: var(--ds-text-soft);
+}
+
+.ds-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+    content: "/";
+    margin: 0 .4rem;
+    color: var(--ds-text-soft);
+    font-weight: 500;
 }
 
 .ds-breadcrumb .breadcrumb-item a {
@@ -957,6 +975,12 @@ body {
     background: #fff;
     transition: border-color .15s, box-shadow .15s;
     box-shadow: 0 1px 0 rgba(21, 48, 79, 0.02);
+    min-height: var(--ds-control-h);
+}
+
+.ds-form-field .form-control-sm,
+.ds-form-field .form-select-sm {
+    min-height: var(--ds-control-h-sm);
 }
 .ds-form-field .form-control:focus,
 .ds-form-field .form-select:focus,
@@ -1028,6 +1052,7 @@ body {
     cursor: pointer;
     transition: transform .12s, box-shadow .12s, background .12s;
     line-height: 1.2;
+    min-height: var(--ds-control-h);
 }
 .ds-btn:disabled { opacity: .55; cursor: not-allowed; }
 .ds-btn:not(:disabled):hover { transform: translateY(-1px); }
@@ -1061,7 +1086,7 @@ body {
     border-color: #d8dfe7;
 }
 .ds-btn-outline:hover { background: #f4f7fb; color: var(--ds-text); }
-.ds-btn-sm { padding: .4rem .75rem; font-size: .78rem; border-radius: 8px; }
+.ds-btn-sm { padding: .4rem .75rem; font-size: .78rem; border-radius: 8px; min-height: var(--ds-control-h-sm); }
 .ds-btn-lg { padding: .75rem 1.4rem; font-size: .95rem; border-radius: 12px; }
 
 /* Page header consistente para forms y vistas */
@@ -1210,7 +1235,7 @@ body {
 .ds-form-main .form-control,
 .ds-form-main .form-select,
 .ds-form-main textarea.form-control {
-    min-height: 42px;
+    min-height: var(--ds-control-h);
 }
 
 /* Grid utilitario para forms complejos sin Bootstrap (usado en Usuario) */
@@ -1374,12 +1399,67 @@ body {
 }
 .ds-filter-bar .ds-filter-row {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: .75rem;
     align-items: flex-end;
 }
-.ds-filter-bar .ds-filter-field { min-width: 180px; flex: 1 1 auto; }
-.ds-filter-bar .ds-filter-actions { display: flex; gap: .5rem; }
+.ds-filter-bar .ds-filter-field { min-width: 180px; flex: 1 1 0; }
+.ds-filter-bar .ds-filter-actions {
+    display: flex;
+    gap: .5rem;
+    margin-left: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 1199.98px) {
+    .ds-filter-bar .ds-filter-row {
+        flex-wrap: wrap;
+    }
+
+    .ds-filter-bar .ds-filter-actions {
+        margin-left: 0;
+    }
+}
+
+/* Auditoria: filtros en una sola fila en escritorio para mejor escaneo. */
+.ds-filter-bar .ds-filter-row-auditoria {
+    flex-wrap: nowrap;
+    align-items: flex-end;
+}
+
+.ds-filter-bar .ds-filter-row-auditoria .ds-filter-field {
+    min-width: 150px;
+    flex: 1 1 0;
+}
+
+.ds-filter-bar .ds-filter-row-auditoria .ds-filter-actions {
+    margin-left: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.ds-filter-bar .ds-filter-row-auditoria .form-control-sm,
+.ds-filter-bar .ds-filter-row-auditoria .form-select-sm,
+.ds-filter-bar .ds-filter-row-auditoria .ds-filter-actions .ds-btn-sm {
+    height: var(--ds-control-h-sm);
+    min-height: var(--ds-control-h-sm);
+}
+
+.ds-filter-bar .ds-filter-row-auditoria .ds-filter-actions .ds-btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: .4rem;
+    padding-bottom: .4rem;
+}
+
+@media (max-width: 1199.98px) {
+    .ds-filter-bar .ds-filter-row-auditoria {
+        flex-wrap: wrap;
+    }
+}
+
 .ds-filter-bar .ds-filter-summary {
     display: inline-flex;
     align-items: center;
@@ -1470,6 +1550,24 @@ body {
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
+
+/* Variante para 4 KPI cards en una sola fila (desktop). */
+.ds-kpi-grid.ds-kpi-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 991.98px) {
+    .ds-kpi-grid.ds-kpi-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .ds-kpi-grid.ds-kpi-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
 .ds-kpi-card {
     display: flex;
     align-items: center;
@@ -1519,6 +1617,88 @@ a.ds-kpi-card:hover, a.ds-kpi-card:focus {
 .ds-kpi-card.tone-info    { --ds-kpi-tone: #2563eb; --ds-kpi-bg: rgba(37,99,235,.12); }
 .ds-kpi-card.tone-muted   { --ds-kpi-tone: #64748b; --ds-kpi-bg: rgba(100,116,139,.12); }
 .ds-kpi-card.tone-purple  { --ds-kpi-tone: #6f42c1; --ds-kpi-bg: rgba(111,66,193,.14); }
+
+/* Variante visual: tarjetas KPI con color completo (usado en Clientes). */
+.ds-kpi-grid-solid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 991.98px) {
+    .ds-kpi-grid-solid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .ds-kpi-grid-solid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ds-kpi-grid-solid .ds-kpi-card {
+    --ds-kpi-solid-start: #1d4ed8;
+    --ds-kpi-solid-end: #1e40af;
+    background: linear-gradient(135deg, var(--ds-kpi-solid-start), var(--ds-kpi-solid-end));
+    border: 0;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.ds-kpi-grid-solid .ds-kpi-card::after {
+    content: "";
+    position: absolute;
+    right: -28px;
+    top: -28px;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.ds-kpi-grid-solid .ds-kpi-card .ds-kpi-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.ds-kpi-grid-solid .ds-kpi-card .ds-kpi-label {
+    color: rgba(255, 255, 255, 0.84);
+}
+
+.ds-kpi-grid-solid .ds-kpi-card .ds-kpi-value {
+    color: #fff;
+}
+
+.ds-kpi-grid-solid .ds-kpi-card.tone-success {
+    --ds-kpi-solid-start: #059669;
+    --ds-kpi-solid-end: #047857;
+}
+
+.ds-kpi-grid-solid .ds-kpi-card.tone-warning {
+    --ds-kpi-solid-start: #d97706;
+    --ds-kpi-solid-end: #b45309;
+}
+
+.ds-kpi-grid-solid .ds-kpi-card.tone-danger {
+    --ds-kpi-solid-start: #dc2626;
+    --ds-kpi-solid-end: #b91c1c;
+}
+
+.ds-kpi-grid-solid .ds-kpi-card.tone-info {
+    --ds-kpi-solid-start: #2563eb;
+    --ds-kpi-solid-end: #1d4ed8;
+}
+
+.ds-kpi-grid-solid .ds-kpi-card.tone-muted {
+    --ds-kpi-solid-start: #64748b;
+    --ds-kpi-solid-end: #475569;
+}
+
+.ds-kpi-grid-solid .ds-kpi-card.tone-purple {
+    --ds-kpi-solid-start: #7c3aed;
+    --ds-kpi-solid-end: #6d28d9;
+}
 
 /* Mini progress inline para celdas de tabla */
 .ds-progress {

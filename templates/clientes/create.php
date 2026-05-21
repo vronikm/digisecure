@@ -18,7 +18,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/clientes') ?>">Clientes</a></li>
-<li class="breadcrumb-item active">Nuevo</li>
+<li class="breadcrumb-item active" aria-current="page">Nuevo</li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>

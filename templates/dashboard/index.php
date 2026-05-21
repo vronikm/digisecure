@@ -388,7 +388,7 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
 </section>
 
 <section class="ds-dashboard-section">
-    <div class="ds-kpi-grid">
+    <div class="ds-kpi-grid ds-kpi-grid-solid">
         <a href="<?= $view->url('/guardias') ?>" class="ds-kpi-card" style="text-decoration: none;">
             <span class="ds-kpi-icon"><i class="bi bi-person-badge-fill"></i></span>
             <div style="flex:1; min-width:0;">
@@ -653,4 +653,3 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
 })();
 </script>
 <?php $view->endSection() ?>
-

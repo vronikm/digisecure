@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Listado de puestos (sitios donde el tenant presta servicios).
  *
@@ -30,7 +30,7 @@ $qs = http_build_query(array_filter([
 $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
-<?php $view->section('title') ?>Puestos — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Puestos â€” DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-geo-alt me-1"></i>Puestos</li>
@@ -53,7 +53,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 
 <!-- KPIs -->
-<div class="ds-kpi-grid">
+<div class="ds-kpi-grid ds-kpi-grid-solid">
     <div class="ds-kpi-card">
         <span class="ds-kpi-icon"><i class="bi bi-collection"></i></span>
         <div>
@@ -87,11 +87,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 <!-- Filtros -->
 <div class="ds-filter-bar">
     <form method="get" action="<?= $view->url('/puestos') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-summary">
-            <i class="bi bi-funnel"></i>
-            <strong>Filtrar:</strong>
-        </div>
-        <div class="ds-filter-field">
+<div class="ds-filter-field">
             <div class="ds-form-field">
                 <label class="ds-form-label">Buscar</label>
                 <input type="text" name="q" class="form-control form-control-sm"
@@ -140,7 +136,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </div>
         <div class="ds-filter-actions">
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Aplicar
+                <i class="bi bi-search"></i>Buscar
             </button>
             <?php if ($hasFilters): ?>
             <a href="<?= $view->url('/puestos') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
@@ -200,7 +196,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                             <?php if (!empty($p['codigo'])): ?>
                                 <span class="ds-cell-mono"><?= $e((string) $p['codigo']) ?></span> &middot;
                             <?php endif ?>
-                            <?= $e((string) ($p['ciudad'] ?? '—')) ?>
+                            <?= $e((string) ($p['ciudad'] ?? 'â€”')) ?>
                         </div>
                     </td>
                     <td><div class="ds-cell-name" style="font-weight: 500;"><?= $e((string) $p['cliente_razon_social']) ?></div></td>
@@ -260,3 +256,4 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 <?php endif ?>
 <?php $view->endSection() ?>
+

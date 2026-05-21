@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Listado de asignaciones guardia <-> puesto.
  *
@@ -29,7 +29,7 @@ $cobertura = $kpis['plazas_total'] > 0
 $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-warning' : 'tone-danger');
 ?>
 
-<?php $view->section('title') ?>Asignaciones — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Asignaciones â€” DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-link-45deg me-1"></i>Asignaciones</li>
@@ -52,7 +52,7 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
 </div>
 
 <!-- KPIs -->
-<div class="ds-kpi-grid">
+<div class="ds-kpi-grid ds-kpi-grid-solid">
     <div class="ds-kpi-card tone-success">
         <span class="ds-kpi-icon"><i class="bi bi-check2-circle"></i></span>
         <div>
@@ -87,11 +87,7 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
 <!-- Filtros -->
 <div class="ds-filter-bar">
     <form method="get" action="<?= $view->url('/asignaciones') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-summary">
-            <i class="bi bi-funnel"></i>
-            <strong>Filtrar:</strong>
-        </div>
-        <div class="ds-filter-field">
+<div class="ds-filter-field">
             <div class="ds-form-field">
                 <label class="ds-form-label">Buscar</label>
                 <input type="text" name="q" class="form-control form-control-sm"
@@ -127,7 +123,7 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
         </div>
         <div class="ds-filter-actions">
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Aplicar
+                <i class="bi bi-search"></i>Buscar
             </button>
             <?php if ($hasFilters): ?>
             <a href="<?= $view->url('/asignaciones') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
@@ -211,7 +207,7 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
                         <?php if (!empty($a['rol_en_puesto'])): ?>
                             <span class="ds-chip"><?= $e((string) $a['rol_en_puesto']) ?></span>
                         <?php else: ?>
-                            <span class="ds-cell-sub">—</span>
+                            <span class="ds-cell-sub">â€”</span>
                         <?php endif ?>
                     </td>
                     <td><span class="ds-badge <?= $tone ?>"><?= $estado ? $e($estado->label()) : $e((string) $a['estado']) ?></span></td>
@@ -256,3 +252,4 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
 </div>
 <?php endif ?>
 <?php $view->endSection() ?>
+

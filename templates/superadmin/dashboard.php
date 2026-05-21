@@ -50,7 +50,7 @@ $eventoTone = [
 </div>
 
 <!-- KPI Cards -->
-<div class="ds-kpi-grid">
+<div class="ds-kpi-grid ds-kpi-grid-solid">
     <div class="ds-kpi-card">
         <span class="ds-kpi-icon"><i class="bi bi-buildings-fill"></i></span>
         <div style="flex: 1;">

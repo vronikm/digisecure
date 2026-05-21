@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Listado global de tenants (Fase 13).
  *
@@ -54,11 +54,7 @@ $baseParams = array_filter([
 <!-- Filtros -->
 <div class="ds-filter-bar">
     <form method="GET" action="<?= $view->url('/admin/tenants') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-summary">
-            <i class="bi bi-funnel"></i>
-            <strong>Filtrar:</strong>
-        </div>
-        <div class="ds-filter-field">
+<div class="ds-filter-field">
             <div class="ds-form-field">
                 <label class="ds-form-label">Buscar</label>
                 <input type="text" class="form-control form-control-sm" name="q"
@@ -90,7 +86,7 @@ $baseParams = array_filter([
         </div>
         <div class="ds-filter-actions">
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Aplicar
+                <i class="bi bi-search"></i>Buscar
             </button>
             <?php if ($hasFilters): ?>
             <a href="<?= $view->url('/admin/tenants') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
@@ -167,7 +163,7 @@ $baseParams = array_filter([
                                 <span class="ds-cell-mono"><?= $e(substr($venc, 0, 10)) ?></span>
                             <?php endif ?>
                         <?php else: ?>
-                            <span class="ds-cell-sub">—</span>
+                            <span class="ds-cell-sub">â€”</span>
                         <?php endif ?>
                     </td>
                     <td><span class="ds-badge <?= $tone ?>"><?= $e((string) $t['estado']) ?></span></td>
@@ -205,3 +201,4 @@ $baseParams = array_filter([
 </div>
 <?php endif ?>
 <?php $view->endSection() ?>
+

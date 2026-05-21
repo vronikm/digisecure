@@ -135,7 +135,7 @@ $normalizeMenuSearch = static function (array $parts): string {
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=19.1">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=20.0">
     <?= $view->yieldSection('head') ?>
 </head>
 <body>
@@ -321,7 +321,6 @@ $normalizeMenuSearch = static function (array $parts): string {
                 <section class="ds-menu-section" data-menu-section
                          style="--ds-section-accent: <?= $e($meta['accent']) ?>; --ds-section-soft: <?= $e($meta['soft']) ?>;">
                     <div class="ds-menu-header">
-                        <span class="ds-menu-header-mark"><i class="bi <?= $e($meta['icon']) ?>"></i></span>
                         <span class="ds-menu-header-copy">
                             <strong><?= $e($section['label']) ?></strong>
                             <span><?= count($sectionItems) ?> modulo<?= count($sectionItems) === 1 ? '' : 's' ?></span>

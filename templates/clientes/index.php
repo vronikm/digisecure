@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Listado de clientes del tenant.
  *
@@ -27,7 +27,7 @@ $qs = http_build_query(array_filter([
 $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
-<?php $view->section('title') ?>Clientes — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Clientes â€” DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-briefcase me-1"></i>Clientes</li>
@@ -50,7 +50,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 
 <!-- KPIs -->
-<div class="ds-kpi-grid">
+<div class="ds-kpi-grid ds-kpi-grid-4 ds-kpi-grid-solid">
     <div class="ds-kpi-card">
         <span class="ds-kpi-icon"><i class="bi bi-collection"></i></span>
         <div>
@@ -84,11 +84,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 <!-- Filtros -->
 <div class="ds-filter-bar">
     <form method="get" action="<?= $view->url('/clientes') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-summary">
-            <i class="bi bi-funnel"></i>
-            <strong>Filtrar:</strong>
-        </div>
-        <div class="ds-filter-field">
+<div class="ds-filter-field">
             <div class="ds-form-field">
                 <label class="ds-form-label">Buscar</label>
                 <input type="text" name="q" class="form-control form-control-sm"
@@ -111,7 +107,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </div>
         <div class="ds-filter-actions">
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Aplicar
+                <i class="bi bi-search"></i>Buscar
             </button>
             <?php if ($hasFilters): ?>
             <a href="<?= $view->url('/clientes') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
@@ -182,14 +178,14 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                         <?php elseif (!empty($c['contacto_telefono'])): ?>
                         <div class="ds-cell-mono"><?= $e((string) $c['contacto_telefono']) ?></div>
                         <?php else: ?>
-                        <span class="ds-cell-sub">—</span>
+                        <span class="ds-cell-sub">â€”</span>
                         <?php endif ?>
                     </td>
                     <td>
                         <?php if (!empty($c['sector'])): ?>
                             <span class="ds-chip"><?= $e((string) $c['sector']) ?></span>
                         <?php else: ?>
-                            <span class="ds-cell-sub">—</span>
+                            <span class="ds-cell-sub">â€”</span>
                         <?php endif ?>
                     </td>
                     <td><span class="ds-badge <?= $tone ?>"><?= $e(ucfirst((string) $c['estado'])) ?></span></td>
@@ -239,3 +235,4 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 <?php endif ?>
 <?php $view->endSection() ?>
+

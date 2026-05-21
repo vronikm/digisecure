@@ -42,7 +42,7 @@ $estadoTone = static fn(string $estado) => match ($estado) {
 </div>
 
 <!-- KPIs -->
-<div class="ds-kpi-grid">
+<div class="ds-kpi-grid ds-kpi-grid-solid">
     <div class="ds-kpi-card tone-danger">
         <span class="ds-kpi-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
         <div>

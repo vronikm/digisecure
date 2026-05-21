@@ -57,10 +57,6 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 <!-- Filtros -->
 <div class="ds-filter-bar">
     <form method="get" action="<?= $view->url('/guardias') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-summary">
-            <i class="bi bi-funnel"></i>
-            <strong>Filtrar:</strong>
-        </div>
         <div class="ds-filter-field">
             <div class="ds-form-field">
                 <label class="ds-form-label">Buscar</label>
@@ -97,7 +93,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </div>
         <div class="ds-filter-actions">
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Aplicar
+                <i class="bi bi-search"></i>Buscar
             </button>
             <?php if ($hasFilters): ?>
             <a href="<?= $view->url('/guardias') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">

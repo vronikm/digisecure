@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Listado de usuarios del tenant.
  *
@@ -22,7 +22,7 @@ $qs = http_build_query(array_filter(['estado' => $filters['estado'] ?? '']));
 $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
-<?php $view->section('title') ?>Usuarios — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Usuarios â€” DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-people me-1"></i>Usuarios</li>
@@ -47,11 +47,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 <!-- Filtros -->
 <div class="ds-filter-bar">
     <form method="get" action="<?= $view->url('/usuarios') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-summary">
-            <i class="bi bi-funnel"></i>
-            <strong>Filtrar:</strong>
-        </div>
-        <div class="ds-filter-field">
+<div class="ds-filter-field">
             <div class="ds-form-field">
                 <label class="ds-form-label">Estado</label>
                 <select name="estado" class="form-select form-select-sm">
@@ -66,7 +62,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </div>
         <div class="ds-filter-actions">
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Aplicar
+                <i class="bi bi-search"></i>Buscar
             </button>
             <?php if ($filters['estado'] ?? null): ?>
             <a href="<?= $view->url('/usuarios') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
@@ -206,3 +202,4 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 <?php endif ?>
 <?php $view->endSection() ?>
+

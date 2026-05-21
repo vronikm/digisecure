@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Listado de notificaciones del tenant.
  *
@@ -33,7 +33,7 @@ $hasFilters = !empty($filters['estado'] ?? null)
     || !empty($filters['evento'] ?? null);
 ?>
 
-<?php $view->section('title') ?>Notificaciones — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Notificaciones â€” DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-bell me-1"></i>Notificaciones</li>
@@ -51,7 +51,7 @@ $hasFilters = !empty($filters['estado'] ?? null)
 </div>
 
 <!-- KPIs -->
-<div class="ds-kpi-grid">
+<div class="ds-kpi-grid ds-kpi-grid-solid">
     <div class="ds-kpi-card tone-muted">
         <span class="ds-kpi-icon"><i class="bi bi-hourglass-split"></i></span>
         <div>
@@ -85,11 +85,7 @@ $hasFilters = !empty($filters['estado'] ?? null)
 <!-- Filtros -->
 <div class="ds-filter-bar">
     <form method="get" action="<?= $view->url('/notificaciones') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-summary">
-            <i class="bi bi-funnel"></i>
-            <strong>Filtrar:</strong>
-        </div>
-        <div class="ds-filter-field">
+<div class="ds-filter-field">
             <div class="ds-form-field">
                 <label class="ds-form-label">Estado</label>
                 <select name="estado" class="form-select form-select-sm">
@@ -120,7 +116,7 @@ $hasFilters = !empty($filters['estado'] ?? null)
         </div>
         <div class="ds-filter-actions">
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Aplicar
+                <i class="bi bi-search"></i>Buscar
             </button>
             <?php if ($hasFilters): ?>
             <a href="<?= $view->url('/notificaciones') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
@@ -167,7 +163,7 @@ $hasFilters = !empty($filters['estado'] ?? null)
                     <td><span class="ds-cell-mono"><?= $e(substr((string) $n['created_at'], 0, 16)) ?></span></td>
                     <td><span class="ds-cell-mono"><?= $e((string) $n['evento']) ?></span></td>
                     <td><span class="ds-chip"><i class="bi <?= $canalIcon((string) $n['canal']) ?>"></i><?= $e((string) $n['canal']) ?></span></td>
-                    <td class="ds-cell-mono"><?= $e((string) ($n['destinatario_email'] ?? $n['destinatario_telefono'] ?? '—')) ?></td>
+                    <td class="ds-cell-mono"><?= $e((string) ($n['destinatario_email'] ?? $n['destinatario_telefono'] ?? 'â€”')) ?></td>
                     <td>
                         <div style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= $e((string) $n['asunto']) ?>">
                             <?= $e((string) $n['asunto']) ?>
@@ -219,3 +215,4 @@ $hasFilters = !empty($filters['estado'] ?? null)
 </div>
 <?php endif ?>
 <?php $view->endSection() ?>
+
