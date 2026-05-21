@@ -102,8 +102,10 @@ $eventoTone = [
                     <div class="ds-card-subtitle">Distribucion del catalogo</div>
                 </div>
             </div>
-            <div class="ds-card-body" style="display: flex; align-items: center; justify-content: center; min-height: 280px;">
-                <canvas id="chartPlan" width="260" height="260"></canvas>
+            <div class="ds-card-body" style="display: flex; align-items: center; justify-content: center; min-height: 230px; padding: 1rem;">
+                <div style="width: min(100%, 210px); height: 210px;">
+                    <canvas id="chartPlan"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -243,7 +245,7 @@ $eventoTone = [
             labels: planLabels,
             datasets: [{ data: planData, backgroundColor: colors.slice(0, planLabels.length), borderWidth: 2, hoverOffset: 6 }],
         },
-        options: { responsive: true, maintainAspectRatio: true, cutout: '58%', plugins: { legend: { position: 'bottom', labels: { padding: 14 } } } },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { padding: 12 } } } },
     });
 
     const regLabels = <?= json_encode(array_map(fn($r) => $r['dia'], $registrosPorDia)) ?>;

@@ -163,7 +163,7 @@ $baseParams = array_filter([
                                 <span class="ds-cell-mono"><?= $e(substr($venc, 0, 10)) ?></span>
                             <?php endif ?>
                         <?php else: ?>
-                            <span class="ds-cell-sub">â€”</span>
+                            <span class="ds-cell-sub">&mdash;</span>
                         <?php endif ?>
                     </td>
                     <td><span class="ds-badge <?= $tone ?>"><?= $e((string) $t['estado']) ?></span></td>
