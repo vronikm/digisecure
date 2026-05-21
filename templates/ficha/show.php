@@ -31,6 +31,80 @@ $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr(
 
 <?php $view->section('title') ?>Ficha <?= $e($ficha['correlativo']) ?> — DigiSecure<?php $view->endSection() ?>
 
+<?php $view->section('head') ?>
+<style>
+    .ds-personal-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .7rem;
+    }
+    .ds-personal-item {
+        grid-column: span 6;
+        padding: .7rem .8rem;
+        border: 1px solid rgba(21, 48, 79, 0.09);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fcfdff, #f7f9fc);
+        min-width: 0;
+    }
+    .ds-personal-item.span-3 { grid-column: span 3; }
+    .ds-personal-item.span-4 { grid-column: span 4; }
+    .ds-personal-item.span-8 { grid-column: span 8; }
+    .ds-personal-item.span-12 { grid-column: span 12; }
+    .ds-personal-label {
+        font-size: .66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--ds-text-soft);
+        margin-bottom: .2rem;
+        line-height: 1.2;
+    }
+    .ds-personal-value {
+        font-size: .93rem;
+        font-weight: 600;
+        color: var(--ds-text);
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ds-personal-value.break {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+    .ds-personal-item > div:last-child {
+        font-size: .93rem;
+        font-weight: 600;
+        color: var(--ds-text);
+        line-height: 1.3;
+    }
+    .ds-personal-item > .ds-cell-mono {
+        font-size: .93rem;
+        line-height: 1.3;
+    }
+    .ds-personal-item > .ds-cell-sub {
+        font-size: .9rem;
+        line-height: 1.35;
+        color: var(--ds-text-soft);
+        white-space: normal;
+    }
+    @media (max-width: 1199.98px) {
+        .ds-personal-item.span-3 { grid-column: span 4; }
+        .ds-personal-item.span-8 { grid-column: span 12; }
+    }
+    @media (max-width: 767.98px) {
+        .ds-personal-item,
+        .ds-personal-item.span-3,
+        .ds-personal-item.span-4,
+        .ds-personal-item.span-8,
+        .ds-personal-item.span-12 {
+            grid-column: span 12;
+        }
+    }
+</style>
+<?php $view->endSection() ?>
+
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
 <li class="breadcrumb-item active"><?= $e($ficha['correlativo']) ?></li>
@@ -75,13 +149,13 @@ $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr(
             <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="ds-btn ds-btn-outline ds-btn-sm">
                 <i class="bi bi-folder2-open"></i>Ver expediente
             </a>
-            <?php if ($user->tienePermiso('fichas.editar') && in_array($estado, [EstadoFicha::BORRADOR, EstadoFicha::EN_REVISION])): ?>
+            <?php if ($user->tienePermiso('guardias.editar') && in_array($estado, [EstadoFicha::BORRADOR, EstadoFicha::EN_REVISION])): ?>
             <a href="<?= $view->url('/guardias/' . $fichaId . '/editar') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
                 <i class="bi bi-pencil"></i>Editar
             </a>
             <?php endif ?>
-            <?php if ($user->tienePermiso('fichas.completar') && $estado === EstadoFicha::EN_REVISION): ?>
-            <form method="post" action="<?= $view->url('/guardias/' . $fichaId . '/completar') ?>"
+            <?php if ($user->tienePermiso('guardias.editar') && $estado === EstadoFicha::EN_REVISION): ?>
+            <form method="post" action="<?= $view->url('/guardias/' . $fichaId . '/completar') ?>" class="ds-form-inline"
                   onsubmit="return confirm('Marcar esta ficha como COMPLETA? Se validaran los requisitos basicos.');"
                   style="display: inline;">
                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
@@ -131,45 +205,45 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
                 <span class="ds-card-mark"><i class="bi bi-person"></i></span>
                 <div>
                     <div class="ds-card-title">Datos personales</div>
-                    <div class="ds-card-subtitle">Identidad y contacto</div>
+                    <div class="ds-card-subtitle">Identidad y contacto principal</div>
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Cedula</div>
+                <div class="ds-personal-grid">
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Cedula</div>
                         <div class="ds-cell-mono" style="font-weight: 700;"><?= $e($ficha['cedula_display'] ?? '[cifrado]') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Genero</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Genero</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['genero'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Fecha de nacimiento</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Fecha de nacimiento</div>
                         <div class="ds-cell-mono"><?= $ficha['fecha_nacimiento'] ? date('d/m/Y', strtotime($ficha['fecha_nacimiento'])) : '—' ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Lugar de nacimiento</div>
+                    <div class="ds-personal-item span-8">
+                        <div class="ds-personal-label">Lugar de nacimiento</div>
                         <div style="<?= $ds_dd ?>"><?= $e(trim(($ficha['lugar_nacimiento_ciudad'] ?? '') . ', ' . ($ficha['lugar_nacimiento_provincia'] ?? ''), ', ') ?: '—') ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Tipo de sangre</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Tipo de sangre</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['tipo_sangre'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Estatura</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Estatura</div>
                         <div style="<?= $ds_dd ?>"><?= $ficha['estatura'] ? number_format((float) $ficha['estatura'], 2) . ' m' : '—' ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Estado civil</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Estado civil</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['estado_civil'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Celular</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Celular</div>
                         <div class="ds-cell-mono"><?= $e($ficha['celular'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Email</div>
+                    <div class="ds-personal-item span-8">
+                        <div class="ds-personal-label">Email</div>
                         <div class="ds-cell-mono"><?= $e($ficha['email'] ?? '—') ?></div>
                     </div>
                 </div>
@@ -188,41 +262,41 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Ciudad</div>
+                <div class="ds-personal-grid">
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Ciudad</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['domicilio_ciudad'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Tipo de vivienda</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Tipo de vivienda</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['domicilio_tipo_vivienda'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-8">
-                        <div style="<?= $ds_dt ?>">Calle</div>
+                    <div class="ds-personal-item span-8">
+                        <div class="ds-personal-label">Calle</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['domicilio_calle'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Numero</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Numero</div>
                         <div class="ds-cell-mono"><?= $e($ficha['domicilio_numero'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Barrio</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Barrio</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['domicilio_barrio'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Telefono fijo</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Telefono fijo</div>
                         <div class="ds-cell-mono"><?= $e($ficha['domicilio_telefono'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-12">
-                        <div style="<?= $ds_dt ?>">Referencia</div>
+                    <div class="ds-personal-item span-12">
+                        <div class="ds-personal-label">Referencia</div>
                         <div class="ds-cell-sub"><?= $e($ficha['domicilio_referencia'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Contacto de emergencia</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Contacto de emergencia</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['contacto_emergencia_nombre'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Tel. emergencia</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Tel. emergencia</div>
                         <div class="ds-cell-mono"><?= $e($ficha['contacto_emergencia_telefono'] ?? '—') ?></div>
                     </div>
                 </div>
@@ -241,17 +315,17 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Banco</div>
+                <div class="ds-personal-grid">
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Banco</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['banco'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Tipo de cuenta</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Tipo de cuenta</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['tipo_cuenta'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-12">
-                        <div style="<?= $ds_dt ?>">Cuenta bancaria</div>
+                    <div class="ds-personal-item span-12">
+                        <div class="ds-personal-label">Cuenta bancaria</div>
                         <div class="ds-cell-mono" style="font-weight: 700;"><?= $e($ficha['cuenta_bancaria_display'] ?? '[cifrado]') ?></div>
                     </div>
                 </div>
@@ -270,21 +344,21 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Primaria</div>
+                <div class="ds-personal-grid">
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Primaria</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['instruccion_primaria'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Secundaria</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Secundaria</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['instruccion_secundaria'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Superior</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Superior</div>
                         <div style="<?= $ds_dd ?>"><?= $e($ficha['instruccion_superior'] ?? '—') ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Ultimo reentrenamiento</div>
+                    <div class="ds-personal-item span-4">
+                        <div class="ds-personal-label">Ultimo reentrenamiento</div>
                         <div class="ds-cell-mono"><?= $ficha['fecha_ultimo_reentrenamiento'] ? date('d/m/Y', strtotime($ficha['fecha_ultimo_reentrenamiento'])) : '—' ?></div>
                     </div>
                 </div>

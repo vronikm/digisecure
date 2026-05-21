@@ -58,6 +58,9 @@ final class LoginController
             );
         }
 
+        // Re-emitir token CSRF al cambiar de contexto anonimo -> autenticado.
+        $csrf->rotateToken();
+
         $target = $this->sanitizeReturnTo($returnTo);
         return Response::redirect($target);
     }

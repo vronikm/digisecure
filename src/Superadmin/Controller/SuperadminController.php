@@ -90,6 +90,8 @@ final class SuperadminController
 
         $uso = $this->repo->usoTenant($id);
         $usuarios = $this->repo->usuariosTenant($id);
+        $usuariosDisponibles = $this->repo->usuariosDisponiblesParaTenant($id, 150);
+        $rolesDisponibles = $this->repo->rolesDisponiblesParaTenant($id);
         $ciclos = $this->repo->ciclosTenant($id);
         $registros = $this->repo->registrosTenant($id);
         $planes = $this->planRepo->listarActivos(false);
@@ -98,10 +100,317 @@ final class SuperadminController
             'tenant' => $tenant,
             'uso' => $uso,
             'usuarios' => $usuarios,
+            'usuariosDisponibles' => $usuariosDisponibles,
+            'rolesDisponibles' => $rolesDisponibles,
             'ciclos' => $ciclos,
             'registros' => $registros,
             'planes' => $planes,
         ]);
+    }
+
+    // ============================ Crear tenant ============================
+
+    public function tenantCrearForm(Request $request, CsrfGuard $csrf): Response
+    {
+        return $this->renderTenantCreateView(
+            $csrf,
+            $this->tenantCreateFormPath(),
+            $this->tenantCreateBackPath(),
+            $this->tenantCreateBackLabel(),
+            [],
+        );
+    }
+
+    public function tenantCrear(Request $request, CsrfGuard $csrf): Response
+    {
+        $formPath = $this->tenantCreateFormPath();
+        $volverUrl = $this->tenantCreateBackPath();
+        $volverLabel = $this->tenantCreateBackLabel();
+
+        $input = $request->post;
+        $planCodigo = trim((string) ($input['plan_codigo'] ?? 'trial'));
+        $plan = $this->planRepo->findByCodigo($planCodigo);
+        if ($plan === null || !$plan->activo) {
+            $this->flash->error('Selecciona un plan valido y activo.');
+            return $this->renderTenantCreateView($csrf, $formPath, $volverUrl, $volverLabel, $input);
+        }
+
+        $razonSocial = trim((string) ($input['razon_social'] ?? ''));
+        $ruc = preg_replace('/\D/', '', (string) ($input['ruc'] ?? '')) ?? '';
+        $email = mb_strtolower(trim((string) ($input['email_contacto'] ?? '')), 'UTF-8');
+        $estado = trim((string) ($input['estado'] ?? 'activo'));
+
+        if ($razonSocial === '' || mb_strlen($razonSocial) < 3) {
+            $this->flash->error('La razon social es obligatoria (minimo 3 caracteres).');
+            return $this->renderTenantCreateView($csrf, $formPath, $volverUrl, $volverLabel, $input);
+        }
+        if (!preg_match('/^\d{13}$/', $ruc)) {
+            $this->flash->error('El RUC debe tener 13 digitos.');
+            return $this->renderTenantCreateView($csrf, $formPath, $volverUrl, $volverLabel, $input);
+        }
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $this->flash->error('El email de contacto no es valido.');
+            return $this->renderTenantCreateView($csrf, $formPath, $volverUrl, $volverLabel, $input);
+        }
+        if (!in_array($estado, ['activo', 'pendiente', 'suspendido', 'cancelado'], true)) {
+            $estado = 'activo';
+        }
+
+        $inicio = trim((string) ($input['plan_inicio'] ?? ''));
+        $venc = trim((string) ($input['plan_vencimiento'] ?? ''));
+        if ($inicio === '') {
+            $inicio = date('Y-m-d');
+        }
+        if ($venc === '') {
+            $venc = (new \DateTimeImmutable($inicio))->modify('+30 days')->format('Y-m-d');
+        }
+
+        $maxUsuarios = max(1, (int) ($input['max_usuarios'] ?? $plan->maxUsuarios));
+        $maxGuardias = max(1, (int) ($input['max_guardias'] ?? $plan->maxGuardias));
+        $maxStorage = max(128, (int) ($input['max_storage_mb'] ?? $plan->maxStorageMb));
+
+        $tenantId = IdGenerator::ulid();
+        $now = Clock::nowString();
+        $data = [
+            'id' => $tenantId,
+            'razon_social' => $razonSocial,
+            'ruc' => $ruc,
+            'nombre_comercial' => trim((string) ($input['nombre_comercial'] ?? '')) ?: null,
+            'email_contacto' => $email,
+            'telefono' => trim((string) ($input['telefono'] ?? '')) ?: null,
+            'direccion' => trim((string) ($input['direccion'] ?? '')) ?: null,
+            'ciudad' => trim((string) ($input['ciudad'] ?? '')) ?: null,
+            'provincia' => trim((string) ($input['provincia'] ?? '')) ?: null,
+            'pais' => strtoupper(trim((string) ($input['pais'] ?? 'EC'))) ?: 'EC',
+            'estado' => $estado,
+            'plan_codigo' => $plan->codigo,
+            'plan_inicio' => $inicio,
+            'plan_vencimiento' => $venc,
+            'max_usuarios' => $maxUsuarios,
+            'max_guardias' => $maxGuardias,
+            'max_storage_mb' => $maxStorage,
+            'timezone' => trim((string) ($input['timezone'] ?? 'America/Guayaquil')) ?: 'America/Guayaquil',
+            'locale' => trim((string) ($input['locale'] ?? 'es_EC')) ?: 'es_EC',
+            'notas' => trim((string) ($input['notas'] ?? '')) ?: null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        try {
+            $this->repo->crearTenant($data);
+            $this->flash->success('Tenant creado correctamente.');
+
+            $user = $request->attribute('auth_user');
+            $this->audit->log(
+                evento: 'superadmin.tenant.creado',
+                usuarioId: $user?->id,
+                entidadTipo: 'tenant',
+                entidadId: $tenantId,
+                detalles: [
+                    'razon_social' => $razonSocial,
+                    'plan_codigo' => $plan->codigo,
+                    'estado' => $estado,
+                ],
+                nivel: 'warning',
+                ip: $request->clientIp(),
+            );
+
+            if ($user?->tienePermiso('superadmin.tenants.ver')) {
+                return Response::redirect($this->securePath($request, "/admin/tenants/{$tenantId}"));
+            }
+
+            return Response::redirect($formPath);
+        } catch (\Throwable) {
+            $this->flash->error('No se pudo crear el tenant. Verifica RUC/email unicos y datos obligatorios.');
+            return $this->renderTenantCreateView($csrf, $formPath, $volverUrl, $volverLabel, $input);
+        }
+    }
+
+    // ============================ Editar tenant ============================
+
+    public function tenantEditarForm(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        $tenant = $this->repo->findTenant($id);
+        if ($tenant === null) {
+            $this->flash->error('Tenant no encontrado.');
+            return Response::redirect('/admin/tenants');
+        }
+
+        return $this->view->response('superadmin/tenant-edit', [
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'tenant' => $tenant,
+            'planes' => $this->planRepo->listarActivos(false),
+            'input' => [],
+        ]);
+    }
+
+    public function tenantActualizar(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        $tenant = $this->repo->findTenant($id);
+        if ($tenant === null) {
+            $this->flash->error('Tenant no encontrado.');
+            return Response::redirect('/admin/tenants');
+        }
+
+        $input = $request->post;
+        $planCodigo = trim((string) ($input['plan_codigo'] ?? (string) $tenant['plan_codigo']));
+        $plan = $this->planRepo->findByCodigo($planCodigo);
+        if ($plan === null || !$plan->activo) {
+            $this->flash->error('Selecciona un plan valido y activo.');
+            return $this->view->response('superadmin/tenant-edit', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => "/admin/tenants/{$id}/editar",
+                'tenant' => array_merge($tenant, $input),
+                'planes' => $this->planRepo->listarActivos(false),
+                'input' => $input,
+            ]);
+        }
+
+        $update = [
+            'razon_social' => trim((string) ($input['razon_social'] ?? (string) $tenant['razon_social'])),
+            'nombre_comercial' => trim((string) ($input['nombre_comercial'] ?? (string) ($tenant['nombre_comercial'] ?? ''))) ?: null,
+            'email_contacto' => mb_strtolower(trim((string) ($input['email_contacto'] ?? (string) $tenant['email_contacto'])), 'UTF-8'),
+            'telefono' => trim((string) ($input['telefono'] ?? (string) ($tenant['telefono'] ?? ''))) ?: null,
+            'direccion' => trim((string) ($input['direccion'] ?? (string) ($tenant['direccion'] ?? ''))) ?: null,
+            'ciudad' => trim((string) ($input['ciudad'] ?? (string) ($tenant['ciudad'] ?? ''))) ?: null,
+            'provincia' => trim((string) ($input['provincia'] ?? (string) ($tenant['provincia'] ?? ''))) ?: null,
+            'pais' => strtoupper(trim((string) ($input['pais'] ?? (string) ($tenant['pais'] ?? 'EC')))) ?: 'EC',
+            'plan_codigo' => $plan->codigo,
+            'plan_inicio' => trim((string) ($input['plan_inicio'] ?? (string) ($tenant['plan_inicio'] ?? ''))) ?: null,
+            'plan_vencimiento' => trim((string) ($input['plan_vencimiento'] ?? (string) ($tenant['plan_vencimiento'] ?? ''))) ?: null,
+            'max_usuarios' => max(1, (int) ($input['max_usuarios'] ?? (int) $tenant['max_usuarios'])),
+            'max_guardias' => max(1, (int) ($input['max_guardias'] ?? (int) $tenant['max_guardias'])),
+            'max_storage_mb' => max(128, (int) ($input['max_storage_mb'] ?? (int) $tenant['max_storage_mb'])),
+            'timezone' => trim((string) ($input['timezone'] ?? (string) ($tenant['timezone'] ?? 'America/Guayaquil'))) ?: 'America/Guayaquil',
+            'locale' => trim((string) ($input['locale'] ?? (string) ($tenant['locale'] ?? 'es_EC'))) ?: 'es_EC',
+            'notas' => trim((string) ($input['notas'] ?? (string) ($tenant['notas'] ?? ''))) ?: null,
+            'updated_at' => Clock::nowString(),
+        ];
+
+        if ($update['razon_social'] === '' || mb_strlen((string) $update['razon_social']) < 3) {
+            $this->flash->error('La razon social es obligatoria (minimo 3 caracteres).');
+            return $this->view->response('superadmin/tenant-edit', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => "/admin/tenants/{$id}/editar",
+                'tenant' => array_merge($tenant, $input),
+                'planes' => $this->planRepo->listarActivos(false),
+                'input' => $input,
+            ]);
+        }
+        if ((string) $update['email_contacto'] === '' || filter_var((string) $update['email_contacto'], FILTER_VALIDATE_EMAIL) === false) {
+            $this->flash->error('El email de contacto no es valido.');
+            return $this->view->response('superadmin/tenant-edit', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => "/admin/tenants/{$id}/editar",
+                'tenant' => array_merge($tenant, $input),
+                'planes' => $this->planRepo->listarActivos(false),
+                'input' => $input,
+            ]);
+        }
+
+        try {
+            $this->repo->actualizarTenant($id, $update);
+            $this->flash->success('Tenant actualizado correctamente.');
+
+            $user = $request->attribute('auth_user');
+            $this->audit->log(
+                evento: 'superadmin.tenant.actualizado',
+                usuarioId: $user?->id,
+                entidadTipo: 'tenant',
+                entidadId: $id,
+                detalles: [
+                    'razon_social' => $update['razon_social'],
+                    'plan_codigo' => $update['plan_codigo'],
+                ],
+                nivel: 'warning',
+                ip: $request->clientIp(),
+            );
+
+            return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
+        } catch (\Throwable) {
+            $this->flash->error('No se pudo actualizar el tenant. Verifica datos unicos y obligatorios.');
+            return $this->view->response('superadmin/tenant-edit', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => "/admin/tenants/{$id}/editar",
+                'tenant' => array_merge($tenant, $input),
+                'planes' => $this->planRepo->listarActivos(false),
+                'input' => $input,
+            ]);
+        }
+    }
+
+    // ======================== Asociar usuario -> tenant ========================
+
+    public function asociarUsuarioTenant(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        $tenantDestino = $this->repo->findTenant($id);
+        if ($tenantDestino === null) {
+            $this->flash->error('Tenant destino no encontrado.');
+            return Response::redirect('/admin/tenants');
+        }
+
+        $usuarioId = trim((string) $request->post('usuario_id', ''));
+        $roleId = trim((string) $request->post('role_id', ''));
+
+        if ($usuarioId === '') {
+            $this->flash->error('Selecciona un usuario para asociar.');
+            return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
+        }
+
+        $usuario = $this->repo->findUsuarioGlobal($usuarioId);
+        if ($usuario === null) {
+            $this->flash->error('El usuario seleccionado no existe.');
+            return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
+        }
+
+        if ((string) $usuario['tenant_id'] === $id) {
+            $this->flash->success('El usuario ya estaba asociado a este tenant.');
+            return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
+        }
+
+        if ($roleId !== '') {
+            $roleValido = $this->db->fetchOne(
+                'SELECT id FROM roles WHERE id = :rid AND (tenant_id = :tid OR tenant_id IS NULL)',
+                ['rid' => $roleId, 'tid' => $id],
+            );
+            if ($roleValido === null) {
+                $this->flash->error('El rol seleccionado no es valido para el tenant destino.');
+                return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
+            }
+        }
+
+        try {
+            $this->repo->asociarUsuarioATenant(
+                $usuarioId,
+                $id,
+                $roleId !== '' ? $roleId : null,
+                $request->attribute('auth_user')?->id,
+            );
+
+            $this->flash->success('Usuario asociado al tenant correctamente.');
+
+            $user = $request->attribute('auth_user');
+            $this->audit->log(
+                evento: 'superadmin.usuario.asociado_tenant',
+                usuarioId: $user?->id,
+                entidadTipo: 'usuario',
+                entidadId: $usuarioId,
+                detalles: [
+                    'tenant_origen_id' => $usuario['tenant_id'],
+                    'tenant_origen' => $usuario['tenant_actual'],
+                    'tenant_destino_id' => $id,
+                    'tenant_destino' => $tenantDestino['razon_social'],
+                    'role_id' => $roleId !== '' ? $roleId : null,
+                ],
+                nivel: 'warning',
+                ip: $request->clientIp(),
+            );
+        } catch (\Throwable) {
+            $this->flash->error('No se pudo asociar el usuario. Verifica que no exista conflicto de email en el tenant destino.');
+        }
+
+        return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
     }
 
     // ============================ Cambiar estado ============================
@@ -113,7 +422,7 @@ final class SuperadminController
 
         if (!in_array($nuevoEstado, $estadosValidos, true)) {
             $this->flash->error('Estado invalido.', 'No se pudo actualizar el tenant');
-            return Response::redirect("/admin/tenants/{$id}");
+            return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
         }
 
         $tenant = $this->repo->findTenant($id);
@@ -142,7 +451,7 @@ final class SuperadminController
             ip: $request->clientIp(),
         );
 
-        return Response::redirect("/admin/tenants/{$id}");
+        return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
     }
 
     // ============================ Cambiar plan ============================
@@ -155,7 +464,7 @@ final class SuperadminController
         $plan = $this->planRepo->findByCodigo($planCodigo);
         if ($plan === null || !$plan->activo) {
             $this->flash->error('El plan seleccionado no existe o esta inactivo.');
-            return Response::redirect("/admin/tenants/{$id}");
+            return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
         }
 
         $tenant = $this->repo->findTenant($id);
@@ -221,7 +530,7 @@ final class SuperadminController
             $tenant['razon_social'],
         );
 
-        return Response::redirect("/admin/tenants/{$id}");
+        return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
     }
 
     // ============================ Log de registros ============================
@@ -233,5 +542,57 @@ final class SuperadminController
         return $this->view->response('superadmin/registros', [
             'registros' => $registros,
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     */
+    private function renderTenantCreateView(
+        CsrfGuard $csrf,
+        string $formPath,
+        string $volverUrl,
+        string $volverLabel,
+        array $input,
+    ): Response {
+        return $this->view->response('superadmin/tenant-create', [
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $formPath,
+            'planes' => $this->planRepo->listarActivos(false),
+            'input' => $input,
+            'formAction' => $formPath,
+            'volverUrl' => $volverUrl,
+            'volverLabel' => $volverLabel,
+        ]);
+    }
+
+    private function tenantCreateFormPath(): string
+    {
+        return '/admin/tenants/crear';
+    }
+
+    private function tenantCreateBackPath(): string
+    {
+        return '/admin/tenants';
+    }
+
+    private function tenantCreateBackLabel(): string
+    {
+        return 'Volver al listado';
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 }

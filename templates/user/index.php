@@ -46,7 +46,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 
 <!-- Filtros -->
 <div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/usuarios') ?>" class="ds-filter-row">
+    <form method="get" action="<?= $view->url('/usuarios') ?>" class="ds-filter-row ds-form-filter">
         <div class="ds-filter-summary">
             <i class="bi bi-funnel"></i>
             <strong>Filtrar:</strong>
@@ -151,7 +151,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                             <?php endif ?>
                             <?php if ($user->tienePermiso('usuarios.bloquear') && $u['id'] !== $user->id): ?>
                                 <?php if ($estado === 'activo'): ?>
-                                <form method="post" action="<?= $view->url('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline"
+                                <form method="post" action="<?= $view->url('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline ds-form-inline"
                                       onsubmit="return confirm('Bloquear a <?= $e($u['nombres']) ?>?');">
                                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                     <input type="hidden" name="estado" value="bloqueado">
@@ -160,7 +160,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                                     </button>
                                 </form>
                                 <?php else: ?>
-                                <form method="post" action="<?= $view->url('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline"
+                                <form method="post" action="<?= $view->url('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline ds-form-inline"
                                       onsubmit="return confirm('Reactivar a <?= $e($u['nombres']) ?>?');">
                                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                     <input type="hidden" name="estado" value="activo">

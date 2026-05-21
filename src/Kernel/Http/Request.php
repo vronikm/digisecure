@@ -127,6 +127,11 @@ final class Request
      */
     public function query(string $key, mixed $default = null): mixed
     {
+        $overrideKey = "query.{$key}";
+        if (\array_key_exists($overrideKey, $this->attributes)) {
+            return $this->attributes[$overrideKey] ?? $default;
+        }
+
         return $this->query[$key] ?? $default;
     }
 

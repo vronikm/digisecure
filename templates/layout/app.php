@@ -12,11 +12,31 @@
 use DigiSecure\Kernel\View\Menu\MenuBuilder;
 use DigiSecure\Kernel\View\Menu\MenuItem;
 use DigiSecure\Kernel\View\ViewRenderer;
+use DigiSecure\Security\Auth\AuthenticatedUser;
 
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 /** @var \DigiSecure\Security\Auth\AuthenticatedUser $user */
 /** @var string $csrfToken */
 /** @var string $currentPath */
+
+$user = $user ?? $view->shared('user');
+$csrfToken = (string) ($csrfToken ?? $view->shared('csrfToken', ''));
+$currentPath = (string) ($currentPath ?? $view->shared('currentPath', '/'));
+
+if (!$user instanceof AuthenticatedUser) {
+    $user = new AuthenticatedUser(
+        id: '',
+        tenantId: '',
+        email: '',
+        nombres: 'Usuario',
+        apellidos: '',
+        estado: 'inactivo',
+        tenantNombre: '-',
+        tenantEstado: 'inactivo',
+        permisos: [],
+        roles: [],
+    );
+}
 
 $e = ViewRenderer::e(...);
 $pageTitle = $view->yieldSection('title', 'DigiSecure');
@@ -79,6 +99,28 @@ $roleLabels = array_values(array_filter(array_map(
     static fn(array $role): string => trim((string) ($role['nombre'] ?? '')),
     $user->roles,
 )));
+
+$normalizeMenuSearch = static function (array $parts): string {
+    $raw = trim(implode(' ', array_filter(
+        array_map(static fn(mixed $part): string => trim((string) $part), $parts),
+        static fn(string $part): bool => $part !== '',
+    )));
+
+    $lower = function_exists('mb_strtolower')
+        ? mb_strtolower($raw, 'UTF-8')
+        : strtolower($raw);
+
+    $ascii = strtr($lower, [
+        'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a', 'ã' => 'a',
+        'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+        'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i',
+        'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o', 'õ' => 'o',
+        'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u',
+        'ñ' => 'n',
+    ]);
+
+    return trim((string) preg_replace('/\s+/', ' ', $lower . ' ' . $ascii));
+};
 ?>
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
@@ -93,7 +135,7 @@ $roleLabels = array_values(array_filter(array_map(
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=18.6">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=19.1">
     <?= $view->yieldSection('head') ?>
 </head>
 <body>
@@ -231,7 +273,7 @@ $roleLabels = array_values(array_filter(array_map(
                     <i class="bi bi-chevron-right item-arrow"></i>
                 </a>
                 <div class="ds-dm-footer">
-                    <form method="POST" action="<?= $view->url('/logout') ?>">
+                    <form method="POST" action="<?= $view->url('/logout') ?>" class="ds-form-inline">
                         <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                         <button type="submit" class="dropdown-item">
                             <i class="bi bi-box-arrow-right"></i>
@@ -266,7 +308,7 @@ $roleLabels = array_values(array_filter(array_map(
 
             <label class="ds-search-wrap" for="ds-menu-search">
                 <i class="bi bi-search"></i>
-                <input id="ds-menu-search" type="search" placeholder="Buscar modulo o accion">
+                <input id="ds-menu-search" type="search" placeholder="Buscar modulo o accion" autocomplete="off">
             </label>
         </div>
 
@@ -289,17 +331,39 @@ $roleLabels = array_values(array_filter(array_map(
                     <?php foreach ($sectionItems as $item): ?>
                         <?php
                         $isActive = $item->isActive($currentPath);
+                        $isExpanded = $item->children !== [] && $isActive;
+                        $visibleChildren = [];
                         $childSearch = [];
                         foreach ($item->children as $child) {
                             if (!$child->isVisibleFor($user->permisos)) {
                                 continue;
                             }
-                            $childSearch[] = $child->label . ' ' . ($child->description ?? '');
+                            $childSearchText = $normalizeMenuSearch([
+                                $child->label,
+                                $child->description ?? '',
+                                $child->url ?? '',
+                                implode(' ', $child->permisos),
+                            ]);
+                            $visibleChildren[] = [
+                                'item' => $child,
+                                'search' => $childSearchText,
+                            ];
+                            $childSearch[] = $childSearchText;
                         }
-                        $searchText = strtolower(trim($item->label . ' ' . ($item->description ?? '') . ' ' . implode(' ', $childSearch)));
+                        $ownSearchText = $normalizeMenuSearch([
+                            $section['label'],
+                            $item->label,
+                            $item->description ?? '',
+                            $item->url ?? '',
+                            implode(' ', $item->permisos),
+                        ]);
+                        $searchText = $normalizeMenuSearch([$ownSearchText, implode(' ', $childSearch)]);
                         $subId = 'menu-' . md5($section['label'] . $item->label);
                         ?>
-                        <div class="ds-menu-node" data-menu-node data-menu-search="<?= $e($searchText) ?>">
+                        <div class="ds-menu-node"
+                             data-menu-node
+                             data-menu-search="<?= $e($searchText) ?>"
+                             data-menu-search-own="<?= $e($ownSearchText) ?>">
                             <?php if ($item->children === []): ?>
                                 <a href="<?= $e($item->url !== null ? $view->url($item->url) : '#') ?>"
                                    class="ds-menu-item<?= $isActive ? ' active' : '' ?>">
@@ -318,19 +382,24 @@ $roleLabels = array_values(array_filter(array_map(
                                 <a href="#<?= $subId ?>"
                                    class="ds-menu-item<?= $isActive ? ' active' : '' ?>"
                                    data-bs-toggle="collapse"
-                                   aria-expanded="false">
+                                   aria-expanded="<?= $isExpanded ? 'true' : 'false' ?>">
                                     <span class="ds-menu-icon"><i class="bi <?= $e($item->icon) ?>"></i></span>
                                     <span class="ds-menu-copy">
                                         <span class="ds-menu-label"><?= $e($item->label) ?></span>
                                     </span>
                                     <span class="ds-menu-chevron"><i class="bi bi-chevron-right"></i></span>
                                 </a>
-                                <div class="collapse ds-submenu" id="<?= $subId ?>">
-                                    <?php foreach ($item->children as $child): ?>
-                                        <?php if (!$child->isVisibleFor($user->permisos)) continue; ?>
+                                <div class="collapse ds-submenu<?= $isExpanded ? ' show' : '' ?>" id="<?= $subId ?>">
+                                    <?php foreach ($visibleChildren as $childEntry): ?>
+                                        <?php
+                                        $child = $childEntry['item'];
+                                        $childSearchText = $childEntry['search'];
+                                        ?>
                                         <?php $childActive = $child->isActive($currentPath); ?>
                                         <a href="<?= $e($child->url !== null ? $view->url($child->url) : '#') ?>"
-                                           class="ds-submenu-item<?= $childActive ? ' active' : '' ?>">
+                                           class="ds-submenu-item<?= $childActive ? ' active' : '' ?>"
+                                           data-menu-child
+                                           data-menu-search="<?= $e($childSearchText) ?>">
                                             <span class="ds-submenu-icon"><i class="bi <?= $e($child->icon) ?>"></i></span>
                                             <span class="ds-submenu-copy">
                                                 <span class="ds-submenu-label"><?= $e($child->label) ?></span>
@@ -347,7 +416,7 @@ $roleLabels = array_values(array_filter(array_map(
                 </section>
             <?php endforeach; ?>
 
-            <div class="ds-menu-empty d-none" id="ds-menu-empty">
+            <div class="ds-menu-empty is-menu-hidden" id="ds-menu-empty">
                 No encontramos coincidencias para esa busqueda.
             </div>
         </div>
@@ -362,15 +431,17 @@ $roleLabels = array_values(array_filter(array_map(
 <div class="ds-sidebar-overlay" id="sidebar-overlay"></div>
 
 <main class="ds-main">
-    <div class="ds-shell">
-        <?php $breadcrumb = $view->yieldSection('breadcrumb'); ?>
-        <?php if ($breadcrumb !== ''): ?>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb ds-breadcrumb"><?= $breadcrumb ?></ol>
-            </nav>
-        <?php endif; ?>
+    <?php $breadcrumb = $view->yieldSection('breadcrumb'); ?>
+    <?php if ($breadcrumb !== ''): ?>
+        <nav aria-label="breadcrumb" class="ds-breadcrumb-outer">
+            <ol class="breadcrumb ds-breadcrumb"><?= $breadcrumb ?></ol>
+        </nav>
+    <?php endif; ?>
 
-        <?= $view->yieldSection('content') ?>
+    <div class="ds-shell">
+        <div class="ds-content-wrap">
+            <?= $view->yieldSection('content') ?>
+        </div>
 
         <footer class="ds-footer">
             &copy; <?= date('Y') ?> DigiSecure | Sistema de gestion de seguridad privada
@@ -380,6 +451,7 @@ $roleLabels = array_values(array_filter(array_map(
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="<?= $view->url('/assets/js/ds-menu-search.js') ?>?v=1.1" defer></script>
 <script>
 (() => {
     const toasts = document.querySelectorAll('[data-ds-toast]');
@@ -389,7 +461,10 @@ $roleLabels = array_values(array_filter(array_map(
             toast.classList.add('is-hiding');
             setTimeout(() => toast.remove(), 220);
         };
-        toast.querySelector('[data-ds-toast-close]')?.addEventListener('click', dismiss);
+        const closeButton = toast.querySelector('[data-ds-toast-close]');
+        if (closeButton) {
+            closeButton.addEventListener('click', dismiss);
+        }
         setTimeout(dismiss, 5500);
     });
 })();
@@ -418,52 +493,115 @@ $roleLabels = array_values(array_filter(array_map(
         });
     });
 
-    overlay?.addEventListener('click', () => {
-        sidebar?.classList.remove('show');
-        syncOverlay();
-    });
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            if (sidebar) {
+                sidebar.classList.remove('show');
+            }
+            syncOverlay();
+        });
+    }
 
     document.querySelectorAll('.ds-sidebar a[href]').forEach((link) => {
         link.addEventListener('click', () => {
-            if (window.innerWidth < 992) {
-                sidebar?.classList.remove('show');
+            if (link.matches('[data-bs-toggle="collapse"]')) {
+                return;
+            }
+
+            if (window.innerWidth < 992 && sidebar) {
+                sidebar.classList.remove('show');
                 syncOverlay();
             }
         });
     });
 
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.trim().toLowerCase();
+    if (!searchInput) {
+        syncOverlay();
+    } else {
+        const normalizeSearch = (value) => {
+            const raw = String(value || '').trim().toLowerCase();
+            try {
+                return raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            } catch (error) {
+                return raw;
+            }
+        };
+
+        const setSubmenuOpen = (node, open) => {
+            const submenu = node.querySelector('.ds-submenu');
+            const trigger = node.querySelector('.ds-menu-item[data-bs-toggle="collapse"]');
+            if (!submenu) {
+                return;
+            }
+
+            submenu.classList.toggle('show', open);
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+        };
+
+        const resetNode = (node) => {
+            node.classList.remove('is-menu-hidden');
+            node.querySelectorAll('[data-menu-child]').forEach((child) => {
+                child.classList.remove('is-menu-hidden');
+            });
+            setSubmenuOpen(node, Boolean(node.querySelector('.ds-menu-item.active, .ds-submenu-item.active')));
+        };
+
+        const runMenuSearch = () => {
+            const query = normalizeSearch(searchInput.value);
             let visibleNodes = 0;
 
             menuSections.forEach((section) => {
                 let sectionVisible = 0;
                 section.querySelectorAll('[data-menu-node]').forEach((node) => {
-                    const haystack = (node.getAttribute('data-menu-search') || '').toLowerCase();
-                    const matches = query === '' || haystack.includes(query);
-                    node.classList.toggle('d-none', !matches);
+                    if (query === '') {
+                        resetNode(node);
+                        sectionVisible += 1;
+                        visibleNodes += 1;
+                        return;
+                    }
+
+                    const ownText = normalizeSearch(node.getAttribute('data-menu-search-own'));
+                    const fullText = normalizeSearch(node.getAttribute('data-menu-search'));
+                    const childLinks = Array.from(node.querySelectorAll('[data-menu-child]'));
+                    const ownMatches = ownText.includes(query);
+                    let visibleChildren = 0;
+
+                    childLinks.forEach((child) => {
+                        const childText = normalizeSearch(child.getAttribute('data-menu-search'));
+                        const childMatches = ownMatches || childText.includes(query);
+                        child.classList.toggle('is-menu-hidden', !childMatches);
+                        if (childMatches) {
+                            visibleChildren += 1;
+                        }
+                    });
+
+                    const matches = childLinks.length > 0
+                        ? ownMatches || visibleChildren > 0
+                        : fullText.includes(query);
+
+                    node.classList.toggle('is-menu-hidden', !matches);
                     if (matches) {
                         sectionVisible += 1;
                         visibleNodes += 1;
-                        const submenu = node.querySelector('.ds-submenu');
-                        if (submenu && query !== '') {
-                            submenu.classList.add('show');
-                        }
+                        setSubmenuOpen(node, childLinks.length > 0);
                     } else {
-                        const submenu = node.querySelector('.ds-submenu');
-                        if (submenu && !node.querySelector('.ds-menu-item.active')) {
-                            submenu.classList.remove('show');
-                        }
+                        setSubmenuOpen(node, false);
                     }
                 });
-                section.classList.toggle('d-none', sectionVisible === 0);
+                section.classList.toggle('is-menu-hidden', sectionVisible === 0);
             });
 
             if (emptyState) {
-                emptyState.classList.toggle('d-none', visibleNodes !== 0 || query === '');
+                emptyState.classList.toggle('is-menu-hidden', visibleNodes !== 0 || query === '');
             }
-        });
+        };
+
+        searchInput.addEventListener('input', runMenuSearch);
+        searchInput.addEventListener('keyup', runMenuSearch);
+        searchInput.addEventListener('change', runMenuSearch);
+        searchInput.addEventListener('search', runMenuSearch);
     }
 })();
 </script>

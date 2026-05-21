@@ -117,7 +117,7 @@ final class AsignacionController
         try {
             $id = $this->service->crear($input, $user->id, $request->clientIp());
             $this->flash->success('Asignacion creada correctamente.');
-            return Response::redirect("/asignaciones/{$id}");
+            return Response::redirect($this->securePath($request, "/asignaciones/{$id}"));
         } catch (DomainException $e) {
             return $this->view->response('asignaciones/create', [
                 'user' => $user,
@@ -168,7 +168,7 @@ final class AsignacionController
         }
         if ($asignacion['estado'] !== 'activa') {
             $this->flash->error('Solo se pueden editar asignaciones activas.');
-            return Response::redirect("/asignaciones/{$id}");
+            return Response::redirect($this->securePath($request, "/asignaciones/{$id}"));
         }
 
         return $this->view->response('asignaciones/edit', [
@@ -189,7 +189,7 @@ final class AsignacionController
         try {
             $this->service->actualizar($id, $input, $user->id, $request->clientIp());
             $this->flash->success('Asignacion actualizada.');
-            return Response::redirect("/asignaciones/{$id}");
+            return Response::redirect($this->securePath($request, "/asignaciones/{$id}"));
         } catch (DomainException $e) {
             $asignacion = $this->repo->findById($id) ?? [];
             return $this->view->response('asignaciones/edit', [
@@ -216,6 +216,22 @@ final class AsignacionController
         } catch (DomainException $e) {
             $this->flash->error($e->getMessage(), 'No se pudo cerrar la asignacion');
         }
-        return Response::redirect("/asignaciones/{$id}");
+        return Response::redirect($this->securePath($request, "/asignaciones/{$id}"));
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 }

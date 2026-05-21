@@ -29,6 +29,8 @@ use DigiSecure\Tenant\Domain\TenantContext;
 final class Authenticator
 {
     private const SESSION_USER_KEY = '_digisecure.auth_user';
+    private const SESSION_USER_SYNC_AT_KEY = '_digisecure.auth_user_sync_at';
+    private const SESSION_USER_SYNC_INTERVAL_SECONDS = 120;
     private const MAX_ATTEMPTS = 5;
     private const LOCKOUT_MINUTES = 15;
 
@@ -157,6 +159,7 @@ final class Authenticator
         // 13. Guardar en sesión + regenerar ID (anti-fixation)
         $this->session->regenerateId(true);
         $this->session->set(self::SESSION_USER_KEY, $authUser->toSessionArray());
+        $this->session->set(self::SESSION_USER_SYNC_AT_KEY, time());
 
         // 14. Auditoría
         $this->audit->loginExitoso($usuario['id'], $ip, $userAgent);
@@ -178,6 +181,7 @@ final class Authenticator
         if ($user !== null) {
             $this->audit->logout($user->id, $ip);
         }
+        $this->session->remove(self::SESSION_USER_SYNC_AT_KEY);
         $this->session->destroy();
     }
 
@@ -192,6 +196,69 @@ final class Authenticator
         }
 
         return AuthenticatedUser::fromSessionArray($data);
+    }
+
+    /**
+     * Sincroniza roles/permisos en sesión para reflejar cambios RBAC sin forzar relogin.
+     * Hace refresh como máximo cada SESSION_USER_SYNC_INTERVAL_SECONDS.
+     */
+    public function syncSessionUser(AuthenticatedUser $user): AuthenticatedUser
+    {
+        $lastSyncAt = (int) $this->session->get(self::SESSION_USER_SYNC_AT_KEY, 0);
+        $now = time();
+
+        if (($now - $lastSyncAt) < self::SESSION_USER_SYNC_INTERVAL_SECONDS) {
+            return $user;
+        }
+
+        $permisos = array_column($this->db->fetchAll(
+            'SELECT DISTINCT p.codigo
+               FROM usuarios_roles ur
+               INNER JOIN roles r ON r.id = ur.role_id
+               INNER JOIN roles_permisos rp ON rp.role_id = r.id
+               INNER JOIN permisos p ON p.id = rp.permiso_id
+              WHERE ur.usuario_id = :usuario_id
+                AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
+            [
+                'usuario_id' => $user->id,
+                'tenant_id' => $user->tenantId,
+            ],
+        ), 'codigo');
+
+        $roles = $this->db->fetchAll(
+            'SELECT r.codigo, r.nombre
+               FROM usuarios_roles ur
+               INNER JOIN roles r ON r.id = ur.role_id
+              WHERE ur.usuario_id = :usuario_id
+                AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
+            [
+                'usuario_id' => $user->id,
+                'tenant_id' => $user->tenantId,
+            ],
+        );
+
+        $this->session->set(self::SESSION_USER_SYNC_AT_KEY, $now);
+
+        if ($permisos === $user->permisos && $roles === $user->roles) {
+            return $user;
+        }
+
+        $updated = new AuthenticatedUser(
+            id: $user->id,
+            tenantId: $user->tenantId,
+            email: $user->email,
+            nombres: $user->nombres,
+            apellidos: $user->apellidos,
+            estado: $user->estado,
+            tenantNombre: $user->tenantNombre,
+            tenantEstado: $user->tenantEstado,
+            permisos: $permisos,
+            roles: $roles,
+        );
+
+        $this->session->set(self::SESSION_USER_KEY, $updated->toSessionArray());
+
+        return $updated;
     }
 
     /**

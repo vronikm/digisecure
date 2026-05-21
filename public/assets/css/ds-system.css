@@ -773,6 +773,13 @@ body {
     text-align: center;
 }
 
+.ds-menu-section.is-menu-hidden,
+.ds-menu-node.is-menu-hidden,
+.ds-submenu-item.is-menu-hidden,
+.ds-menu-empty.is-menu-hidden {
+    display: none !important;
+}
+
 .ds-sidebar-footer {
     padding: 0.55rem 0.75rem;
     border-radius: 10px;
@@ -812,10 +819,48 @@ body {
     backdrop-filter: blur(16px);
 }
 
+.ds-content-wrap {
+    max-width: 1320px;
+    margin: 0 auto;
+}
+
+.ds-breadcrumb-outer {
+    margin: 0 0 0.75rem 0;
+    padding: 0 0.25rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .ds-breadcrumb {
-    margin-bottom: 1rem;
+    margin-bottom: 0;
     padding: 0;
     background: transparent;
+    font-size: 0.75rem;
+    justify-content: flex-end;
+    --bs-breadcrumb-divider: '/';
+    --bs-breadcrumb-divider-color: var(--ds-text-soft);
+    --bs-breadcrumb-item-padding-x: 0.4rem;
+}
+
+.ds-breadcrumb .breadcrumb-item {
+    font-size: 0.75rem;
+    color: var(--ds-text-soft);
+}
+
+.ds-breadcrumb .breadcrumb-item a {
+    color: var(--ds-text-soft);
+    text-decoration: none;
+    transition: color .15s;
+}
+
+.ds-breadcrumb .breadcrumb-item a:hover {
+    color: #2f80ed;
+    text-decoration: underline;
+}
+
+.ds-breadcrumb .breadcrumb-item.active {
+    color: var(--ds-text);
+    font-weight: 600;
 }
 
 .ds-footer {
@@ -1051,6 +1096,144 @@ body {
     display: block;
     font-size: .8rem;
     color: var(--ds-text-soft);
+}
+
+/* Layout reusable para formularios y vistas (patron Nuevo usuario) */
+.ds-form-wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+.ds-form-main {
+    max-width: 1040px;
+    margin: 0 auto;
+    display: block;
+}
+
+.ds-form-filter {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    display: block;
+}
+
+.ds-form-inline {
+    margin: 0;
+    display: inline-block;
+}
+
+.ds-view-wrap {
+    max-width: 1140px;
+    margin: 0 auto;
+}
+
+.ds-form-main .row,
+.ds-form-wrap .row {
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: .9rem 1rem;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.ds-form-main .row > *,
+.ds-form-wrap .row > * {
+    width: auto;
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+    grid-column: span 12;
+}
+
+.ds-form-main .row > [class*="col-"] > .ds-form-field,
+.ds-form-wrap .row > [class*="col-"] > .ds-form-field {
+    width: 100%;
+}
+
+.ds-form-main .row > .col-6,
+.ds-form-wrap .row > .col-6 { grid-column: span 6; }
+
+.ds-form-main .row > .col-12,
+.ds-form-wrap .row > .col-12 { grid-column: span 12; }
+
+@media (min-width: 768px) {
+    .ds-form-main .row > .col-md-3,
+    .ds-form-wrap .row > .col-md-3 { grid-column: span 3; }
+
+    .ds-form-main .row > .col-md-4,
+    .ds-form-wrap .row > .col-md-4 { grid-column: span 4; }
+
+    .ds-form-main .row > .col-md-5,
+    .ds-form-wrap .row > .col-md-5 { grid-column: span 5; }
+
+    .ds-form-main .row > .col-md-6,
+    .ds-form-wrap .row > .col-md-6 { grid-column: span 6; }
+
+    .ds-form-main .row > .col-md-7,
+    .ds-form-wrap .row > .col-md-7 { grid-column: span 7; }
+
+    .ds-form-main .row > .col-md-8,
+    .ds-form-wrap .row > .col-md-8 { grid-column: span 8; }
+
+    .ds-form-main .row > .col-md-9,
+    .ds-form-wrap .row > .col-md-9 { grid-column: span 9; }
+
+    .ds-form-main .row > .col-md-10,
+    .ds-form-wrap .row > .col-md-10 { grid-column: span 10; }
+
+    .ds-form-main .row > .col-md-12,
+    .ds-form-wrap .row > .col-md-12 { grid-column: span 12; }
+}
+
+@media (min-width: 992px) {
+    .ds-form-main .row > .col-lg-3,
+    .ds-form-wrap .row > .col-lg-3 { grid-column: span 3; }
+
+    .ds-form-main .row > .col-lg-4,
+    .ds-form-wrap .row > .col-lg-4 { grid-column: span 4; }
+
+    .ds-form-main .row > .col-lg-5,
+    .ds-form-wrap .row > .col-lg-5 { grid-column: span 5; }
+
+    .ds-form-main .row > .col-lg-6,
+    .ds-form-wrap .row > .col-lg-6 { grid-column: span 6; }
+
+    .ds-form-main .row > .col-lg-8,
+    .ds-form-wrap .row > .col-lg-8 { grid-column: span 8; }
+
+    .ds-form-main .row > .col-lg-12,
+    .ds-form-wrap .row > .col-lg-12 { grid-column: span 12; }
+}
+
+.ds-form-main .form-control,
+.ds-form-main .form-select,
+.ds-form-main textarea.form-control {
+    min-height: 42px;
+}
+
+/* Grid utilitario para forms complejos sin Bootstrap (usado en Usuario) */
+.ds-user-grid,
+.ds-form-grid-12 {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: .9rem 1rem;
+}
+
+.ds-col-12 { grid-column: span 12; }
+
+@media (min-width: 768px) {
+    .ds-col-md-6 { grid-column: span 6; }
+}
+
+@media (min-width: 1200px) {
+    .ds-col-lg-3 { grid-column: span 3; }
+    .ds-col-lg-4 { grid-column: span 4; }
+    .ds-col-lg-5 { grid-column: span 5; }
+    .ds-col-lg-6 { grid-column: span 6; }
+    .ds-col-lg-7 { grid-column: span 7; }
+    .ds-col-lg-8 { grid-column: span 8; }
 }
 
 /* ---------- 8. Tablas, badges, empty states, filtros (Fase 16) ---------- */

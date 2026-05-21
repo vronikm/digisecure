@@ -39,8 +39,16 @@ final class ExportarReporteService
         $rows = $this->db->fetchAll(
             "SELECT f.correlativo, f.tipo_ficha, f.estado, f.fecha_emision,
                     f.nombres, f.apellidos, f.genero, f.fecha_nacimiento,
-                    f.celular, f.email, f.direccion_domicilio, f.ciudad,
-                    f.provincia, f.nivel_instruccion, f.estado_civil,
+                    f.celular, f.email,
+                    TRIM(CONCAT_WS(' ', f.domicilio_calle, f.domicilio_numero, f.domicilio_barrio)) AS direccion_domicilio,
+                    f.domicilio_ciudad AS ciudad,
+                    f.lugar_nacimiento_provincia AS provincia,
+                    COALESCE(
+                        NULLIF(f.instruccion_superior, ''),
+                        NULLIF(f.instruccion_secundaria, ''),
+                        NULLIF(f.instruccion_primaria, '')
+                    ) AS nivel_instruccion,
+                    f.estado_civil,
                     f.created_at, f.updated_at
              FROM fichas f
              WHERE f.tenant_id = :tid
@@ -147,7 +155,15 @@ final class ExportarReporteService
         $rows = $this->db->fetchAll(
             "SELECT f.correlativo, f.apellidos, f.nombres, f.estado AS ficha_estado,
                     e.estado AS expediente_estado,
-                    e.bloque_a_completado, e.bloque_b_desbloqueado, e.bloque_b_completado,
+                    CASE
+                        WHEN e.bloque_a_total > 0 AND e.bloque_a_aceptados >= e.bloque_a_total THEN 1
+                        ELSE 0
+                    END AS bloque_a_completado,
+                    e.bloque_b_desbloqueado,
+                    CASE
+                        WHEN e.bloque_b_total > 0 AND e.bloque_b_aceptados >= e.bloque_b_total THEN 1
+                        ELSE 0
+                    END AS bloque_b_completado,
                     (SELECT COUNT(*) FROM expediente_documentos ed
                         WHERE ed.expediente_id = e.id AND ed.tenant_id = :tid2 AND ed.estado = 'ACEPTADO') AS docs_aceptados,
                     (SELECT COUNT(*) FROM expediente_documentos ed

@@ -290,7 +290,7 @@ $initials = mb_strtoupper(mb_substr((string) $cliente['razon_social'], 0, 2));
                 foreach ($opciones as $estado => $cfg):
                     if ($cliente['estado'] === $estado) continue;
                 ?>
-                <form method="post" action="<?= $view->url('/clientes/' . $cliente['id'] . '/estado') ?>"
+                <form class="ds-form-main" method="post" action="<?= $view->url('/clientes/' . $cliente['id'] . '/estado') ?>"
                       onsubmit="return confirm('<?= $e($cfg['confirm']) ?>');"
                       style="margin: .35rem 0;">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">

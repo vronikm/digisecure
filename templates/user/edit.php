@@ -15,7 +15,7 @@ $e = ViewRenderer::e(...);
 $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario[$key] ?? $default;
 ?>
 
-<?php $view->section('title') ?>Editar usuario — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Editar usuario - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/usuarios') ?>">Usuarios</a></li>
@@ -48,7 +48,8 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
 </div>
 <?php endif ?>
 
-<form method="post" action="<?= $view->url('/usuarios/' . $usuario['id'] . '/editar') ?>">
+<div class="ds-form-wrap ds-user-form-wrap">
+<form method="post" action="<?= $view->url('/usuarios/' . $usuario['id'] . '/editar') ?>" class="ds-form-main">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">
@@ -60,47 +61,48 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
             </div>
         </div>
         <div class="ds-card-body">
-            <div class="row g-3">
-                <div class="col-md-6">
+            <div class="ds-user-grid">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Nombres <span class="ds-required">*</span></label>
                         <input type="text" name="nombres" class="form-control" required maxlength="120"
                                value="<?= $e($valor('nombres')) ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Apellidos <span class="ds-required">*</span></label>
                         <input type="text" name="apellidos" class="form-control" required maxlength="120"
                                value="<?= $e($valor('apellidos')) ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Email <span class="ds-required">*</span></label>
-                        <input type="email" name="email" class="form-control" required maxlength="190"
-                               value="<?= $e($valor('email')) ?>">
-                    </div>
-                </div>
-                <div class="col-md-6">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Cargo</label>
                         <input type="text" name="cargo" class="form-control" maxlength="120"
                                value="<?= $e($valor('cargo')) ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
+
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-6">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Email <span class="ds-required">*</span></label>
+                        <input type="email" name="email" class="form-control" required maxlength="190"
+                               value="<?= $e($valor('email')) ?>">
+                    </div>
+                </div>
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Telefono</label>
                         <input type="text" name="telefono" class="form-control" maxlength="30"
                                value="<?= $e($valor('telefono')) ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Rol asignado</label>
                         <select name="role_id" class="form-select">
-                            <option value="">— Mantener actual —</option>
+                            <option value="">- Mantener actual -</option>
                             <?php foreach ($roles as $r): ?>
                             <option value="<?= $e($r['id']) ?>" <?= ($input['role_id'] ?? $rolActualId) === $r['id'] ? 'selected' : '' ?>>
                                 <?= $e($r['nombre']) ?>
@@ -128,15 +130,15 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
         <span class="ds-card-mark"><i class="bi bi-shield-lock"></i></span>
         <div>
             <div class="ds-card-title">Resetear contrasena</div>
-            <div class="ds-card-subtitle">Establece una contrasena temporal &mdash; el usuario debera cambiarla al iniciar sesion</div>
+            <div class="ds-card-subtitle">Establece una contrasena temporal; el usuario debera cambiarla al iniciar sesion</div>
         </div>
     </div>
     <div class="ds-card-body">
-        <form method="post" action="<?= $view->url('/usuarios/' . $usuario['id'] . '/password') ?>"
+        <form class="ds-form-main" method="post" action="<?= $view->url('/usuarios/' . $usuario['id'] . '/password') ?>"
               onsubmit="return confirm('Resetear la contrasena de este usuario?');">
             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-7">
+            <div class="ds-user-grid">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-8">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Nueva contrasena temporal</label>
                         <input type="text" name="new_password" class="form-control"
@@ -144,8 +146,8 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
                         <span class="ds-form-help">Anota la contrasena para entregarla al usuario por un canal seguro.</span>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" class="ds-btn ds-btn-danger" style="width: 100%;">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4" style="align-self: end;">
+                    <button type="submit" class="ds-btn ds-btn-danger" style="width: 100%; justify-content: center;">
                         <i class="bi bi-key"></i>Resetear
                     </button>
                 </div>
@@ -154,4 +156,5 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
     </div>
 </div>
 <?php endif ?>
+</div>
 <?php $view->endSection() ?>

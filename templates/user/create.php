@@ -1,6 +1,6 @@
 <?php
 /**
- * Formulario de creación de usuario.
+ * Formulario de creacion de usuario.
  *
  * Variables: $user, $csrfToken, $currentPath, $roles, $input
  * Opcionales: $error
@@ -13,7 +13,7 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 ?>
 
-<?php $view->section('title') ?>Nuevo usuario — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Nuevo usuario - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/usuarios') ?>">Usuarios</a></li>
@@ -46,7 +46,8 @@ $e = ViewRenderer::e(...);
 </div>
 <?php endif ?>
 
-<form method="post" action="<?= $view->url('/usuarios/crear') ?>">
+<div class="ds-form-wrap ds-user-form-wrap">
+<form method="post" action="<?= $view->url('/usuarios/crear') ?>" class="ds-form-main">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">
@@ -58,22 +59,30 @@ $e = ViewRenderer::e(...);
             </div>
         </div>
         <div class="ds-card-body">
-            <div class="row g-3">
-                <div class="col-md-6">
+            <div class="ds-user-grid">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Nombres <span class="ds-required">*</span></label>
                         <input type="text" name="nombres" class="form-control" required maxlength="120"
                                value="<?= $e($input['nombres'] ?? '') ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Apellidos <span class="ds-required">*</span></label>
                         <input type="text" name="apellidos" class="form-control" required maxlength="120"
                                value="<?= $e($input['apellidos'] ?? '') ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Cargo</label>
+                        <input type="text" name="cargo" class="form-control" maxlength="120"
+                               value="<?= $e($input['cargo'] ?? '') ?>">
+                    </div>
+                </div>
+
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-6">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Email <span class="ds-required">*</span></label>
                         <input type="email" name="email" class="form-control" required maxlength="190"
@@ -81,21 +90,14 @@ $e = ViewRenderer::e(...);
                         <span class="ds-form-help">Sera el identificador para iniciar sesion.</span>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Cargo</label>
-                        <input type="text" name="cargo" class="form-control" maxlength="120"
-                               value="<?= $e($input['cargo'] ?? '') ?>">
-                    </div>
-                </div>
-                <div class="col-md-6">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Telefono</label>
                         <input type="text" name="telefono" class="form-control" maxlength="30"
                                value="<?= $e($input['telefono'] ?? '') ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Estado inicial</label>
                         <select name="estado" class="form-select">
@@ -120,27 +122,27 @@ $e = ViewRenderer::e(...);
             </div>
         </div>
         <div class="ds-card-body">
-            <div class="row g-3">
-                <div class="col-md-6">
+            <div class="ds-user-grid">
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-7">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Rol asignado <span class="ds-required">*</span></label>
+                        <select name="role_id" class="form-select" required>
+                            <option value="">- Seleccione -</option>
+                            <?php foreach ($roles as $r): ?>
+                            <option value="<?= $e($r['id']) ?>" <?= ($input['role_id'] ?? '') === $r['id'] ? 'selected' : '' ?>>
+                                <?= $e($r['nombre']) ?>
+                                <?php if ($r['descripcion']): ?> - <?= $e($r['descripcion']) ?><?php endif ?>
+                            </option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-5">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Contrasena inicial <span class="ds-required">*</span></label>
                         <input type="text" name="password" class="form-control" required minlength="8"
                                value="<?= $e($input['password'] ?? '') ?>">
                         <span class="ds-form-help">Minimo 8 caracteres. El usuario debera cambiarla en su proximo login.</span>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Rol asignado <span class="ds-required">*</span></label>
-                        <select name="role_id" class="form-select" required>
-                            <option value="">— Seleccione —</option>
-                            <?php foreach ($roles as $r): ?>
-                            <option value="<?= $e($r['id']) ?>" <?= ($input['role_id'] ?? '') === $r['id'] ? 'selected' : '' ?>>
-                                <?= $e($r['nombre']) ?>
-                                <?php if ($r['descripcion']): ?> — <?= $e($r['descripcion']) ?><?php endif ?>
-                            </option>
-                            <?php endforeach ?>
-                        </select>
                     </div>
                 </div>
             </div>
@@ -154,4 +156,5 @@ $e = ViewRenderer::e(...);
         </button>
     </div>
 </form>
+</div>
 <?php $view->endSection() ?>

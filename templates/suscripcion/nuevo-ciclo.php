@@ -56,7 +56,7 @@ $hoy = date('Y-m-d');
 </div>
 <?php endif ?>
 
-<form method="post" action="<?= $view->url('/suscripcion/ciclo/nuevo') ?>" id="cicloForm">
+<form class="ds-form-main" method="post" action="<?= $view->url('/suscripcion/ciclo/nuevo') ?>" id="cicloForm">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="row g-4">

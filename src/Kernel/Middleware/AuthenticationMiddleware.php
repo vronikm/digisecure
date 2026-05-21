@@ -51,6 +51,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
         $user = $this->authenticator->currentUser();
 
         if ($user !== null) {
+            $user = $this->authenticator->syncSessionUser($user);
             // Usuario autenticado: inyectar en request
             $request = $request->withAttribute('auth_user', $user);
             return $next->handle($request);

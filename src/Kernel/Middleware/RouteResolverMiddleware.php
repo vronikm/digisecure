@@ -41,6 +41,9 @@ final class RouteResolverMiddleware implements MiddlewareInterface
 
         $request = $request->withAttribute('_resolved_route', $match);
         $request = $request->withAttribute('route', $match->route);
+        if ($match->route->name !== null && $match->route->name !== '') {
+            $request = $request->withAttribute('_route_name', $match->route->name);
+        }
         foreach ($match->params as $name => $value) {
             $request = $request->withAttribute("route.{$name}", $value);
         }

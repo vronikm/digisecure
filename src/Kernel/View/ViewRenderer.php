@@ -35,6 +35,9 @@ final class ViewRenderer
     /** @var array<string, mixed> Datos compartidos por middlewares para todas las vistas del request */
     private array $shared = [];
 
+    /** @var null|callable(string): string */
+    private $urlTransformer = null;
+
     public function __construct(string $templatesPath)
     {
         $this->templatesPath = rtrim($templatesPath, '/\\');
@@ -200,7 +203,25 @@ final class ViewRenderer
      */
     public function url(string $path): string
     {
+        if ($this->urlTransformer !== null && str_starts_with($path, '/')) {
+            $transformed = ($this->urlTransformer)($path);
+            if (\is_string($transformed) && $transformed !== '') {
+                $path = $transformed;
+            }
+        }
+
         return BasePath::prepend($path);
+    }
+
+    /**
+     * Permite que un middleware transforme paths internos antes de prepender base path.
+     * Debe resetearse por request para evitar estado residual.
+     *
+     * @param null|callable(string): string $transformer
+     */
+    public function setUrlTransformer(?callable $transformer): void
+    {
+        $this->urlTransformer = $transformer;
     }
 
     private function resolveViewPath(string $view): string

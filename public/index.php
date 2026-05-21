@@ -24,7 +24,16 @@ if (!is_file($autoloadPath)) {
     echo "DigiSecure: dependencias no instaladas. Ejecuta `composer install` en la raíz del proyecto.\n";
     exit(1);
 }
-require $autoloadPath;
+/** @var mixed $loader */
+$loader = require $autoloadPath;
+
+// Fallback de namespaces de módulos (hasta regenerar autoload con Composer).
+if ($loader instanceof \Composer\Autoload\ClassLoader) {
+    $loader->addPsr4('DigiSecure\\Superadmin\\', DIGISECURE_ROOT . '/src/Superadmin');
+    $loader->addPsr4('DigiSecure\\Cliente\\', DIGISECURE_ROOT . '/src/Cliente');
+    $loader->addPsr4('DigiSecure\\Puesto\\', DIGISECURE_ROOT . '/src/Puesto');
+    $loader->addPsr4('DigiSecure\\Asignacion\\', DIGISECURE_ROOT . '/src/Asignacion');
+}
 
 // Verificar archivo .env
 if (!is_file(DIGISECURE_ROOT . '/.env')) {

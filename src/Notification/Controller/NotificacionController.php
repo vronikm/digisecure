@@ -101,6 +101,22 @@ final class NotificacionController
         $this->repo->resetForRetry((string) $id);
         $this->flash->success('Notificacion encolada para reintento.');
 
-        return Response::redirect("/notificaciones/{$id}");
+        return Response::redirect($this->securePath($request, "/notificaciones/{$id}"));
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 }

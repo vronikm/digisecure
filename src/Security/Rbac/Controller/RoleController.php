@@ -100,7 +100,7 @@ final class RoleController
         try {
             $id = $this->gestionarService->crear($request->post, $user->id, $request->clientIp());
             $this->flash->success('Rol creado correctamente.');
-            return Response::redirect("/roles/{$id}");
+            return Response::redirect($this->securePath($request, "/roles/{$id}"));
         } catch (DomainException $e) {
             $catalogo = $this->repo->catalogoPermisosByRecurso();
             return $this->view->response('roles/create', [
@@ -151,7 +151,7 @@ final class RoleController
         try {
             $this->gestionarService->actualizar($id, $request->post, $user->id, $request->clientIp());
             $this->flash->success('Rol actualizado correctamente.');
-            return Response::redirect("/roles/{$id}");
+            return Response::redirect($this->securePath($request, "/roles/{$id}"));
         } catch (DomainException $e) {
             $rol = $this->repo->findById($id);
             $catalogo = $this->repo->catalogoPermisosByRecurso();
@@ -181,7 +181,23 @@ final class RoleController
             return Response::redirect('/roles');
         } catch (DomainException $e) {
             $this->flash->error($e->getMessage(), 'No se pudo eliminar el rol');
-            return Response::redirect("/roles/{$id}");
+            return Response::redirect($this->securePath($request, "/roles/{$id}"));
         }
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 }

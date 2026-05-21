@@ -34,23 +34,42 @@ $roles = array_values(array_filter(array_map(
     static fn(array $role): string => trim((string) ($role['nombre'] ?? '')),
     $user->roles,
 )));
+
+$puedeCrearGuardia = $user->tienePermiso('guardias.crear');
+$puedeVerExpedientes = $user->tienePermiso('expedientes.ver');
+$puedeVerReportes = $user->tienePermiso('reportes.ver');
+$puedeVerUsuarios = $user->tienePermiso('usuarios.ver');
+$puedeVerAuditoria = $user->tienePermiso('auditoria.ver');
+
+$tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerReportes || $puedeVerUsuarios;
 ?>
 
 <?php $view->section('title') ?>Dashboard | DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('head') ?>
 <style>
-    /* Dashboard: separacion vertical generosa entre secciones */
-    .ds-dashboard-section {
-        margin-bottom: 2.5rem;
+    .ds-dashboard-topbar {
+        margin-bottom: 1.1rem;
     }
+
+    .ds-dashboard-toolbar {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+
+    .ds-dashboard-section {
+        margin-bottom: 2rem;
+    }
+
     .ds-dashboard-section:last-child {
         margin-bottom: 0;
     }
-    /* Asegurar que el row interno respete --bs-gutter-x mas amplio */
+
     .ds-dashboard-section > .row {
-        --bs-gutter-x: 1.75rem;
-        --bs-gutter-y: 1.75rem;
+        --bs-gutter-x: 1.6rem;
+        --bs-gutter-y: 1.6rem;
     }
 
     .ds-dashboard-eyebrow {
@@ -83,8 +102,8 @@ $roles = array_values(array_filter(array_map(
     }
 
     .ds-hero-ring {
-        width: 158px;
-        height: 158px;
+        width: 156px;
+        height: 156px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -138,43 +157,6 @@ $roles = array_values(array_filter(array_map(
         line-height: 1;
     }
 
-    .ds-metric-card {
-        height: 100%;
-        border: 0;
-        border-radius: 22px;
-        overflow: hidden;
-        box-shadow: 0 16px 30px rgba(18, 45, 77, 0.08);
-    }
-
-    .ds-metric-card .card-body {
-        display: flex;
-        flex-direction: column;
-        gap: 0.7rem;
-        padding: 1.1rem;
-    }
-
-    .ds-metric-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-
-    .ds-metric-icon {
-        width: 46px;
-        height: 46px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 16px;
-        font-size: 1.15rem;
-    }
-
-    .ds-metric-note {
-        font-size: 0.83rem;
-        color: #607489;
-    }
-
     .ds-surface-card {
         border: 0;
         border-radius: 24px;
@@ -195,19 +177,29 @@ $roles = array_values(array_filter(array_map(
         padding: 1rem 1.15rem 1.15rem;
     }
 
+    .ds-activity-table thead th {
+        font-size: 0.73rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .ds-activity-table tbody td {
+        font-size: 0.86rem;
+    }
+
     .ds-action-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.85rem;
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
     }
 
     .ds-action-tile {
         display: flex;
         flex-direction: column;
         gap: 0.35rem;
-        min-height: 112px;
-        padding: 1rem;
-        border-radius: 20px;
+        min-height: 108px;
+        padding: 0.95rem;
+        border-radius: 18px;
         text-decoration: none;
         color: #16324f;
         background: linear-gradient(180deg, rgba(47, 128, 237, 0.08), rgba(255, 255, 255, 0.9));
@@ -222,11 +214,13 @@ $roles = array_values(array_filter(array_map(
     }
 
     .ds-action-tile i {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
     }
 
-    .ds-health-row + .ds-health-row {
-        margin-top: 0.9rem;
+    .ds-health-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
     }
 
     .ds-health-row .progress {
@@ -237,7 +231,7 @@ $roles = array_values(array_filter(array_map(
 
     .ds-mini-chart-wrap {
         display: grid;
-        grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 170px) minmax(0, 1fr);
         gap: 1rem;
         align-items: center;
     }
@@ -272,8 +266,13 @@ $roles = array_values(array_filter(array_map(
         display: inline-block;
     }
 
-    @media (max-width: 767.98px) {
-        .ds-action-grid,
+    @media (min-width: 1200px) {
+        .ds-action-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 991.98px) {
         .ds-mini-chart-wrap {
             grid-template-columns: 1fr;
         }
@@ -290,291 +289,335 @@ $roles = array_values(array_filter(array_map(
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
+<div class="ds-page-header ds-dashboard-topbar">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-speedometer2"></i></span>
+        <div>
+            <h1>Dashboard operativo</h1>
+            <small>Seguimiento diario de guardias, expedientes y cumplimiento documental</small>
+        </div>
+    </div>
+    <div class="ds-dashboard-toolbar">
+        <?php if ($puedeCrearGuardia): ?>
+            <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
+                <i class="bi bi-person-plus"></i>Nueva ficha
+            </a>
+        <?php endif; ?>
+        <?php if ($puedeVerExpedientes): ?>
+            <a href="<?= $view->url('/expedientes/pendientes') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                <i class="bi bi-clipboard-check"></i>Pendientes
+            </a>
+        <?php endif; ?>
+        <?php if ($puedeVerReportes): ?>
+            <a href="<?= $view->url('/reportes/kpis') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                <i class="bi bi-graph-up-arrow"></i>KPIs
+            </a>
+        <?php endif; ?>
+    </div>
+</div>
+
 <section class="ds-dashboard-section">
-<div class="row g-4">
-    <div class="col-xl-8">
-        <section class="card ds-hero-card border-0 shadow-sm">
-            <div class="card-body p-4 p-lg-5">
-                <div class="row g-4 align-items-center">
-                    <div class="col-lg-8">
-                        <span class="ds-dashboard-eyebrow">
-                            <i class="bi bi-stars"></i>Centro de control diario
-                        </span>
-                        <h1 class="h3 mb-3">Hola, <?= $e($user->nombres) ?>. Hoy tu operacion pide foco en lo esencial.</h1>
-                        <p class="mb-4">
-                            Tienes <strong><?= $docsAtencion ?></strong> documentos que necesitan atencion
-                            y <strong><?= $expedientesIncompletos ?></strong> expedientes que aun no estan completos.
-                        </p>
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="ds-chip-soft">
-                                <i class="bi bi-building"></i><?= $e($user->tenantNombre) ?>
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <section class="card ds-hero-card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="row g-4 align-items-center">
+                        <div class="col-lg-8">
+                            <span class="ds-dashboard-eyebrow">
+                                <i class="bi bi-stars"></i>Centro de control diario
                             </span>
-                            <?php if ($roles !== []): ?>
+                            <h2 class="h3 mb-3">Hola, <?= $e($user->nombres) ?>. Hoy la operacion pide foco en lo esencial.</h2>
+                            <p class="mb-4">
+                                Tienes <strong><?= $docsAtencion ?></strong> documentos que necesitan atencion
+                                y <strong><?= $expedientesIncompletos ?></strong> expedientes que aun no estan completos.
+                            </p>
+                            <div class="d-flex flex-wrap gap-2">
                                 <span class="ds-chip-soft">
-                                    <i class="bi bi-person-badge"></i><?= $e(implode(' / ', array_slice($roles, 0, 2))) ?>
+                                    <i class="bi bi-building"></i><?= $e($user->tenantNombre) ?>
                                 </span>
-                            <?php endif; ?>
-                            <span class="ds-chip-soft">
-                                <i class="bi bi-clock"></i><?= date('d/m/Y H:i') ?>
-                            </span>
+                                <?php if ($roles !== []): ?>
+                                    <span class="ds-chip-soft">
+                                        <i class="bi bi-person-badge"></i><?= $e(implode(' / ', array_slice($roles, 0, 2))) ?>
+                                    </span>
+                                <?php endif; ?>
+                                <span class="ds-chip-soft">
+                                    <i class="bi bi-clock"></i><?= date('d/m/Y H:i') ?>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 d-flex justify-content-lg-end">
+                            <div class="ds-hero-ring">
+                                <span>
+                                    <?= $guardiasCompletitud ?>%
+                                    <small>fichas activas sobre el total visible</small>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-lg-4 d-flex justify-content-lg-end">
-                        <div class="ds-hero-ring">
-                            <span>
-                                <?= $guardiasCompletitud ?>%
-                                <small>fichas activas sobre el total visible</small>
-                            </span>
-                        </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-xl-4">
+            <section class="card ds-priority-card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="text-uppercase fw-bold small text-warning mb-2">Atencion prioritaria</div>
+                    <h2 class="h5 mb-3">Lo que conviene revisar primero</h2>
+
+                    <div class="ds-priority-stat">
+                        <span class="text-muted small">Documentos vencidos</span>
+                        <strong class="text-danger"><?= $docsVencidos ?></strong>
+                        <span class="text-muted small">Requieren renovacion o seguimiento inmediato.</span>
+                    </div>
+
+                    <div class="ds-priority-stat">
+                        <span class="text-muted small">Por vencer en 30 dias</span>
+                        <strong class="text-warning"><?= $docsPorVencer ?></strong>
+                        <span class="text-muted small">Ideal para activar recordatorios o carga preventiva.</span>
+                    </div>
+
+                    <div class="ds-priority-stat">
+                        <span class="text-muted small">Expedientes incompletos</span>
+                        <strong class="text-primary"><?= $expedientesIncompletos ?></strong>
+                        <span class="text-muted small">Seguimiento pendiente antes de cerrar el ciclo documental.</span>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </div>
-
-    <div class="col-xl-4">
-        <section class="card ds-priority-card shadow-sm h-100">
-            <div class="card-body p-4">
-                <div class="text-uppercase fw-bold small text-warning mb-2">Atencion prioritaria</div>
-                <h2 class="h5 mb-3">Lo que conviene revisar primero</h2>
-
-                <div class="ds-priority-stat">
-                    <span class="text-muted small">Documentos vencidos</span>
-                    <strong class="text-danger"><?= $docsVencidos ?></strong>
-                    <span class="text-muted small">Requieren renovacion o seguimiento inmediato.</span>
-                </div>
-
-                <div class="ds-priority-stat">
-                    <span class="text-muted small">Por vencer en 30 dias</span>
-                    <strong class="text-warning"><?= $docsPorVencer ?></strong>
-                    <span class="text-muted small">Ideal para activar recordatorios o carga preventiva.</span>
-                </div>
-
-                <div class="ds-priority-stat">
-                    <span class="text-muted small">Expedientes incompletos</span>
-                    <strong class="text-primary"><?= $expedientesIncompletos ?></strong>
-                    <span class="text-muted small">Seguimiento pendiente antes de cerrar el ciclo documental.</span>
-                </div>
-            </div>
-        </section>
-    </div>
-</div>
 </section>
 
 <section class="ds-dashboard-section">
-<div class="ds-kpi-grid">
-    <a href="<?= $view->url('/guardias') ?>" class="ds-kpi-card" style="text-decoration: none;">
-        <span class="ds-kpi-icon"><i class="bi bi-person-badge-fill"></i></span>
-        <div style="flex:1; min-width:0;">
-            <div class="ds-kpi-label">Guardias activos</div>
-            <div class="ds-kpi-value"><?= $guardiasActivos ?></div>
-            <div class="ds-cell-sub" style="margin-top:.25rem; display:flex; gap:.35rem; flex-wrap:wrap;">
-                <?php if ($fichasRevision > 0): ?>
-                <span class="ds-badge tone-warning no-dot" style="font-size:.65rem;"><?= $fichasRevision ?> en revision</span>
-                <?php endif ?>
-                <?php if ($fichasBorrador > 0): ?>
-                <span class="ds-badge tone-muted no-dot" style="font-size:.65rem;"><?= $fichasBorrador ?> borrador</span>
-                <?php endif ?>
-                <?php if ($fichasRevision === 0 && $fichasBorrador === 0): ?>
-                <span style="color: var(--ds-text-soft);">Sin pendientes</span>
-                <?php endif ?>
+    <div class="ds-kpi-grid">
+        <a href="<?= $view->url('/guardias') ?>" class="ds-kpi-card" style="text-decoration: none;">
+            <span class="ds-kpi-icon"><i class="bi bi-person-badge-fill"></i></span>
+            <div style="flex:1; min-width:0;">
+                <div class="ds-kpi-label">Guardias activos</div>
+                <div class="ds-kpi-value"><?= $guardiasActivos ?></div>
+                <div class="ds-cell-sub" style="margin-top:.25rem; display:flex; gap:.35rem; flex-wrap:wrap;">
+                    <?php if ($fichasRevision > 0): ?>
+                    <span class="ds-badge tone-warning no-dot" style="font-size:.65rem;"><?= $fichasRevision ?> en revision</span>
+                    <?php endif ?>
+                    <?php if ($fichasBorrador > 0): ?>
+                    <span class="ds-badge tone-muted no-dot" style="font-size:.65rem;"><?= $fichasBorrador ?> borrador</span>
+                    <?php endif ?>
+                    <?php if ($fichasRevision === 0 && $fichasBorrador === 0): ?>
+                    <span style="color: var(--ds-text-soft);">Sin pendientes</span>
+                    <?php endif ?>
+                </div>
             </div>
-        </div>
-    </a>
+        </a>
 
-    <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-warning" style="text-decoration: none;">
-        <span class="ds-kpi-icon"><i class="bi bi-hourglass-split"></i></span>
-        <div style="flex:1; min-width:0;">
-            <div class="ds-kpi-label">Por vencer (30 dias)</div>
-            <div class="ds-kpi-value"><?= $docsPorVencer ?></div>
-            <div class="ds-cell-sub" style="margin-top:.25rem;">Documentos por renovar pronto</div>
-        </div>
-    </a>
-
-    <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-danger" style="text-decoration: none;">
-        <span class="ds-kpi-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
-        <div style="flex:1; min-width:0;">
-            <div class="ds-kpi-label">Vencidos</div>
-            <div class="ds-kpi-value"><?= $docsVencidos ?></div>
-            <div class="ds-cell-sub" style="margin-top:.25rem;"><?= $docsVencidos === 0 ? 'Todo al dia' : 'Requieren accion inmediata' ?></div>
-        </div>
-    </a>
-
-    <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-success" style="text-decoration: none;">
-        <span class="ds-kpi-icon"><i class="bi bi-check2-circle"></i></span>
-        <div style="flex:1; min-width:0;">
-            <div class="ds-kpi-label">Expedientes completos</div>
-            <div class="ds-kpi-value"><?= $expedientesCompletos ?></div>
-            <div class="ds-cell-sub" style="margin-top:.25rem;">
-                <?php if ($expedientesIncompletos > 0): ?>
-                    <?= $expedientesIncompletos ?> aun por completar
-                <?php else: ?>
-                    Todos los expedientes cerrados
-                <?php endif ?>
+        <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-warning" style="text-decoration: none;">
+            <span class="ds-kpi-icon"><i class="bi bi-hourglass-split"></i></span>
+            <div style="flex:1; min-width:0;">
+                <div class="ds-kpi-label">Por vencer (30 dias)</div>
+                <div class="ds-kpi-value"><?= $docsPorVencer ?></div>
+                <div class="ds-cell-sub" style="margin-top:.25rem;">Documentos por renovar pronto</div>
             </div>
-        </div>
-    </a>
-</div>
+        </a>
+
+        <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-danger" style="text-decoration: none;">
+            <span class="ds-kpi-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
+            <div style="flex:1; min-width:0;">
+                <div class="ds-kpi-label">Vencidos</div>
+                <div class="ds-kpi-value"><?= $docsVencidos ?></div>
+                <div class="ds-cell-sub" style="margin-top:.25rem;"><?= $docsVencidos === 0 ? 'Todo al dia' : 'Requieren accion inmediata' ?></div>
+            </div>
+        </a>
+
+        <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-success" style="text-decoration: none;">
+            <span class="ds-kpi-icon"><i class="bi bi-check2-circle"></i></span>
+            <div style="flex:1; min-width:0;">
+                <div class="ds-kpi-label">Expedientes completos</div>
+                <div class="ds-kpi-value"><?= $expedientesCompletos ?></div>
+                <div class="ds-cell-sub" style="margin-top:.25rem;">
+                    <?php if ($expedientesIncompletos > 0): ?>
+                        <?= $expedientesIncompletos ?> aun por completar
+                    <?php else: ?>
+                        Todos los expedientes cerrados
+                    <?php endif ?>
+                </div>
+            </div>
+        </a>
+    </div>
 </section>
 
 <section class="ds-dashboard-section">
-<div class="row g-4">
-    <div class="col-lg-8">
-        <section class="card ds-surface-card h-100">
-            <div class="card-header">
-                <div>
-                    <h2 class="h5 mb-1"><i class="bi bi-activity me-2 text-primary"></i>Actividad reciente</h2>
-                    <p class="text-muted small mb-0">Ultimos movimientos relevantes del sistema.</p>
-                </div>
-                <?php if ($user->tienePermiso('auditoria.ver')): ?>
-                    <a href="<?= $view->url('/auditoria') ?>" class="btn btn-outline-primary btn-sm">Ver auditoria</a>
-                <?php endif; ?>
-            </div>
-            <div class="card-body">
-                <?php if (empty($stats['actividad_reciente'])): ?>
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                        No hay actividad reciente registrada.
-                    </div>
-                <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Evento</th>
-                                    <th>Usuario</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach ($stats['actividad_reciente'] as $act): ?>
-                                <tr>
-                                    <td class="small text-muted"><?= $e($act['fecha']) ?></td>
-                                    <td><?= $e($act['evento']) ?></td>
-                                    <td class="small text-muted"><?= $e($act['usuario']) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </section>
-    </div>
-
-    <div class="col-lg-4">
-        <section class="card ds-surface-card mb-4 mb-lg-5">
-            <div class="card-header">
-                <div>
-                    <h2 class="h5 mb-1"><i class="bi bi-lightning-charge me-2 text-warning"></i>Acciones rapidas</h2>
-                    <p class="text-muted small mb-0">Tareas frecuentes segun tus permisos.</p>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="ds-action-grid">
-                    <?php if ($user->tienePermiso('guardias.crear')): ?>
-                        <a href="<?= $view->url('/guardias/crear') ?>" class="ds-action-tile">
-                            <i class="bi bi-person-plus text-primary"></i>
-                            <strong>Nueva ficha</strong>
-                            <span class="small text-muted">Alta rapida de guardias.</span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($user->tienePermiso('expedientes.ver')): ?>
-                        <a href="<?= $view->url('/expedientes/pendientes') ?>" class="ds-action-tile">
-                            <i class="bi bi-clipboard-check text-warning"></i>
-                            <strong>Validar expedientes</strong>
-                            <span class="small text-muted">Ir al flujo pendiente.</span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($user->tienePermiso('reportes.ver')): ?>
-                        <a href="<?= $view->url('/reportes/kpis') ?>" class="ds-action-tile">
-                            <i class="bi bi-graph-up-arrow text-success"></i>
-                            <strong>Ver KPIs</strong>
-                            <span class="small text-muted">Panel ejecutivo completo.</span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($user->tienePermiso('usuarios.ver')): ?>
-                        <a href="<?= $view->url('/usuarios') ?>" class="ds-action-tile">
-                            <i class="bi bi-people text-info"></i>
-                            <strong>Gestionar usuarios</strong>
-                            <span class="small text-muted">Accesos y estados.</span>
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </section>
-
-        <section class="card ds-surface-card mb-4 mb-lg-5">
-            <div class="card-header">
-                <div>
-                    <h2 class="h5 mb-1"><i class="bi bi-heart-pulse me-2 text-success"></i>Salud operativa</h2>
-                    <p class="text-muted small mb-0">Lectura rapida de avance y cumplimiento.</p>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="ds-health-row">
-                    <div class="d-flex justify-content-between small mb-2">
-                        <span>Fichas activas</span>
-                        <strong><?= $guardiasCompletitud ?>%</strong>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-primary" style="width: <?= $guardiasCompletitud ?>%"></div>
-                    </div>
-                </div>
-
-                <div class="ds-health-row">
-                    <div class="d-flex justify-content-between small mb-2">
-                        <span>Expedientes completos</span>
-                        <strong><?= $expedientesCompletitud ?>%</strong>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-success" style="width: <?= $expedientesCompletitud ?>%"></div>
-                    </div>
-                </div>
-
-                <div class="ds-health-row">
-                    <div class="d-flex justify-content-between small mb-2">
-                        <span>Salud documental</span>
-                        <strong><?= $saludDocumental ?>%</strong>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-warning" style="width: <?= $saludDocumental ?>%"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="card ds-surface-card">
-            <div class="card-header">
-                <div>
-                    <h2 class="h5 mb-1"><i class="bi bi-pie-chart me-2 text-info"></i>Distribucion de fichas</h2>
-                    <p class="text-muted small mb-0">Estado del pipeline de registro.</p>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="ds-mini-chart-wrap">
+    <div class="row g-4">
+        <div class="col-xl-7">
+            <section class="card ds-surface-card h-100">
+                <div class="card-header">
                     <div>
-                        <canvas id="miniChartFichas" style="max-height: 190px;"></canvas>
+                        <h2 class="h5 mb-1"><i class="bi bi-activity me-2 text-primary"></i>Actividad reciente</h2>
+                        <p class="text-muted small mb-0">Ultimos movimientos relevantes del sistema.</p>
                     </div>
-                    <div class="ds-mini-legend">
-                        <div class="ds-mini-legend-item">
-                            <span><i class="ds-dot" style="background:#27ae60"></i>Activas</span>
-                            <strong><?= $guardiasActivos ?></strong>
+                    <?php if ($puedeVerAuditoria): ?>
+                        <a href="<?= $view->url('/auditoria') ?>" class="btn btn-outline-primary btn-sm">Ver auditoria</a>
+                    <?php endif; ?>
+                </div>
+                <div class="card-body">
+                    <?php if (empty($stats['actividad_reciente'])): ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                            No hay actividad reciente registrada.
                         </div>
-                        <div class="ds-mini-legend-item">
-                            <span><i class="ds-dot" style="background:#f39c12"></i>En revision</span>
-                            <strong><?= $fichasRevision ?></strong>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table ds-activity-table align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Evento</th>
+                                        <th>Usuario</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($stats['actividad_reciente'] as $act): ?>
+                                    <tr>
+                                        <td class="small text-muted"><?= $e($act['fecha']) ?></td>
+                                        <td><?= $e($act['evento']) ?></td>
+                                        <td class="small text-muted"><?= $e($act['usuario']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="ds-mini-legend-item">
-                            <span><i class="ds-dot" style="background:#7f8c8d"></i>Borrador</span>
-                            <strong><?= $fichasBorrador ?></strong>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-xl-5">
+            <section class="card ds-surface-card h-100">
+                <div class="card-header">
+                    <div>
+                        <h2 class="h5 mb-1"><i class="bi bi-lightning-charge me-2 text-warning"></i>Acciones rapidas</h2>
+                        <p class="text-muted small mb-0">Tareas frecuentes segun tus permisos.</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <?php if (!$tieneAccionesRapidas): ?>
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-shield-lock fs-4 d-block mb-2"></i>
+                            Tu perfil no tiene acciones directas en este panel.
+                        </div>
+                    <?php else: ?>
+                        <div class="ds-action-grid">
+                            <?php if ($puedeCrearGuardia): ?>
+                                <a href="<?= $view->url('/guardias/crear') ?>" class="ds-action-tile">
+                                    <i class="bi bi-person-plus text-primary"></i>
+                                    <strong>Nueva ficha</strong>
+                                    <span class="small text-muted">Alta rapida de guardias.</span>
+                                </a>
+                            <?php endif; ?>
+                            <?php if ($puedeVerExpedientes): ?>
+                                <a href="<?= $view->url('/expedientes/pendientes') ?>" class="ds-action-tile">
+                                    <i class="bi bi-clipboard-check text-warning"></i>
+                                    <strong>Validar expedientes</strong>
+                                    <span class="small text-muted">Ir al flujo pendiente.</span>
+                                </a>
+                            <?php endif; ?>
+                            <?php if ($puedeVerReportes): ?>
+                                <a href="<?= $view->url('/reportes/kpis') ?>" class="ds-action-tile">
+                                    <i class="bi bi-graph-up-arrow text-success"></i>
+                                    <strong>Ver KPIs</strong>
+                                    <span class="small text-muted">Panel ejecutivo completo.</span>
+                                </a>
+                            <?php endif; ?>
+                            <?php if ($puedeVerUsuarios): ?>
+                                <a href="<?= $view->url('/usuarios') ?>" class="ds-action-tile">
+                                    <i class="bi bi-people text-info"></i>
+                                    <strong>Gestionar usuarios</strong>
+                                    <span class="small text-muted">Accesos y estados.</span>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </div>
+    </div>
+</section>
+
+<section class="ds-dashboard-section">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <section class="card ds-surface-card h-100">
+                <div class="card-header">
+                    <div>
+                        <h2 class="h5 mb-1"><i class="bi bi-heart-pulse me-2 text-success"></i>Salud operativa</h2>
+                        <p class="text-muted small mb-0">Lectura rapida de avance y cumplimiento.</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="ds-health-grid">
+                        <div class="ds-health-row">
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span>Fichas activas</span>
+                                <strong><?= $guardiasCompletitud ?>%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-primary" style="width: <?= $guardiasCompletitud ?>%"></div>
+                            </div>
+                        </div>
+
+                        <div class="ds-health-row">
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span>Expedientes completos</span>
+                                <strong><?= $expedientesCompletitud ?>%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: <?= $expedientesCompletitud ?>%"></div>
+                            </div>
+                        </div>
+
+                        <div class="ds-health-row">
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span>Salud documental</span>
+                                <strong><?= $saludDocumental ?>%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: <?= $saludDocumental ?>%"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
+
+        <div class="col-lg-6">
+            <section class="card ds-surface-card h-100">
+                <div class="card-header">
+                    <div>
+                        <h2 class="h5 mb-1"><i class="bi bi-pie-chart me-2 text-info"></i>Distribucion de fichas</h2>
+                        <p class="text-muted small mb-0">Estado del pipeline de registro.</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="ds-mini-chart-wrap">
+                        <div>
+                            <canvas id="miniChartFichas" style="max-height: 190px;"></canvas>
+                        </div>
+                        <div class="ds-mini-legend">
+                            <div class="ds-mini-legend-item">
+                                <span><i class="ds-dot" style="background:#27ae60"></i>Activas</span>
+                                <strong><?= $guardiasActivos ?></strong>
+                            </div>
+                            <div class="ds-mini-legend-item">
+                                <span><i class="ds-dot" style="background:#f39c12"></i>En revision</span>
+                                <strong><?= $fichasRevision ?></strong>
+                            </div>
+                            <div class="ds-mini-legend-item">
+                                <span><i class="ds-dot" style="background:#7f8c8d"></i>Borrador</span>
+                                <strong><?= $fichasBorrador ?></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
-</div>
 </section>
 <?php $view->endSection() ?>
 
@@ -610,3 +653,4 @@ $roles = array_values(array_filter(array_map(
 })();
 </script>
 <?php $view->endSection() ?>
+

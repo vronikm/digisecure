@@ -110,7 +110,7 @@ final class PuestoController
         try {
             $id = $this->service->crear($input, $user->id, $request->clientIp());
             $this->flash->success('Puesto registrado correctamente.');
-            return Response::redirect("/puestos/{$id}");
+            return Response::redirect($this->securePath($request, "/puestos/{$id}"));
         } catch (DomainException $e) {
             return $this->view->response('puestos/create', [
                 'user' => $user,
@@ -185,7 +185,7 @@ final class PuestoController
         try {
             $this->service->actualizar($id, $input, $user->id, $request->clientIp());
             $this->flash->success('Puesto actualizado correctamente.');
-            return Response::redirect("/puestos/{$id}");
+            return Response::redirect($this->securePath($request, "/puestos/{$id}"));
         } catch (DomainException $e) {
             $puesto = $this->repo->findById($id) ?? [];
             return $this->view->response('puestos/edit', [
@@ -220,6 +220,22 @@ final class PuestoController
         } catch (DomainException $e) {
             $this->flash->error($e->getMessage(), 'No se pudo cambiar el estado del puesto');
         }
-        return Response::redirect("/puestos/{$id}");
+        return Response::redirect($this->securePath($request, "/puestos/{$id}"));
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 }

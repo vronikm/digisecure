@@ -53,7 +53,7 @@ $e = ViewRenderer::e(...);
     </div>
 </div>
 
-<form method="post" action="<?= $view->url('/empresa/editar') ?>">
+<form method="post" action="<?= $view->url('/empresa/editar') ?>" class="ds-form-main">
     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">

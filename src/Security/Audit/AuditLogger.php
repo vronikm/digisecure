@@ -20,6 +20,8 @@ use DigiSecure\Tenant\Domain\TenantContext;
  */
 final class AuditLogger
 {
+    private const EVENTO_MAX_LENGTH = 80;
+
     public function __construct(
         private readonly PdoConnection $db,
         private readonly TenantContext $tenantContext,
@@ -47,6 +49,7 @@ final class AuditLogger
         ?string $userAgent = null,
     ): void {
         $tenantId = $this->tenantContext->currentTenantId();
+        $evento = $this->normalizeEvento($evento);
 
         $ipBinary = null;
         if ($ip !== null) {
@@ -72,6 +75,24 @@ final class AuditLogger
                 'created_at' => Clock::nowString(),
             ],
         );
+    }
+
+    private function normalizeEvento(string $evento): string
+    {
+        $evento = trim($evento);
+        if ($evento === '') {
+            return 'audit.evento_desconocido';
+        }
+
+        if (mb_strlen($evento) <= self::EVENTO_MAX_LENGTH) {
+            return $evento;
+        }
+
+        $hash = substr(sha1($evento), 0, 12);
+        $headLength = self::EVENTO_MAX_LENGTH - 1 - strlen($hash);
+        $head = mb_substr($evento, 0, $headLength);
+
+        return "{$head}#{$hash}";
     }
 
     /**

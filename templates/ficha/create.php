@@ -8,7 +8,6 @@
 
 use DigiSecure\Ficha\Domain\Enum\EstadoCivil;
 use DigiSecure\Ficha\Domain\Enum\Genero;
-use DigiSecure\Ficha\Domain\Enum\Parentesco;
 use DigiSecure\Ficha\Domain\Enum\TipoFicha;
 use DigiSecure\Ficha\Domain\Enum\TipoSangre;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -28,9 +27,66 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
     }
     $cursosAsignados[$cursoId] = $cursoInput;
 }
+
+$formPageTitle = isset($formPageTitle) && is_string($formPageTitle) && $formPageTitle !== ''
+    ? $formPageTitle
+    : 'Nueva Ficha';
+$formBreadcrumbParentLabel = isset($formBreadcrumbParentLabel) && is_string($formBreadcrumbParentLabel)
+    ? $formBreadcrumbParentLabel
+    : 'Guardias';
+$formBreadcrumbParentUrl = isset($formBreadcrumbParentUrl) && is_string($formBreadcrumbParentUrl) && $formBreadcrumbParentUrl !== ''
+    ? $formBreadcrumbParentUrl
+    : '/guardias';
+$formBreadcrumbCurrent = isset($formBreadcrumbCurrent) && is_string($formBreadcrumbCurrent) && $formBreadcrumbCurrent !== ''
+    ? $formBreadcrumbCurrent
+    : 'Nueva Ficha';
+$formKickerLabel = isset($formKickerLabel) && is_string($formKickerLabel) && $formKickerLabel !== ''
+    ? $formKickerLabel
+    : 'Nueva Ficha de Guardia';
+$formBackUrl = isset($formBackUrl) && is_string($formBackUrl) && $formBackUrl !== ''
+    ? $formBackUrl
+    : '/guardias';
+$formBackLabel = isset($formBackLabel) && is_string($formBackLabel) && $formBackLabel !== ''
+    ? $formBackLabel
+    : 'Volver';
+$formAction = isset($formAction) && is_string($formAction) && $formAction !== ''
+    ? $formAction
+    : '/guardias/crear';
+$formCancelUrl = isset($formCancelUrl) && is_string($formCancelUrl) && $formCancelUrl !== ''
+    ? $formCancelUrl
+    : '/guardias';
+$formCancelLabel = isset($formCancelLabel) && is_string($formCancelLabel) && $formCancelLabel !== ''
+    ? $formCancelLabel
+    : 'Cancelar';
+$formSubmitLabel = isset($formSubmitLabel) && is_string($formSubmitLabel) && $formSubmitLabel !== ''
+    ? $formSubmitLabel
+    : 'Crear Ficha';
+$formSubmitIcon = isset($formSubmitIcon) && is_string($formSubmitIcon) && $formSubmitIcon !== ''
+    ? $formSubmitIcon
+    : 'bi bi-save';
+$formShowCancel = isset($formShowCancel) ? (bool)$formShowCancel : true;
+$formSuccessMessage = isset($formSuccessMessage) && is_string($formSuccessMessage)
+    ? $formSuccessMessage
+    : '';
+$formRequireConfirm = isset($formRequireConfirm) ? (bool)$formRequireConfirm : false;
+$formConfirmTitle = isset($formConfirmTitle) && is_string($formConfirmTitle) && $formConfirmTitle !== ''
+    ? $formConfirmTitle
+    : 'Confirmar cambios';
+$formConfirmText = isset($formConfirmText) && is_string($formConfirmText) && $formConfirmText !== ''
+    ? $formConfirmText
+    : 'Se actualizará la ficha con la información ingresada.';
+$formConfirmButton = isset($formConfirmButton) && is_string($formConfirmButton) && $formConfirmButton !== ''
+    ? $formConfirmButton
+    : 'Sí, guardar';
+$formConfirmCancel = isset($formConfirmCancel) && is_string($formConfirmCancel) && $formConfirmCancel !== ''
+    ? $formConfirmCancel
+    : 'Cancelar';
+$defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha']) && $input['tipo_ficha'] !== ''
+    ? $input['tipo_ficha']
+    : 'INGRESO';
 ?>
 
-<?php $view->section('title') ?>Nueva Ficha — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?><?= $e($formPageTitle) ?> — DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('head') ?>
 <style>
@@ -48,6 +104,40 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
         letter-spacing: .08em;
         text-transform: uppercase;
     }
+    .ds-create-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        margin-bottom: .75rem;
+        flex-wrap: nowrap;
+    }
+    .ds-create-header .ds-form-kicker {
+        margin-bottom: 0;
+    }
+    .ds-create-header .ds-btn {
+        margin-left: auto;
+        white-space: nowrap;
+    }
+    .ds-breadcrumb {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .ds-breadcrumb .breadcrumb-item {
+        display: inline-flex;
+        align-items: center;
+        list-style: none;
+    }
+    .ds-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+        content: '/';
+        margin: 0 .4rem;
+        color: var(--ds-text-soft);
+        font-weight: 500;
+    }
     .ds-step-nav {
         position: sticky;
         top: 1rem;
@@ -64,16 +154,23 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
     }
     .ds-step-list {
         display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: .75rem;
+    }
+    @media (max-width: 991.98px) {
+        .ds-step-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 575.98px) {
+        .ds-step-list { grid-template-columns: 1fr; }
     }
     .ds-step-link {
         display: flex;
         align-items: center;
-        gap: .75rem;
+        gap: .65rem;
         width: 100%;
-        padding: .85rem .9rem;
+        padding: .75rem .8rem;
         border: 1px solid rgba(21, 48, 79, .08);
-        border-radius: 18px;
+        border-radius: 16px;
         background: #fff;
         color: #16324f;
         text-align: left;
@@ -85,34 +182,43 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
         transform: translateY(-1px);
     }
     .ds-step-index {
-        width: 34px;
-        height: 34px;
+        width: 30px;
+        height: 30px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
+        border-radius: 10px;
         background: rgba(47, 128, 237, .12);
         color: #2f80ed;
         font-weight: 700;
         flex: 0 0 auto;
+        font-size: .9rem;
     }
     .ds-step-copy {
         display: flex;
         flex-direction: column;
         min-width: 0;
+        flex: 1 1 auto;
     }
     .ds-step-copy strong {
-        font-size: .92rem;
+        font-size: .88rem;
         line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .ds-step-copy span {
         color: #607489;
-        font-size: .76rem;
+        font-size: .72rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .ds-step-status {
         margin-left: auto;
-        font-size: .75rem;
+        font-size: .7rem;
         font-weight: 700;
+        flex: 0 0 auto;
     }
     .ds-step-panel {
         display: none;
@@ -186,60 +292,169 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
     #fichaForm .card {
         background: #fff;
         border: 1px solid rgba(21, 48, 79, 0.08);
-        border-radius: 16px;
-        box-shadow: 0 6px 20px rgba(9, 29, 53, 0.06);
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(9, 29, 53, 0.05);
         overflow: hidden;
-        margin-bottom: 1.25rem;
+        margin-bottom: 0.9rem;
     }
     #fichaForm .card.ds-step-nav-card {
         /* la stepper card mantiene su propio look mas redondeado */
-        border-radius: 24px;
-        box-shadow: 0 16px 30px rgba(18, 45, 77, 0.08);
+        border-radius: 20px;
+        box-shadow: 0 12px 24px rgba(18, 45, 77, 0.07);
     }
 
     #fichaForm .card-header {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        padding: 0.85rem 1.15rem;
+        gap: 0.5rem;
+        padding: 0.65rem 1rem;
         background: linear-gradient(180deg, #fbfcfe, #f6f8fb);
         border-bottom: 1px solid #eef1f5;
         font-weight: 700;
-        font-size: 0.92rem;
+        font-size: 0.88rem;
         color: #16324f;
     }
     #fichaForm .card-header > i.bi {
-        width: 32px; height: 32px;
+        width: 26px; height: 26px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 10px;
+        border-radius: 8px;
         background: rgba(47, 128, 237, 0.12);
         color: #2f80ed;
-        font-size: 1rem;
-        margin-right: 0.45rem;
+        font-size: 0.9rem;
+        margin-right: 0.35rem;
     }
 
     #fichaForm .card-body {
-        padding: 1.1rem 1.25rem 1.25rem;
+        padding: 0.85rem 1rem 0.95rem;
         background: #fff;
+    }
+
+    /* Sub-header para agrupar campos dentro de una card */
+    #fichaForm .ds-subheader {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #607489;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px dashed rgba(21, 48, 79, .12);
+    }
+    /* Mayor separación cuando hay un sub-header después del bloque anterior */
+    #fichaForm .ds-subheader.mt-3 {
+        margin-top: 1.5rem !important;
+        padding-top: 0.85rem;
+        border-top: 1px solid rgba(21, 48, 79, .06);
+    }
+    #fichaForm .ds-subheader i.bi {
+        color: #2f80ed;
+        font-size: 0.85rem;
     }
 
     /* Espaciado vertical entre campos del grid (col-md-*) */
     #fichaForm .row > [class*="col-"] {
-        margin-bottom: 0.85rem;
+        margin-bottom: 0.55rem;
     }
     #fichaForm .row > [class*="col-"]:last-child {
         margin-bottom: 0;
     }
 
+    /* ====== CSS Grid auto-fit para campos compactos (independiente de Bootstrap) ====== */
+    #fichaForm .ff-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 0.6rem 0.75rem;
+        align-items: end; /* alinear inputs al fondo aunque labels tengan distintas alturas */
+    }
+    #fichaForm .ff-row > div {
+        display: flex;
+        flex-direction: column;
+    }
+    #fichaForm .ff-row > div > .form-label {
+        margin-top: auto; /* empuja label hacia abajo si la celda es alta */
+    }
+    #fichaForm .ff-row > .ff-span-2 { grid-column: span 2; }
+    #fichaForm .ff-row > .ff-span-3 { grid-column: span 3; }
+    #fichaForm .ff-row > .ff-span-4 { grid-column: span 4; }
+    #fichaForm .ff-row > .ff-span-full { grid-column: 1 / -1; }
+    /* Campos angostos (numero, edad) */
+    #fichaForm .ff-row > .ff-narrow {
+        max-width: 130px;
+    }
+
+    /* Input con icono de validación (cédula) */
+    #fichaForm .ff-input-with-icon {
+        position: relative;
+    }
+    #fichaForm .ff-input-with-icon > .form-control {
+        padding-right: 2.2rem;
+    }
+    #fichaForm .ff-input-icon {
+        position: absolute;
+        right: 0.65rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1rem;
+        line-height: 1;
+        pointer-events: none;
+        display: none;
+    }
+    #fichaForm .ff-input-with-icon.is-valid > .ff-input-icon {
+        display: inline-block;
+        color: #059669;
+    }
+    #fichaForm .ff-input-with-icon.is-invalid > .ff-input-icon {
+        display: inline-block;
+        color: #dc2626;
+    }
+    #fichaForm .ff-input-with-icon.is-valid > .form-control {
+        border-color: #059669;
+    }
+    #fichaForm .ff-input-with-icon.is-invalid > .form-control {
+        border-color: #dc2626;
+    }
+    #fichaForm .ff-input-with-icon.is-valid > .form-control:focus {
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+    }
+    #fichaForm .ff-input-with-icon.is-invalid > .form-control:focus {
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+    }
+    #fichaForm .ff-error-text {
+        display: none;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #dc2626;
+        margin-top: 0.25rem;
+        line-height: 1.2;
+    }
+    #fichaForm .ff-error-text.show {
+        display: block;
+    }
+    @media (max-width: 480px) {
+        #fichaForm .ff-row {
+            grid-template-columns: 1fr 1fr;
+        }
+        #fichaForm .ff-row > .ff-span-2,
+        #fichaForm .ff-row > .ff-span-3,
+        #fichaForm .ff-row > .ff-span-4,
+        #fichaForm .ff-row > .ff-span-full {
+            grid-column: 1 / -1;
+        }
+        #fichaForm .ff-row > .ff-narrow { max-width: 100%; }
+    }
+
     /* Labels y campos */
     #fichaForm .form-label {
         display: block; /* etiqueta en su propia linea */
-        font-size: 0.78rem;
+        font-size: 0.74rem;
         font-weight: 600;
         color: #16324f;
-        margin-bottom: 0.35rem;
+        margin-bottom: 0.2rem;
     }
     #fichaForm .form-label .text-danger {
         color: #dc2626 !important;
@@ -252,9 +467,9 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
         display: block;
         width: 100%;
         border: 1px solid #d8dfe7;
-        border-radius: 10px;
-        padding: 0.5rem 0.8rem;
-        font-size: 0.88rem;
+        border-radius: 9px;
+        padding: 0.38rem 0.7rem;
+        font-size: 0.84rem;
         color: #16324f;
         background: #fff;
         transition: border-color .15s, box-shadow .15s;
@@ -275,9 +490,10 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
         border-color: #dc2626;
     }
     #fichaForm .form-text {
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         color: #5f7288;
-        margin-top: 0.25rem;
+        margin-top: 0.15rem;
+        line-height: 1.2;
     }
 
     /* Botones del form: usar el look del sistema */
@@ -371,29 +587,30 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
 <?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
-<li class="breadcrumb-item active">Nueva Ficha</li>
+<?php if ($formBreadcrumbParentLabel !== ''): ?>
+<li class="breadcrumb-item"><a href="<?= $view->url($formBreadcrumbParentUrl) ?>"><?= $e($formBreadcrumbParentLabel) ?></a></li>
+<?php endif ?>
+<li class="breadcrumb-item active" aria-current="page"><?= $e($formBreadcrumbCurrent) ?></li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-    <div>
-        <span class="ds-form-kicker"><i class="bi bi-ui-checks-grid"></i>Formulario guiado</span>
-        <h4 class="mb-1"><i class="bi bi-plus-circle me-2"></i>Nueva Ficha de Guardia</h4>
-        <p class="text-muted mb-0">Organizamos el formulario por pasos para reducir la carga visual y mantener toda la funcionalidad.</p>
-    </div>
-    <a href="<?= $view->url('/guardias') ?>" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i>Volver
+<div class="ds-create-header">
+    <span class="ds-form-kicker"><i class="bi bi-ui-checks-grid"></i><?= $e($formKickerLabel) ?></span>
+    <a href="<?= $view->url($formBackUrl) ?>" class="ds-btn ds-btn-outline ds-btn-sm">
+        <i class="bi bi-arrow-left"></i><?= $e($formBackLabel) ?>
     </a>
 </div>
 
 <?php if (!empty($error)): ?>
 <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?= $e($error) ?></div>
 <?php endif ?>
+<?php if ($formSuccessMessage !== ''): ?>
+<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><?= $e($formSuccessMessage) ?></div>
+<?php endif ?>
 
 <div class="row g-4">
     <div class="col-xl-8">
-<form method="post" action="<?= $view->url('/guardias/crear') ?>" id="fichaForm" novalidate>
+<form method="post" action="<?= $view->url($formAction) ?>" id="fichaForm" class="ds-form-main" novalidate>
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="card ds-step-nav-card shadow-sm mb-4">
@@ -437,45 +654,45 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
 
     <div class="ds-step-panel active" data-step-panel="base">
 
-    <!-- 1. Tipo de Ficha -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-tag me-2"></i>Tipo de Ficha</div>
+    <!-- Datos Personales (incluye Tipo de Ficha) -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-person me-2"></i>Datos Personales</div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Tipo <span class="text-danger">*</span></label>
+            <div class="ds-subheader"><i class="bi bi-tag"></i>Identificación</div>
+            <div class="ff-row">
+                <div>
+                    <label class="form-label">Tipo de Ficha <span class="text-danger">*</span></label>
                     <select name="tipo_ficha" class="form-select" required>
                         <?php foreach (TipoFicha::cases() as $tipo): ?>
-                        <option value="<?= $tipo->value ?>" <?= ($input['tipo_ficha'] ?? 'INGRESO') === $tipo->value ? 'selected' : '' ?>>
+                        <option value="<?= $tipo->value ?>" <?= $defaultTipoFicha === $tipo->value ? 'selected' : '' ?>>
                             <?= $e($tipo->label()) ?>
                         </option>
                         <?php endforeach ?>
                     </select>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. Datos Personales -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-person me-2"></i>Datos Personales</div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-6">
+                <div>
+                    <label class="form-label">Cédula <span class="text-danger">*</span></label>
+                    <div class="ff-input-with-icon" id="cedula-wrap">
+                        <input type="text" name="cedula" class="form-control" required maxlength="10" minlength="10"
+                               pattern="\d{10}" inputmode="numeric" autocomplete="off"
+                               placeholder="Ej: 1712345678" value="<?= $old('cedula') ?>">
+                        <i class="bi ff-input-icon" id="cedula-icon" aria-hidden="true"></i>
+                    </div>
+                    <div class="ff-error-text" id="cedula-error"></div>
+                </div>
+                <div class="ff-span-2">
                     <label class="form-label">Apellidos <span class="text-danger">*</span></label>
                     <input type="text" name="apellidos" class="form-control" required maxlength="120" value="<?= $old('apellidos') ?>">
                 </div>
-                <div class="col-md-6">
+                <div class="ff-span-2">
                     <label class="form-label">Nombres <span class="text-danger">*</span></label>
                     <input type="text" name="nombres" class="form-control" required maxlength="120" value="<?= $old('nombres') ?>">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Cédula <span class="text-danger">*</span></label>
-                    <input type="text" name="cedula" class="form-control" required maxlength="10" minlength="10"
-                           pattern="\d{10}" placeholder="10 dígitos" value="<?= $old('cedula') ?>">
-                    <div class="form-text">Cédula ecuatoriana (10 dígitos)</div>
-                </div>
-                <div class="col-md-4">
+            </div>
+
+            <div class="ds-subheader mt-3"><i class="bi bi-person-vcard"></i>Datos demográficos</div>
+            <div class="ff-row">
+                <div>
                     <label class="form-label">Género <span class="text-danger">*</span></label>
                     <select name="genero" class="form-select" required>
                         <option value="">Seleccione...</option>
@@ -486,35 +703,11 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
                         <?php endforeach ?>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Fecha Nacimiento <span class="text-danger">*</span></label>
+                <div>
+                    <label class="form-label">Fecha de Nacimiento <span class="text-danger">*</span></label>
                     <input type="date" name="fecha_nacimiento" class="form-control" required value="<?= $old('fecha_nacimiento') ?>">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Ciudad Nacimiento</label>
-                    <input type="text" name="lugar_nacimiento_ciudad" class="form-control" maxlength="100" value="<?= $old('lugar_nacimiento_ciudad') ?>">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Provincia Nacimiento</label>
-                    <input type="text" name="lugar_nacimiento_provincia" class="form-control" maxlength="100" value="<?= $old('lugar_nacimiento_provincia') ?>">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Tipo Sangre</label>
-                    <select name="tipo_sangre" class="form-select">
-                        <option value="">Seleccione...</option>
-                        <?php foreach (TipoSangre::cases() as $ts): ?>
-                        <option value="<?= $e($ts->value) ?>" <?= ($input['tipo_sangre'] ?? '') === $ts->value ? 'selected' : '' ?>>
-                            <?= $e($ts->label()) ?>
-                        </option>
-                        <?php endforeach ?>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Estatura (m)</label>
-                    <input type="number" name="estatura" class="form-control" step="0.01" min="1.00" max="2.50"
-                           placeholder="1.70" value="<?= $old('estatura') ?>">
-                </div>
-                <div class="col-md-3">
+                <div>
                     <label class="form-label">Estado Civil</label>
                     <select name="estado_civil" class="form-select">
                         <option value="">Seleccione...</option>
@@ -525,11 +718,39 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
                         <?php endforeach ?>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div>
+                    <label class="form-label">Tipo de Sangre</label>
+                    <select name="tipo_sangre" class="form-select">
+                        <option value="">Seleccione...</option>
+                        <?php foreach (TipoSangre::cases() as $ts): ?>
+                        <option value="<?= $e($ts->value) ?>" <?= ($input['tipo_sangre'] ?? '') === $ts->value ? 'selected' : '' ?>>
+                            <?= $e($ts->label()) ?>
+                        </option>
+                        <?php endforeach ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Estatura (m)</label>
+                    <input type="number" name="estatura" class="form-control" step="0.01" min="1.00" max="2.50"
+                           placeholder="1.70" value="<?= $old('estatura') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Ciudad de Nacimiento</label>
+                    <input type="text" name="lugar_nacimiento_ciudad" class="form-control" maxlength="100" value="<?= $old('lugar_nacimiento_ciudad') ?>">
+                </div>
+                <div class="ff-span-2">
+                    <label class="form-label">Provincia de Nacimiento</label>
+                    <input type="text" name="lugar_nacimiento_provincia" class="form-control" maxlength="100" value="<?= $old('lugar_nacimiento_provincia') ?>">
+                </div>
+            </div>
+
+            <div class="ds-subheader mt-3"><i class="bi bi-telephone"></i>Contacto directo</div>
+            <div class="ff-row">
+                <div>
                     <label class="form-label">Celular</label>
                     <input type="tel" name="celular" class="form-control" maxlength="30" value="<?= $old('celular') ?>">
                 </div>
-                <div class="col-md-3">
+                <div class="ff-span-3">
                     <label class="form-label">Email</label>
                     <input type="email" name="email" class="form-control" maxlength="190" value="<?= $old('email') ?>">
                 </div>
@@ -540,17 +761,30 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
     </div>
 
     <div class="ds-step-panel" data-step-panel="contacto">
-    <!-- 3. Domicilio -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-house me-2"></i>Domicilio</div>
+    <!-- Contacto -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-house me-2"></i>Domicilio y contacto</div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
+            <div class="ds-subheader"><i class="bi bi-geo-alt"></i>Dirección</div>
+            <div class="ff-row">
+                <div>
                     <label class="form-label">Ciudad</label>
                     <input type="text" name="domicilio_ciudad" class="form-control" maxlength="100" value="<?= $old('domicilio_ciudad') ?>">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Tipo Vivienda</label>
+                <div class="ff-span-2">
+                    <label class="form-label">Calle</label>
+                    <input type="text" name="domicilio_calle" class="form-control" maxlength="255" value="<?= $old('domicilio_calle') ?>">
+                </div>
+                <div class="ff-narrow">
+                    <label class="form-label">Número</label>
+                    <input type="text" name="domicilio_numero" class="form-control" maxlength="30" value="<?= $old('domicilio_numero') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Barrio</label>
+                    <input type="text" name="domicilio_barrio" class="form-control" maxlength="150" value="<?= $old('domicilio_barrio') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Tipo de Vivienda</label>
                     <select name="domicilio_tipo_vivienda" class="form-select">
                         <option value="">Seleccione...</option>
                         <?php foreach (['PROPIA' => 'Propia', 'ARRENDADA' => 'Arrendada', 'FAMILIAR' => 'Familiar'] as $v => $l): ?>
@@ -560,32 +794,24 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
                         <?php endforeach ?>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div>
                     <label class="form-label">Teléfono Domicilio</label>
                     <input type="tel" name="domicilio_telefono" class="form-control" maxlength="30" value="<?= $old('domicilio_telefono') ?>">
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Calle</label>
-                    <input type="text" name="domicilio_calle" class="form-control" maxlength="255" value="<?= $old('domicilio_calle') ?>">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Número</label>
-                    <input type="text" name="domicilio_numero" class="form-control" maxlength="30" value="<?= $old('domicilio_numero') ?>">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Barrio</label>
-                    <input type="text" name="domicilio_barrio" class="form-control" maxlength="150" value="<?= $old('domicilio_barrio') ?>">
-                </div>
-                <div class="col-md-12">
-                    <label class="form-label">Referencia</label>
+                <div class="ff-span-full">
+                    <label class="form-label">Referencia (cómo llegar)</label>
                     <input type="text" name="domicilio_referencia" class="form-control" maxlength="255" value="<?= $old('domicilio_referencia') ?>">
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Contacto Emergencia (Nombre)</label>
+            </div>
+
+            <div class="ds-subheader mt-3"><i class="bi bi-telephone-plus"></i>Contacto de emergencia</div>
+            <div class="ff-row">
+                <div class="ff-span-2">
+                    <label class="form-label">Nombre del Contacto</label>
                     <input type="text" name="contacto_emergencia_nombre" class="form-control" maxlength="200" value="<?= $old('contacto_emergencia_nombre') ?>">
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Contacto Emergencia (Teléfono)</label>
+                <div>
+                    <label class="form-label">Teléfono del Contacto</label>
                     <input type="tel" name="contacto_emergencia_telefono" class="form-control" maxlength="30" value="<?= $old('contacto_emergencia_telefono') ?>">
                 </div>
             </div>
@@ -595,99 +821,89 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
     </div>
 
     <div class="ds-step-panel" data-step-panel="historial">
-    <!-- 4. Datos Financieros -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-bank me-2"></i>Datos Financieros</div>
+    <!-- Finanzas e instrucción -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-bank me-2"></i>Finanzas e instrucción</div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
+            <div class="ds-subheader"><i class="bi bi-cash-coin"></i>Datos financieros</div>
+            <div class="ff-row">
+                <div class="ff-span-2">
                     <label class="form-label">Banco</label>
                     <input type="text" name="banco" class="form-control" maxlength="120" value="<?= $old('banco') ?>">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Tipo Cuenta</label>
+                <div>
+                    <label class="form-label">Tipo de Cuenta</label>
                     <select name="tipo_cuenta" class="form-select">
                         <option value="">Seleccione...</option>
                         <option value="AHORROS" <?= ($input['tipo_cuenta'] ?? '') === 'AHORROS' ? 'selected' : '' ?>>Ahorros</option>
                         <option value="CORRIENTE" <?= ($input['tipo_cuenta'] ?? '') === 'CORRIENTE' ? 'selected' : '' ?>>Corriente</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Cuenta Bancaria</label>
+                <div class="ff-span-2">
+                    <label class="form-label">Número de Cuenta Bancaria</label>
                     <input type="text" name="cuenta_bancaria" class="form-control" maxlength="30" value="<?= $old('cuenta_bancaria') ?>">
-                    <div class="form-text">Se almacena cifrada (AES-256-GCM)</div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- 5. Instrucción -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-mortarboard me-2"></i>Instrucción</div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Primaria</label>
+            <div class="ds-subheader mt-3"><i class="bi bi-mortarboard"></i>Nivel de instrucción</div>
+            <div class="ff-row">
+                <div>
+                    <label class="form-label">Instrucción Primaria</label>
                     <input type="text" name="instruccion_primaria" class="form-control" maxlength="200"
                            placeholder="Nombre de la institución" value="<?= $old('instruccion_primaria') ?>">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Secundaria (Bachillerato)</label>
+                <div>
+                    <label class="form-label">Instrucción Secundaria</label>
                     <input type="text" name="instruccion_secundaria" class="form-control" maxlength="200"
-                           placeholder="Requisito: Bachiller" value="<?= $old('instruccion_secundaria') ?>">
-                    <div class="form-text">Requisito básico para completar ficha</div>
+                           placeholder="Bachiller" value="<?= $old('instruccion_secundaria') ?>">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Superior</label>
+                <div>
+                    <label class="form-label">Instrucción Superior</label>
                     <input type="text" name="instruccion_superior" class="form-control" maxlength="200" value="<?= $old('instruccion_superior') ?>">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Último Reentrenamiento</label>
+                <div>
+                    <label class="form-label">Fecha Último Reentrenamiento</label>
                     <input type="date" name="fecha_ultimo_reentrenamiento" class="form-control" value="<?= $old('fecha_ultimo_reentrenamiento') ?>">
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 6. Trabajos Anteriores (dinámico) -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-briefcase me-2"></i>Trabajos Anteriores</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTrabajo()">
-                <i class="bi bi-plus-lg me-1"></i>Agregar
-            </button>
-        </div>
-        <div class="card-body" id="trabajos-container">
-            <p class="text-muted small mb-0" id="trabajos-empty">
-                <i class="bi bi-info-circle me-1"></i>Requisito básico: al menos 1 trabajo anterior.
-                Haga clic en "Agregar" para añadir.
-            </p>
-        </div>
-    </div>
+    <!-- Repeaters: Trabajos, Hijos, Referencias -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-collection me-2"></i>Historial laboral y referencias</div>
+        <div class="card-body">
+            <div class="ds-subheader d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-briefcase"></i>Trabajos anteriores</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTrabajo()">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div id="trabajos-container">
+                <p class="text-muted small mb-0" id="trabajos-empty">
+                    <i class="bi bi-info-circle me-1"></i>Requisito básico: al menos 1 trabajo anterior.
+                </p>
+            </div>
 
-    <!-- 7. Hijos Menores (dinámico) -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-people me-2"></i>Hijos Menores</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addHijo()">
-                <i class="bi bi-plus-lg me-1"></i>Agregar
-            </button>
-        </div>
-        <div class="card-body" id="hijos-container">
-            <p class="text-muted small mb-0" id="hijos-empty">Sin hijos menores registrados.</p>
-        </div>
-    </div>
+            <div class="ds-subheader d-flex justify-content-between align-items-center mt-3">
+                <span><i class="bi bi-people"></i>Hijos menores</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addHijo()">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div id="hijos-container">
+                <p class="text-muted small mb-0" id="hijos-empty">Sin hijos menores registrados.</p>
+            </div>
 
-    <!-- 8. Referencias Personales (dinámico) -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-person-lines-fill me-2"></i>Referencias Personales</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addReferencia()">
-                <i class="bi bi-plus-lg me-1"></i>Agregar
-            </button>
-        </div>
-        <div class="card-body" id="referencias-container">
-            <p class="text-muted small mb-0" id="referencias-empty">Sin referencias registradas.</p>
+            <div class="ds-subheader d-flex justify-content-between align-items-center mt-3">
+                <span><i class="bi bi-person-lines-fill"></i>Referencias personales</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addReferencia()">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div id="referencias-container">
+                <p class="text-muted small mb-0" id="referencias-empty">Sin referencias registradas.</p>
+            </div>
         </div>
     </div>
 
@@ -744,12 +960,14 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
             <i class="bi bi-arrow-left me-1"></i>Anterior
         </button>
         <div class="d-flex flex-wrap justify-content-end gap-2">
-            <a href="<?= $view->url('/guardias') ?>" class="btn btn-outline-secondary">Cancelar</a>
+            <?php if ($formShowCancel): ?>
+            <a href="<?= $view->url($formCancelUrl) ?>" class="btn btn-outline-secondary"><?= $e($formCancelLabel) ?></a>
+            <?php endif ?>
             <button type="button" class="btn btn-primary" data-step-next>
                 Siguiente<i class="bi bi-arrow-right ms-1"></i>
             </button>
             <button type="submit" class="btn btn-primary d-none" data-step-submit>
-                <i class="bi bi-save me-1"></i>Crear Ficha
+                <i class="<?= $e($formSubmitIcon) ?> me-1"></i><?= $e($formSubmitLabel) ?>
             </button>
         </div>
     </div>
@@ -759,9 +977,7 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
     <div class="col-xl-4">
         <aside class="ds-step-nav">
             <div class="card ds-summary-card mb-4">
-                <div class="card-body">
-                    <div class="small text-uppercase fw-bold text-primary mb-2">Resumen de avance</div>
-                    <h5 class="mb-3">Completa por bloques y valida en tiempo real.</h5>
+                <div class="card-body">                    
 
                     <div class="ds-progress-label">
                         <span class="small text-muted">Campos obligatorios completos</span>
@@ -771,45 +987,6 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
                         <div class="progress-bar" id="requiredProgressBar" style="width:0%"></div>
                     </div>
 
-                    <div class="ds-summary-list">
-                        <div class="ds-summary-item active" data-summary-step="base">
-                            <span>
-                                <strong class="d-block">1. Base</strong>
-                                <span class="small text-muted">Tipo y datos personales</span>
-                            </span>
-                            <span class="badge text-bg-light" data-summary-status="base">0/6</span>
-                        </div>
-                        <div class="ds-summary-item" data-summary-step="contacto">
-                            <span>
-                                <strong class="d-block">2. Contacto</strong>
-                                <span class="small text-muted">Domicilio</span>
-                            </span>
-                            <span class="badge text-bg-light" data-summary-status="contacto">0/0</span>
-                        </div>
-                        <div class="ds-summary-item" data-summary-step="historial">
-                            <span>
-                                <strong class="d-block">3. Historial</strong>
-                                <span class="small text-muted">Finanzas e historial</span>
-                            </span>
-                            <span class="badge text-bg-light" data-summary-status="historial">0/0</span>
-                        </div>
-                        <div class="ds-summary-item" data-summary-step="cursos">
-                            <span>
-                                <strong class="d-block">4. Cursos</strong>
-                                <span class="small text-muted">Seleccion final</span>
-                            </span>
-                            <span class="badge text-bg-light" data-summary-status="cursos">0/0</span>
-                        </div>
-                    </div>
-
-                    <div class="ds-summary-note">
-                        <strong class="d-block mb-1">Validaciones clave</strong>
-                        Cedula, genero y fecha de nacimiento son obligatorios para crear la ficha.
-                    </div>
-                    <div class="ds-summary-note">
-                        <strong class="d-block mb-1">Dato sensible</strong>
-                        La cuenta bancaria se guarda cifrada cuando se registra.
-                    </div>
                 </div>
             </div>
         </aside>
@@ -818,11 +995,21 @@ foreach ((array)($input['cursos'] ?? []) as $cursoInput) {
 <?php $view->endSection() ?>
 
 <?php $view->section('scripts') ?>
+<?php if ($formRequireConfirm): ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<?php endif ?>
 <script>
 const STEP_ORDER = ['base', 'contacto', 'historial', 'cursos'];
 const prefillTrabajos = <?= json_encode($prefillTrabajos, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 const prefillHijos = <?= json_encode($prefillHijos, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 const prefillReferencias = <?= json_encode($prefillReferencias, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+const REQUIRE_SUBMIT_CONFIRM = <?= $formRequireConfirm ? 'true' : 'false' ?>;
+const SUBMIT_CONFIRM_CONFIG = <?= json_encode([
+    'title' => $formConfirmTitle,
+    'text' => $formConfirmText,
+    'confirmButtonText' => $formConfirmButton,
+    'cancelButtonText' => $formConfirmCancel,
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 let currentStepIndex = 0;
 
 function esc(v) {
@@ -909,29 +1096,29 @@ function addTrabajo(data = {}) {
     const c = document.getElementById('trabajos-container');
     const i = trabajoIdx++;
     const div = document.createElement('div');
-    div.className = 'row g-2 align-items-end trabajo-row ds-repeat-card';
+    div.className = 'ff-row trabajo-row ds-repeat-card';
     div.innerHTML = `
-        <div class="col-md-4">
-            <label class="form-label small">Empresa</label>
+        <div class="ff-span-2">
+            <label class="form-label small">Nombre de la Empresa</label>
             <input type="text" name="trabajos_anteriores[${i}][empresa]" class="form-control form-control-sm" required value="${esc(data.empresa)}">
         </div>
-        <div class="col-md-3">
-            <label class="form-label small">Cargo</label>
+        <div class="ff-span-2">
+            <label class="form-label small">Cargo Desempeñado</label>
             <input type="text" name="trabajos_anteriores[${i}][cargo]" class="form-control form-control-sm" value="${esc(data.cargo)}">
         </div>
-        <div class="col-md-2">
-            <label class="form-label small">Tiempo</label>
+        <div>
+            <label class="form-label small">Tiempo de Servicio</label>
             <input type="text" name="trabajos_anteriores[${i}][tiempo]" class="form-control form-control-sm" placeholder="Ej: 2 años">
         </div>
-        <div class="col-md-2">
-            <label class="form-label small">Dirección</label>
+        <div class="ff-span-2">
+            <label class="form-label small">Dirección de la Empresa</label>
             <input type="text" name="trabajos_anteriores[${i}][direccion]" class="form-control form-control-sm">
         </div>
-        <div class="col-md-2">
-            <label class="form-label small">Teléfonos</label>
+        <div>
+            <label class="form-label small">Teléfonos de Contacto</label>
             <input type="text" name="trabajos_anteriores[${i}][telefonos]" class="form-control form-control-sm">
         </div>
-        <div class="col-md-1">
+        <div class="d-flex align-items-end">
             <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.trabajo-row').remove();checkEmpty('trabajos');refreshSummary()">
                 <i class="bi bi-trash"></i>
             </button>
@@ -953,24 +1140,24 @@ function addHijo(data = {}) {
     const c = document.getElementById('hijos-container');
     const i = hijoIdx++;
     const div = document.createElement('div');
-    div.className = 'row g-2 align-items-end hijo-row ds-repeat-card';
+    div.className = 'ff-row hijo-row ds-repeat-card';
     div.innerHTML = `
-        <div class="col-md-5">
-            <label class="form-label small">Nombre</label>
+        <div class="ff-span-2">
+            <label class="form-label small">Nombre del Hijo/a</label>
             <input type="text" name="hijos_menores[${i}][nombre]" class="form-control form-control-sm" required>
         </div>
-        <div class="col-md-2">
+        <div class="ff-narrow">
             <label class="form-label small">Edad</label>
             <input type="number" name="hijos_menores[${i}][edad]" class="form-control form-control-sm" min="0" max="17">
         </div>
-        <div class="col-md-3">
-            <label class="form-label small">Justifica con cédula</label>
+        <div>
+            <label class="form-label small">Justifica con Cédula</label>
             <select name="hijos_menores[${i}][justifica_con_cedula]" class="form-select form-select-sm">
                 <option value="0">No</option>
                 <option value="1">Sí</option>
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="d-flex align-items-end">
             <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.hijo-row').remove();checkEmpty('hijos');refreshSummary()">
                 <i class="bi bi-trash"></i>
             </button>
@@ -990,9 +1177,9 @@ function addReferencia(data = {}) {
     const c = document.getElementById('referencias-container');
     const i = refIdx++;
     const div = document.createElement('div');
-    div.className = 'row g-2 align-items-end ref-row ds-repeat-card';
+    div.className = 'ff-row ref-row ds-repeat-card';
     div.innerHTML = `
-        <div class="col-md-2">
+        <div>
             <label class="form-label small">Parentesco</label>
             <select name="referencias[${i}][parentesco]" class="form-select form-select-sm">
                 <option value="PADRE">Padre</option>
@@ -1001,19 +1188,19 @@ function addReferencia(data = {}) {
                 <option value="OTRO">Otro</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label small">Nombre</label>
+        <div class="ff-span-2">
+            <label class="form-label small">Nombre Completo</label>
             <input type="text" name="referencias[${i}][nombre]" class="form-control form-control-sm" required>
         </div>
-        <div class="col-md-3">
-            <label class="form-label small">Dirección</label>
+        <div class="ff-span-2">
+            <label class="form-label small">Dirección de la Referencia</label>
             <input type="text" name="referencias[${i}][direccion]" class="form-control form-control-sm">
         </div>
-        <div class="col-md-2">
-            <label class="form-label small">Teléfono</label>
+        <div>
+            <label class="form-label small">Teléfono de Contacto</label>
             <input type="text" name="referencias[${i}][telefono]" class="form-control form-control-sm">
         </div>
-        <div class="col-md-2">
+        <div class="d-flex align-items-end">
             <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.ref-row').remove();checkEmpty('referencias');refreshSummary()">
                 <i class="bi bi-trash"></i>
             </button>
@@ -1055,6 +1242,53 @@ document.querySelectorAll('.curso-check').forEach(cb => {
 });
 
 const fichaForm = document.getElementById('fichaForm');
+let submitConfirmed = false;
+
+/**
+ * Valida una cédula ecuatoriana usando el algoritmo módulo 10.
+ * Reglas:
+ *  - 10 dígitos numéricos
+ *  - Primeros 2 dígitos: código de provincia (01-24, o 30 para extranjeros)
+ *  - Tercer dígito < 6 (personas naturales)
+ *  - Décimo dígito = dígito verificador calculado por algoritmo módulo 10
+ *
+ * @param {string} cedula
+ * @returns {{valid: boolean, reason?: string}}
+ */
+function validarCedulaEcuador(cedula) {
+    if (typeof cedula !== 'string') cedula = String(cedula ?? '');
+    cedula = cedula.trim();
+
+    if (!/^\d{10}$/.test(cedula)) {
+        return { valid: false, reason: 'La cédula debe tener exactamente 10 dígitos numéricos' };
+    }
+
+    const provincia = parseInt(cedula.substring(0, 2), 10);
+    if ((provincia < 1 || provincia > 24) && provincia !== 30) {
+        return { valid: false, reason: 'Código de provincia inválido (debe estar entre 01-24 o ser 30)' };
+    }
+
+    const tercerDigito = parseInt(cedula.charAt(2), 10);
+    if (tercerDigito >= 6) {
+        return { valid: false, reason: 'El tercer dígito debe ser menor a 6 (personas naturales)' };
+    }
+
+    const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+    let suma = 0;
+    for (let i = 0; i < 9; i++) {
+        let producto = parseInt(cedula.charAt(i), 10) * coeficientes[i];
+        if (producto >= 10) producto -= 9;
+        suma += producto;
+    }
+    const digitoVerificador = (10 - (suma % 10)) % 10;
+    const digitoCedula = parseInt(cedula.charAt(9), 10);
+
+    if (digitoVerificador !== digitoCedula) {
+        return { valid: false, reason: 'Dígito verificador incorrecto (la cédula no es válida)' };
+    }
+
+    return { valid: true };
+}
 
 if (fichaForm) {
     prefillTrabajos.forEach(row => addTrabajo(row));
@@ -1064,6 +1298,68 @@ if (fichaForm) {
     checkEmpty('trabajos');
     checkEmpty('hijos');
     checkEmpty('referencias');
+
+    // Validación de cédula ecuatoriana (en vivo: solo dígitos + verificación al salir del campo)
+    const cedulaInput = fichaForm.querySelector('input[name="cedula"]');
+    const cedulaWrap = document.getElementById('cedula-wrap');
+    const cedulaIcon = document.getElementById('cedula-icon');
+    const cedulaError = document.getElementById('cedula-error');
+
+    const setCedulaEstado = (estado, mensaje = '') => {
+        if (!cedulaWrap || !cedulaIcon || !cedulaError) return;
+        cedulaWrap.classList.remove('is-valid', 'is-invalid');
+        cedulaIcon.classList.remove('bi-check-circle-fill', 'bi-x-circle-fill');
+        cedulaError.classList.remove('show');
+        cedulaError.textContent = '';
+        if (estado === 'valid') {
+            cedulaWrap.classList.add('is-valid');
+            cedulaIcon.classList.add('bi-check-circle-fill');
+        } else if (estado === 'invalid') {
+            cedulaWrap.classList.add('is-invalid');
+            cedulaIcon.classList.add('bi-x-circle-fill');
+            cedulaError.textContent = mensaje || 'Cédula incorrecta';
+            cedulaError.classList.add('show');
+        }
+    };
+
+    if (cedulaInput) {
+        cedulaInput.addEventListener('input', () => {
+            cedulaInput.value = cedulaInput.value.replace(/\D/g, '').slice(0, 10);
+            cedulaInput.setCustomValidity('');
+            // Validación en vivo solo cuando completa los 10 dígitos
+            if (cedulaInput.value.length === 10) {
+                const r = validarCedulaEcuador(cedulaInput.value);
+                if (r.valid) {
+                    setCedulaEstado('valid');
+                } else {
+                    setCedulaEstado('invalid', 'Cédula incorrecta');
+                    cedulaInput.setCustomValidity(r.reason);
+                }
+            } else {
+                setCedulaEstado('none');
+            }
+        });
+        const verificarCedula = () => {
+            const val = cedulaInput.value;
+            if (val === '') {
+                cedulaInput.setCustomValidity('');
+                setCedulaEstado('none');
+                return;
+            }
+            const r = validarCedulaEcuador(val);
+            if (r.valid) {
+                setCedulaEstado('valid');
+                cedulaInput.setCustomValidity('');
+            } else {
+                setCedulaEstado('invalid', 'Cédula incorrecta');
+                cedulaInput.setCustomValidity(r.reason);
+            }
+        };
+        cedulaInput.addEventListener('blur', verificarCedula);
+        cedulaInput.addEventListener('change', verificarCedula);
+        // Si viene precargada del servidor, validar al cargar
+        if (cedulaInput.value.length === 10) verificarCedula();
+    }
 
     fichaForm.addEventListener('input', event => {
         const field = event.target;
@@ -1100,6 +1396,13 @@ if (fichaForm) {
     });
 
     fichaForm.addEventListener('submit', function(event) {
+        // Validar cédula antes del submit
+        const cedInput = this.querySelector('input[name="cedula"]');
+        if (cedInput && cedInput.value !== '') {
+            const r = validarCedulaEcuador(cedInput.value);
+            cedInput.setCustomValidity(r.valid ? '' : r.reason);
+        }
+
         this.querySelectorAll('.curso-hidden').forEach(el => el.remove());
 
         let ci = 0;
@@ -1124,21 +1427,56 @@ if (fichaForm) {
             ci++;
         });
 
-        if (this.checkValidity()) return;
+        if (!this.checkValidity()) {
+            event.preventDefault();
+            const firstInvalid = this.querySelector(':invalid');
+            if (!firstInvalid) return;
+            const targetPanel = firstInvalid.closest('[data-step-panel]');
+            if (targetPanel) {
+                const step = targetPanel.getAttribute('data-step-panel');
+                const stepIndex = STEP_ORDER.indexOf(step);
+                if (stepIndex >= 0) showStep(stepIndex);
+            }
+            firstInvalid.dataset.touched = '1';
+            updateFieldState(firstInvalid, true);
+            firstInvalid.reportValidity();
+            refreshSummary();
+            return;
+        }
+
+        if (!REQUIRE_SUBMIT_CONFIRM || submitConfirmed) {
+            return;
+        }
 
         event.preventDefault();
-        const firstInvalid = this.querySelector(':invalid');
-        if (!firstInvalid) return;
-        const targetPanel = firstInvalid.closest('[data-step-panel]');
-        if (targetPanel) {
-            const step = targetPanel.getAttribute('data-step-panel');
-            const stepIndex = STEP_ORDER.indexOf(step);
-            if (stepIndex >= 0) showStep(stepIndex);
+        const submitAfterConfirm = () => {
+            submitConfirmed = true;
+            if (typeof this.requestSubmit === 'function') {
+                this.requestSubmit();
+                return;
+            }
+            this.submit();
+        };
+
+        if (typeof Swal === 'undefined') {
+            submitAfterConfirm();
+            return;
         }
-        firstInvalid.dataset.touched = '1';
-        updateFieldState(firstInvalid, true);
-        firstInvalid.reportValidity();
-        refreshSummary();
+
+        Swal.fire({
+            icon: 'question',
+            title: SUBMIT_CONFIRM_CONFIG.title,
+            text: SUBMIT_CONFIRM_CONFIG.text,
+            showCancelButton: true,
+            confirmButtonText: SUBMIT_CONFIRM_CONFIG.confirmButtonText,
+            cancelButtonText: SUBMIT_CONFIRM_CONFIG.cancelButtonText,
+            reverseButtons: true,
+            focusCancel: true,
+        }).then(result => {
+            if (result.isConfirmed) {
+                submitAfterConfirm();
+            }
+        });
     });
 
     showStep(0);

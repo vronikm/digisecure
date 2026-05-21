@@ -17,7 +17,7 @@ enum EstadoFicha: string
             self::BORRADOR => 'Borrador',
             self::EN_REVISION => 'En revisión',
             self::COMPLETA => 'Completa',
-            self::ANULADA => 'Anulada',
+            self::ANULADA => 'Eliminado',
         };
     }
 

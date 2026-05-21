@@ -190,7 +190,7 @@ final class UserController
             $this->flash->success('Contrasena restablecida correctamente.');
         } catch (DomainException $e) {
             $this->flash->error($e->getMessage(), 'No se pudo restablecer la contrasena');
-            return Response::redirect("/usuarios/{$id}/editar");
+            return Response::redirect($this->securePath($request, "/usuarios/{$id}/editar"));
         }
         return Response::redirect('/usuarios');
     }
@@ -243,5 +243,21 @@ final class UserController
             ];
         }
         return $byUser;
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 }

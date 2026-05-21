@@ -86,7 +86,7 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
 
 <!-- Filtros -->
 <div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/asignaciones') ?>" class="ds-filter-row">
+    <form method="get" action="<?= $view->url('/asignaciones') ?>" class="ds-filter-row ds-form-filter">
         <div class="ds-filter-summary">
             <i class="bi bi-funnel"></i>
             <strong>Filtrar:</strong>

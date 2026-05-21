@@ -41,14 +41,19 @@ $baseParams = array_filter([
             <small><?= $total ?> empresa<?= $total !== 1 ? 's' : '' ?> registrada<?= $total !== 1 ? 's' : '' ?></small>
         </div>
     </div>
-    <a href="<?= $view->url('/admin') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-        <i class="bi bi-arrow-left"></i>Volver al panel
-    </a>
+    <div style="display:flex; gap:.5rem;">
+        <a href="<?= $view->url('/admin/tenants/crear') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
+            <i class="bi bi-plus-lg"></i>Crear tenant
+        </a>
+        <a href="<?= $view->url('/admin') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+            <i class="bi bi-arrow-left"></i>Volver al panel
+        </a>
+    </div>
 </div>
 
 <!-- Filtros -->
 <div class="ds-filter-bar">
-    <form method="GET" action="<?= $view->url('/admin/tenants') ?>" class="ds-filter-row">
+    <form method="GET" action="<?= $view->url('/admin/tenants') ?>" class="ds-filter-row ds-form-filter">
         <div class="ds-filter-summary">
             <i class="bi bi-funnel"></i>
             <strong>Filtrar:</strong>

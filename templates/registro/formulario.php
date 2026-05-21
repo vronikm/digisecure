@@ -95,7 +95,7 @@ $checked = static fn(string $k): bool => !empty($form[$k]);
                     </div>
                 <?php endif; ?>
 
-                <form method="POST" action="<?= $view->url('/registro') ?>" novalidate autocomplete="on">
+                <form class="ds-form-main" method="POST" action="<?= $view->url('/registro') ?>" novalidate autocomplete="on">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
                     <div class="form-section-title"><i class="bi bi-building"></i>Datos de la empresa</div>

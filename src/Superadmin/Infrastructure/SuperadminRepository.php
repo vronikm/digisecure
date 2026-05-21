@@ -268,4 +268,140 @@ final class SuperadminRepository
             ],
         ) > 0;
     }
+
+    /**
+     * Crea un tenant global.
+     *
+     * @param array<string, scalar|null> $data
+     */
+    public function crearTenant(array $data): string
+    {
+        $id = (string) ($data['id'] ?? '');
+        if ($id === '') {
+            throw new \InvalidArgumentException('El id del tenant es obligatorio.');
+        }
+
+        $this->db->execute(
+            'INSERT INTO tenants
+                (id, razon_social, ruc, nombre_comercial, email_contacto, telefono,
+                 direccion, ciudad, provincia, pais, estado,
+                 plan_codigo, plan_inicio, plan_vencimiento,
+                 max_usuarios, max_guardias, max_storage_mb,
+                 timezone, locale, notas, created_at, updated_at)
+             VALUES
+                (:id, :razon_social, :ruc, :nombre_comercial, :email_contacto, :telefono,
+                 :direccion, :ciudad, :provincia, :pais, :estado,
+                 :plan_codigo, :plan_inicio, :plan_vencimiento,
+                 :max_usuarios, :max_guardias, :max_storage_mb,
+                 :timezone, :locale, :notas, :created_at, :updated_at)',
+            $data,
+        );
+
+        return $id;
+    }
+
+    /**
+     * @param array<string, scalar|null> $data
+     */
+    public function actualizarTenant(string $tenantId, array $data): bool
+    {
+        if ($data === []) {
+            return false;
+        }
+
+        $set = [];
+        foreach (array_keys($data) as $col) {
+            $set[] = "{$col} = :{$col}";
+        }
+
+        $data['id'] = $tenantId;
+
+        return $this->db->affectedRows(
+            'UPDATE tenants SET ' . implode(', ', $set) . ' WHERE id = :id',
+            $data,
+        ) > 0;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function usuariosDisponiblesParaTenant(string $tenantId, int $limit = 100): array
+    {
+        return $this->db->fetchAll(
+            "SELECT u.id, u.email, u.nombres, u.apellidos, u.estado,
+                    t.id AS tenant_actual_id, t.razon_social AS tenant_actual
+               FROM usuarios u
+               INNER JOIN tenants t ON t.id = u.tenant_id
+              WHERE u.tenant_id <> :tid
+                AND u.estado IN ('activo','pendiente_verificacion','inactivo')
+              ORDER BY t.razon_social, u.apellidos, u.nombres
+              LIMIT :lim",
+            ['tid' => $tenantId, 'lim' => $limit],
+        );
+    }
+
+    /**
+     * @return list<array{id:string, nombre:string, codigo:string, tenant_id:?string}>
+     */
+    public function rolesDisponiblesParaTenant(string $tenantId): array
+    {
+        return $this->db->fetchAll(
+            'SELECT id, nombre, codigo, tenant_id
+               FROM roles
+              WHERE tenant_id = :tid OR tenant_id IS NULL
+              ORDER BY es_sistema DESC, nombre ASC',
+            ['tid' => $tenantId],
+        );
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findUsuarioGlobal(string $usuarioId): ?array
+    {
+        return $this->db->fetchOne(
+            'SELECT u.id, u.tenant_id, u.email, u.nombres, u.apellidos, u.estado,
+                    t.razon_social AS tenant_actual
+               FROM usuarios u
+               INNER JOIN tenants t ON t.id = u.tenant_id
+              WHERE u.id = :id',
+            ['id' => $usuarioId],
+        );
+    }
+
+    public function asociarUsuarioATenant(
+        string $usuarioId,
+        string $tenantId,
+        ?string $roleId,
+        ?string $assignedBy,
+    ): void {
+        $now = Clock::nowString();
+
+        $this->db->transactional(function () use ($usuarioId, $tenantId, $roleId, $assignedBy, $now): void {
+            $this->db->execute(
+                'UPDATE usuarios
+                    SET tenant_id = :tid, updated_at = :now
+                  WHERE id = :uid',
+                ['tid' => $tenantId, 'now' => $now, 'uid' => $usuarioId],
+            );
+
+            $this->db->execute(
+                'DELETE FROM usuarios_roles WHERE usuario_id = :uid',
+                ['uid' => $usuarioId],
+            );
+
+            if ($roleId !== null && $roleId !== '') {
+                $this->db->execute(
+                    'INSERT INTO usuarios_roles (usuario_id, role_id, assigned_at, assigned_by)
+                     VALUES (:uid, :rid, :at, :ab)',
+                    [
+                        'uid' => $usuarioId,
+                        'rid' => $roleId,
+                        'at' => $now,
+                        'ab' => $assignedBy,
+                    ],
+                );
+            }
+        });
+    }
 }

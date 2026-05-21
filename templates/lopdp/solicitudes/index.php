@@ -56,7 +56,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 
 <!-- Filtros -->
 <div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/lopdp/solicitudes') ?>" class="ds-filter-row">
+    <form method="get" action="<?= $view->url('/lopdp/solicitudes') ?>" class="ds-filter-row ds-form-filter">
         <div class="ds-filter-summary">
             <i class="bi bi-funnel"></i>
             <strong>Filtrar:</strong>

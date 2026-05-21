@@ -48,7 +48,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 
 <!-- Filtros -->
 <div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url($currentPath) ?>" class="ds-filter-row">
+    <form method="get" action="<?= $view->url($currentPath) ?>" class="ds-filter-row ds-form-filter">
         <div class="ds-filter-summary">
             <i class="bi bi-funnel"></i>
             <strong>Filtrar:</strong>
@@ -170,19 +170,19 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         <ul class="ds-pagination">
             <li>
                 <a class="ds-page <?= $page <= 1 ? 'is-disabled' : '' ?>"
-                   href="<?= $e($currentPath) ?>?page=<?= max(1, $page - 1) ?><?= $qsPrefix ?>" aria-label="Anterior">
+                   href="<?= $view->url($currentPath) ?>?page=<?= max(1, $page - 1) ?><?= $qsPrefix ?>" aria-label="Anterior">
                     <i class="bi bi-chevron-left"></i>
                 </a>
             </li>
             <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
             <li>
                 <a class="ds-page <?= $p === $page ? 'is-active' : '' ?>"
-                   href="<?= $e($currentPath) ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
+                   href="<?= $view->url($currentPath) ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
             </li>
             <?php endfor ?>
             <li>
                 <a class="ds-page <?= $page >= $totalPages ? 'is-disabled' : '' ?>"
-                   href="<?= $e($currentPath) ?>?page=<?= min($totalPages, $page + 1) ?><?= $qsPrefix ?>" aria-label="Siguiente">
+                   href="<?= $view->url($currentPath) ?>?page=<?= min($totalPages, $page + 1) ?><?= $qsPrefix ?>" aria-label="Siguiente">
                     <i class="bi bi-chevron-right"></i>
                 </a>
             </li>

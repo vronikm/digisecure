@@ -98,7 +98,7 @@ if ($success) {
                     incluyendo letras y numeros.
                 </p>
 
-                <form method="POST" action="<?= $view->url('/password/reset/' . $token) ?>" novalidate>
+                <form class="ds-form-main" method="POST" action="<?= $view->url('/password/reset/' . $token) ?>" novalidate>
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
                     <div class="login-field">

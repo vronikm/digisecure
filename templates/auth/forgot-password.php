@@ -72,7 +72,7 @@ $sent = $sent ?? false;
                     Te enviaremos un enlace seguro para crear una nueva contrasena.
                 </p>
 
-                <form method="POST" action="<?= $view->url('/password/forgot') ?>" autocomplete="on" novalidate>
+                <form class="ds-form-main" method="POST" action="<?= $view->url('/password/forgot') ?>" autocomplete="on" novalidate>
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
                     <div class="login-field">

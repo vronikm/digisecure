@@ -52,7 +52,7 @@ $ds_dd = 'font-size: .88rem; color: var(--ds-text); padding: 0 0 .55rem; margin:
     </div>
     <div style="display: flex; gap: .5rem;">
         <?php if ($notificacion['estado'] === 'FALLIDA'): ?>
-        <form method="post" action="<?= $view->url('/notificaciones/' . $e((string) $notificacion['id']) . '/retry') ?>"
+        <form class="ds-form-main" method="post" action="<?= $view->url('/notificaciones/' . $e((string) $notificacion['id']) . '/retry') ?>"
               onsubmit="return confirm('Reintentar el envio de esta notificacion?');" style="display: inline;">
             <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">

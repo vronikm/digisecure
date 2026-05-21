@@ -265,7 +265,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 <?php endif ?>
 
                 <?php if ($puedeRevisar && $user->tienePermiso('expedientes.revisar')): ?>
-                <form method="post" action="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/revisar') ?>">
+                <form method="post" action="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/revisar') ?>" class="ds-form-main">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <div class="ds-form-field" style="margin-bottom: 1rem;">
                         <label class="ds-form-label">Observacion del revisor</label>

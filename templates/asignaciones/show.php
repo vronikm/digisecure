@@ -211,7 +211,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="tab-finalizar">
-                        <form method="post" action="<?= $view->url('/asignaciones/' . $asignacion['id'] . '/cerrar') ?>"
+                        <form class="ds-form-main" method="post" action="<?= $view->url('/asignaciones/' . $asignacion['id'] . '/cerrar') ?>"
                               onsubmit="return confirm('Finalizar esta asignacion?');">
                             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                             <input type="hidden" name="accion" value="finalizar">
@@ -226,7 +226,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                         </form>
                     </div>
                     <div class="tab-pane fade" id="tab-cancelar">
-                        <form method="post" action="<?= $view->url('/asignaciones/' . $asignacion['id'] . '/cerrar') ?>"
+                        <form class="ds-form-main" method="post" action="<?= $view->url('/asignaciones/' . $asignacion['id'] . '/cerrar') ?>"
                               onsubmit="return confirm('Cancelar esta asignacion? Esta accion queda en auditoria.');">
                             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                             <input type="hidden" name="accion" value="cancelar">

@@ -114,7 +114,7 @@ final class LopdpController
         try {
             $id = $this->registrarService->execute($input, $user->id, $request->clientIp());
             $this->flash->success('Solicitud ARCO-P registrada correctamente.');
-            return Response::redirect("/lopdp/solicitudes/{$id}");
+            return Response::redirect($this->securePath($request, "/lopdp/solicitudes/{$id}"));
         } catch (DomainException $e) {
             return $this->view->response('lopdp/solicitudes/create', [
                 'user' => $user,
@@ -154,7 +154,7 @@ final class LopdpController
             $estado = (string) ($request->post['estado'] ?? 'RESPONDIDA');
             $msg = $estado === 'DENEGADA' ? 'Solicitud denegada y registrada en auditoria.' : 'Solicitud respondida correctamente.';
             $this->flash->success($msg);
-            return Response::redirect("/lopdp/solicitudes/{$id}");
+            return Response::redirect($this->securePath($request, "/lopdp/solicitudes/{$id}"));
         } catch (DomainException $e) {
             $solicitud = $this->solicitudRepo->findById($id);
             return $this->view->response('lopdp/solicitudes/show', [
@@ -184,5 +184,21 @@ final class LopdpController
             'consentimientos' => $consentimientos,
             'activos' => $activos,
         ]);
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 }

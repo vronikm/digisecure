@@ -6,6 +6,7 @@ namespace DigiSecure\Kernel\Middleware;
 
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
+use DigiSecure\Kernel\Routing\Route;
 use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Audit\AuditLogger;
 
@@ -40,7 +41,15 @@ final class AuditMiddleware implements MiddlewareInterface
             return $response;
         }
 
-        $routeName = $request->attribute('_route_name') ?? $request->path;
+        $routeName = $request->attribute('_route_name');
+        if (!is_string($routeName) || $routeName === '') {
+            $route = $request->attribute('route');
+            if ($route instanceof Route) {
+                $routeName = $route->name ?? $route->path;
+            } else {
+                $routeName = $request->path;
+            }
+        }
 
         $this->audit->log(
             evento: "http.{$request->method}.{$routeName}",

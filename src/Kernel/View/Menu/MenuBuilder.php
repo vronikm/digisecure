@@ -35,20 +35,20 @@ final class MenuBuilder
             [
                 'type' => 'item',
                 'item' => new MenuItem(
-                    label: 'Clientes',
+                    label: 'Empresas cliente',
                     icon: 'bi-briefcase',
                     permisos: ['clientes.ver'],
                     description: 'Empresas a las que prestas servicios',
                     children: [
                         new MenuItem(
-                            label: 'Listado de clientes',
+                            label: 'Listado de empresas cliente',
                             icon: 'bi-list-ul',
                             url: '/clientes',
                             permisos: ['clientes.ver'],
                             description: 'Filtros, estados y contactos',
                         ),
                         new MenuItem(
-                            label: 'Nuevo cliente',
+                            label: 'Nueva empresa cliente',
                             icon: 'bi-plus-circle',
                             url: '/clientes/crear',
                             permisos: ['clientes.crear'],
@@ -260,10 +260,25 @@ final class MenuBuilder
                 'type' => 'item',
                 'item' => new MenuItem(
                     label: 'Empresa',
-                    icon: 'bi-building',
-                    url: '/empresa',
-                    permisos: ['tenants.ver'],
-                    description: 'Datos del tenant y configuracion base',
+                    icon: 'bi-buildings',
+                    permisos: [],
+                    description: 'Gestion de la empresa actual',
+                    children: [
+                        new MenuItem(
+                            label: 'Mi empresa',
+                            icon: 'bi-building',
+                            url: '/empresa',
+                            permisos: ['tenants.ver'],
+                            description: 'Datos del tenant actual',
+                        ),
+                        new MenuItem(
+                            label: 'Editar mi empresa',
+                            icon: 'bi-pencil-square',
+                            url: '/empresa/editar',
+                            permisos: ['tenants.editar'],
+                            description: 'Actualizar informacion del tenant actual',
+                        ),
+                    ],
                 ),
             ],
             [

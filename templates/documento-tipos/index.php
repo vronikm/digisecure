@@ -156,7 +156,7 @@ $e = ViewRenderer::e(...);
                         <?php endif ?>
                     </td>
                     <td class="ds-cell-end">
-                        <form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo']) . '/toggle') ?>" style="display:inline-block;">
+                        <form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo']) . '/toggle') ?>" class="ds-form-inline" style="display:inline-block;">
                             <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                             <button type="submit" class="ds-icon-btn <?= $esActivo ? 'tone-success' : '' ?>"
                                     title="<?= $esActivo ? 'Desactivar' : 'Activar' ?>">

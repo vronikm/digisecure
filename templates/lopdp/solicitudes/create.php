@@ -54,7 +54,7 @@ $e = ViewRenderer::e(...);
     </div>
 </div>
 
-<form method="post" action="<?= $view->url('/lopdp/solicitudes/crear') ?>">
+<form method="post" action="<?= $view->url('/lopdp/solicitudes/crear') ?>" class="ds-form-main">
     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">

@@ -3,7 +3,8 @@
  * Detalle de un tenant (Fase 13).
  *
  * Variables: $user, $csrfToken, $currentPath, $tenant, $uso,
- *            $usuarios, $ciclos, $registros, $planes
+ *            $usuarios, $usuariosDisponibles, $rolesDisponibles,
+ *            $ciclos, $registros, $planes
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -13,6 +14,8 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
 $t = $tenant;
+$usuariosDisponibles = is_array($usuariosDisponibles ?? null) ? $usuariosDisponibles : [];
+$rolesDisponibles = is_array($rolesDisponibles ?? null) ? $rolesDisponibles : [];
 $storageMb = round(((int) ($uso['storage_bytes'] ?? 0)) / (1024 * 1024), 1);
 $maxStorage = (int) ($t['max_storage_mb'] ?? 0);
 $maxUsuarios = (int) ($t['max_usuarios'] ?? 0);
@@ -71,9 +74,14 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
             </small>
         </div>
     </div>
-    <a href="<?= $view->url('/admin/tenants') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-        <i class="bi bi-arrow-left"></i>Volver al listado
-    </a>
+    <div style="display:flex; gap:.5rem;">
+        <a href="<?= $view->url('/admin/tenants/' . $e((string) $t['id']) . '/editar') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
+            <i class="bi bi-pencil"></i>Editar tenant
+        </a>
+        <a href="<?= $view->url('/admin/tenants') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+            <i class="bi bi-arrow-left"></i>Volver al listado
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">
@@ -290,7 +298,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <form method="POST" action="<?= $view->url('/admin/tenants/' . $e((string) $t['id']) . '/estado') ?>"
+                <form class="ds-form-main" method="POST" action="<?= $view->url('/admin/tenants/' . $e((string) $t['id']) . '/estado') ?>"
                       onsubmit="return confirm('Cambiar el estado de este tenant?');">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <div class="ds-form-field" style="margin-bottom: .85rem;">
@@ -318,7 +326,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <form method="POST" action="<?= $view->url('/admin/tenants/' . $e((string) $t['id']) . '/plan') ?>"
+                <form class="ds-form-main" method="POST" action="<?= $view->url('/admin/tenants/' . $e((string) $t['id']) . '/plan') ?>"
                       onsubmit="return confirm('Asignar este plan al tenant?');">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <div class="ds-form-field" style="margin-bottom: .65rem;">
@@ -339,6 +347,56 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                         <i class="bi bi-arrow-up-circle"></i>Asignar plan
                     </button>
                 </form>
+            </div>
+        </div>
+
+        <!-- Asociar usuarios -->
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-mark"><i class="bi bi-person-plus"></i></span>
+                <div>
+                    <div class="ds-card-title">Asociar usuario</div>
+                    <div class="ds-card-subtitle">Mover usuario de otro tenant a este tenant</div>
+                </div>
+            </div>
+            <div class="ds-card-body">
+                <?php if ($usuariosDisponibles === []): ?>
+                    <div class="ds-empty-state" style="padding: 1rem .75rem;">
+                        <p style="margin:0;">No hay usuarios disponibles para asociar.</p>
+                    </div>
+                <?php else: ?>
+                    <form class="ds-form-main" method="POST" action="<?= $view->url('/admin/tenants/' . $e((string) $t['id']) . '/usuarios/asociar') ?>">
+                        <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                        <div class="ds-form-field" style="margin-bottom: .75rem;">
+                            <label class="ds-form-label">Usuario origen</label>
+                            <select name="usuario_id" class="form-select form-select-sm" required>
+                                <option value="">Selecciona usuario</option>
+                                <?php foreach ($usuariosDisponibles as $u): ?>
+                                <option value="<?= $e((string) $u['id']) ?>">
+                                    <?= $e(trim((string) $u['apellidos'] . ' ' . (string) $u['nombres'])) ?>
+                                    · <?= $e((string) $u['email']) ?>
+                                    · <?= $e((string) $u['tenant_actual']) ?>
+                                </option>
+                                <?php endforeach ?>
+                            </select>
+                        </div>
+                        <div class="ds-form-field" style="margin-bottom: .85rem;">
+                            <label class="ds-form-label">Rol en tenant destino</label>
+                            <select name="role_id" class="form-select form-select-sm">
+                                <option value="">Sin rol inicial</option>
+                                <?php foreach ($rolesDisponibles as $r): ?>
+                                <option value="<?= $e((string) $r['id']) ?>">
+                                    <?= $e((string) $r['nombre']) ?> (<?= $e((string) $r['codigo']) ?>)
+                                </option>
+                                <?php endforeach ?>
+                            </select>
+                            <span class="ds-form-help">Si no seleccionas rol, el usuario quedara sin permisos hasta asignarle uno.</span>
+                        </div>
+                        <button type="submit" class="ds-btn ds-btn-primary" style="width: 100%;">
+                            <i class="bi bi-link-45deg"></i>Asociar usuario
+                        </button>
+                    </form>
+                <?php endif ?>
             </div>
         </div>
 

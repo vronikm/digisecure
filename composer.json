@@ -41,7 +41,11 @@
             "DigiSecure\\Notification\\": "src/Notification/",
             "DigiSecure\\Subscription\\": "src/Subscription/",
             "DigiSecure\\Reporting\\": "src/Reporting/",
-            "DigiSecure\\Infrastructure\\": "src/Infrastructure/"
+            "DigiSecure\\Infrastructure\\": "src/Infrastructure/",
+            "DigiSecure\\Superadmin\\": "src/Superadmin/",
+            "DigiSecure\\Cliente\\": "src/Cliente/",
+            "DigiSecure\\Puesto\\": "src/Puesto/",
+            "DigiSecure\\Asignacion\\": "src/Asignacion/"
         }
     },
     "autoload-dev": {

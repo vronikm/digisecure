@@ -47,7 +47,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
 </div>
 <?php endif ?>
 
-<form method="post" action="<?= $view->url('/clientes/crear') ?>">
+<form class="ds-form-main" method="post" action="<?= $view->url('/clientes/crear') ?>">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">

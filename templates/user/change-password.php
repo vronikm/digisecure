@@ -64,7 +64,7 @@ $success = $success ?? null;
         </div>
         <?php endif ?>
 
-        <form method="POST" action="<?= $view->url('/perfil/password') ?>" novalidate>
+        <form class="ds-form-main" method="POST" action="<?= $view->url('/perfil/password') ?>" novalidate>
             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
             <div class="ds-card">

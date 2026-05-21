@@ -47,7 +47,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
             <small><?= $total ?> registro<?= $total !== 1 ? 's' : '' ?> encontrado<?= $total !== 1 ? 's' : '' ?></small>
         </div>
     </div>
-    <?php if ($user->tienePermiso('fichas.crear')): ?>
+    <?php if ($user->tienePermiso('guardias.crear')): ?>
     <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary">
         <i class="bi bi-plus-lg"></i>Nueva ficha
     </a>
@@ -56,7 +56,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 
 <!-- Filtros -->
 <div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/guardias') ?>" class="ds-filter-row">
+    <form method="get" action="<?= $view->url('/guardias') ?>" class="ds-filter-row ds-form-filter">
         <div class="ds-filter-summary">
             <i class="bi bi-funnel"></i>
             <strong>Filtrar:</strong>
@@ -120,7 +120,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                 Crea la primera ficha para empezar a registrar a los guardias de tu empresa.
             <?php endif ?>
         </p>
-        <?php if ($user->tienePermiso('fichas.crear') && !$hasFilters): ?>
+        <?php if ($user->tienePermiso('guardias.crear') && !$hasFilters): ?>
         <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary">
             <i class="bi bi-plus-lg"></i>Crear la primera ficha
         </a>
@@ -175,14 +175,35 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <a href="<?= $view->url('/guardias/' . $f['id']) ?>"
-                               class="ds-icon-btn" title="Ver detalle">
-                                <i class="bi bi-eye"></i>
+                               class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
+                                Ver
                             </a>
-                            <?php if ($user->tienePermiso('fichas.editar') && in_array($f['estado'], ['BORRADOR', 'EN_REVISION'], true)): ?>
-                            <a href="<?= $view->url('/guardias/' . $f['id'] . '/editar') ?>"
-                               class="ds-icon-btn" title="Editar">
-                                <i class="bi bi-pencil"></i>
-                            </a>
+                            <?php if ($user->tienePermiso('guardias.editar') && in_array($f['estado'], ['BORRADOR', 'EN_REVISION'], true)): ?>
+                                <a href="<?= $view->url('/guardias/' . $f['id'] . '/editar') ?>"
+                                   class="ds-btn ds-btn-outline ds-btn-sm" title="Editar">
+                                    Editar
+                                </a>
+                            <?php endif ?>
+                            <?php if ($user->tienePermiso('guardias.eliminar')): ?>
+                                <?php if ($f['estado'] === 'ANULADA'): ?>
+                                    <form method="post" action="<?= $view->url('/guardias/' . $f['id'] . '/recuperar') ?>" class="d-inline js-ficha-confirm-form ds-form-inline"
+                                          data-action="recover"
+                                          data-guardia="<?= $e(trim(($f['apellidos'] ?? '') . ' ' . ($f['nombres'] ?? ''))) ?>">
+                                        <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                                        <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm" title="Recuperar">
+                                            Recuperar
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <form method="post" action="<?= $view->url('/guardias/' . $f['id'] . '/eliminar') ?>" class="d-inline js-ficha-confirm-form ds-form-inline"
+                                          data-action="delete"
+                                          data-guardia="<?= $e(trim(($f['apellidos'] ?? '') . ' ' . ($f['nombres'] ?? ''))) ?>">
+                                        <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                                        <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm" title="Eliminar">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                <?php endif ?>
                             <?php endif ?>
                         </div>
                     </td>
@@ -219,4 +240,56 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     <?php endif ?>
 </div>
 <?php endif ?>
+<?php $view->endSection() ?>
+
+<?php $view->section('scripts') ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+(() => {
+    const forms = document.querySelectorAll('.js-ficha-confirm-form');
+    if (!forms.length) return;
+
+    forms.forEach((form) => {
+        form.removeAttribute('onsubmit');
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const guardia = form.dataset.guardia || 'este guardia';
+            const isRecover = form.dataset.action === 'recover';
+
+            if (isRecover) {
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Recuperar ficha de guardia?',
+                    text: `La ficha de ${guardia} volvera al estado Borrador.`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Si, recuperar',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true,
+                    focusCancel: true,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+                return;
+            }
+
+            Swal.fire({
+                icon: 'warning',
+                title: '¿Eliminar ficha de guardia?',
+                text: `La ficha de ${guardia} se marcará como Eliminado y podrás recuperarla después si es necesario.`,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                focusCancel: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+})();
+</script>
 <?php $view->endSection() ?>

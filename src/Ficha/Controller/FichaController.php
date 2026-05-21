@@ -7,8 +7,10 @@ namespace DigiSecure\Ficha\Controller;
 use DigiSecure\Ficha\Application\ActualizarFichaService;
 use DigiSecure\Ficha\Application\CompletarFichaService;
 use DigiSecure\Ficha\Application\CrearFichaService;
+use DigiSecure\Ficha\Application\EliminarFichaService;
 use DigiSecure\Ficha\Application\GenerarDeclaracionLealtadService;
 use DigiSecure\Ficha\Application\GenerarFormatoHuellasService;
+use DigiSecure\Ficha\Application\RecuperarFichaService;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Http\FlashBag;
@@ -41,6 +43,8 @@ final class FichaController
         private readonly CrearFichaService $crearService,
         private readonly ActualizarFichaService $actualizarService,
         private readonly CompletarFichaService $completarService,
+        private readonly EliminarFichaService $eliminarService,
+        private readonly RecuperarFichaService $recuperarService,
         private readonly GenerarDeclaracionLealtadService $declaracionLealtadService,
         private readonly GenerarFormatoHuellasService $formatoHuellasService,
         private readonly Encryption $encryption,
@@ -110,7 +114,7 @@ final class FichaController
             $this->verificarLimite->verificarCrearGuardia();
             $result = $this->crearService->execute($input, $user->id, $request->clientIp());
             $this->flash->success('Ficha de guardia creada correctamente.');
-            return Response::redirect("/guardias/{$result['id']}");
+            return Response::redirect($this->securePath($request, "/guardias/{$result['id']}"));
         } catch (DomainException $e) {
             $cursos = $this->loadCatalogoCursos();
             return $this->view->response('ficha/create', [
@@ -201,7 +205,7 @@ final class FichaController
         try {
             $this->actualizarService->execute($id, $input, $user->id, $request->clientIp());
             $this->flash->success('Ficha actualizada correctamente.');
-            return Response::redirect("/guardias/{$id}");
+            return Response::redirect($this->securePath($request, "/guardias/{$id}/editar"));
         } catch (DomainException $e) {
             $ficha = $this->fichaRepo->findFichaById($id) ?? [];
             $catalogoCursos = $this->loadCatalogoCursos();
@@ -213,7 +217,7 @@ final class FichaController
                 'trabajos' => $input['trabajos_anteriores'] ?? [],
                 'hijos' => $input['hijos_menores'] ?? [],
                 'referencias' => $input['referencias'] ?? [],
-                'fichasCursos' => [],
+                'fichasCursos' => $input['cursos'] ?? [],
                 'cursos' => $catalogoCursos,
                 'error' => $e->getMessage(),
             ]);
@@ -250,10 +254,42 @@ final class FichaController
             }
 
             $this->flash->success('Ficha marcada como COMPLETA.');
-            return Response::redirect("/guardias/{$id}");
+            return Response::redirect($this->securePath($request, "/guardias/{$id}"));
         } catch (DomainException $e) {
             $this->flash->error($e->getMessage(), 'No se pudo completar la ficha');
-            return Response::redirect("/guardias/{$id}");
+            return Response::redirect($this->securePath($request, "/guardias/{$id}"));
+        }
+    }
+
+    // ======================== ELIMINAR (LOGICO) ========================
+
+    public function destroy(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        try {
+            $this->eliminarService->execute($id, $user->id, $request->clientIp());
+            $this->flash->success('Ficha eliminada correctamente.');
+            return Response::redirect('/guardias');
+        } catch (DomainException $e) {
+            $this->flash->error($e->getMessage(), 'No se pudo eliminar la ficha');
+            return Response::redirect($this->securePath($request, "/guardias/{$id}"));
+        }
+    }
+
+    public function recover(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        try {
+            $this->recuperarService->execute($id, $user->id, $request->clientIp());
+            $this->flash->success('Ficha recuperada correctamente (estado Borrador).');
+            return Response::redirect('/guardias');
+        } catch (DomainException $e) {
+            $this->flash->error($e->getMessage(), 'No se pudo recuperar la ficha');
+            return Response::redirect($this->securePath($request, "/guardias/{$id}"));
         }
     }
 
@@ -317,6 +353,22 @@ final class FichaController
         return $this->db->fetchAll(
             'SELECT id, codigo, nombre FROM catalogo_cursos WHERE activo = 1 ORDER BY orden',
         );
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 
     private function decryptSafe(mixed $ciphertext): string

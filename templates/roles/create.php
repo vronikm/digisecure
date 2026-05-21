@@ -48,7 +48,7 @@ $selectedPermisos = $input['permisos_ids'] ?? [];
 </div>
 <?php endif ?>
 
-<form method="post" action="<?= $view->url('/roles/crear') ?>">
+<form class="ds-form-main" method="post" action="<?= $view->url('/roles/crear') ?>">
     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
     <!-- Datos basicos -->

@@ -208,7 +208,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="tab-responder">
-                        <form method="post" action="<?= $view->url('/lopdp/solicitudes/' . $solicitud['id'] . '/responder') ?>">
+                        <form method="post" action="<?= $view->url('/lopdp/solicitudes/' . $solicitud['id'] . '/responder') ?>" class="ds-form-main">
                             <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                             <input type="hidden" name="estado" value="RESPONDIDA">
                             <div class="ds-form-field" style="margin-bottom: 1rem;">
@@ -222,7 +222,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                         </form>
                     </div>
                     <div class="tab-pane fade" id="tab-denegar">
-                        <form method="post" action="<?= $view->url('/lopdp/solicitudes/' . $solicitud['id'] . '/responder') ?>">
+                        <form method="post" action="<?= $view->url('/lopdp/solicitudes/' . $solicitud['id'] . '/responder') ?>" class="ds-form-main">
                             <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                             <input type="hidden" name="estado" value="DENEGADA">
                             <div class="ds-form-field" style="margin-bottom: 1rem;">

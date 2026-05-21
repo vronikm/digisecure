@@ -31,7 +31,14 @@ if (!is_file($autoload)) {
     fwrite(STDERR, "ERROR: vendor/autoload.php no encontrado. Ejecuta `composer install`.\n");
     exit(1);
 }
-require $autoload;
+/** @var mixed $loader */
+$loader = require $autoload;
+if ($loader instanceof \Composer\Autoload\ClassLoader) {
+    $loader->addPsr4('DigiSecure\\Superadmin\\', DIGISECURE_ROOT . '/src/Superadmin');
+    $loader->addPsr4('DigiSecure\\Cliente\\', DIGISECURE_ROOT . '/src/Cliente');
+    $loader->addPsr4('DigiSecure\\Puesto\\', DIGISECURE_ROOT . '/src/Puesto');
+    $loader->addPsr4('DigiSecure\\Asignacion\\', DIGISECURE_ROOT . '/src/Asignacion');
+}
 
 use DigiSecure\Infrastructure\Persistence\MigrationException;
 use DigiSecure\Infrastructure\Persistence\MigrationRunner;

@@ -54,7 +54,7 @@ $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
 </div>
 <?php endif ?>
 
-<form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $tipo['codigo'])) ?>">
+<form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $tipo['codigo'])) ?>" class="ds-form-main">
     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
     <?php if (!empty($tipo['descripcion'])): ?>

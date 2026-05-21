@@ -255,7 +255,9 @@ final class ExpedienteController
 
             $expediente = $this->expRepo->findExpedienteById($id);
             $this->flash->success('Documento subido correctamente.');
-            return Response::redirect("/guardias/{$expediente['ficha_id']}/expediente");
+            return Response::redirect(
+                $this->securePath($request, "/guardias/{$expediente['ficha_id']}/expediente")
+            );
         } catch (DomainException $e) {
             $expediente = $this->expRepo->findExpedienteById($id);
             $tipo = $this->expRepo->findDocumentoTipoById($tipoId);
@@ -318,7 +320,9 @@ final class ExpedienteController
                 ? 'Documento aceptado.'
                 : ($accion === 'rechazar' ? 'Documento rechazado.' : 'Revision registrada.');
             $this->flash->success($msg);
-            return Response::redirect("/guardias/{$expediente['ficha_id']}/expediente");
+            return Response::redirect(
+                $this->securePath($request, "/guardias/{$expediente['ficha_id']}/expediente")
+            );
         } catch (DomainException $e) {
             $doc = $this->expRepo->findDocumentoById($docId);
             if ($doc === null) {
@@ -337,5 +341,21 @@ final class ExpedienteController
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    private function securePath(Request $request, string $path): string
+    {
+        $formatter = $request->attribute('secure_url');
+        if (!\is_callable($formatter)) {
+            return $path;
+        }
+
+        try {
+            $secure = $formatter($path);
+        } catch (\Throwable) {
+            return $path;
+        }
+
+        return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 }

@@ -16,6 +16,8 @@ use DigiSecure\Kernel\Middleware\AuthorizationMiddleware;
 use DigiSecure\Kernel\Middleware\CsrfMiddleware;
 use DigiSecure\Kernel\Middleware\ErrorHandlerMiddleware;
 use DigiSecure\Kernel\Middleware\Pipeline;
+use DigiSecure\Kernel\Middleware\LayoutContextMiddleware;
+use DigiSecure\Kernel\Middleware\SecureUrlMiddleware;
 use DigiSecure\Kernel\Middleware\SecurityHeadersMiddleware;
 use DigiSecure\Kernel\Middleware\SessionMiddleware;
 use DigiSecure\Kernel\Middleware\TenantContextMiddleware;
@@ -28,6 +30,7 @@ use DigiSecure\Security\Crypto\Hasher;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Security\Rbac\Authorizer;
 use DigiSecure\Security\Session\SessionManager;
+use DigiSecure\Security\Url\SecureUrlTokenService;
 use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\Controller\DashboardController;
 use DigiSecure\Security\Auth\Controller\LoginController;
@@ -124,6 +127,13 @@ final class Bootstrap
                 $c->get(Config::class)->string('encryption.key', '')
             ),
         );
+        $container->singleton(
+            SecureUrlTokenService::class,
+            static fn(Container $c): SecureUrlTokenService => new SecureUrlTokenService(
+                $c->get(Encryption::class),
+                $c->get(Config::class)->int('security.secure_url_ttl', 900),
+            ),
+        );
 
         // 6. Multi-tenancy: TenantContext (request-scoped, singleton por request)
         $container->singleton(
@@ -199,6 +209,20 @@ final class Bootstrap
                 $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
                 $c->get(AuditLogger::class),
                 $c->get(\DigiSecure\Security\Lopdp\Application\ConsentManager::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Ficha\Application\EliminarFichaService::class,
+            static fn(Container $c) => new \DigiSecure\Ficha\Application\EliminarFichaService(
+                $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Ficha\Application\RecuperarFichaService::class,
+            static fn(Container $c) => new \DigiSecure\Ficha\Application\RecuperarFichaService(
+                $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
+                $c->get(AuditLogger::class),
             ),
         );
 
@@ -599,6 +623,7 @@ final class Bootstrap
         //  - Authentication carga el usuario de sesión y protege rutas.
         //  - TenantContext establece el tenant_id para BaseRepository.
         //  - RouteResolver resuelve la ruta y expone _route_permission ANTES de Authorization.
+        //  - SecureUrl tokeniza links sensibles y decodifica params tokenizados.
         //  - Authorization verifica permisos de ruta.
         //  - Audit registra operaciones de escritura.
         $globalMiddlewares = [
@@ -607,8 +632,10 @@ final class Bootstrap
             SessionMiddleware::class,
             CsrfMiddleware::class,
             AuthenticationMiddleware::class,
+            LayoutContextMiddleware::class,
             TenantContextMiddleware::class,
             \DigiSecure\Kernel\Middleware\RouteResolverMiddleware::class,
+            SecureUrlMiddleware::class,
             AuthorizationMiddleware::class,
             \DigiSecure\Kernel\Middleware\AlertasLayoutMiddleware::class,
             \DigiSecure\Kernel\Middleware\FlashMiddleware::class,
@@ -658,6 +685,9 @@ final class Bootstrap
             ],
             'encryption' => [
                 'key' => $envVars['ENCRYPTION_KEY'] ?? '',
+            ],
+            'security' => [
+                'secure_url_ttl' => $envVars['SECURE_URL_TTL_SECONDS'] ?? '900',
             ],
             'mail' => [
                 'driver' => $envVars['MAIL_DRIVER'] ?? 'smtp',
@@ -726,6 +756,8 @@ final class Bootstrap
         $router->get('/guardias/{id}/editar', [FichaController::class, 'edit'], name: 'fichas.edit', permission: 'guardias.editar');
         $router->post('/guardias/{id}/editar', [FichaController::class, 'update'], name: 'fichas.update', permission: 'guardias.editar');
         $router->post('/guardias/{id}/completar', [FichaController::class, 'completar'], name: 'fichas.completar', permission: 'guardias.editar');
+        $router->post('/guardias/{id}/eliminar', [FichaController::class, 'destroy'], name: 'fichas.destroy', permission: 'guardias.eliminar');
+        $router->post('/guardias/{id}/recuperar', [FichaController::class, 'recover'], name: 'fichas.recover', permission: 'guardias.eliminar');
 
         // PDFs de guardia (Fase 6)
         $router->get('/guardias/{id}/declaracion-lealtad.pdf', [FichaController::class, 'descargarDeclaracionLealtad'], name: 'fichas.pdf.declaracion', permission: 'guardias.ver');
@@ -832,9 +864,14 @@ final class Bootstrap
         // Panel Superadmin (Fase 13)
         $router->get('/admin', [SuperadminController::class, 'dashboard'], name: 'admin.dashboard', permission: 'superadmin.panel');
         $router->get('/admin/tenants', [SuperadminController::class, 'tenants'], name: 'admin.tenants', permission: 'superadmin.tenants.ver');
+        $router->get('/admin/tenants/crear', [SuperadminController::class, 'tenantCrearForm'], name: 'admin.tenants.create', permission: 'superadmin.tenants.gestionar');
+        $router->post('/admin/tenants/crear', [SuperadminController::class, 'tenantCrear'], name: 'admin.tenants.store', permission: 'superadmin.tenants.gestionar');
         $router->get('/admin/tenants/{id}', [SuperadminController::class, 'tenantDetalle'], name: 'admin.tenants.detalle', permission: 'superadmin.tenants.ver');
+        $router->get('/admin/tenants/{id}/editar', [SuperadminController::class, 'tenantEditarForm'], name: 'admin.tenants.edit', permission: 'superadmin.tenants.gestionar');
+        $router->post('/admin/tenants/{id}/editar', [SuperadminController::class, 'tenantActualizar'], name: 'admin.tenants.update', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/estado', [SuperadminController::class, 'cambiarEstado'], name: 'admin.tenants.estado', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/plan', [SuperadminController::class, 'cambiarPlan'], name: 'admin.tenants.plan', permission: 'superadmin.tenants.gestionar');
+        $router->post('/admin/tenants/{id}/usuarios/asociar', [SuperadminController::class, 'asociarUsuarioTenant'], name: 'admin.tenants.usuarios.asociar', permission: 'superadmin.tenants.gestionar');
         $router->get('/admin/registros', [SuperadminController::class, 'registros'], name: 'admin.registros', permission: 'superadmin.registros.ver');
 
         // Registro público y activación (Fase 12) — rutas públicas, sin permission

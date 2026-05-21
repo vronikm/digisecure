@@ -56,7 +56,7 @@ $valor = static fn(string $k, string $d = ''): string => (string) ($input[$k] ??
     </div>
 </div>
 
-<form method="post" action="<?= $view->url('/asignaciones/' . $asignacion['id'] . '/editar') ?>">
+<form class="ds-form-main" method="post" action="<?= $view->url('/asignaciones/' . $asignacion['id'] . '/editar') ?>">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">

@@ -64,7 +64,7 @@ $returnTo = $returnTo ?? null;
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="<?= $view->url('/login') ?>" autocomplete="on" novalidate>
+            <form class="ds-form-main" method="POST" action="<?= $view->url('/login') ?>" autocomplete="on" novalidate>
                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                 <?php if ($returnTo !== null): ?>
                     <input type="hidden" name="return_to" value="<?= $e($returnTo) ?>">

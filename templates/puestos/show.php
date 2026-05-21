@@ -318,7 +318,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 foreach ($opciones as $estado => $cfg):
                     if ($puesto['estado'] === $estado) continue;
                 ?>
-                <form method="post" action="<?= $view->url('/puestos/' . $puesto['id'] . '/estado') ?>"
+                <form class="ds-form-main" method="post" action="<?= $view->url('/puestos/' . $puesto['id'] . '/estado') ?>"
                       onsubmit="return confirm('<?= $e($cfg['confirm']) ?>');"
                       style="margin: .35rem 0;">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
