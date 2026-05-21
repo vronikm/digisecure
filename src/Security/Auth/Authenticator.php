@@ -109,8 +109,11 @@ final class Authenticator
             throw new AuthenticationException(AuthenticationException::ACCOUNT_INACTIVE);
         }
 
-        // 6. Verificar estado del tenant
-        if ($usuario['tenant_estado'] !== 'activo') {
+        // 6. Verificar estado del tenant.
+        //    Excepción: el superadmin de sistema puede ingresar aunque su tenant
+        //    esté suspendido/cancelado para no perder control operativo global.
+        $isSystemSuperadmin = $this->userHasSystemSuperadminRole((string) $usuario['id']);
+        if ($usuario['tenant_estado'] !== 'activo' && !$isSystemSuperadmin) {
             $this->registrarIntentoFallido($emailNorm, $ip, $userAgent, $usuario['id'], $usuario['tenant_id']);
             throw new AuthenticationException(AuthenticationException::TENANT_SUSPENDED);
         }
@@ -381,5 +384,20 @@ final class Authenticator
     private function normalizeEmail(string $email): string
     {
         return mb_strtolower(trim($email), 'UTF-8');
+    }
+
+    private function userHasSystemSuperadminRole(string $userId): bool
+    {
+        $count = (int) $this->db->fetchScalar(
+            "SELECT COUNT(*)
+               FROM usuarios_roles ur
+               INNER JOIN roles r ON r.id = ur.role_id
+              WHERE ur.usuario_id = :uid
+                AND r.codigo = 'superadmin'
+                AND r.tenant_id IS NULL",
+            ['uid' => $userId],
+        );
+
+        return $count > 0;
     }
 }

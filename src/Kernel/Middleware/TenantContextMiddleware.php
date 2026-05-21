@@ -36,8 +36,9 @@ final class TenantContextMiddleware implements MiddlewareInterface
             return $next->handle($request);
         }
 
-        // Verificar que el tenant esté activo
-        if ($user->tenantEstado !== 'activo') {
+        // Verificar que el tenant esté activo.
+        // El superadmin de sistema no se bloquea aquí para conservar acceso global.
+        if ($user->tenantEstado !== 'activo' && !$user->esSuperAdmin()) {
             return Response::html(
                 '<h1>Cuenta suspendida</h1><p>La cuenta de tu empresa está suspendida. Contacta a soporte.</p>',
                 403,
