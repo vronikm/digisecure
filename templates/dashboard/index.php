@@ -94,6 +94,51 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
             radial-gradient(circle at top right, rgba(47, 128, 237, 0.18), transparent 34%),
             linear-gradient(135deg, #15304f, #1d4d8f);
         color: #fff;
+        position: relative;
+    }
+
+    .ds-hero-card .card-body {
+        padding: clamp(1.45rem, 2.25vw, 2.65rem) !important;
+    }
+
+    .ds-hero-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(176px, 220px);
+        align-items: center;
+        column-gap: clamp(1rem, 2vw, 2.15rem);
+        row-gap: 1.2rem;
+        min-height: 250px;
+    }
+
+    .ds-hero-copy {
+        max-width: 780px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.95rem;
+    }
+
+    .ds-hero-copy h2 {
+        margin: 0;
+        line-height: 1.18;
+        font-size: clamp(1.3rem, 1.65vw, 1.9rem);
+    }
+
+    .ds-hero-copy p {
+        margin: 0;
+        max-width: 64ch;
+    }
+
+    .ds-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem 0.65rem;
+        margin-top: 0.1rem;
+    }
+
+    .ds-hero-ring-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
     }
 
     .ds-hero-card p,
@@ -101,9 +146,15 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
         color: rgba(255, 255, 255, 0.76) !important;
     }
 
+    .ds-hero-card .ds-dashboard-eyebrow {
+        background: rgba(125, 211, 252, 0.18);
+        color: #e0f2fe;
+        border: 1px solid rgba(186, 230, 253, 0.28);
+    }
+
     .ds-hero-ring {
-        width: 156px;
-        height: 156px;
+        width: 176px;
+        height: 176px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -115,6 +166,9 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
     }
 
     .ds-hero-ring span {
+        display: block;
+        max-width: 132px;
+        margin: 0 auto;
         text-align: center;
         font-weight: 700;
         line-height: 1.15;
@@ -145,15 +199,44 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
         border: 1px solid rgba(242, 153, 74, 0.18);
     }
 
-    .ds-priority-card .ds-priority-stat + .ds-priority-stat {
-        margin-top: 0.9rem;
-        padding-top: 0.9rem;
-        border-top: 1px solid rgba(21, 48, 79, 0.08);
+    .ds-priority-card .card-body {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: clamp(1.35rem, 2vw, 2.25rem) !important;
+    }
+
+    .ds-priority-head {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .ds-priority-title {
+        margin: 0;
+        line-height: 1.22;
+        font-size: clamp(1.1rem, 1.35vw, 1.45rem);
+    }
+
+    .ds-priority-grid {
+        display: grid;
+        gap: 0.7rem;
+        margin-top: 0.1rem;
+    }
+
+    .ds-priority-stat {
+        display: grid;
+        gap: 0.35rem;
+        padding: 0.82rem 0.92rem;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(21, 48, 79, 0.1);
     }
 
     .ds-priority-stat strong {
         display: block;
-        font-size: 1.75rem;
+        font-size: clamp(1.35rem, 1.8vw, 1.7rem);
         line-height: 1;
     }
 
@@ -277,8 +360,14 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
             grid-template-columns: 1fr;
         }
 
-        .ds-hero-ring {
-            margin-inline: auto;
+        .ds-hero-layout {
+            grid-template-columns: 1fr;
+            min-height: 0;
+        }
+
+        .ds-hero-ring-wrap {
+            justify-content: center;
+            padding-top: 0.2rem;
         }
     }
 </style>
@@ -318,20 +407,20 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
 
 <section class="ds-dashboard-section">
     <div class="row g-4">
-        <div class="col-xl-8">
+        <div class="col-12">
             <section class="card ds-hero-card border-0 shadow-sm">
-                <div class="card-body p-4 p-lg-5">
-                    <div class="row g-4 align-items-center">
-                        <div class="col-lg-8">
+                <div class="card-body">
+                    <div class="ds-hero-layout">
+                        <div class="ds-hero-copy">
                             <span class="ds-dashboard-eyebrow">
                                 <i class="bi bi-stars"></i>Centro de control diario
                             </span>
-                            <h2 class="h3 mb-3">Hola, <?= $e($user->nombres) ?>. Hoy la operacion pide foco en lo esencial.</h2>
-                            <p class="mb-4">
+                            <h2>Hola, <?= $e($user->nombres) ?>. Hoy la operacion pide foco en lo esencial.</h2>
+                            <p>
                                 Tienes <strong><?= $docsAtencion ?></strong> documentos que necesitan atencion
                                 y <strong><?= $expedientesIncompletos ?></strong> expedientes que aun no estan completos.
                             </p>
-                            <div class="d-flex flex-wrap gap-2">
+                            <div class="ds-hero-meta">
                                 <span class="ds-chip-soft">
                                     <i class="bi bi-building"></i><?= $e($user->tenantNombre) ?>
                                 </span>
@@ -345,7 +434,7 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
                                 </span>
                             </div>
                         </div>
-                        <div class="col-lg-4 d-flex justify-content-lg-end">
+                        <div class="ds-hero-ring-wrap">
                             <div class="ds-hero-ring">
                                 <span>
                                     <?= $guardiasCompletitud ?>%
@@ -358,28 +447,32 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
             </section>
         </div>
 
-        <div class="col-xl-4">
+        <div class="col-12">
             <section class="card ds-priority-card shadow-sm h-100">
-                <div class="card-body p-4">
-                    <div class="text-uppercase fw-bold small text-warning mb-2">Atencion prioritaria</div>
-                    <h2 class="h5 mb-3">Lo que conviene revisar primero</h2>
-
-                    <div class="ds-priority-stat">
-                        <span class="text-muted small">Documentos vencidos</span>
-                        <strong class="text-danger"><?= $docsVencidos ?></strong>
-                        <span class="text-muted small">Requieren renovacion o seguimiento inmediato.</span>
+                <div class="card-body">
+                    <div class="ds-priority-head">
+                        <div class="text-uppercase fw-bold small text-warning">Atencion prioritaria</div>
+                        <h2 class="ds-priority-title">Lo que conviene revisar primero</h2>
                     </div>
 
-                    <div class="ds-priority-stat">
-                        <span class="text-muted small">Por vencer en 30 dias</span>
-                        <strong class="text-warning"><?= $docsPorVencer ?></strong>
-                        <span class="text-muted small">Ideal para activar recordatorios o carga preventiva.</span>
-                    </div>
+                    <div class="ds-priority-grid">
+                        <div class="ds-priority-stat">
+                            <span class="text-muted small">Documentos vencidos</span>
+                            <strong class="text-danger"><?= $docsVencidos ?></strong>
+                            <span class="text-muted small">Requieren renovacion o seguimiento inmediato.</span>
+                        </div>
 
-                    <div class="ds-priority-stat">
-                        <span class="text-muted small">Expedientes incompletos</span>
-                        <strong class="text-primary"><?= $expedientesIncompletos ?></strong>
-                        <span class="text-muted small">Seguimiento pendiente antes de cerrar el ciclo documental.</span>
+                        <div class="ds-priority-stat">
+                            <span class="text-muted small">Por vencer en 30 dias</span>
+                            <strong class="text-warning"><?= $docsPorVencer ?></strong>
+                            <span class="text-muted small">Ideal para activar recordatorios o carga preventiva.</span>
+                        </div>
+
+                        <div class="ds-priority-stat">
+                            <span class="text-muted small">Expedientes incompletos</span>
+                            <strong class="text-primary"><?= $expedientesIncompletos ?></strong>
+                            <span class="text-muted small">Seguimiento pendiente antes de cerrar el ciclo documental.</span>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -591,7 +684,7 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
                 <div class="card-header">
                     <div>
                         <h2 class="h5 mb-1"><i class="bi bi-pie-chart me-2 text-info"></i>Distribucion de fichas</h2>
-                        <p class="text-muted small mb-0">Estado del pipeline de registro.</p>
+                        <p class="text-muted small mb-0">Avance del registro de guardias.</p>
                     </div>
                 </div>
                 <div class="card-body">

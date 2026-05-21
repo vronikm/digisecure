@@ -863,6 +863,12 @@ final class Bootstrap
 
         // Panel Superadmin (Fase 13)
         $router->get('/admin', [SuperadminController::class, 'dashboard'], name: 'admin.dashboard', permission: 'superadmin.panel');
+        $router->get('/admin/planes', [SuperadminController::class, 'planes'], name: 'admin.planes', permission: 'superadmin.planes.ver');
+        $router->get('/admin/planes/crear', [SuperadminController::class, 'planCrearForm'], name: 'admin.planes.create', permission: 'superadmin.planes.gestionar');
+        $router->post('/admin/planes/crear', [SuperadminController::class, 'planCrear'], name: 'admin.planes.store', permission: 'superadmin.planes.gestionar');
+        $router->get('/admin/planes/{codigo}/editar', [SuperadminController::class, 'planEditarForm'], name: 'admin.planes.edit', permission: 'superadmin.planes.gestionar');
+        $router->post('/admin/planes/{codigo}/editar', [SuperadminController::class, 'planActualizar'], name: 'admin.planes.update', permission: 'superadmin.planes.gestionar');
+        $router->post('/admin/planes/{codigo}/estado', [SuperadminController::class, 'planCambiarEstado'], name: 'admin.planes.estado', permission: 'superadmin.planes.gestionar');
         $router->get('/admin/tenants', [SuperadminController::class, 'tenants'], name: 'admin.tenants', permission: 'superadmin.tenants.ver');
         $router->get('/admin/tenants/crear', [SuperadminController::class, 'tenantCrearForm'], name: 'admin.tenants.create', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/crear', [SuperadminController::class, 'tenantCrear'], name: 'admin.tenants.store', permission: 'superadmin.tenants.gestionar');

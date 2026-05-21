@@ -353,6 +353,13 @@ final class MenuBuilder
                             description: 'Metricas y KPIs del operador',
                         ),
                         new MenuItem(
+                            label: 'Planes',
+                            icon: 'bi-gem',
+                            url: '/admin/planes',
+                            permisos: ['superadmin.planes.ver'],
+                            description: 'Catalogo y configuracion de planes SaaS',
+                        ),
+                        new MenuItem(
                             label: 'Empresas',
                             icon: 'bi-buildings',
                             url: '/admin/tenants',

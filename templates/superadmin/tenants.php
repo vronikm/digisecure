@@ -171,8 +171,8 @@ $baseParams = array_filter([
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <a href="<?= $view->url('/admin/tenants/' . $e((string) $t['id'])) ?>"
-                               class="ds-icon-btn" title="Ver detalle">
-                                <i class="bi bi-eye"></i>
+                               class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
+                                Ver
                             </a>
                         </div>
                     </td>

@@ -234,8 +234,8 @@ $initials = mb_strtoupper(mb_substr((string) $cliente['razon_social'], 0, 2));
                             <td class="ds-cell-end"><span class="ds-chip"><i class="bi bi-people"></i><?= (int) $p['num_guardias_requeridos'] ?></span></td>
                             <td><span class="ds-badge <?= $pTone ?>"><?= $e(ucfirst((string) $p['estado'])) ?></span></td>
                             <td class="ds-cell-end">
-                                <a href="<?= $view->url('/puestos/' . $p['id']) ?>" class="ds-icon-btn" title="Ver detalle">
-                                    <i class="bi bi-eye"></i>
+                                <a href="<?= $view->url('/puestos/' . $p['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
+                                    Ver
                                 </a>
                             </td>
                         </tr>

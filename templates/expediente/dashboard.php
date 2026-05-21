@@ -222,14 +222,14 @@ $toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <?php if ($doc): ?>
-                            <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="ds-icon-btn" title="Ver detalle">
-                                <i class="bi bi-eye"></i>
+                            <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
+                                Ver
                             </a>
                             <?php endif ?>
                             <?php if ($user->tienePermiso('expedientes.subir')): ?>
                             <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
-                               class="ds-icon-btn" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
-                                <i class="bi bi-upload"></i>
+                               class="ds-btn ds-btn-outline ds-btn-sm" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
+                                <?= $doc ? 'Reemplazar' : 'Subir' ?>
                             </a>
                             <?php endif ?>
                         </div>
@@ -300,14 +300,14 @@ $toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <?php if ($doc): ?>
-                            <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="ds-icon-btn" title="Ver">
-                                <i class="bi bi-eye"></i>
+                            <a href="<?= $view->url('/expedientes/documento/' . $doc['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Ver">
+                                Ver
                             </a>
                             <?php endif ?>
                             <?php if ($user->tienePermiso('expedientes.subir')): ?>
                             <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
-                               class="ds-icon-btn" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
-                                <i class="bi bi-upload"></i>
+                               class="ds-btn ds-btn-outline ds-btn-sm" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
+                                <?= $doc ? 'Reemplazar' : 'Subir' ?>
                             </a>
                             <?php endif ?>
                         </div>

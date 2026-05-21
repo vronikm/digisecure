@@ -14,7 +14,6 @@ use DigiSecure\Shared\Domain\DomainException;
 use DigiSecure\Shared\Infrastructure\Clock;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
 use DigiSecure\Subscription\Infrastructure\PlanRepository;
-use DigiSecure\Subscription\Infrastructure\SuscripcionCicloRepository;
 use DigiSecure\Superadmin\Infrastructure\SuperadminRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Tenant\Domain\TenantContext;
@@ -81,7 +80,7 @@ final class SuperadminController
 
     // ============================ Detalle tenant ============================
 
-    public function tenantDetalle(Request $request, string $id): Response
+    public function tenantDetalle(Request $request, CsrfGuard $csrf, string $id): Response
     {
         $tenant = $this->repo->findTenant($id);
         if ($tenant === null) {
@@ -97,6 +96,8 @@ final class SuperadminController
         $planes = $this->planRepo->listarActivos(false);
 
         return $this->view->response('superadmin/tenant-detalle', [
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
             'tenant' => $tenant,
             'uso' => $uso,
             'usuarios' => $usuarios,
@@ -544,6 +545,233 @@ final class SuperadminController
         ]);
     }
 
+    // ============================ Planes ============================
+
+    public function planes(Request $request, CsrfGuard $csrf): Response
+    {
+        $busqueda = trim((string) $request->query('q', ''));
+        $estado = trim((string) $request->query('estado', ''));
+        $publico = trim((string) $request->query('publico', ''));
+
+        $planes = $this->planRepo->listarCatalogoGlobal(
+            $busqueda !== '' ? $busqueda : null,
+            $estado !== '' ? $estado : null,
+            $publico !== '' ? $publico : null,
+        );
+
+        $stats = [
+            'total' => count($planes),
+            'activos' => count(array_filter($planes, static fn(array $p): bool => (int) ($p['activo'] ?? 0) === 1)),
+            'inactivos' => count(array_filter($planes, static fn(array $p): bool => (int) ($p['activo'] ?? 0) !== 1)),
+            'publicos' => count(array_filter($planes, static fn(array $p): bool => (int) ($p['es_publico'] ?? 0) === 1)),
+        ];
+
+        return $this->view->response('superadmin/plans', [
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'planes' => $planes,
+            'stats' => $stats,
+            'busqueda' => $busqueda,
+            'estadoFiltro' => $estado,
+            'publicoFiltro' => $publico,
+        ]);
+    }
+
+    public function planCrearForm(Request $request, CsrfGuard $csrf): Response
+    {
+        return $this->view->response('superadmin/plan-create', [
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'input' => [],
+        ]);
+    }
+
+    public function planCrear(Request $request, CsrfGuard $csrf): Response
+    {
+        $input = $request->post;
+        $validation = $this->validarPayloadPlan($input);
+
+        if ($validation['ok'] !== true) {
+            $this->flash->error((string) $validation['error']);
+            return $this->view->response('superadmin/plan-create', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/admin/planes/crear',
+                'input' => $input,
+            ]);
+        }
+
+        $payload = $validation['payload'];
+        $codigo = (string) $payload['codigo'];
+        if ($this->planRepo->existsCodigo($codigo)) {
+            $this->flash->error('Ya existe un plan con ese codigo.');
+            return $this->view->response('superadmin/plan-create', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/admin/planes/crear',
+                'input' => $input,
+            ]);
+        }
+
+        $now = Clock::nowString();
+        $planId = IdGenerator::ulid();
+        $data = array_merge($payload, [
+            'id' => $planId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        try {
+            $this->planRepo->create($data);
+            $this->flash->success('Plan creado correctamente.');
+
+            $user = $request->attribute('auth_user');
+            $this->audit->log(
+                evento: 'superadmin.plan.creado',
+                usuarioId: $user?->id,
+                entidadTipo: 'plan',
+                entidadId: $planId,
+                detalles: [
+                    'codigo' => $codigo,
+                    'nombre' => $payload['nombre'],
+                    'activo' => (int) $payload['activo'],
+                ],
+                nivel: 'warning',
+                ip: $request->clientIp(),
+            );
+
+            return Response::redirect($this->securePath($request, '/admin/planes'));
+        } catch (\Throwable) {
+            $this->flash->error('No se pudo crear el plan. Verifica datos unicos y formato de caracteristicas JSON.');
+            return $this->view->response('superadmin/plan-create', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/admin/planes/crear',
+                'input' => $input,
+            ]);
+        }
+    }
+
+    public function planEditarForm(Request $request, CsrfGuard $csrf, string $codigo): Response
+    {
+        $plan = $this->planRepo->findRawByCodigo($codigo);
+        if ($plan === null) {
+            $this->flash->error('Plan no encontrado.');
+            return Response::redirect('/admin/planes');
+        }
+
+        return $this->view->response('superadmin/plan-edit', [
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'plan' => $plan,
+            'input' => [],
+        ]);
+    }
+
+    public function planActualizar(Request $request, CsrfGuard $csrf, string $codigo): Response
+    {
+        $plan = $this->planRepo->findRawByCodigo($codigo);
+        if ($plan === null) {
+            $this->flash->error('Plan no encontrado.');
+            return Response::redirect('/admin/planes');
+        }
+
+        $input = $request->post;
+        $validation = $this->validarPayloadPlan($input);
+        if ($validation['ok'] !== true) {
+            $this->flash->error((string) $validation['error']);
+            return $this->view->response('superadmin/plan-edit', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/admin/planes/' . $codigo . '/editar',
+                'plan' => array_merge($plan, $input),
+                'input' => $input,
+            ]);
+        }
+
+        $payload = $validation['payload'];
+        $codigoNuevo = (string) $payload['codigo'];
+        $planId = (string) ($plan['id'] ?? '');
+
+        if ($planId === '') {
+            $this->flash->error('No se pudo identificar el plan a actualizar.');
+            return Response::redirect('/admin/planes');
+        }
+
+        if ($this->planRepo->existsCodigo($codigoNuevo, $planId)) {
+            $this->flash->error('Ya existe otro plan con ese codigo.');
+            return $this->view->response('superadmin/plan-edit', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/admin/planes/' . $codigo . '/editar',
+                'plan' => array_merge($plan, $input),
+                'input' => $input,
+            ]);
+        }
+
+        $payload['updated_at'] = Clock::nowString();
+
+        try {
+            $this->planRepo->updateById($planId, $payload);
+            $this->flash->success('Plan actualizado correctamente.');
+
+            $user = $request->attribute('auth_user');
+            $this->audit->log(
+                evento: 'superadmin.plan.actualizado',
+                usuarioId: $user?->id,
+                entidadTipo: 'plan',
+                entidadId: $planId,
+                detalles: [
+                    'codigo_anterior' => (string) $plan['codigo'],
+                    'codigo_nuevo' => $codigoNuevo,
+                    'nombre' => $payload['nombre'],
+                ],
+                nivel: 'warning',
+                ip: $request->clientIp(),
+            );
+
+            return Response::redirect($this->securePath($request, '/admin/planes/' . $codigoNuevo . '/editar'));
+        } catch (\Throwable) {
+            $this->flash->error('No se pudo actualizar el plan. Verifica el formato JSON y la unicidad del codigo.');
+            return $this->view->response('superadmin/plan-edit', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/admin/planes/' . $codigo . '/editar',
+                'plan' => array_merge($plan, $input),
+                'input' => $input,
+            ]);
+        }
+    }
+
+    public function planCambiarEstado(Request $request, CsrfGuard $csrf, string $codigo): Response
+    {
+        $plan = $this->planRepo->findRawByCodigo($codigo);
+        if ($plan === null) {
+            $this->flash->error('Plan no encontrado.');
+            return Response::redirect('/admin/planes');
+        }
+
+        $nuevoEstado = trim((string) $request->post('estado', ''));
+        if (!in_array($nuevoEstado, ['activo', 'inactivo'], true)) {
+            $this->flash->error('Estado invalido para el plan.');
+            return Response::redirect($this->securePath($request, '/admin/planes'));
+        }
+
+        $activo = $nuevoEstado === 'activo';
+        $this->planRepo->cambiarEstado((string) $plan['codigo'], $activo, Clock::nowString());
+
+        $user = $request->attribute('auth_user');
+        $this->audit->log(
+            evento: 'superadmin.plan.estado_cambiado',
+            usuarioId: $user?->id,
+            entidadTipo: 'plan',
+            entidadId: (string) ($plan['id'] ?? $plan['codigo']),
+            detalles: [
+                'codigo' => (string) $plan['codigo'],
+                'estado_nuevo' => $nuevoEstado,
+            ],
+            nivel: 'warning',
+            ip: $request->clientIp(),
+        );
+
+        $this->flash->success('Estado del plan actualizado correctamente.');
+        return Response::redirect($this->securePath($request, '/admin/planes'));
+    }
+
     /**
      * @param array<string, mixed> $input
      */
@@ -578,6 +806,66 @@ final class SuperadminController
     private function tenantCreateBackLabel(): string
     {
         return 'Volver al listado';
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array{ok:true,payload:array<string, scalar|null>}|array{ok:false,error:string}
+     */
+    private function validarPayloadPlan(array $input): array
+    {
+        $codigo = mb_strtolower(trim((string) ($input['codigo'] ?? '')), 'UTF-8');
+        $codigo = preg_replace('/\s+/', '-', $codigo) ?? $codigo;
+        $nombre = trim((string) ($input['nombre'] ?? ''));
+        $descripcion = trim((string) ($input['descripcion'] ?? ''));
+        $nivel = max(0, min(255, (int) ($input['nivel'] ?? 0)));
+        $precioMensual = max(0, round((float) ($input['precio_mensual_usd'] ?? 0), 2));
+        $precioAnual = max(0, round((float) ($input['precio_anual_usd'] ?? 0), 2));
+        $maxUsuarios = max(1, (int) ($input['max_usuarios'] ?? 1));
+        $maxGuardias = max(1, (int) ($input['max_guardias'] ?? 1));
+        $maxStorage = max(128, (int) ($input['max_storage_mb'] ?? 128));
+        $orden = max(0, (int) ($input['orden'] ?? 0));
+        $esPublico = ((string) ($input['es_publico'] ?? '0')) === '1' ? 1 : 0;
+        $activo = ((string) ($input['activo'] ?? '0')) === '1' ? 1 : 0;
+
+        if (!preg_match('/^[a-z0-9][a-z0-9_-]{1,49}$/', $codigo)) {
+            return ['ok' => false, 'error' => 'El codigo del plan es invalido (usa solo minusculas, numeros, guion o guion bajo).'];
+        }
+        if ($nombre === '' || mb_strlen($nombre, 'UTF-8') < 3) {
+            return ['ok' => false, 'error' => 'El nombre del plan es obligatorio (minimo 3 caracteres).'];
+        }
+
+        $caracteristicasRaw = trim((string) ($input['caracteristicas_json'] ?? ''));
+        if ($caracteristicasRaw === '') {
+            $caracteristicasRaw = '{}';
+        }
+        $caracteristicas = json_decode($caracteristicasRaw, true);
+        if (!is_array($caracteristicas)) {
+            return ['ok' => false, 'error' => 'Caracteristicas JSON invalido. Usa un objeto JSON valido.'];
+        }
+        $caracteristicasJson = json_encode($caracteristicas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($caracteristicasJson === false) {
+            return ['ok' => false, 'error' => 'No se pudo serializar el JSON de caracteristicas.'];
+        }
+
+        return [
+            'ok' => true,
+            'payload' => [
+                'codigo' => $codigo,
+                'nombre' => $nombre,
+                'descripcion' => $descripcion !== '' ? $descripcion : null,
+                'nivel' => $nivel,
+                'precio_mensual_usd' => number_format($precioMensual, 2, '.', ''),
+                'precio_anual_usd' => number_format($precioAnual, 2, '.', ''),
+                'max_usuarios' => $maxUsuarios,
+                'max_guardias' => $maxGuardias,
+                'max_storage_mb' => $maxStorage,
+                'caracteristicas' => $caracteristicasJson,
+                'es_publico' => $esPublico,
+                'activo' => $activo,
+                'orden' => $orden,
+            ],
+        ];
     }
 
     private function securePath(Request $request, string $path): string

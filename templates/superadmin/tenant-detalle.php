@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Detalle de un tenant (Fase 13).
  *
@@ -14,6 +14,7 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
 $t = $tenant;
+$csrfToken = (string) ($csrfToken ?? '');
 $usuariosDisponibles = is_array($usuariosDisponibles ?? null) ? $usuariosDisponibles : [];
 $rolesDisponibles = is_array($rolesDisponibles ?? null) ? $rolesDisponibles : [];
 $storageMb = round(((int) ($uso['storage_bytes'] ?? 0)) / (1024 * 1024), 1);
@@ -60,6 +61,67 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
 
 <?php $view->section('title') ?><?= $e((string) $t['razon_social']) ?> | Superadmin<?php $view->endSection() ?>
 
+<?php $view->section('head') ?>
+<style>
+    .ds-company-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .7rem;
+    }
+    .ds-company-item {
+        grid-column: span 6;
+        padding: .7rem .8rem;
+        border: 1px solid rgba(21, 48, 79, 0.09);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fcfdff, #f7f9fc);
+        min-width: 0;
+    }
+    .ds-company-item.span-3 { grid-column: span 3; }
+    .ds-company-item.span-4 { grid-column: span 4; }
+    .ds-company-item.span-6 { grid-column: span 6; }
+    .ds-company-item.span-8 { grid-column: span 8; }
+    .ds-company-item.span-12 { grid-column: span 12; }
+    .ds-company-label {
+        font-size: .66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--ds-text-soft);
+        margin-bottom: .2rem;
+        line-height: 1.2;
+    }
+    .ds-company-value {
+        font-size: .93rem;
+        font-weight: 600;
+        color: var(--ds-text);
+        line-height: 1.3;
+    }
+    .ds-company-value.break {
+        white-space: normal;
+        word-break: break-word;
+    }
+    .ds-company-item .ds-cell-mono {
+        font-size: .93rem;
+        line-height: 1.3;
+        color: var(--ds-text);
+    }
+    @media (max-width: 1199.98px) {
+        .ds-company-item.span-3 { grid-column: span 4; }
+        .ds-company-item.span-8 { grid-column: span 12; }
+    }
+    @media (max-width: 767.98px) {
+        .ds-company-item,
+        .ds-company-item.span-3,
+        .ds-company-item.span-4,
+        .ds-company-item.span-6,
+        .ds-company-item.span-8,
+        .ds-company-item.span-12 {
+            grid-column: span 12;
+        }
+    }
+</style>
+<?php $view->endSection() ?>
+
 <?php $view->section('content') ?>
 <div class="ds-page-header">
     <div class="ds-page-title">
@@ -97,37 +159,78 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Nombre comercial</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($t['nombre_comercial'] ?? '—')) ?></div>
+                <div class="ds-company-grid">
+                    <div class="ds-company-item span-8">
+                        <div class="ds-company-label">Razon social</div>
+                        <div class="ds-company-value break"><?= $e((string) ($t['razon_social'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-3">
-                        <div style="<?= $ds_dt ?>">Telefono</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($t['telefono'] ?? '—')) ?></div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Nombre comercial</div>
+                        <div class="ds-company-value break"><?= $e((string) ($t['nombre_comercial'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-3">
-                        <div style="<?= $ds_dt ?>">Ciudad</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($t['ciudad'] ?? '—')) ?></div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">RUC</div>
+                        <div class="ds-cell-mono" style="font-weight: 700;"><?= $e((string) ($t['ruc'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Plan</div>
-                        <div><span class="ds-chip"><i class="bi bi-gem"></i><?= $e((string) $t['plan_codigo']) ?></span> <span style="font-weight: 600; margin-left: .35rem;"><?= $e((string) ($t['plan_nombre'] ?? '')) ?></span></div>
+                    <div class="ds-company-item span-8">
+                        <div class="ds-company-label">Email de contacto</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($t['email_contacto'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Inicio plan</div>
-                        <div class="ds-cell-mono"><?= $e(substr((string) ($t['plan_inicio'] ?? '—'), 0, 10)) ?></div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Telefono</div>
+                        <div class="ds-company-value"><?= $e((string) ($t['telefono'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Vencimiento</div>
-                        <div class="ds-cell-mono"><?= $e(substr((string) ($t['plan_vencimiento'] ?? '—'), 0, 10)) ?></div>
+                    <div class="ds-company-item span-8">
+                        <div class="ds-company-label">Direccion</div>
+                        <div class="ds-company-value break"><?= $e((string) ($t['direccion'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Registrado</div>
-                        <div class="ds-cell-mono"><?= $e(substr((string) ($t['created_at'] ?? ''), 0, 16)) ?></div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Ciudad</div>
+                        <div class="ds-company-value"><?= $e((string) ($t['ciudad'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Activado</div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Provincia</div>
+                        <div class="ds-company-value"><?= $e((string) ($t['provincia'] ?? '-')) ?></div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Pais</div>
+                        <div class="ds-company-value"><?= $e((string) ($t['pais'] ?? 'EC')) ?></div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Plan</div>
+                        <div class="ds-company-value break">
+                            <?= $e((string) ($t['plan_codigo'] ?? '-')) ?>
+                            <?php if (!empty($t['plan_nombre'])): ?>
+                                · <?= $e((string) $t['plan_nombre']) ?>
+                            <?php endif ?>
+                        </div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Inicio plan</div>
+                        <div class="ds-cell-mono"><?= $e(substr((string) ($t['plan_inicio'] ?? '-'), 0, 10)) ?></div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Vencimiento</div>
+                        <div class="ds-cell-mono"><?= $e(substr((string) ($t['plan_vencimiento'] ?? '-'), 0, 10)) ?></div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Zona horaria</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($t['timezone'] ?? '-')) ?></div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Locale</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($t['locale'] ?? '-')) ?></div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Tenant ID</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($t['id'] ?? '-')) ?></div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Registrado</div>
+                        <div class="ds-cell-mono"><?= $e(substr((string) ($t['created_at'] ?? '-'), 0, 16)) ?></div>
+                    </div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Activado</div>
                         <div class="ds-cell-mono">
                             <?php if (!empty($t['activado_at'])): ?>
                                 <?= $e(substr((string) $t['activado_at'], 0, 16)) ?>
@@ -136,9 +239,9 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                             <?php endif ?>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Timezone</div>
-                        <div class="ds-cell-mono"><?= $e((string) ($t['timezone'] ?? '')) ?></div>
+                    <div class="ds-company-item span-4">
+                        <div class="ds-company-label">Estado</div>
+                        <div><span class="ds-badge <?= $estadoTone[(string) ($t['estado'] ?? '')] ?? 'tone-muted' ?>"><?= $e(ucfirst((string) ($t['estado'] ?? ''))) ?></span></div>
                     </div>
                 </div>
             </div>
@@ -222,7 +325,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                         <tr>
                             <td><div class="ds-cell-name"><?= $e(trim(($u['nombres'] ?? '') . ' ' . ($u['apellidos'] ?? ''))) ?></div></td>
                             <td><span class="ds-cell-mono"><?= $e((string) $u['email']) ?></span></td>
-                            <td><span class="ds-cell-sub"><?= $e((string) ($u['roles'] ?? '—')) ?></span></td>
+                            <td><span class="ds-cell-sub"><?= $e((string) ($u['roles'] ?? 'â€”')) ?></span></td>
                             <td>
                                 <?php if (!empty($u['ultimo_login_at'])): ?>
                                     <span class="ds-cell-mono"><?= $e(substr((string) $u['ultimo_login_at'], 0, 16)) ?></span>
@@ -374,8 +477,8 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                                 <?php foreach ($usuariosDisponibles as $u): ?>
                                 <option value="<?= $e((string) $u['id']) ?>">
                                     <?= $e(trim((string) $u['apellidos'] . ' ' . (string) $u['nombres'])) ?>
-                                    · <?= $e((string) $u['email']) ?>
-                                    · <?= $e((string) $u['tenant_actual']) ?>
+                                    Â· <?= $e((string) $u['email']) ?>
+                                    Â· <?= $e((string) $u['tenant_actual']) ?>
                                 </option>
                                 <?php endforeach ?>
                             </select>
@@ -424,3 +527,4 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
     </div>
 </div>
 <?php $view->endSection() ?>
+

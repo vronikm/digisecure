@@ -176,8 +176,8 @@ $hasFilters = !empty($filters['estado'] ?? null)
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <a href="<?= $view->url('/notificaciones/' . $e((string) $n['id'])) ?>"
-                               class="ds-icon-btn" title="Ver detalle">
-                                <i class="bi bi-eye"></i>
+                               class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
+                                Ver
                             </a>
                         </div>
                     </td>

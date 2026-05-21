@@ -212,12 +212,12 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                     <td><span class="ds-badge <?= $tone ?>"><?= $e(ucfirst((string) $p['estado'])) ?></span></td>
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
-                            <a href="<?= $view->url('/puestos/' . $p['id']) ?>" class="ds-icon-btn" title="Ver detalle">
-                                <i class="bi bi-eye"></i>
+                            <a href="<?= $view->url('/puestos/' . $p['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
+                                Ver
                             </a>
                             <?php if ($user->tienePermiso('puestos.editar') && $p['estado'] !== 'archivado'): ?>
-                            <a href="<?= $view->url('/puestos/' . $p['id'] . '/editar') ?>" class="ds-icon-btn" title="Editar">
-                                <i class="bi bi-pencil"></i>
+                            <a href="<?= $view->url('/puestos/' . $p['id'] . '/editar') ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Editar">
+                                Editar
                             </a>
                             <?php endif ?>
                         </div>

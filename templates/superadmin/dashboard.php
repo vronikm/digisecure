@@ -176,7 +176,20 @@ $eventoTone = [
 
 <!-- Quick links -->
 <div class="row g-4" style="margin-top: .25rem;">
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <a href="<?= $view->url('/admin/planes') ?>" class="ds-card" style="text-decoration: none; display: block; height: 100%; transition: transform .15s, box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 30px rgba(9,29,53,.12)';"
+           onmouseout="this.style.transform='';this.style.boxShadow='';">
+            <div class="ds-card-body" style="text-align: center; padding: 1.75rem 1.25rem;">
+                <span style="width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: rgba(16,185,129,.12); color: #0f766e; font-size: 1.6rem; margin-bottom: .75rem;">
+                    <i class="bi bi-gem"></i>
+                </span>
+                <div style="font-weight: 700; color: var(--ds-text); font-size: 1rem;">Gestionar planes</div>
+                <div class="ds-cell-sub" style="margin-top: .25rem;">Catalogo y configuracion</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
         <a href="<?= $view->url('/admin/tenants') ?>" class="ds-card" style="text-decoration: none; display: block; height: 100%; transition: transform .15s, box-shadow .15s;"
            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 30px rgba(9,29,53,.12)';"
            onmouseout="this.style.transform='';this.style.boxShadow='';">
@@ -189,7 +202,7 @@ $eventoTone = [
             </div>
         </a>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <a href="<?= $view->url('/admin/registros') ?>" class="ds-card" style="text-decoration: none; display: block; height: 100%; transition: transform .15s, box-shadow .15s;"
            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 30px rgba(9,29,53,.12)';"
            onmouseout="this.style.transform='';this.style.boxShadow='';">
@@ -202,7 +215,7 @@ $eventoTone = [
             </div>
         </a>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <a href="<?= $view->url('/auditoria') ?>" class="ds-card" style="text-decoration: none; display: block; height: 100%; transition: transform .15s, box-shadow .15s;"
            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 30px rgba(9,29,53,.12)';"
            onmouseout="this.style.transform='';this.style.boxShadow='';">

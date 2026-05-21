@@ -263,8 +263,8 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                                 <?php endif ?>
                             </td>
                             <td class="ds-cell-end">
-                                <a href="<?= $view->url('/asignaciones/' . $a['id']) ?>" class="ds-icon-btn" title="Ver">
-                                    <i class="bi bi-eye"></i>
+                                <a href="<?= $view->url('/asignaciones/' . $a['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Ver">
+                                    Ver
                                 </a>
                             </td>
                         </tr>

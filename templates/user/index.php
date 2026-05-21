@@ -141,8 +141,8 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                         <div class="ds-row-actions">
                             <?php if ($user->tienePermiso('usuarios.editar')): ?>
                             <a href="<?= $view->url('/usuarios/' . $u['id'] . '/editar') ?>"
-                               class="ds-icon-btn" title="Editar">
-                                <i class="bi bi-pencil"></i>
+                               class="ds-btn ds-btn-outline ds-btn-sm" title="Editar">
+                                Editar
                             </a>
                             <?php endif ?>
                             <?php if ($user->tienePermiso('usuarios.bloquear') && $u['id'] !== $user->id): ?>
@@ -151,8 +151,8 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                                       onsubmit="return confirm('Bloquear a <?= $e($u['nombres']) ?>?');">
                                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                     <input type="hidden" name="estado" value="bloqueado">
-                                    <button type="submit" class="ds-icon-btn tone-danger" title="Bloquear">
-                                        <i class="bi bi-lock"></i>
+                                    <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm" title="Bloquear">
+                                        Bloquear
                                     </button>
                                 </form>
                                 <?php else: ?>
@@ -160,8 +160,8 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                                       onsubmit="return confirm('Reactivar a <?= $e($u['nombres']) ?>?');">
                                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                     <input type="hidden" name="estado" value="activo">
-                                    <button type="submit" class="ds-icon-btn tone-success" title="Reactivar">
-                                        <i class="bi bi-unlock"></i>
+                                    <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm" title="Reactivar">
+                                        Reactivar
                                     </button>
                                 </form>
                                 <?php endif ?>

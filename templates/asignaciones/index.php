@@ -213,8 +213,8 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
                     <td><span class="ds-badge <?= $tone ?>"><?= $estado ? $e($estado->label()) : $e((string) $a['estado']) ?></span></td>
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
-                            <a href="<?= $view->url('/asignaciones/' . $a['id']) ?>" class="ds-icon-btn" title="Ver detalle">
-                                <i class="bi bi-eye"></i>
+                            <a href="<?= $view->url('/asignaciones/' . $a['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
+                                Ver
                             </a>
                         </div>
                     </td>

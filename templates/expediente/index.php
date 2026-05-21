@@ -150,7 +150,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                         <div class="ds-row-actions">
                             <a href="<?= $view->url('/guardias/' . $exp['ficha_id'] . '/expediente') ?>"
                                class="ds-btn ds-btn-outline ds-btn-sm">
-                                <i class="bi bi-folder2-open"></i>Abrir expediente
+                                Abrir expediente
                             </a>
                         </div>
                     </td>

@@ -154,9 +154,9 @@ $e = ViewRenderer::e(...);
                     <td class="ds-cell-end">
                         <form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo']) . '/toggle') ?>" class="ds-form-inline" style="display:inline-block;">
                             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-                            <button type="submit" class="ds-icon-btn <?= $esActivo ? 'tone-success' : '' ?>"
+                            <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm"
                                     title="<?= $esActivo ? 'Desactivar' : 'Activar' ?>">
-                                <i class="bi <?= $esActivo ? 'bi-toggle-on' : 'bi-toggle-off' ?>" style="font-size:1.1rem;"></i>
+                                <?= $esActivo ? 'Desactivar' : 'Activar' ?>
                             </button>
                         </form>
                     </td>
@@ -170,8 +170,8 @@ $e = ViewRenderer::e(...);
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <a href="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo'])) ?>"
-                               class="ds-icon-btn" title="Configurar">
-                                <i class="bi bi-gear"></i>
+                               class="ds-btn ds-btn-outline ds-btn-sm" title="Configurar">
+                                Configurar
                             </a>
                         </div>
                     </td>
