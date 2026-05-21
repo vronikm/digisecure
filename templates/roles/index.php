@@ -11,6 +11,8 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 $total = count($roles);
+$totalSistema = count(array_filter($roles, static fn(array $r): bool => (int) ($r['es_sistema'] ?? 0) === 1));
+$totalEmpresa = $total - $totalSistema;
 ?>
 
 <?php $view->section('title') ?>Roles — DigiSecure<?php $view->endSection() ?>
@@ -25,7 +27,10 @@ $total = count($roles);
         <span class="ds-page-mark"><i class="bi bi-shield-lock"></i></span>
         <div>
             <h1>Roles y permisos</h1>
-            <small><?= $total ?> rol<?= $total !== 1 ? 'es' : '' ?> disponible<?= $total !== 1 ? 's' : '' ?></small>
+            <small>
+                <?= $total ?> rol<?= $total !== 1 ? 'es' : '' ?> disponible<?= $total !== 1 ? 's' : '' ?>
+                · Empresa: <?= $totalEmpresa ?> · Sistema: <?= $totalSistema ?>
+            </small>
         </div>
     </div>
     <?php if ($user->tienePermiso('roles.crear')): ?>

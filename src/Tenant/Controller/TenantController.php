@@ -52,12 +52,14 @@ final class TenantController
         $user = $request->attribute('auth_user');
 
         $tenant = $this->tenantRepo->findCurrent();
+        $canEditSensitive = $this->canEditSensitive($user);
 
         return $this->view->response('tenant/edit', [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
             'tenant' => $tenant,
+            'canEditSensitive' => $canEditSensitive,
         ]);
     }
 
@@ -65,11 +67,12 @@ final class TenantController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
+        $canEditSensitive = $this->canEditSensitive($user);
 
         try {
-            $this->actualizarService->execute($request->post, $user->id, $request->clientIp());
+            $this->actualizarService->execute($request->post, $user->id, $request->clientIp(), $canEditSensitive);
             $this->flash->success('Datos de la empresa actualizados correctamente.');
-            return Response::redirect('/empresa');
+            return Response::redirect('/empresa/editar');
         } catch (DomainException $e) {
             $tenant = $this->tenantRepo->findCurrent();
             return $this->view->response('tenant/edit', [
@@ -78,7 +81,14 @@ final class TenantController
                 'currentPath' => '/empresa/editar',
                 'tenant' => array_merge($tenant ?? [], $request->post),
                 'error' => $e->getMessage(),
+                'canEditSensitive' => $canEditSensitive,
             ]);
         }
+    }
+
+    private function canEditSensitive(AuthenticatedUser $user): bool
+    {
+        return $user->tienePermiso('superadmin.panel')
+            || $user->tienePermiso('superadmin.tenants.gestionar');
     }
 }

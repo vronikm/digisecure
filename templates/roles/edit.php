@@ -61,7 +61,7 @@ $esSistema = (int) ($rol['es_sistema'] ?? 0) === 1;
 <?php endif ?>
 
 <form class="ds-form-main" method="post" action="<?= $view->url('/roles/' . $e((string) $rol['id']) . '/editar') ?>">
-    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+    <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">
         <div class="ds-card-header">
@@ -167,7 +167,7 @@ $esSistema = (int) ($rol['es_sistema'] ?? 0) === 1;
         <form class="ds-form-main" method="post" action="<?= $view->url('/roles/' . $e((string) $rol['id']) . '/eliminar') ?>"
               onsubmit="return confirm('Estas seguro de eliminar el rol «<?= $e($rol['nombre']) ?>»? Esta accion no se puede deshacer.');"
               style="display: inline;">
-            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+            <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
             <button type="submit" class="ds-btn ds-btn-outline" style="color: #dc2626; border-color: rgba(220,38,38,.3);">
                 <i class="bi bi-trash"></i>Eliminar rol
             </button>

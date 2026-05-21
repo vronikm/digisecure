@@ -27,6 +27,7 @@ use DigiSecure\Security\Csrf\CsrfGuard;
 final class CsrfMiddleware implements MiddlewareInterface
 {
     private const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+    private const LEGACY_FIELD_NAME = '_csrf';
 
     public function __construct(
         private readonly CsrfGuard $csrf,
@@ -58,6 +59,12 @@ final class CsrfMiddleware implements MiddlewareInterface
             return $fromPost;
         }
 
+        // Compatibilidad retroactiva con formularios legacy.
+        $fromLegacyPost = $request->post(self::LEGACY_FIELD_NAME);
+        if (\is_string($fromLegacyPost) && $fromLegacyPost !== '') {
+            return $fromLegacyPost;
+        }
+
         $fromHeader = $request->header(CsrfGuard::HEADER_NAME);
         if ($fromHeader !== null && $fromHeader !== '') {
             return $fromHeader;
@@ -69,6 +76,11 @@ final class CsrfMiddleware implements MiddlewareInterface
             $fromJson = $json[CsrfGuard::FIELD_NAME] ?? null;
             if (\is_string($fromJson) && $fromJson !== '') {
                 return $fromJson;
+            }
+
+            $fromLegacyJson = $json[self::LEGACY_FIELD_NAME] ?? null;
+            if (\is_string($fromLegacyJson) && $fromLegacyJson !== '') {
+                return $fromLegacyJson;
             }
         }
 

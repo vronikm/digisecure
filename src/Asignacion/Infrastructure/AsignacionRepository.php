@@ -298,8 +298,13 @@ final class AsignacionRepository extends BaseRepository
             $bindings['cliente_id'] = (string) $filters['cliente_id'];
         }
         if (!empty($filters['q'])) {
-            $where[] = '(f.apellidos LIKE :q OR f.nombres LIKE :q OR f.correlativo LIKE :q OR p.nombre LIKE :q OR c.razon_social LIKE :q)';
-            $bindings['q'] = '%' . $filters['q'] . '%';
+            $where[] = '(f.apellidos LIKE :q_apellidos OR f.nombres LIKE :q_nombres OR f.correlativo LIKE :q_correlativo OR p.nombre LIKE :q_puesto OR c.razon_social LIKE :q_cliente)';
+            $q = '%' . (string) $filters['q'] . '%';
+            $bindings['q_apellidos'] = $q;
+            $bindings['q_nombres'] = $q;
+            $bindings['q_correlativo'] = $q;
+            $bindings['q_puesto'] = $q;
+            $bindings['q_cliente'] = $q;
         }
 
         return [implode(' AND ', $where), $bindings];

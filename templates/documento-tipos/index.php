@@ -153,7 +153,7 @@ $e = ViewRenderer::e(...);
                     </td>
                     <td class="ds-cell-end">
                         <form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo']) . '/toggle') ?>" class="ds-form-inline" style="display:inline-block;">
-                            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+                            <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                             <button type="submit" class="ds-icon-btn <?= $esActivo ? 'tone-success' : '' ?>"
                                     title="<?= $esActivo ? 'Desactivar' : 'Activar' ?>">
                                 <i class="bi <?= $esActivo ? 'bi-toggle-on' : 'bi-toggle-off' ?>" style="font-size:1.1rem;"></i>

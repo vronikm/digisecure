@@ -46,8 +46,12 @@ final class ClienteRepository extends BaseRepository
         }
 
         if (!empty($filters['q'])) {
-            $where[] = '(razon_social LIKE :q OR nombre_comercial LIKE :q OR documento LIKE :q OR contacto_nombre LIKE :q)';
-            $bindings['q'] = '%' . $filters['q'] . '%';
+            $where[] = '(razon_social LIKE :q_razon OR nombre_comercial LIKE :q_nombre OR documento LIKE :q_doc OR contacto_nombre LIKE :q_contacto)';
+            $q = '%' . (string) $filters['q'] . '%';
+            $bindings['q_razon'] = $q;
+            $bindings['q_nombre'] = $q;
+            $bindings['q_doc'] = $q;
+            $bindings['q_contacto'] = $q;
         }
 
         $sql = 'SELECT id, razon_social, nombre_comercial, tipo_documento, documento,
@@ -82,8 +86,12 @@ final class ClienteRepository extends BaseRepository
         }
 
         if (!empty($filters['q'])) {
-            $where[] = '(razon_social LIKE :q OR nombre_comercial LIKE :q OR documento LIKE :q OR contacto_nombre LIKE :q)';
-            $bindings['q'] = '%' . $filters['q'] . '%';
+            $where[] = '(razon_social LIKE :q_razon OR nombre_comercial LIKE :q_nombre OR documento LIKE :q_doc OR contacto_nombre LIKE :q_contacto)';
+            $q = '%' . (string) $filters['q'] . '%';
+            $bindings['q_razon'] = $q;
+            $bindings['q_nombre'] = $q;
+            $bindings['q_doc'] = $q;
+            $bindings['q_contacto'] = $q;
         }
 
         return $this->tenantCount(implode(' AND ', $where), $bindings);

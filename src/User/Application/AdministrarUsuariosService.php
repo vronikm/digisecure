@@ -221,8 +221,28 @@ final class AdministrarUsuariosService
     {
         $tenantId = $this->tenantContext->requireTenantId();
         $row = $this->db->fetchOne(
-            'SELECT id FROM roles WHERE id = :id AND (tenant_id = :tid OR tenant_id IS NULL)',
-            ['id' => $roleId, 'tid' => $tenantId],
+            'SELECT r.id
+               FROM roles r
+              WHERE r.id = :id
+                AND r.codigo <> :codigo_superadmin
+                AND (
+                    r.tenant_id = :tid
+                    OR (
+                        r.tenant_id IS NULL
+                        AND NOT EXISTS (
+                            SELECT 1
+                              FROM roles rt
+                             WHERE rt.tenant_id = :tid_shadow
+                               AND rt.codigo = r.codigo
+                        )
+                    )
+                )',
+            [
+                'id' => $roleId,
+                'tid' => $tenantId,
+                'tid_shadow' => $tenantId,
+                'codigo_superadmin' => 'superadmin',
+            ],
         );
         if ($row === null) {
             throw new DomainException('Rol inválido o no accesible.');

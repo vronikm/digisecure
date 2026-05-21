@@ -37,9 +37,26 @@ final class RoleRepository
                      WHERE ur.role_id = r.id AND u.tenant_id = :tid_count) AS usuarios_count,
                     (SELECT COUNT(*) FROM roles_permisos rp WHERE rp.role_id = r.id) AS permisos_count
              FROM roles r
-             WHERE r.tenant_id = :tid OR r.tenant_id IS NULL
-             ORDER BY r.es_sistema DESC, r.nombre ASC',
-            ['tid' => $tenantId, 'tid_count' => $tenantId],
+             WHERE r.codigo <> :codigo_superadmin
+               AND (
+                    r.tenant_id = :tid
+                    OR (
+                        r.tenant_id IS NULL
+                        AND NOT EXISTS (
+                            SELECT 1
+                              FROM roles rt
+                             WHERE rt.tenant_id = :tid_shadow
+                               AND rt.codigo = r.codigo
+                        )
+                    )
+               )
+             ORDER BY r.es_sistema ASC, r.nombre ASC',
+            [
+                'tid' => $tenantId,
+                'tid_count' => $tenantId,
+                'tid_shadow' => $tenantId,
+                'codigo_superadmin' => 'superadmin',
+            ],
         );
     }
 

@@ -58,8 +58,12 @@ final class PuestoRepository extends BaseRepository
         }
 
         if (!empty($filters['q'])) {
-            $where[] = '(p.nombre LIKE :q OR p.codigo LIKE :q OR c.razon_social LIKE :q OR p.direccion LIKE :q)';
-            $bindings['q'] = '%' . $filters['q'] . '%';
+            $where[] = '(p.nombre LIKE :q_nombre OR p.codigo LIKE :q_codigo OR c.razon_social LIKE :q_cliente OR p.direccion LIKE :q_direccion)';
+            $q = '%' . (string) $filters['q'] . '%';
+            $bindings['q_nombre'] = $q;
+            $bindings['q_codigo'] = $q;
+            $bindings['q_cliente'] = $q;
+            $bindings['q_direccion'] = $q;
         }
 
         $sql = 'SELECT p.id, p.codigo, p.nombre, p.tipo, p.modalidad,
@@ -103,8 +107,12 @@ final class PuestoRepository extends BaseRepository
             $bindings['cliente_id'] = (string) $filters['cliente_id'];
         }
         if (!empty($filters['q'])) {
-            $where[] = '(p.nombre LIKE :q OR p.codigo LIKE :q OR c.razon_social LIKE :q OR p.direccion LIKE :q)';
-            $bindings['q'] = '%' . $filters['q'] . '%';
+            $where[] = '(p.nombre LIKE :q_nombre OR p.codigo LIKE :q_codigo OR c.razon_social LIKE :q_cliente OR p.direccion LIKE :q_direccion)';
+            $q = '%' . (string) $filters['q'] . '%';
+            $bindings['q_nombre'] = $q;
+            $bindings['q_codigo'] = $q;
+            $bindings['q_cliente'] = $q;
+            $bindings['q_direccion'] = $q;
         }
 
         $sql = 'SELECT COUNT(*) FROM puestos p

@@ -126,7 +126,11 @@ $db->transactional(function (PdoConnection $db) use ($tenantId, $adminId, $email
 
     // 3. Clonar roles del sistema para este tenant
     $systemRoles = $db->fetchAll(
-        "SELECT id, codigo, nombre, descripcion FROM roles WHERE tenant_id IS NULL AND es_sistema = 1"
+        "SELECT id, codigo, nombre, descripcion
+           FROM roles
+          WHERE tenant_id IS NULL
+            AND es_sistema = 1
+            AND codigo <> 'superadmin'"
     );
 
     $roleMapping = []; // sistema_role_id => nuevo_tenant_role_id

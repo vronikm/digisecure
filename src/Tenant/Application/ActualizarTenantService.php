@@ -31,7 +31,7 @@ final class ActualizarTenantService
     /**
      * @param array<string, mixed> $input
      */
-    public function execute(array $input, string $usuarioId, string $ip): void
+    public function execute(array $input, string $usuarioId, string $ip, bool $canEditSensitive = false): void
     {
         $razonSocial = trim((string)($input['razon_social'] ?? ''));
         if ($razonSocial === '') {
@@ -53,6 +53,14 @@ final class ActualizarTenantService
         // Estos dos son obligatorios — siempre los incluimos
         $data['razon_social'] = $razonSocial;
         $data['email_contacto'] = $email;
+
+        if ($canEditSensitive && array_key_exists('ruc', $input)) {
+            $ruc = preg_replace('/\D+/', '', (string)($input['ruc'] ?? ''));
+            if (!is_string($ruc) || strlen($ruc) !== 13) {
+                throw new DomainException('El RUC debe contener exactamente 13 digitos.');
+            }
+            $data['ruc'] = $ruc;
+        }
 
         $this->repo->updateCurrent($data);
 

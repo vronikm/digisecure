@@ -203,10 +203,26 @@ final class UserController
         $tenantId = $this->tenantContext->requireTenantId();
         return $this->db->fetchAll(
             'SELECT id, codigo, nombre, descripcion
-             FROM roles
-             WHERE tenant_id = :tid OR tenant_id IS NULL
-             ORDER BY es_sistema DESC, nombre ASC',
-            ['tid' => $tenantId],
+             FROM roles r
+             WHERE r.codigo <> :codigo_superadmin
+               AND (
+                    r.tenant_id = :tid
+                    OR (
+                        r.tenant_id IS NULL
+                        AND NOT EXISTS (
+                            SELECT 1
+                              FROM roles rt
+                             WHERE rt.tenant_id = :tid_shadow
+                               AND rt.codigo = r.codigo
+                        )
+                    )
+               )
+             ORDER BY es_sistema ASC, nombre ASC',
+            [
+                'tid' => $tenantId,
+                'tid_shadow' => $tenantId,
+                'codigo_superadmin' => 'superadmin',
+            ],
         );
     }
 

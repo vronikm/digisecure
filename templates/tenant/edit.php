@@ -10,6 +10,7 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+$canEditSensitive = (bool) ($canEditSensitive ?? false);
 ?>
 
 <?php $view->section('title') ?>Editar empresa — DigiSecure<?php $view->endSection() ?>
@@ -48,13 +49,18 @@ $e = ViewRenderer::e(...);
 <div class="login-info" style="margin-bottom: 1.25rem;">
     <i class="bi bi-info-circle"></i>
     <div>
+        <?php if ($canEditSensitive): ?>
+        <strong>Modo superadmin</strong>
+        Puedes actualizar el RUC desde esta vista. El resto de campos sensibles se gestionan desde el panel global.
+        <?php else: ?>
         <strong>Campos protegidos</strong>
         El RUC, estado, plan y limites solo pueden ser modificados por el administrador de la plataforma.
+        <?php endif; ?>
     </div>
 </div>
 
 <form method="post" action="<?= $view->url('/empresa/editar') ?>" class="ds-form-main">
-    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+    <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">
         <div class="ds-card-header">
@@ -66,25 +72,32 @@ $e = ViewRenderer::e(...);
         </div>
         <div class="ds-card-body">
             <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Razon social <span class="ds-required">*</span></label>
                         <input type="text" name="razon_social" class="form-control" maxlength="255"
                                value="<?= $e((string) ($tenant['razon_social'] ?? '')) ?>" required>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Nombre comercial</label>
                         <input type="text" name="nombre_comercial" class="form-control" maxlength="255"
                                value="<?= $e((string) ($tenant['nombre_comercial'] ?? '')) ?>">
                     </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-4">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">RUC</label>
+                        <label class="ds-form-label">RUC<?= $canEditSensitive ? ' <span class="ds-required">*</span>' : '' ?></label>
+                        <?php if ($canEditSensitive): ?>
+                        <input type="text" name="ruc" class="form-control" required maxlength="13" minlength="13"
+                               inputmode="numeric" pattern="\d{13}"
+                               value="<?= $e((string) ($tenant['ruc'] ?? '')) ?>">
+                        <span class="ds-form-help">Debe contener 13 digitos numericos.</span>
+                        <?php else: ?>
                         <input type="text" class="form-control" value="<?= $e((string) ($tenant['ruc'] ?? '')) ?>" disabled>
                         <span class="ds-form-help">Solo modificable por el administrador del sistema.</span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -129,21 +142,21 @@ $e = ViewRenderer::e(...);
         </div>
         <div class="ds-card-body">
             <div class="row g-3">
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Direccion</label>
                         <input type="text" name="direccion" class="form-control" maxlength="255"
                                value="<?= $e((string) ($tenant['direccion'] ?? '')) ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Ciudad</label>
                         <input type="text" name="ciudad" class="form-control" maxlength="100"
                                value="<?= $e((string) ($tenant['ciudad'] ?? '')) ?>">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Provincia</label>
                         <input type="text" name="provincia" class="form-control" maxlength="100"
@@ -155,7 +168,6 @@ $e = ViewRenderer::e(...);
     </div>
 
     <div class="ds-form-actions">
-        <a href="<?= $view->url('/empresa') ?>" class="ds-btn ds-btn-outline">Cancelar</a>
         <button type="submit" class="ds-btn ds-btn-primary">
             <i class="bi bi-check-lg"></i>Guardar cambios
         </button>
