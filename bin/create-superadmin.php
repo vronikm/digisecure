@@ -162,11 +162,11 @@ try {
                 $created = true;
             } else {
                 $userId = (string)$existingUser['id'];
-                $tenantId = (string)$existingUser['tenant_id'];
 
                 $db->execute(
                     'UPDATE usuarios
-                        SET password_hash = :password_hash,
+                        SET tenant_id = :tenant_id,
+                            password_hash = :password_hash,
                             nombres = :nombres,
                             apellidos = :apellidos,
                             cargo = :cargo,
@@ -179,6 +179,7 @@ try {
                       WHERE id = :id',
                     [
                         'id' => $userId,
+                        'tenant_id' => $tenantId,
                         'password_hash' => $passwordHash,
                         'nombres' => $nombres,
                         'apellidos' => $apellidos,
@@ -265,6 +266,22 @@ function resolveTenantForSuperadmin(PdoConnection $db, ?string $tenantIdOpt, str
             throw new RuntimeException("El tenant '{$tenantIdOpt}' no está activo.");
         }
 
+        markPlatformTenant($db, (string) $tenant['id']);
+
+        return [
+            'id' => (string)$tenant['id'],
+            'razon_social' => (string)$tenant['razon_social'],
+        ];
+    }
+
+    $tenant = $db->fetchOne(
+        "SELECT id, razon_social
+           FROM tenants
+          WHERE platform_marker = 'Y'
+          LIMIT 1"
+    );
+    if ($tenant !== null) {
+        markPlatformTenant($db, (string) $tenant['id']);
         return [
             'id' => (string)$tenant['id'],
             'razon_social' => (string)$tenant['razon_social'],
@@ -279,6 +296,7 @@ function resolveTenantForSuperadmin(PdoConnection $db, ?string $tenantIdOpt, str
           LIMIT 1"
     );
     if ($tenant !== null) {
+        markPlatformTenant($db, (string) $tenant['id']);
         return [
             'id' => (string)$tenant['id'],
             'razon_social' => (string)$tenant['razon_social'],
@@ -295,11 +313,11 @@ function resolveTenantForSuperadmin(PdoConnection $db, ?string $tenantIdOpt, str
         "INSERT INTO tenants
             (id, razon_social, ruc, nombre_comercial, email_contacto, telefono, ciudad, provincia, pais, estado,
              plan_codigo, plan_inicio, max_usuarios, max_guardias, max_storage_mb, timezone, locale,
-             created_at, updated_at)
+             platform_marker, created_at, updated_at)
          VALUES
             (:id, :razon, :ruc, :comercial, :email, :telefono, :ciudad, :provincia, 'EC', 'activo',
              'enterprise', CURDATE(), 9999, 999999, 102400, 'America/Guayaquil', 'es_EC',
-             :created_at, :updated_at)",
+             'Y', :created_at, :updated_at)",
         [
             'id' => $tenantId,
             'razon' => $razon,
@@ -318,6 +336,17 @@ function resolveTenantForSuperadmin(PdoConnection $db, ?string $tenantIdOpt, str
         'id' => $tenantId,
         'razon_social' => $razon,
     ];
+}
+
+function markPlatformTenant(PdoConnection $db, string $tenantId): void
+{
+    $db->execute('UPDATE tenants SET platform_marker = NULL');
+    $db->execute(
+        "UPDATE tenants
+            SET platform_marker = 'Y'
+          WHERE id = :id",
+        ['id' => $tenantId],
+    );
 }
 
 function generateUniqueRuc(PdoConnection $db): string

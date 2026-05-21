@@ -78,12 +78,19 @@ final class UserController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
+        $esSuperAdmin = $user->esSuperAdmin();
+        $systemTenantId = $esSuperAdmin
+            ? $this->resolvePlatformTenantIdOrFallback($user->tenantId)
+            : $user->tenantId;
 
         return $this->view->response('user/create', [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
-            'roles' => $this->loadRolesAccesibles(),
+            'roles' => $esSuperAdmin ? $this->loadSystemRolesCatalog() : $this->loadRolesAccesibles(),
+            'esSuperAdmin' => $esSuperAdmin,
+            'tenants' => $esSuperAdmin ? $this->loadTenantsCatalog() : [],
+            'systemTenantId' => $systemTenantId,
             'input' => [],
         ]);
     }
@@ -93,10 +100,16 @@ final class UserController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
         $input = $request->post;
+        $esSuperAdmin = $user->esSuperAdmin();
+        $systemTenantId = $esSuperAdmin
+            ? $this->resolvePlatformTenantIdOrFallback($user->tenantId)
+            : $user->tenantId;
 
         try {
-            $this->verificarLimite->verificarCrearUsuario();
-            $this->service->crear($input, $user->id, $request->clientIp());
+            if (!$esSuperAdmin) {
+                $this->verificarLimite->verificarCrearUsuario();
+            }
+            $this->service->crear($input, $user->id, $request->clientIp(), $esSuperAdmin, $user->tenantId);
             $this->flash->success('Usuario creado correctamente.');
             return Response::redirect('/usuarios');
         } catch (DomainException $e) {
@@ -104,7 +117,10 @@ final class UserController
                 'user' => $user,
                 'csrfToken' => $csrf->token(),
                 'currentPath' => '/usuarios/crear',
-                'roles' => $this->loadRolesAccesibles(),
+                'roles' => $esSuperAdmin ? $this->loadSystemRolesCatalog() : $this->loadRolesAccesibles(),
+                'esSuperAdmin' => $esSuperAdmin,
+                'tenants' => $esSuperAdmin ? $this->loadTenantsCatalog() : [],
+                'systemTenantId' => $systemTenantId,
                 'input' => $input,
                 'error' => $e->getMessage(),
             ]);
@@ -115,8 +131,12 @@ final class UserController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
+        $esSuperAdmin = $user->esSuperAdmin();
+        $systemTenantId = $esSuperAdmin
+            ? $this->resolvePlatformTenantIdOrFallback($user->tenantId)
+            : $user->tenantId;
 
-        $usuario = $this->repo->findUserById($id);
+        $usuario = $this->findUsuario($id, $esSuperAdmin);
         if ($usuario === null) {
             return $this->view->response('errors/404', [
                 'user' => $user,
@@ -126,14 +146,20 @@ final class UserController
         }
 
         $rolesAsignados = $this->loadRolesByUserIds([$id])[$id] ?? [];
+        $tenantActualNombre = $this->loadTenantNombreById((string) ($usuario['tenant_id'] ?? ''));
 
         return $this->view->response('user/edit', [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
             'usuario' => $usuario,
-            'roles' => $this->loadRolesAccesibles(),
+            'roles' => $esSuperAdmin ? $this->loadSystemRolesCatalog() : $this->loadRolesAccesibles(),
             'rolActualId' => $rolesAsignados[0]['id'] ?? null,
+            'rolActualCodigo' => $rolesAsignados[0]['codigo'] ?? null,
+            'esSuperAdmin' => $esSuperAdmin,
+            'tenants' => $esSuperAdmin ? $this->loadTenantsCatalog() : [],
+            'systemTenantId' => $systemTenantId,
+            'tenantActualNombre' => $tenantActualNombre,
             'input' => [],
         ]);
     }
@@ -143,21 +169,33 @@ final class UserController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
         $input = $request->post;
+        $esSuperAdmin = $user->esSuperAdmin();
+        $systemTenantId = $esSuperAdmin
+            ? $this->resolvePlatformTenantIdOrFallback($user->tenantId)
+            : $user->tenantId;
 
         try {
-            $this->service->actualizar($id, $input, $user->id, $request->clientIp());
+            $this->service->actualizar($id, $input, $user->id, $request->clientIp(), $esSuperAdmin, $user->tenantId);
             $this->flash->success('Usuario actualizado correctamente.');
             return Response::redirect('/usuarios');
         } catch (DomainException $e) {
-            $usuario = $this->repo->findUserById($id);
+            $usuario = $this->findUsuario($id, $esSuperAdmin);
             $rolesAsignados = $this->loadRolesByUserIds([$id])[$id] ?? [];
+            $tenantActualNombre = $usuario !== null
+                ? $this->loadTenantNombreById((string) ($usuario['tenant_id'] ?? ''))
+                : '';
             return $this->view->response('user/edit', [
                 'user' => $user,
                 'csrfToken' => $csrf->token(),
                 'currentPath' => $request->path,
                 'usuario' => $usuario,
-                'roles' => $this->loadRolesAccesibles(),
+                'roles' => $esSuperAdmin ? $this->loadSystemRolesCatalog() : $this->loadRolesAccesibles(),
                 'rolActualId' => $rolesAsignados[0]['id'] ?? null,
+                'rolActualCodigo' => $rolesAsignados[0]['codigo'] ?? null,
+                'esSuperAdmin' => $esSuperAdmin,
+                'tenants' => $esSuperAdmin ? $this->loadTenantsCatalog() : [],
+                'systemTenantId' => $systemTenantId,
+                'tenantActualNombre' => $tenantActualNombre,
                 'input' => $input,
                 'error' => $e->getMessage(),
             ]);
@@ -227,6 +265,33 @@ final class UserController
     }
 
     /**
+     * Catálogo de roles base de sistema para operaciones cross-tenant del superadmin.
+     *
+     * @return list<array{id:string, codigo:string, nombre:string, descripcion:?string}>
+     */
+    private function loadSystemRolesCatalog(): array
+    {
+        return $this->db->fetchAll(
+            'SELECT id, codigo, nombre, descripcion
+               FROM roles
+              WHERE tenant_id IS NULL
+              ORDER BY nombre ASC',
+        );
+    }
+
+    /**
+     * @return list<array{id:string, razon_social:string, ruc:string, estado:string}>
+     */
+    private function loadTenantsCatalog(): array
+    {
+        return $this->db->fetchAll(
+            'SELECT id, razon_social, ruc, estado
+               FROM tenants
+              ORDER BY razon_social ASC',
+        );
+    }
+
+    /**
      * @param list<string> $userIds
      * @return array<string, list<array{id:string, codigo:string, nombre:string}>>
      */
@@ -246,7 +311,8 @@ final class UserController
             'SELECT ur.usuario_id, r.id, r.codigo, r.nombre
              FROM usuarios_roles ur
              INNER JOIN roles r ON r.id = ur.role_id
-             WHERE ur.usuario_id IN (' . implode(',', $placeholders) . ')',
+             WHERE ur.usuario_id IN (' . implode(',', $placeholders) . ')
+             ORDER BY ur.assigned_at DESC',
             $bindings,
         );
 
@@ -259,6 +325,21 @@ final class UserController
             ];
         }
         return $byUser;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function findUsuario(string $id, bool $esSuperAdmin): ?array
+    {
+        if (!$esSuperAdmin) {
+            return $this->repo->findUserById($id);
+        }
+
+        return $this->db->fetchOne(
+            'SELECT * FROM usuarios WHERE id = :id',
+            ['id' => $id],
+        );
     }
 
     private function securePath(Request $request, string $path): string
@@ -275,5 +356,36 @@ final class UserController
         }
 
         return \is_string($secure) && $secure !== '' ? $secure : $path;
+    }
+
+    private function resolvePlatformTenantIdOrFallback(?string $fallbackTenantId): string
+    {
+        $row = $this->db->fetchOne(
+            "SELECT id
+               FROM tenants
+              WHERE platform_marker = 'Y'
+              LIMIT 1",
+        );
+
+        if ($row !== null) {
+            return (string) $row['id'];
+        }
+
+        return trim((string) $fallbackTenantId);
+    }
+
+    private function loadTenantNombreById(string $tenantId): string
+    {
+        $tenantId = trim($tenantId);
+        if ($tenantId === '') {
+            return '';
+        }
+
+        $row = $this->db->fetchOne(
+            'SELECT razon_social FROM tenants WHERE id = :id LIMIT 1',
+            ['id' => $tenantId],
+        );
+
+        return $row !== null ? (string) $row['razon_social'] : '';
     }
 }

@@ -3,6 +3,7 @@
  * Formulario de edicion de usuario.
  *
  * Variables: $user, $csrfToken, $currentPath, $usuario, $roles, $rolActualId, $input
+ * Opcionales: $rolActualCodigo, $esSuperAdmin, $tenants, $systemTenantId, $tenantActualNombre
  * Opcionales: $error
  */
 
@@ -13,6 +14,14 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
 $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario[$key] ?? $default;
+$esSuperAdmin = (bool) ($esSuperAdmin ?? false);
+$tenants = is_array($tenants ?? null) ? $tenants : [];
+$systemTenantId = (string) ($systemTenantId ?? $user->tenantId);
+$rolActualCodigo = (string) ($rolActualCodigo ?? '');
+$tenantSel = (string) ($input['tenant_id'] ?? ($usuario['tenant_id'] ?? ''));
+$scopeSel = (string) ($input['user_scope'] ?? (($tenantSel !== '' && $tenantSel === $systemTenantId) || $rolActualCodigo === 'superadmin' ? 'sistema' : 'empresa'));
+$rolSelId = (string) ($input['role_id'] ?? $rolActualId ?? '');
+$tenantActualNombre = (string) ($tenantActualNombre ?? '');
 ?>
 
 <?php $view->section('title') ?>Editar usuario - DigiSecure<?php $view->endSection() ?>
@@ -62,6 +71,41 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
         </div>
         <div class="ds-card-body">
             <div class="ds-user-grid">
+                <?php if ($esSuperAdmin): ?>
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Ambito <span class="ds-required">*</span></label>
+                        <select name="user_scope" id="user_scope" class="form-select" required>
+                            <option value="empresa" <?= $scopeSel === 'empresa' ? 'selected' : '' ?>>Empresa (Tenant)</option>
+                            <option value="sistema" <?= $scopeSel === 'sistema' ? 'selected' : '' ?>>Sistema</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-8" id="tenant_scope_wrap">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Tenant (Empresa) <span class="ds-required">*</span></label>
+                        <select name="tenant_id" id="tenant_id" class="form-select">
+                            <option value="">- Seleccione empresa -</option>
+                            <?php foreach ($tenants as $t): ?>
+                            <option value="<?= $e((string) $t['id']) ?>" <?= $tenantSel === (string) $t['id'] ? 'selected' : '' ?>>
+                                <?= $e((string) $t['razon_social']) ?> · RUC <?= $e((string) $t['ruc']) ?>
+                            </option>
+                            <?php endforeach ?>
+                        </select>
+                        <span class="ds-form-help">En "Sistema" se usa automaticamente la empresa de plataforma marcada en el sistema.</span>
+                    </div>
+                </div>
+                <?php else: ?>
+                <div class="ds-col-12 ds-col-md-6 ds-col-lg-6">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Tenant (Empresa)</label>
+                        <input type="text" class="form-control" readonly
+                               value="<?= $e($tenantActualNombre !== '' ? $tenantActualNombre : 'No asignada') ?>">
+                        <span class="ds-form-help">Este usuario pertenece a la empresa actual.</span>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Nombres <span class="ds-required">*</span></label>
@@ -104,7 +148,15 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
                         <select name="role_id" class="form-select">
                             <option value="">- Mantener actual -</option>
                             <?php foreach ($roles as $r): ?>
-                            <option value="<?= $e($r['id']) ?>" <?= ($input['role_id'] ?? $rolActualId) === $r['id'] ? 'selected' : '' ?>>
+                            <?php
+                            $selected = false;
+                            if ($esSuperAdmin) {
+                                $selected = $rolSelId !== '' ? $rolSelId === (string) $r['id'] : $rolActualCodigo === (string) ($r['codigo'] ?? '');
+                            } else {
+                                $selected = ($input['role_id'] ?? $rolActualId) === $r['id'];
+                            }
+                            ?>
+                            <option value="<?= $e($r['id']) ?>" <?= $selected ? 'selected' : '' ?>>
                                 <?= $e($r['nombre']) ?>
                             </option>
                             <?php endforeach ?>
@@ -157,4 +209,29 @@ $valor = static fn(string $key, mixed $default = '') => $input[$key] ?? $usuario
 </div>
 <?php endif ?>
 </div>
+
+<?php if ($esSuperAdmin): ?>
+<script>
+(() => {
+    const scope = document.getElementById('user_scope');
+    const tenantWrap = document.getElementById('tenant_scope_wrap');
+    const tenantInput = document.getElementById('tenant_id');
+    const systemTenantId = <?= json_encode($systemTenantId, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    if (!scope || !tenantWrap || !tenantInput) return;
+
+    const refresh = () => {
+        const isSistema = scope.value === 'sistema';
+        tenantWrap.style.display = '';
+        tenantInput.required = !isSistema;
+        tenantInput.disabled = isSistema;
+        if (isSistema && typeof systemTenantId === 'string' && systemTenantId !== '') {
+            tenantInput.value = systemTenantId;
+        }
+    };
+
+    scope.addEventListener('change', refresh);
+    refresh();
+})();
+</script>
+<?php endif; ?>
 <?php $view->endSection() ?>
