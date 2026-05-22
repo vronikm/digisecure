@@ -70,10 +70,8 @@ final class Authenticator
         // 2. Buscar usuario (puede estar en cualquier tenant)
         $usuario = $this->db->fetchOne(
             'SELECT u.id, u.tenant_id, u.email, u.password_hash, u.nombres, u.apellidos,
-                    u.estado, u.intentos_fallidos, u.bloqueado_hasta, u.debe_cambiar_password,
-                    t.razon_social AS tenant_nombre, t.estado AS tenant_estado
+                    u.estado, u.intentos_fallidos, u.bloqueado_hasta, u.debe_cambiar_password
              FROM usuarios u
-             INNER JOIN tenants t ON t.id = u.tenant_id
              WHERE u.email_normalizado = :email_normalizado',
             ['email_normalizado' => $emailNorm],
         );
@@ -93,6 +91,22 @@ final class Authenticator
 
             throw new AuthenticationException(AuthenticationException::INVALID_CREDENTIALS);
         }
+
+        // 3.1 Cargar tenant en query separada para evitar comparaciones collation-sensitive
+        //     entre columnas de tablas distintas en motores con collations mixtas.
+        $tenant = $this->db->fetchOne(
+            'SELECT razon_social AS tenant_nombre, estado AS tenant_estado
+             FROM tenants
+             WHERE id = :tenant_id',
+            ['tenant_id' => $usuario['tenant_id']],
+        );
+
+        if ($tenant === null) {
+            $this->registrarIntentoFallido($emailNorm, $ip, $userAgent, $usuario['id'], $usuario['tenant_id']);
+            throw new AuthenticationException(AuthenticationException::INVALID_CREDENTIALS);
+        }
+        $usuario['tenant_nombre'] = (string) $tenant['tenant_nombre'];
+        $usuario['tenant_estado'] = (string) $tenant['tenant_estado'];
 
         // 4. Verificar bloqueo temporal
         if ($usuario['bloqueado_hasta'] !== null) {
@@ -217,9 +231,12 @@ final class Authenticator
         $permisos = array_column($this->db->fetchAll(
             'SELECT DISTINCT p.codigo
                FROM usuarios_roles ur
-               INNER JOIN roles r ON r.id = ur.role_id
-               INNER JOIN roles_permisos rp ON rp.role_id = r.id
-               INNER JOIN permisos p ON p.id = rp.permiso_id
+               INNER JOIN roles r
+                       ON r.id COLLATE utf8mb4_0900_ai_ci = ur.role_id COLLATE utf8mb4_0900_ai_ci
+               INNER JOIN roles_permisos rp
+                       ON rp.role_id COLLATE utf8mb4_0900_ai_ci = r.id COLLATE utf8mb4_0900_ai_ci
+               INNER JOIN permisos p
+                       ON p.id COLLATE utf8mb4_0900_ai_ci = rp.permiso_id COLLATE utf8mb4_0900_ai_ci
               WHERE ur.usuario_id = :usuario_id
                 AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
             [
@@ -231,7 +248,8 @@ final class Authenticator
         $roles = $this->db->fetchAll(
             'SELECT r.codigo, r.nombre
                FROM usuarios_roles ur
-               INNER JOIN roles r ON r.id = ur.role_id
+               INNER JOIN roles r
+                       ON r.id COLLATE utf8mb4_0900_ai_ci = ur.role_id COLLATE utf8mb4_0900_ai_ci
               WHERE ur.usuario_id = :usuario_id
                 AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
             [
@@ -391,7 +409,8 @@ final class Authenticator
         $count = (int) $this->db->fetchScalar(
             "SELECT COUNT(*)
                FROM usuarios_roles ur
-               INNER JOIN roles r ON r.id = ur.role_id
+               INNER JOIN roles r
+                       ON r.id COLLATE utf8mb4_0900_ai_ci = ur.role_id COLLATE utf8mb4_0900_ai_ci
               WHERE ur.usuario_id = :uid
                 AND r.codigo = 'superadmin'
                 AND r.tenant_id IS NULL",
