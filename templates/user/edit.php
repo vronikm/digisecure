@@ -186,8 +186,8 @@ $tenantActualNombre = (string) ($tenantActualNombre ?? '');
         </div>
     </div>
     <div class="ds-card-body">
-        <form class="ds-form-main" method="post" action="<?= $view->url('/usuarios/' . $usuario['id'] . '/password') ?>"
-              onsubmit="return confirm('Resetear la contrasena de este usuario?');">
+        <form id="form-reset-password-user" class="ds-form-main" method="post"
+              action="<?= $view->url('/usuarios/' . $usuario['id'] . '/password') ?>">
             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
             <div class="ds-user-grid">
                 <div class="ds-col-12 ds-col-md-6 ds-col-lg-8">
@@ -209,6 +209,56 @@ $tenantActualNombre = (string) ($tenantActualNombre ?? '');
 </div>
 <?php endif ?>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+(() => {
+    const form = document.getElementById('form-reset-password-user');
+    if (!form) {
+        return;
+    }
+
+    let confirmed = false;
+    form.addEventListener('submit', (event) => {
+        if (confirmed) {
+            return;
+        }
+
+        event.preventDefault();
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const submitConfirmed = () => {
+            confirmed = true;
+            form.submit();
+        };
+
+        if (typeof window.Swal === 'undefined') {
+            if (window.confirm('Se reseteara la contrasena del usuario. Deseas continuar?')) {
+                submitConfirmed();
+            }
+            return;
+        }
+
+        window.Swal.fire({
+            title: 'Confirmar reseteo',
+            text: 'La contrasena actual sera reemplazada por una temporal.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Si, resetear',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            focusCancel: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                submitConfirmed();
+            }
+        });
+    });
+})();
+</script>
 
 <?php if ($esSuperAdmin): ?>
 <script>

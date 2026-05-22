@@ -365,6 +365,7 @@ final class MenuBuilder
                             url: '/admin/tenants',
                             permisos: ['superadmin.tenants.ver'],
                             description: 'Listado y gestion de tenants',
+                            activeWhenPrefixes: ['/admin/tenants/'],
                         ),
                         new MenuItem(
                             label: 'Log de registros',

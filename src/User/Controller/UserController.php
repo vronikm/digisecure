@@ -46,6 +46,7 @@ final class UserController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
+        $esSuperAdmin = $user->esSuperAdmin();
 
         $page = max(1, (int) $request->query('page', 1));
         $limit = 25;
@@ -53,8 +54,28 @@ final class UserController
         $estado = $request->query('estado');
         $estadoFiltro = is_string($estado) && $estado !== '' ? $estado : null;
 
-        $usuarios = $this->repo->listByTenant($limit, $offset, $estadoFiltro);
-        $total = $this->repo->countByTenant($estadoFiltro);
+        if ($esSuperAdmin) {
+            $usuarios = $this->repo->listGlobalOrderedByTenant($limit, $offset, $estadoFiltro);
+            $total = $this->repo->countGlobal($estadoFiltro);
+
+            $tenantIds = array_values(array_unique(array_filter(
+                array_map(
+                    static fn(array $u): string => trim((string) ($u['tenant_id'] ?? '')),
+                    $usuarios,
+                ),
+            )));
+            $tenantNames = $this->loadTenantNamesByIds($tenantIds);
+
+            foreach ($usuarios as &$u) {
+                $tid = trim((string) ($u['tenant_id'] ?? ''));
+                $u['tenant_nombre'] = $tenantNames[$tid] ?? 'Sin empresa';
+            }
+            unset($u);
+        } else {
+            $usuarios = $this->repo->listByTenant($limit, $offset, $estadoFiltro);
+            $total = $this->repo->countByTenant($estadoFiltro);
+        }
+
         $totalPages = max(1, (int) ceil($total / $limit));
 
         // Cargar roles por usuario para mostrar en la tabla
@@ -65,6 +86,7 @@ final class UserController
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
+            'esSuperAdmin' => $esSuperAdmin,
             'usuarios' => $usuarios,
             'rolesByUser' => $rolesByUser,
             'total' => $total,
@@ -224,13 +246,19 @@ final class UserController
         $newPassword = (string) $request->post('new_password', '');
 
         try {
-            $this->service->resetearPassword($id, $newPassword, $user->id, $request->clientIp());
+            $this->service->resetearPassword(
+                $id,
+                $newPassword,
+                $user->id,
+                $request->clientIp(),
+                $user->esSuperAdmin(),
+            );
             $this->flash->success('Contrasena restablecida correctamente.');
         } catch (DomainException $e) {
             $this->flash->error($e->getMessage(), 'No se pudo restablecer la contrasena');
             return Response::redirect($this->securePath($request, "/usuarios/{$id}/editar"));
         }
-        return Response::redirect('/usuarios');
+        return Response::redirect($this->securePath($request, "/usuarios/{$id}/editar"));
     }
 
     /**
@@ -387,5 +415,38 @@ final class UserController
         );
 
         return $row !== null ? (string) $row['razon_social'] : '';
+    }
+
+    /**
+     * @param list<string> $tenantIds
+     * @return array<string, string>
+     */
+    private function loadTenantNamesByIds(array $tenantIds): array
+    {
+        if ($tenantIds === []) {
+            return [];
+        }
+
+        $placeholders = [];
+        $bindings = [];
+        foreach ($tenantIds as $i => $tenantId) {
+            $key = "t{$i}";
+            $placeholders[] = ":{$key}";
+            $bindings[$key] = $tenantId;
+        }
+
+        $rows = $this->db->fetchAll(
+            'SELECT id, razon_social
+               FROM tenants
+              WHERE id IN (' . implode(',', $placeholders) . ')',
+            $bindings,
+        );
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(string) $row['id']] = (string) $row['razon_social'];
+        }
+
+        return $map;
     }
 }

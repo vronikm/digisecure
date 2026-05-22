@@ -135,7 +135,38 @@ $normalizeMenuSearch = static function (array $parts): string {
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=20.0">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=20.1">
+    <style>
+        @keyframes dsMenuActivePulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(47, 128, 237, 0.50);
+                transform: translateX(0);
+            }
+            55% {
+                box-shadow: 0 0 0 10px rgba(47, 128, 237, 0);
+                transform: translateX(2px);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(47, 128, 237, 0);
+                transform: translateX(0);
+            }
+        }
+
+        .ds-menu-item.active.ds-active-pulse,
+        .ds-submenu-item.active.ds-active-pulse {
+            animation: dsMenuActivePulse 1s ease-out 1;
+            outline: 1px solid rgba(47, 128, 237, 0.45);
+            outline-offset: 1px;
+            will-change: transform, box-shadow;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ds-menu-item.active.ds-active-pulse,
+            .ds-submenu-item.active.ds-active-pulse {
+                animation: none;
+            }
+        }
+    </style>
     <?= $view->yieldSection('head') ?>
 </head>
 <body>
@@ -473,13 +504,101 @@ $normalizeMenuSearch = static function (array $parts): string {
     const toggles = document.querySelectorAll('[data-sidebar-toggle]');
     const searchInput = document.getElementById('ds-menu-search');
     const emptyState = document.getElementById('ds-menu-empty');
+    const menuScroll = document.querySelector('.ds-menu-scroll');
     const menuSections = Array.from(document.querySelectorAll('[data-menu-section]'));
+    const MENU_SCROLL_KEY = 'digisecure.sidebar.scrollTop.v1';
 
     const syncOverlay = () => {
         if (!sidebar || !overlay) {
             return;
         }
         overlay.classList.toggle('show', sidebar.classList.contains('show'));
+    };
+
+    const setSubmenuOpen = (node, open) => {
+        const submenu = node.querySelector('.ds-submenu');
+        const trigger = node.querySelector('.ds-menu-item[data-bs-toggle="collapse"]');
+        if (!submenu) {
+            return;
+        }
+
+        submenu.classList.toggle('show', open);
+        if (trigger) {
+            trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+    };
+
+    const saveMenuScroll = () => {
+        if (!menuScroll) {
+            return;
+        }
+        try {
+            window.sessionStorage.setItem(MENU_SCROLL_KEY, String(menuScroll.scrollTop));
+        } catch (error) {
+            // noop: storage puede estar restringido
+        }
+    };
+
+    const restoreMenuScroll = () => {
+        if (!menuScroll) {
+            return false;
+        }
+
+        try {
+            const raw = window.sessionStorage.getItem(MENU_SCROLL_KEY);
+            if (raw === null) {
+                return false;
+            }
+            const top = Number.parseInt(raw, 10);
+            if (!Number.isFinite(top)) {
+                return false;
+            }
+            menuScroll.scrollTop = Math.max(0, top);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    };
+
+    const revealActiveMenuItem = () => {
+        if (!sidebar || !menuScroll) {
+            return null;
+        }
+
+        const active = sidebar.querySelector('.ds-submenu-item.active, .ds-menu-item.active');
+        if (!active) {
+            return null;
+        }
+
+        const parentNode = active.closest('[data-menu-node]');
+        if (parentNode) {
+            setSubmenuOpen(parentNode, true);
+        }
+
+        const containerRect = menuScroll.getBoundingClientRect();
+        const activeRect = active.getBoundingClientRect();
+        const padding = 18;
+        const isVisible =
+            activeRect.top >= (containerRect.top + padding)
+            && activeRect.bottom <= (containerRect.bottom - padding);
+
+        if (isVisible) {
+            return active;
+        }
+
+        const target = active.offsetTop - Math.round(menuScroll.clientHeight * 0.35);
+        menuScroll.scrollTop = Math.max(0, target);
+        return active;
+    };
+
+    const pulseActiveMenuItem = (activeNode) => {
+        if (!activeNode) {
+            return;
+        }
+        activeNode.classList.add('ds-active-pulse');
+        window.setTimeout(() => {
+            activeNode.classList.remove('ds-active-pulse');
+        }, 1100);
     };
 
     toggles.forEach((toggle) => {
@@ -507,6 +626,8 @@ $normalizeMenuSearch = static function (array $parts): string {
                 return;
             }
 
+            saveMenuScroll();
+
             if (window.innerWidth < 992 && sidebar) {
                 sidebar.classList.remove('show');
                 syncOverlay();
@@ -514,94 +635,112 @@ $normalizeMenuSearch = static function (array $parts): string {
         });
     });
 
-    if (!searchInput) {
-        syncOverlay();
-    } else {
-        const normalizeSearch = (value) => {
-            const raw = String(value || '').trim().toLowerCase();
-            try {
-                return raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            } catch (error) {
-                return raw;
-            }
-        };
+    const normalizeSearch = (value) => {
+        const raw = String(value || '').trim().toLowerCase();
+        try {
+            return raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        } catch (error) {
+            return raw;
+        }
+    };
 
-        const setSubmenuOpen = (node, open) => {
-            const submenu = node.querySelector('.ds-submenu');
-            const trigger = node.querySelector('.ds-menu-item[data-bs-toggle="collapse"]');
-            if (!submenu) {
-                return;
-            }
+    const resetNode = (node) => {
+        node.classList.remove('is-menu-hidden');
+        node.querySelectorAll('[data-menu-child]').forEach((child) => {
+            child.classList.remove('is-menu-hidden');
+        });
+        setSubmenuOpen(node, Boolean(node.querySelector('.ds-menu-item.active, .ds-submenu-item.active')));
+    };
 
-            submenu.classList.toggle('show', open);
-            if (trigger) {
-                trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
-            }
-        };
+    const runMenuSearch = () => {
+        if (!searchInput) {
+            return;
+        }
 
-        const resetNode = (node) => {
-            node.classList.remove('is-menu-hidden');
-            node.querySelectorAll('[data-menu-child]').forEach((child) => {
-                child.classList.remove('is-menu-hidden');
-            });
-            setSubmenuOpen(node, Boolean(node.querySelector('.ds-menu-item.active, .ds-submenu-item.active')));
-        };
+        const query = normalizeSearch(searchInput.value);
+        let visibleNodes = 0;
 
-        const runMenuSearch = () => {
-            const query = normalizeSearch(searchInput.value);
-            let visibleNodes = 0;
+        menuSections.forEach((section) => {
+            let sectionVisible = 0;
+            section.querySelectorAll('[data-menu-node]').forEach((node) => {
+                if (query === '') {
+                    resetNode(node);
+                    sectionVisible += 1;
+                    visibleNodes += 1;
+                    return;
+                }
 
-            menuSections.forEach((section) => {
-                let sectionVisible = 0;
-                section.querySelectorAll('[data-menu-node]').forEach((node) => {
-                    if (query === '') {
-                        resetNode(node);
-                        sectionVisible += 1;
-                        visibleNodes += 1;
-                        return;
-                    }
+                const ownText = normalizeSearch(node.getAttribute('data-menu-search-own'));
+                const fullText = normalizeSearch(node.getAttribute('data-menu-search'));
+                const childLinks = Array.from(node.querySelectorAll('[data-menu-child]'));
+                const ownMatches = ownText.includes(query);
+                let visibleChildren = 0;
 
-                    const ownText = normalizeSearch(node.getAttribute('data-menu-search-own'));
-                    const fullText = normalizeSearch(node.getAttribute('data-menu-search'));
-                    const childLinks = Array.from(node.querySelectorAll('[data-menu-child]'));
-                    const ownMatches = ownText.includes(query);
-                    let visibleChildren = 0;
-
-                    childLinks.forEach((child) => {
-                        const childText = normalizeSearch(child.getAttribute('data-menu-search'));
-                        const childMatches = ownMatches || childText.includes(query);
-                        child.classList.toggle('is-menu-hidden', !childMatches);
-                        if (childMatches) {
-                            visibleChildren += 1;
-                        }
-                    });
-
-                    const matches = childLinks.length > 0
-                        ? ownMatches || visibleChildren > 0
-                        : fullText.includes(query);
-
-                    node.classList.toggle('is-menu-hidden', !matches);
-                    if (matches) {
-                        sectionVisible += 1;
-                        visibleNodes += 1;
-                        setSubmenuOpen(node, childLinks.length > 0);
-                    } else {
-                        setSubmenuOpen(node, false);
+                childLinks.forEach((child) => {
+                    const childText = normalizeSearch(child.getAttribute('data-menu-search'));
+                    const childMatches = ownMatches || childText.includes(query);
+                    child.classList.toggle('is-menu-hidden', !childMatches);
+                    if (childMatches) {
+                        visibleChildren += 1;
                     }
                 });
-                section.classList.toggle('is-menu-hidden', sectionVisible === 0);
+
+                const matches = childLinks.length > 0
+                    ? ownMatches || visibleChildren > 0
+                    : fullText.includes(query);
+
+                node.classList.toggle('is-menu-hidden', !matches);
+                if (matches) {
+                    sectionVisible += 1;
+                    visibleNodes += 1;
+                    setSubmenuOpen(node, childLinks.length > 0);
+                } else {
+                    setSubmenuOpen(node, false);
+                }
             });
+            section.classList.toggle('is-menu-hidden', sectionVisible === 0);
+        });
 
-            if (emptyState) {
-                emptyState.classList.toggle('is-menu-hidden', visibleNodes !== 0 || query === '');
-            }
-        };
+        if (emptyState) {
+            emptyState.classList.toggle('is-menu-hidden', visibleNodes !== 0 || query === '');
+        }
+    };
 
+    if (searchInput) {
         searchInput.addEventListener('input', runMenuSearch);
         searchInput.addEventListener('keyup', runMenuSearch);
         searchInput.addEventListener('change', runMenuSearch);
         searchInput.addEventListener('search', runMenuSearch);
+        runMenuSearch();
+    } else {
+        document.querySelectorAll('[data-menu-node]').forEach((node) => {
+            setSubmenuOpen(node, Boolean(node.querySelector('.ds-menu-item.active, .ds-submenu-item.active')));
+        });
     }
+
+    if (menuScroll) {
+        let savingScheduled = false;
+        menuScroll.addEventListener('scroll', () => {
+            if (savingScheduled) {
+                return;
+            }
+            savingScheduled = true;
+            window.requestAnimationFrame(() => {
+                saveMenuScroll();
+                savingScheduled = false;
+            });
+        }, { passive: true });
+    }
+
+    window.addEventListener('beforeunload', saveMenuScroll);
+
+    restoreMenuScroll();
+    const activeNode = revealActiveMenuItem();
+    window.requestAnimationFrame(() => {
+        pulseActiveMenuItem(activeNode);
+    });
+    saveMenuScroll();
+    syncOverlay();
 })();
 </script>
 

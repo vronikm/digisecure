@@ -280,23 +280,37 @@ final class AdministrarUsuariosService
         );
     }
 
-    public function resetearPassword(string $id, string $passwordPlano, string $actorId, string $ip): void
+    public function resetearPassword(
+        string $id,
+        string $passwordPlano,
+        string $actorId,
+        string $ip,
+        bool $actorIsSuperAdmin = false,
+    ): void
     {
         if (strlen($passwordPlano) < 8) {
             throw new DomainException('La contraseña debe tener al menos 8 caracteres.');
         }
-        $usuario = $this->repo->findUserById($id);
+        $usuario = $actorIsSuperAdmin
+            ? $this->findUserGlobalById($id)
+            : $this->repo->findUserById($id);
         if ($usuario === null) {
             throw new DomainException('Usuario no encontrado.');
         }
 
-        $this->repo->update($id, [
+        $updateData = [
             'password_hash' => $this->hasher->hash($passwordPlano),
             'password_changed_at' => Clock::nowString(),
             'debe_cambiar_password' => 1,
             'intentos_fallidos' => 0,
             'bloqueado_hasta' => null,
-        ]);
+        ];
+        if ($actorIsSuperAdmin) {
+            $updateData['updated_at'] = Clock::nowString();
+            $this->updateUserGlobal($id, $updateData);
+        } else {
+            $this->repo->update($id, $updateData);
+        }
 
         $this->audit->log(
             'usuario.password_reseteado',
@@ -448,12 +462,27 @@ final class AdministrarUsuariosService
     private function createUserInTenant(string $tenantId, array $data): string
     {
         $id = IdGenerator::ulid();
-        $payload = array_merge($data, [
+        $now = Clock::nowString();
+        $email = trim((string) ($data['email'] ?? ''));
+        $payload = [
             'id' => $id,
             'tenant_id' => $tenantId,
-            'created_at' => Clock::nowString(),
-            'updated_at' => Clock::nowString(),
-        ]);
+            'email' => $email,
+            'email_normalizado' => mb_strtolower($email, 'UTF-8'),
+            'password_hash' => (string) ($data['password_hash'] ?? ''),
+            'nombres' => (string) ($data['nombres'] ?? ''),
+            'apellidos' => (string) ($data['apellidos'] ?? ''),
+            'cargo' => $data['cargo'] ?? null,
+            'telefono' => $data['telefono'] ?? null,
+            'estado' => (string) ($data['estado'] ?? 'activo'),
+            'mfa_habilitado' => (int) ($data['mfa_habilitado'] ?? 0),
+            'intentos_fallidos' => (int) ($data['intentos_fallidos'] ?? 0),
+            'password_changed_at' => (string) ($data['password_changed_at'] ?? $now),
+            'debe_cambiar_password' => (int) ($data['debe_cambiar_password'] ?? 1),
+            'created_by' => $data['created_by'] ?? null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
 
         $this->db->execute(
             'INSERT INTO usuarios

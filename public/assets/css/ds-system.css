@@ -1301,6 +1301,25 @@ body {
 .ds-table tbody tr:last-child td { border-bottom: none; }
 .ds-table tbody tr { transition: background .12s; }
 .ds-table tbody tr:hover { background: #f8fafc; }
+.ds-table .ds-table-group-row td {
+    background: linear-gradient(180deg, #f6f9ff 0%, #edf3fd 100%);
+    border-bottom: 1px solid #dce8fa;
+    padding-top: .7rem;
+    padding-bottom: .7rem;
+}
+.ds-table .ds-table-group-row:hover { background: transparent; }
+.ds-table .ds-group-title {
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #1d4f91;
+}
+.ds-table .ds-group-sub {
+    font-size: .74rem;
+    color: #5a6f8f;
+    margin-top: .1rem;
+}
 .ds-table .ds-cell-name {
     font-weight: 600;
     color: var(--ds-text);

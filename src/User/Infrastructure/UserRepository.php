@@ -82,6 +82,34 @@ final class UserRepository extends BaseRepository
     }
 
     /**
+     * Lista usuarios globales (cross-tenant), ordenados por tenant.
+     * Uso exclusivo para vistas de Super Administrador.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listGlobalOrderedByTenant(int $limit = 50, int $offset = 0, ?string $estado = null): array
+    {
+        $where = '';
+        $bindings = [];
+
+        if ($estado !== null) {
+            $where = 'estado = :estado';
+            $bindings['estado'] = $estado;
+        }
+
+        $sql = 'SELECT id, tenant_id, email, nombres, apellidos, cargo, estado, ultimo_login_at, created_at
+                FROM usuarios';
+        if ($where !== '') {
+            $sql .= " WHERE {$where}";
+        }
+        $sql .= ' ORDER BY tenant_id ASC, apellidos ASC, nombres ASC LIMIT :limit OFFSET :offset';
+        $bindings['limit'] = $limit;
+        $bindings['offset'] = $offset;
+
+        return $this->db->fetchAll($sql, $bindings);
+    }
+
+    /**
      * Cuenta usuarios del tenant.
      */
     public function countByTenant(?string $estado = null): int
@@ -93,6 +121,22 @@ final class UserRepository extends BaseRepository
             $bindings['estado'] = $estado;
         }
         return $this->tenantCount($where, $bindings);
+    }
+
+    /**
+     * Cuenta usuarios globales (cross-tenant).
+     * Uso exclusivo para vistas de Super Administrador.
+     */
+    public function countGlobal(?string $estado = null): int
+    {
+        if ($estado === null) {
+            return (int) $this->db->fetchScalar('SELECT COUNT(*) FROM usuarios');
+        }
+
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM usuarios WHERE estado = :estado',
+            ['estado' => $estado],
+        );
     }
 
     /**

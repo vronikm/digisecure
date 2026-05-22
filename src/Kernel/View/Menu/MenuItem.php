@@ -22,6 +22,7 @@ final readonly class MenuItem
      * @param string|null $badge     Texto del badge (ej: conteo de pendientes)
      * @param string $badgeClass     Clase CSS del badge
      * @param string|null $description Texto de apoyo para clarificar el objetivo del item
+     * @param list<string> $activeWhenPrefixes Prefijos de ruta adicionales para marcar activo
      */
     public function __construct(
         public string $label,
@@ -32,6 +33,7 @@ final readonly class MenuItem
         public ?string $badge = null,
         public string $badgeClass = 'bg-primary',
         public ?string $description = null,
+        public array $activeWhenPrefixes = [],
     ) {
     }
 
@@ -79,6 +81,12 @@ final readonly class MenuItem
     {
         if ($this->url !== null && $this->url === $currentPath) {
             return true;
+        }
+
+        foreach ($this->activeWhenPrefixes as $prefix) {
+            if ($prefix !== '' && str_starts_with($currentPath, $prefix)) {
+                return true;
+            }
         }
 
         foreach ($this->children as $child) {
