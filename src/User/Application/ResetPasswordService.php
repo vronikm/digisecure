@@ -50,7 +50,8 @@ final class ResetPasswordService
             'SELECT u.id, u.tenant_id, u.email, u.token_recuperacion_expira_at,
                     t.estado AS tenant_estado, t.razon_social AS tenant_nombre
              FROM usuarios u
-             INNER JOIN tenants t ON t.id = u.tenant_id
+             INNER JOIN tenants t
+                     ON t.id COLLATE utf8mb4_0900_ai_ci = u.tenant_id COLLATE utf8mb4_0900_ai_ci
              WHERE u.token_recuperacion_hash = :hash AND u.estado = :estado',
             ['hash' => $tokenHash, 'estado' => 'activo'],
         );

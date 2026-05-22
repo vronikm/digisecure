@@ -328,7 +328,7 @@ final class SuperadminController
                 ip: $request->clientIp(),
             );
 
-            return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
+            return Response::redirect($this->securePath($request, "/admin/tenants/{$id}/editar"));
         } catch (\Throwable) {
             $this->flash->error('No se pudo actualizar el tenant. Verifica datos unicos y obligatorios.');
             return $this->view->response('superadmin/tenant-edit', [

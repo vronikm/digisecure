@@ -34,15 +34,68 @@ $expedientesCompletosPct = $expedientesTotal > 0 ? (int) round(($expedientesComp
 
 <?php $view->section('head') ?>
 <style>
+    .ds-dashboard-topbar {
+        margin-bottom: 1.1rem;
+    }
+
+    .ds-dashboard-toolbar {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+
+    .ds-dashboard-section {
+        margin-bottom: 2rem;
+    }
+
+    .ds-dashboard-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .ds-dashboard-section > .row {
+        --bs-gutter-x: 1.6rem;
+        --bs-gutter-y: 1.6rem;
+    }
+
     .ds-report-hero {
         overflow: hidden;
         border: 0;
         border-radius: 28px;
         background:
-            radial-gradient(circle at top right, rgba(14, 165, 164, 0.18), transparent 34%),
-            linear-gradient(135deg, #15304f, #1b4b72);
+            radial-gradient(circle at top right, rgba(47, 128, 237, 0.18), transparent 34%),
+            linear-gradient(135deg, #15304f, #1d4d8f);
         color: #fff;
         box-shadow: 0 18px 34px rgba(18, 45, 77, 0.16);
+    }
+
+    .ds-report-hero .card-body {
+        padding: clamp(1.45rem, 2.25vw, 2.65rem) !important;
+    }
+
+    .ds-report-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem 1.5rem;
+        align-items: start;
+    }
+
+    .ds-report-copy h2 {
+        margin: 0 0 0.75rem 0;
+        line-height: 1.18;
+        font-size: clamp(1.3rem, 1.65vw, 1.9rem);
+    }
+
+    .ds-report-copy p {
+        margin: 0;
+        max-width: 64ch;
+    }
+
+    .ds-report-side {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.55rem;
     }
 
     .ds-report-eyebrow {
@@ -52,7 +105,9 @@ $expedientesCompletosPct = $expedientesTotal > 0 ? (int) round(($expedientesComp
         margin-bottom: 0.9rem;
         padding: 0.38rem 0.72rem;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(125, 211, 252, 0.18);
+        color: #e0f2fe;
+        border: 1px solid rgba(186, 230, 253, 0.28);
         font-size: 0.78rem;
         font-weight: 700;
         letter-spacing: 0.08em;
@@ -177,6 +232,14 @@ $expedientesCompletosPct = $expedientesTotal > 0 ? (int) round(($expedientesComp
     }
 
     @media (max-width: 991.98px) {
+        .ds-report-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .ds-report-side {
+            align-items: flex-start;
+        }
+
         .ds-insight-strip {
             grid-template-columns: 1fr;
         }
@@ -190,254 +253,279 @@ $expedientesCompletosPct = $expedientesTotal > 0 ? (int) round(($expedientesComp
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<section class="card ds-report-hero mb-4">
-    <div class="card-body p-4 p-lg-5">
-        <div class="d-flex flex-column flex-lg-row justify-content-between gap-4">
-            <div>
-                <span class="ds-report-eyebrow"><i class="bi bi-bar-chart-line"></i>Tablero ejecutivo</span>
-                <h1 class="h3 mb-3">KPIs con lectura clara para operacion y cumplimiento.</h1>
-                <p class="mb-0">
-                    Este panel prioriza avance documental, estado de fichas y proximos vencimientos
-                    para que la toma de decisiones sea mas rapida.
-                </p>
+<div class="ds-page-header ds-dashboard-topbar">
+    <div class="ds-page-title">
+        <span class="ds-page-mark"><i class="bi bi-bar-chart-line-fill"></i></span>
+        <div>
+            <h1>Tablero ejecutivo</h1>
+            <small>KPIs y tendencias para control operativo y cumplimiento documental</small>
+        </div>
+    </div>
+    <div class="ds-dashboard-toolbar">
+        <a href="<?= $view->url('/reportes/exportar') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+            <i class="bi bi-file-earmark-arrow-down"></i>Exportar reporte
+        </a>
+    </div>
+</div>
+
+<section class="ds-dashboard-section">
+    <section class="card ds-report-hero">
+        <div class="card-body">
+            <div class="ds-report-layout">
+                <div class="ds-report-copy">
+                    <span class="ds-report-eyebrow"><i class="bi bi-bar-chart-line"></i>Tablero ejecutivo</span>
+                    <h2>KPIs con lectura clara para operacion y cumplimiento.</h2>
+                    <p>
+                        Este panel prioriza avance documental, estado de fichas y proximos vencimientos
+                        para que la toma de decisiones sea mas rapida.
+                    </p>
+                </div>
+                <div class="ds-report-side">
+                    <span class="badge text-bg-light px-3 py-2">Actualizacion con datos del sistema</span>
+                    <a href="<?= $view->url('/reportes/exportar') ?>" class="btn btn-light">
+                        <i class="bi bi-file-earmark-arrow-down me-1"></i>Exportar reporte
+                    </a>
+                </div>
             </div>
-            <div class="d-flex flex-column align-items-lg-end gap-2">
-                <span class="badge text-bg-light px-3 py-2">Actualizacion con datos del sistema</span>
-                <a href="<?= $view->url('/reportes/exportar') ?>" class="btn btn-light">
-                    <i class="bi bi-file-earmark-arrow-down me-1"></i>Exportar reporte
-                </a>
+
+            <div class="ds-insight-strip">
+                <div class="ds-insight-card">
+                    <span class="small text-white-50">Cumplimiento documental</span>
+                    <strong><?= $docsAceptadosPct ?>%</strong>
+                    <span class="small text-white-50"><?= $docsAceptados ?> aceptados de <?= $docsSubidos ?> cargados</span>
+                </div>
+                <div class="ds-insight-card">
+                    <span class="small text-white-50">Fichas completas</span>
+                    <strong><?= $fichasCompletasPct ?>%</strong>
+                    <span class="small text-white-50"><?= $fichasCompletas ?> completas del total registrado</span>
+                </div>
+                <div class="ds-insight-card">
+                    <span class="small text-white-50">Expedientes completos</span>
+                    <strong><?= $expedientesCompletosPct ?>%</strong>
+                    <span class="small text-white-50"><?= $expedientesCompletos ?> expedientes listos para operar</span>
+                </div>
             </div>
         </div>
+    </section>
+</section>
 
-        <div class="ds-insight-strip">
-            <div class="ds-insight-card">
-                <span class="small text-white-50">Cumplimiento documental</span>
-                <strong><?= $docsAceptadosPct ?>%</strong>
-                <span class="small text-white-50"><?= $docsAceptados ?> aceptados de <?= $docsSubidos ?> cargados</span>
-            </div>
-            <div class="ds-insight-card">
-                <span class="small text-white-50">Fichas completas</span>
-                <strong><?= $fichasCompletasPct ?>%</strong>
-                <span class="small text-white-50"><?= $fichasCompletas ?> completas del total registrado</span>
-            </div>
-            <div class="ds-insight-card">
-                <span class="small text-white-50">Expedientes completos</span>
-                <strong><?= $expedientesCompletosPct ?>%</strong>
-                <span class="small text-white-50"><?= $expedientesCompletos ?> expedientes listos para operar</span>
-            </div>
+<section class="ds-dashboard-section">
+    <div class="row g-3">
+        <div class="col-sm-6 col-xl-3">
+            <section class="card ds-summary-card">
+                <div class="card-body">
+                    <div class="ds-summary-top">
+                        <div>
+                            <div class="text-uppercase small fw-bold text-primary">Total fichas</div>
+                            <div class="display-6 fw-semibold mb-0"><?= $fichasTotal ?></div>
+                        </div>
+                        <span class="ds-summary-icon" style="background: rgba(47, 128, 237, 0.12); color: #2f80ed;">
+                            <i class="bi bi-person-vcard"></i>
+                        </span>
+                    </div>
+                    <div class="ds-summary-note">Base actual de personal y movimientos de ficha.</div>
+                </div>
+            </section>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <section class="card ds-summary-card">
+                <div class="card-body">
+                    <div class="ds-summary-top">
+                        <div>
+                            <div class="text-uppercase small fw-bold text-info">Expedientes</div>
+                            <div class="display-6 fw-semibold mb-0"><?= $expedientesTotal ?></div>
+                        </div>
+                        <span class="ds-summary-icon" style="background: rgba(52, 152, 219, 0.12); color: #3498db;">
+                            <i class="bi bi-folder2-open"></i>
+                        </span>
+                    </div>
+                    <div class="ds-summary-note">Muestra el universo documental gestionado por la empresa.</div>
+                </div>
+            </section>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <section class="card ds-summary-card">
+                <div class="card-body">
+                    <div class="ds-summary-top">
+                        <div>
+                            <div class="text-uppercase small fw-bold text-success">Docs aceptados</div>
+                            <div class="display-6 fw-semibold mb-0"><?= $docsAceptados ?></div>
+                        </div>
+                        <span class="ds-summary-icon" style="background: rgba(39, 174, 96, 0.12); color: #27ae60;">
+                            <i class="bi bi-check2-circle"></i>
+                        </span>
+                    </div>
+                    <div class="ds-summary-note">Carga ya validada y util para cumplimiento.</div>
+                </div>
+            </section>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <section class="card ds-summary-card">
+                <div class="card-body">
+                    <div class="ds-summary-top">
+                        <div>
+                            <div class="text-uppercase small fw-bold text-warning">Por atender</div>
+                            <div class="display-6 fw-semibold mb-0"><?= $docsPendientes + $docsRevision + $docsRechazados + $docsVencidos ?></div>
+                        </div>
+                        <span class="ds-summary-icon" style="background: rgba(242, 153, 74, 0.14); color: #f2994a;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </span>
+                    </div>
+                    <div class="ds-summary-note">Pendientes, en revision, rechazados o vencidos.</div>
+                </div>
+            </section>
         </div>
     </div>
 </section>
 
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <section class="card ds-summary-card">
-            <div class="card-body">
-                <div class="ds-summary-top">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-primary">Total fichas</div>
-                        <div class="display-6 fw-semibold mb-0"><?= $fichasTotal ?></div>
-                    </div>
-                    <span class="ds-summary-icon" style="background: rgba(47, 128, 237, 0.12); color: #2f80ed;">
-                        <i class="bi bi-person-vcard"></i>
-                    </span>
+<section class="ds-dashboard-section">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <section class="card ds-chart-card h-100">
+                <div class="card-header">
+                    <h2><i class="bi bi-bar-chart me-2 text-primary"></i>Fichas creadas por mes</h2>
+                    <p class="text-muted small mb-0">Ultimos 12 meses para ver ritmo de altas y actualizaciones.</p>
                 </div>
-                <div class="ds-summary-note">Base actual de personal y movimientos de ficha.</div>
-            </div>
-        </section>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <section class="card ds-summary-card">
-            <div class="card-body">
-                <div class="ds-summary-top">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-info">Expedientes</div>
-                        <div class="display-6 fw-semibold mb-0"><?= $expedientesTotal ?></div>
+                <div class="card-body">
+                    <div class="ds-canvas-wrap">
+                        <canvas id="chartFichasMes"></canvas>
                     </div>
-                    <span class="ds-summary-icon" style="background: rgba(52, 152, 219, 0.12); color: #3498db;">
-                        <i class="bi bi-folder2-open"></i>
-                    </span>
                 </div>
-                <div class="ds-summary-note">Muestra el universo documental gestionado por la empresa.</div>
-            </div>
-        </section>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <section class="card ds-summary-card">
-            <div class="card-body">
-                <div class="ds-summary-top">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-success">Docs aceptados</div>
-                        <div class="display-6 fw-semibold mb-0"><?= $docsAceptados ?></div>
+            </section>
+        </div>
+        <div class="col-lg-4">
+            <section class="card ds-focus-card h-100">
+                <div class="card-header">
+                    <h2><i class="bi bi-lightning-charge me-2 text-warning"></i>Lectura rapida</h2>
+                    <p class="text-muted small mb-0">Sintesis de salud operacional y cumplimiento.</p>
+                </div>
+                <div class="card-body">
+                    <div class="ds-focus-metric">
+                        <div class="d-flex justify-content-between small">
+                            <span>Documentos aceptados</span>
+                            <strong><?= $docsAceptadosPct ?>%</strong>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: <?= $docsAceptadosPct ?>%"></div>
+                        </div>
                     </div>
-                    <span class="ds-summary-icon" style="background: rgba(39, 174, 96, 0.12); color: #27ae60;">
-                        <i class="bi bi-check2-circle"></i>
-                    </span>
-                </div>
-                <div class="ds-summary-note">Carga ya validada y util para cumplimiento.</div>
-            </div>
-        </section>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <section class="card ds-summary-card">
-            <div class="card-body">
-                <div class="ds-summary-top">
-                    <div>
-                        <div class="text-uppercase small fw-bold text-warning">Por atender</div>
-                        <div class="display-6 fw-semibold mb-0"><?= $docsPendientes + $docsRevision + $docsRechazados + $docsVencidos ?></div>
-                    </div>
-                    <span class="ds-summary-icon" style="background: rgba(242, 153, 74, 0.14); color: #f2994a;">
-                        <i class="bi bi-exclamation-triangle"></i>
-                    </span>
-                </div>
-                <div class="ds-summary-note">Pendientes, en revision, rechazados o vencidos.</div>
-            </div>
-        </section>
-    </div>
-</div>
 
-<div class="row g-4 mb-4">
-    <div class="col-lg-8">
-        <section class="card ds-chart-card h-100">
-            <div class="card-header">
-                <h2><i class="bi bi-bar-chart me-2 text-primary"></i>Fichas creadas por mes</h2>
-                <p class="text-muted small mb-0">Ultimos 12 meses para ver ritmo de altas y actualizaciones.</p>
-            </div>
-            <div class="card-body">
-                <div class="ds-canvas-wrap">
-                    <canvas id="chartFichasMes"></canvas>
-                </div>
-            </div>
-        </section>
-    </div>
-    <div class="col-lg-4">
-        <section class="card ds-focus-card h-100">
-            <div class="card-header">
-                <h2><i class="bi bi-lightning-charge me-2 text-warning"></i>Lectura rapida</h2>
-                <p class="text-muted small mb-0">Sintesis de salud operacional y cumplimiento.</p>
-            </div>
-            <div class="card-body">
-                <div class="ds-focus-metric">
-                    <div class="d-flex justify-content-between small">
-                        <span>Documentos aceptados</span>
-                        <strong><?= $docsAceptadosPct ?>%</strong>
+                    <div class="ds-focus-metric">
+                        <div class="d-flex justify-content-between small">
+                            <span>Fichas completas</span>
+                            <strong><?= $fichasCompletasPct ?>%</strong>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" style="width: <?= $fichasCompletasPct ?>%"></div>
+                        </div>
                     </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-success" style="width: <?= $docsAceptadosPct ?>%"></div>
-                    </div>
-                </div>
 
-                <div class="ds-focus-metric">
-                    <div class="d-flex justify-content-between small">
-                        <span>Fichas completas</span>
-                        <strong><?= $fichasCompletasPct ?>%</strong>
+                    <div class="ds-focus-metric">
+                        <div class="d-flex justify-content-between small">
+                            <span>Expedientes completos</span>
+                            <strong><?= $expedientesCompletosPct ?>%</strong>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-info" style="width: <?= $expedientesCompletosPct ?>%"></div>
+                        </div>
                     </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-primary" style="width: <?= $fichasCompletasPct ?>%"></div>
-                    </div>
-                </div>
 
-                <div class="ds-focus-metric">
-                    <div class="d-flex justify-content-between small">
-                        <span>Expedientes completos</span>
-                        <strong><?= $expedientesCompletosPct ?>%</strong>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-info" style="width: <?= $expedientesCompletosPct ?>%"></div>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <strong class="small">Proximos vencimientos</strong>
-                        <span class="badge text-bg-warning"><?= $docsProximos ?></span>
-                    </div>
-                    <div class="ds-focus-list">
-                        <?php if (($kpi['docs_vencimiento_proximos'] ?? []) === []): ?>
-                            <div class="ds-focus-item">
-                                <span class="text-muted small">No hay documentos por vencer en el rango analizado.</span>
-                            </div>
-                        <?php else: ?>
-                            <?php foreach (array_slice($kpi['docs_vencimiento_proximos'], 0, 4) as $row): ?>
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong class="small">Proximos vencimientos</strong>
+                            <span class="badge text-bg-warning"><?= $docsProximos ?></span>
+                        </div>
+                        <div class="ds-focus-list">
+                            <?php if (($kpi['docs_vencimiento_proximos'] ?? []) === []): ?>
                                 <div class="ds-focus-item">
-                                    <span class="small text-muted">Semana <?= $e($row['semana']) ?></span>
-                                    <strong><?= (int) ($row['total'] ?? 0) ?></strong>
+                                    <span class="text-muted small">No hay documentos por vencer en el rango analizado.</span>
                                 </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                            <?php else: ?>
+                                <?php foreach (array_slice($kpi['docs_vencimiento_proximos'], 0, 4) as $row): ?>
+                                    <div class="ds-focus-item">
+                                        <span class="small text-muted">Semana <?= $e($row['semana']) ?></span>
+                                        <strong><?= (int) ($row['total'] ?? 0) ?></strong>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </div>
-</div>
+</section>
 
-<div class="row g-4 mb-4">
-    <div class="col-lg-4">
-        <section class="card ds-chart-card h-100">
-            <div class="card-header">
-                <h2><i class="bi bi-pie-chart me-2 text-success"></i>Fichas por estado</h2>
-            </div>
-            <div class="card-body">
-                <div class="ds-canvas-wrap ds-canvas-wrap--sm">
-                    <canvas id="chartFichasEstado"></canvas>
+<section class="ds-dashboard-section">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <section class="card ds-chart-card h-100">
+                <div class="card-header">
+                    <h2><i class="bi bi-pie-chart me-2 text-success"></i>Fichas por estado</h2>
                 </div>
-            </div>
-        </section>
-    </div>
-    <div class="col-lg-4">
-        <section class="card ds-chart-card h-100">
-            <div class="card-header">
-                <h2><i class="bi bi-diagram-3 me-2 text-info"></i>Fichas por tipo</h2>
-            </div>
-            <div class="card-body">
-                <div class="ds-canvas-wrap ds-canvas-wrap--sm">
-                    <canvas id="chartFichasTipo"></canvas>
+                <div class="card-body">
+                    <div class="ds-canvas-wrap ds-canvas-wrap--sm">
+                        <canvas id="chartFichasEstado"></canvas>
+                    </div>
                 </div>
-            </div>
-        </section>
-    </div>
-    <div class="col-lg-4">
-        <section class="card ds-chart-card h-100">
-            <div class="card-header">
-                <h2><i class="bi bi-folder-check me-2 text-primary"></i>Expedientes por estado</h2>
-            </div>
-            <div class="card-body">
-                <div class="ds-canvas-wrap ds-canvas-wrap--sm">
-                    <canvas id="chartExpedientes"></canvas>
+            </section>
+        </div>
+        <div class="col-lg-4">
+            <section class="card ds-chart-card h-100">
+                <div class="card-header">
+                    <h2><i class="bi bi-diagram-3 me-2 text-info"></i>Fichas por tipo</h2>
                 </div>
-            </div>
-        </section>
+                <div class="card-body">
+                    <div class="ds-canvas-wrap ds-canvas-wrap--sm">
+                        <canvas id="chartFichasTipo"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-4">
+            <section class="card ds-chart-card h-100">
+                <div class="card-header">
+                    <h2><i class="bi bi-folder-check me-2 text-primary"></i>Expedientes por estado</h2>
+                </div>
+                <div class="card-body">
+                    <div class="ds-canvas-wrap ds-canvas-wrap--sm">
+                        <canvas id="chartExpedientes"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
-</div>
+</section>
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <section class="card ds-chart-card h-100">
-            <div class="card-header">
-                <h2><i class="bi bi-stack me-2 text-warning"></i>Documentos por estado</h2>
-            </div>
-            <div class="card-body">
-                <div class="ds-canvas-wrap ds-canvas-wrap--sm">
-                    <canvas id="chartDocsEstado"></canvas>
+<section class="ds-dashboard-section">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <section class="card ds-chart-card h-100">
+                <div class="card-header">
+                    <h2><i class="bi bi-stack me-2 text-warning"></i>Documentos por estado</h2>
                 </div>
-            </div>
-        </section>
-    </div>
-    <div class="col-lg-8">
-        <section class="card ds-chart-card h-100">
-            <div class="card-header">
-                <h2><i class="bi bi-calendar-event me-2 text-danger"></i>Documentos por vencer</h2>
-                <p class="text-muted small mb-0">Ventana de 90 dias agrupada por semana para anticipar carga operativa.</p>
-            </div>
-            <div class="card-body">
-                <div class="ds-canvas-wrap">
-                    <canvas id="chartVencimientos"></canvas>
+                <div class="card-body">
+                    <div class="ds-canvas-wrap ds-canvas-wrap--sm">
+                        <canvas id="chartDocsEstado"></canvas>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
+        <div class="col-lg-8">
+            <section class="card ds-chart-card h-100">
+                <div class="card-header">
+                    <h2><i class="bi bi-calendar-event me-2 text-danger"></i>Documentos por vencer</h2>
+                    <p class="text-muted small mb-0">Ventana de 90 dias agrupada por semana para anticipar carga operativa.</p>
+                </div>
+                <div class="card-body">
+                    <div class="ds-canvas-wrap">
+                        <canvas id="chartVencimientos"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
-</div>
+</section>
 <?php $view->endSection() ?>
 
 <?php $view->section('scripts') ?>
