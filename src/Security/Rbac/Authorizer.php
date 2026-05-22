@@ -93,12 +93,9 @@ final class Authorizer
         $rows = $this->db->fetchAll(
             'SELECT DISTINCT p.codigo
              FROM usuarios_roles ur
-             INNER JOIN roles r
-                     ON r.id COLLATE utf8mb4_0900_ai_ci = ur.role_id COLLATE utf8mb4_0900_ai_ci
-             INNER JOIN roles_permisos rp
-                     ON rp.role_id COLLATE utf8mb4_0900_ai_ci = r.id COLLATE utf8mb4_0900_ai_ci
-             INNER JOIN permisos p
-                     ON p.id COLLATE utf8mb4_0900_ai_ci = rp.permiso_id COLLATE utf8mb4_0900_ai_ci
+             INNER JOIN roles r ON r.id = ur.role_id
+             INNER JOIN roles_permisos rp ON rp.role_id = r.id
+             INNER JOIN permisos p ON p.id = rp.permiso_id
              WHERE ur.usuario_id = :usuario_id
                AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
             [
@@ -120,8 +117,7 @@ final class Authorizer
         return $this->db->fetchAll(
             'SELECT r.codigo, r.nombre
              FROM usuarios_roles ur
-             INNER JOIN roles r
-                     ON r.id COLLATE utf8mb4_0900_ai_ci = ur.role_id COLLATE utf8mb4_0900_ai_ci
+             INNER JOIN roles r ON r.id = ur.role_id
              WHERE ur.usuario_id = :usuario_id
                AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
             [
