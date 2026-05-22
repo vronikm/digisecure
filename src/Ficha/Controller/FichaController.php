@@ -8,6 +8,7 @@ use DigiSecure\Ficha\Application\ActualizarFichaService;
 use DigiSecure\Ficha\Application\CompletarFichaService;
 use DigiSecure\Ficha\Application\CrearFichaService;
 use DigiSecure\Ficha\Application\EliminarFichaService;
+use DigiSecure\Ficha\Application\EnviarRevisionFichaService;
 use DigiSecure\Ficha\Application\GenerarDeclaracionLealtadService;
 use DigiSecure\Ficha\Application\GenerarFormatoHuellasService;
 use DigiSecure\Ficha\Application\RecuperarFichaService;
@@ -42,6 +43,7 @@ final class FichaController
         private readonly FichaRepository $fichaRepo,
         private readonly CrearFichaService $crearService,
         private readonly ActualizarFichaService $actualizarService,
+        private readonly EnviarRevisionFichaService $enviarRevisionService,
         private readonly CompletarFichaService $completarService,
         private readonly EliminarFichaService $eliminarService,
         private readonly RecuperarFichaService $recuperarService,
@@ -221,6 +223,23 @@ final class FichaController
                 'cursos' => $catalogoCursos,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    // ======================== ENVIAR A REVISION ========================
+
+    public function enviarRevision(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        try {
+            $this->enviarRevisionService->execute($id, $user->id, $request->clientIp());
+            $this->flash->success('Ficha enviada a revision correctamente.');
+            return Response::redirect($this->securePath($request, "/guardias/{$id}"));
+        } catch (DomainException $e) {
+            $this->flash->error($e->getMessage(), 'No se pudo enviar la ficha a revision');
+            return Response::redirect($this->securePath($request, "/guardias/{$id}"));
         }
     }
 

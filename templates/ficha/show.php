@@ -154,6 +154,16 @@ $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr(
                 <i class="bi bi-pencil"></i>Editar
             </a>
             <?php endif ?>
+            <?php if ($user->tienePermiso('guardias.editar') && $estado === EstadoFicha::BORRADOR): ?>
+            <form method="post" action="<?= $view->url('/guardias/' . $fichaId . '/revision') ?>" class="ds-form-inline"
+                  onsubmit="return confirm('Enviar esta ficha a revisión? Luego podrás completarla cuando cumpla los requisitos.');"
+                  style="display: inline;">
+                <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm">
+                    <i class="bi bi-send-check"></i>Enviar a revisión
+                </button>
+            </form>
+            <?php endif ?>
             <?php if ($user->tienePermiso('guardias.editar') && $estado === EstadoFicha::EN_REVISION): ?>
             <form method="post" action="<?= $view->url('/guardias/' . $fichaId . '/completar') ?>" class="ds-form-inline"
                   onsubmit="return confirm('Marcar esta ficha como COMPLETA? Se validaran los requisitos basicos.');"

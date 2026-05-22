@@ -180,6 +180,16 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                                     Editar
                                 </a>
                             <?php endif ?>
+                            <?php if ($user->tienePermiso('guardias.editar') && $f['estado'] === 'BORRADOR'): ?>
+                                <form method="post" action="<?= $view->url('/guardias/' . $f['id'] . '/revision') ?>"
+                                      class="d-inline ds-form-inline"
+                                      onsubmit="return confirm('Enviar esta ficha a revisión?');">
+                                    <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                                    <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm" title="Enviar a revisión">
+                                        Revisar
+                                    </button>
+                                </form>
+                            <?php endif ?>
                             <?php if ($user->tienePermiso('guardias.eliminar')): ?>
                                 <?php if ($f['estado'] === 'ANULADA'): ?>
                                     <form method="post" action="<?= $view->url('/guardias/' . $f['id'] . '/recuperar') ?>" class="d-inline js-ficha-confirm-form ds-form-inline"

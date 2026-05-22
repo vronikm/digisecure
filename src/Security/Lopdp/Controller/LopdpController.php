@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DigiSecure\Security\Lopdp\Controller;
 
+use DigiSecure\Ficha\Domain\ValueObject\Cedula;
+use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
@@ -14,6 +16,7 @@ use DigiSecure\Security\Lopdp\Application\RegistrarSolicitudArcopService;
 use DigiSecure\Security\Lopdp\Application\ResponderSolicitudArcopService;
 use DigiSecure\Security\Lopdp\Infrastructure\ConsentimientoRepository;
 use DigiSecure\Security\Lopdp\Infrastructure\SolicitudArcopRepository;
+use DigiSecure\User\Infrastructure\UserRepository;
 use DigiSecure\Shared\Domain\DomainException;
 
 /**
@@ -30,6 +33,8 @@ final class LopdpController
         private readonly ViewRenderer $view,
         private readonly SolicitudArcopRepository $solicitudRepo,
         private readonly ConsentimientoRepository $consentRepo,
+        private readonly FichaRepository $fichaRepo,
+        private readonly UserRepository $userRepo,
         private readonly RegistrarSolicitudArcopService $registrarService,
         private readonly ResponderSolicitudArcopService $responderService,
         private readonly FlashBag $flash,
@@ -124,6 +129,89 @@ final class LopdpController
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Endpoint AJAX para autocompletar datos del titular por cédula.
+     * Solo opera sobre entidades del tenant actual.
+     */
+    public function buscarTitular(Request $request): Response
+    {
+        $tipo = strtolower(trim((string) ($request->post['titular_tipo'] ?? '')));
+        $cedulaRaw = preg_replace('/\D+/', '', (string) ($request->post['cedula'] ?? '')) ?? '';
+
+        if (!in_array($tipo, ['guardia', 'usuario'], true)) {
+            return Response::json([
+                'ok' => false,
+                'found' => false,
+                'message' => 'Selecciona tipo de titular guardia o usuario para buscar automáticamente.',
+            ]);
+        }
+
+        if ($cedulaRaw === '') {
+            return Response::json([
+                'ok' => false,
+                'found' => false,
+                'message' => 'Ingresa una cédula para iniciar la búsqueda.',
+            ]);
+        }
+
+        try {
+            $cedula = Cedula::fromString($cedulaRaw);
+        } catch (DomainException $e) {
+            return Response::json([
+                'ok' => false,
+                'found' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        $hash = $cedula->hash();
+        if ($tipo === 'guardia') {
+            $guardia = $this->fichaRepo->findLatestByCedulaHash($hash);
+            if ($guardia === null) {
+                return Response::json([
+                    'ok' => true,
+                    'found' => false,
+                    'message' => 'No existe una ficha de guardia para esa cédula en esta empresa.',
+                ]);
+            }
+
+            return Response::json([
+                'ok' => true,
+                'found' => true,
+                'titular' => [
+                    'titular_id' => (string) $guardia['id'],
+                    'titular_nombre' => trim(((string) ($guardia['apellidos'] ?? '')) . ' ' . ((string) ($guardia['nombres'] ?? ''))),
+                    'titular_email' => (string) ($guardia['email'] ?? ''),
+                    'titular_telefono' => (string) ($guardia['celular'] ?? ''),
+                    'origen' => 'guardia',
+                    'referencia' => (string) ($guardia['correlativo'] ?? ''),
+                ],
+            ]);
+        }
+
+        $usuario = $this->userRepo->findByCedulaHash($hash);
+        if ($usuario === null) {
+            return Response::json([
+                'ok' => true,
+                'found' => false,
+                'message' => 'No existe un usuario para esa cédula en esta empresa.',
+            ]);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'found' => true,
+            'titular' => [
+                'titular_id' => (string) $usuario['id'],
+                'titular_nombre' => trim(((string) ($usuario['apellidos'] ?? '')) . ' ' . ((string) ($usuario['nombres'] ?? ''))),
+                'titular_email' => (string) ($usuario['email'] ?? ''),
+                'titular_telefono' => (string) ($usuario['telefono'] ?? ''),
+                'origen' => 'usuario',
+                'referencia' => (string) ($usuario['email'] ?? ''),
+            ],
+        ]);
     }
 
     public function verSolicitud(Request $request, CsrfGuard $csrf, string $id): Response

@@ -55,6 +55,23 @@ final class UserRepository extends BaseRepository
     }
 
     /**
+     * Busca un usuario por hash de cédula dentro del tenant actual.
+     * Se usa en LOPDP para autocompletar titulares en solicitudes ARCO-P.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByCedulaHash(string $cedulaHash): ?array
+    {
+        return $this->tenantQueryOne(
+            'SELECT id, nombres, apellidos, email, telefono
+             FROM usuarios
+             WHERE cedula_hash = :hash
+             LIMIT 1',
+            ['hash' => $cedulaHash],
+        );
+    }
+
+    /**
      * Lista usuarios del tenant con paginación.
      *
      * @return list<array<string, mixed>>

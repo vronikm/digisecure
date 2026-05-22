@@ -53,6 +53,24 @@ final class FichaRepository extends BaseRepository
     }
 
     /**
+     * Busca la ficha más reciente por hash de cédula dentro del tenant.
+     * Se usa en LOPDP para autocompletar titulares de tipo guardia.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findLatestByCedulaHash(string $cedulaHash): ?array
+    {
+        return $this->tenantQueryOne(
+            'SELECT id, correlativo, nombres, apellidos, email, celular
+             FROM fichas
+             WHERE cedula_hash = :hash
+             ORDER BY created_at DESC
+             LIMIT 1',
+            ['hash' => $cedulaHash],
+        );
+    }
+
+    /**
      * Lista fichas del tenant con paginación y filtros opcionales.
      *
      * @param array<string, mixed> $filters  Filtros: estado, tipo_ficha, busqueda

@@ -31,14 +31,10 @@ final class SecureRouteCatalog
 
         // Expedientes y documentos
         'expedientes.dashboard' => ['fichaId' => 'guardias.id'],
-        'expedientes.documento.upload.form' => [
-            'id' => 'expedientes.id',
-            'tipoId' => 'documento_tipos.id',
-        ],
-        'expedientes.documento.upload' => [
-            'id' => 'expedientes.id',
-            'tipoId' => 'documento_tipos.id',
-        ],
+        // `tipoId` puede venir de seeds legacy (ej. SEEDDOC...) sin formato ULID;
+        // se protege el expediente y se permite tipoId plano para compatibilidad.
+        'expedientes.documento.upload.form' => ['id' => 'expedientes.id'],
+        'expedientes.documento.upload' => ['id' => 'expedientes.id'],
         'expedientes.documento.show' => ['docId' => 'documentos.id'],
         'expedientes.documento.revisar' => ['docId' => 'documentos.id'],
         'expedientes.documento.descargar' => ['docId' => 'documentos.id'],
@@ -128,7 +124,7 @@ final class SecureRouteCatalog
         ['segments' => ['guardias', '{id}', 'declaracion-lealtad.pdf'], 'scopes' => ['id' => 'guardias.id']],
         ['segments' => ['guardias', '{id}', 'formato-huellas.pdf'], 'scopes' => ['id' => 'guardias.id']],
         ['segments' => ['guardias', '{fichaId}', 'expediente'], 'scopes' => ['fichaId' => 'guardias.id']],
-        ['segments' => ['expedientes', '{id}', 'documento', '{tipoId}'], 'scopes' => ['id' => 'expedientes.id', 'tipoId' => 'documento_tipos.id']],
+        ['segments' => ['expedientes', '{id}', 'documento', '{tipoId}'], 'scopes' => ['id' => 'expedientes.id']],
         ['segments' => ['expedientes', 'documento', '{docId}'], 'scopes' => ['docId' => 'documentos.id']],
         ['segments' => ['expedientes', 'documento', '{docId}', 'descargar'], 'scopes' => ['docId' => 'documentos.id']],
         ['segments' => ['expedientes', 'documento', '{docId}', 'revisar'], 'scopes' => ['docId' => 'documentos.id']],

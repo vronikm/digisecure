@@ -43,6 +43,7 @@ $docTone = static fn(EstadoDocumento $d): string => match ($d) {
 
 $toneA = $pctA === 100 ? 'tone-success' : ($pctA >= 50 ? '' : 'tone-warning');
 $toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
+$puedeCargarDocumentos = $user->tienePermiso('expedientes.cargar') || $user->tienePermiso('expedientes.subir');
 ?>
 
 <?php $view->section('title') ?>Expediente — <?= $e($ficha['correlativo']) ?><?php $view->endSection() ?>
@@ -226,7 +227,7 @@ $toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
                                 Ver
                             </a>
                             <?php endif ?>
-                            <?php if ($user->tienePermiso('expedientes.subir')): ?>
+                            <?php if ($puedeCargarDocumentos): ?>
                             <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
                                class="ds-btn ds-btn-outline ds-btn-sm" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
                                 <?= $doc ? 'Reemplazar' : 'Subir' ?>
@@ -304,7 +305,7 @@ $toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
                                 Ver
                             </a>
                             <?php endif ?>
-                            <?php if ($user->tienePermiso('expedientes.subir')): ?>
+                            <?php if ($puedeCargarDocumentos): ?>
                             <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
                                class="ds-btn ds-btn-outline ds-btn-sm" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
                                 <?= $doc ? 'Reemplazar' : 'Subir' ?>

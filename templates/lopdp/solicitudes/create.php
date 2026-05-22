@@ -12,7 +12,7 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 ?>
 
-<?php $view->section('title') ?>Nueva solicitud ARCO-P — LOPDP<?php $view->endSection() ?>
+<?php $view->section('title') ?>Nueva solicitud ARCO-P - LOPDP<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/lopdp') ?>">LOPDP</a></li>
@@ -54,8 +54,9 @@ $e = ViewRenderer::e(...);
     </div>
 </div>
 
-<form method="post" action="<?= $view->url('/lopdp/solicitudes/crear') ?>" class="ds-form-main">
+<form method="post" action="<?= $view->url('/lopdp/solicitudes/crear') ?>" class="ds-form-main" id="arcop-create-form">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+    <input type="hidden" name="titular_id" id="titular_id" value="<?= $e($input['titular_id'] ?? '') ?>">
 
     <div class="ds-card">
         <div class="ds-card-header">
@@ -71,7 +72,7 @@ $e = ViewRenderer::e(...);
                     <div class="ds-form-field">
                         <label class="ds-form-label">Tipo de derecho ARCO-P <span class="ds-required">*</span></label>
                         <select name="tipo" class="form-select" required>
-                            <option value="">— Seleccione —</option>
+                            <option value="">- Seleccione -</option>
                             <?php foreach (['acceso','rectificacion','cancelacion','oposicion','portabilidad'] as $t): ?>
                             <option value="<?= $t ?>" <?= ($input['tipo'] ?? '') === $t ? 'selected' : '' ?>><?= ucfirst($t) ?></option>
                             <?php endforeach ?>
@@ -112,39 +113,44 @@ $e = ViewRenderer::e(...);
                 <div class="col-md-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Tipo de titular <span class="ds-required">*</span></label>
-                        <select name="titular_tipo" class="form-select" required>
-                            <option value="">— Seleccione —</option>
+                        <select name="titular_tipo" id="titular_tipo" class="form-select" required>
+                            <option value="">- Seleccione -</option>
                             <?php foreach (['guardia','usuario','externo'] as $t): ?>
                             <option value="<?= $t ?>" <?= ($input['titular_tipo'] ?? '') === $t ? 'selected' : '' ?>><?= ucfirst($t) ?></option>
                             <?php endforeach ?>
                         </select>
                     </div>
                 </div>
-                <div class="col-md-9">
+                <div class="col-md-3">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Cedula</label>
+                        <input type="text" name="titular_cedula" id="titular_cedula" class="form-control"
+                               maxlength="10" inputmode="numeric" autocomplete="off"
+                               placeholder="Solo 10 digitos"
+                               value="<?= $e($input['titular_cedula'] ?? '') ?>">
+                        <span id="titular_lookup_status" class="ds-form-help" aria-live="polite">
+                            Ingresa la cedula para autocompletar los datos del titular.
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-6">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Nombre completo <span class="ds-required">*</span></label>
-                        <input type="text" name="titular_nombre" class="form-control" maxlength="200"
+                        <input type="text" name="titular_nombre" id="titular_nombre" class="form-control" maxlength="200"
                                value="<?= $e($input['titular_nombre'] ?? '') ?>" required>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Cedula</label>
-                        <input type="text" name="titular_cedula" class="form-control" maxlength="20"
-                               value="<?= $e($input['titular_cedula'] ?? '') ?>">
-                    </div>
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Email</label>
-                        <input type="email" name="titular_email" class="form-control" maxlength="190"
+                        <input type="email" name="titular_email" id="titular_email" class="form-control" maxlength="190"
                                value="<?= $e($input['titular_email'] ?? '') ?>">
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Telefono</label>
-                        <input type="text" name="titular_telefono" class="form-control" maxlength="30"
+                        <input type="text" name="titular_telefono" id="titular_telefono" class="form-control" maxlength="30"
                                value="<?= $e($input['titular_telefono'] ?? '') ?>">
                     </div>
                 </div>
@@ -177,4 +183,153 @@ $e = ViewRenderer::e(...);
         </button>
     </div>
 </form>
+<?php $view->endSection() ?>
+
+<?php $view->section('scripts') ?>
+<script>
+(() => {
+    const tipoInput = document.getElementById('titular_tipo');
+    const cedulaInput = document.getElementById('titular_cedula');
+    const nombreInput = document.getElementById('titular_nombre');
+    const emailInput = document.getElementById('titular_email');
+    const telefonoInput = document.getElementById('titular_telefono');
+    const titularIdInput = document.getElementById('titular_id');
+    const statusNode = document.getElementById('titular_lookup_status');
+    const tokenInput = document.querySelector('#arcop-create-form input[name="_token"]');
+
+    if (!tipoInput || !cedulaInput || !nombreInput || !emailInput || !telefonoInput || !titularIdInput || !statusNode || !tokenInput) {
+        return;
+    }
+
+    const endpoint = <?= json_encode($view->url('/lopdp/solicitudes/titular/buscar'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    let debounceTimer = null;
+    let inFlight = null;
+    let lastLookupKey = '';
+
+    const setStatus = (message, tone = 'muted') => {
+        statusNode.textContent = message;
+        statusNode.style.color = tone === 'ok'
+            ? '#166534'
+            : (tone === 'warn'
+                ? '#b45309'
+                : (tone === 'error' ? '#b91c1c' : 'var(--ds-text-soft)'));
+    };
+
+    const normalizeCedula = (value) => String(value || '').replace(/\D+/g, '').slice(0, 10);
+
+    const clearLink = () => {
+        titularIdInput.value = '';
+    };
+
+    const applyTitularData = (titular) => {
+        titularIdInput.value = String(titular.titular_id || '');
+        nombreInput.value = String(titular.titular_nombre || '');
+        emailInput.value = String(titular.titular_email || '');
+        telefonoInput.value = String(titular.titular_telefono || '');
+
+        const origen = String(titular.origen || '').trim();
+        const referencia = String(titular.referencia || '').trim();
+        if (referencia !== '') {
+            setStatus(`Datos cargados automaticamente (${origen}: ${referencia}).`, 'ok');
+            return;
+        }
+        setStatus('Datos cargados automaticamente.', 'ok');
+    };
+
+    const runLookup = async () => {
+        const tipo = String(tipoInput.value || '').trim().toLowerCase();
+        const cedula = normalizeCedula(cedulaInput.value);
+        cedulaInput.value = cedula;
+
+        if (tipo === '' || tipo === 'externo') {
+            clearLink();
+            setStatus(tipo === 'externo'
+                ? 'Titular externo: completa los datos manualmente.'
+                : 'Selecciona el tipo de titular para habilitar autocompletado.');
+            return;
+        }
+
+        if (cedula.length < 10) {
+            clearLink();
+            setStatus('Ingresa los 10 digitos de la cedula para buscar.', 'muted');
+            return;
+        }
+
+        const lookupKey = `${tipo}|${cedula}`;
+        if (lookupKey === lastLookupKey) {
+            return;
+        }
+        lastLookupKey = lookupKey;
+
+        if (inFlight instanceof AbortController) {
+            inFlight.abort();
+        }
+        inFlight = new AbortController();
+
+        setStatus('Buscando titular...', 'muted');
+
+        const payload = new URLSearchParams();
+        payload.set('_token', String(tokenInput.value || ''));
+        payload.set('titular_tipo', tipo);
+        payload.set('cedula', cedula);
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: payload.toString(),
+                signal: inFlight.signal,
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.ok === false) {
+                clearLink();
+                setStatus(String(data.message || 'No fue posible completar los datos con la cedula ingresada.'), 'warn');
+                return;
+            }
+
+            if (data.found !== true || typeof data.titular !== 'object' || data.titular === null) {
+                clearLink();
+                setStatus(String(data.message || 'No se encontro coincidencia en esta empresa.'), 'warn');
+                return;
+            }
+
+            applyTitularData(data.titular);
+        } catch (error) {
+            if (error && error.name === 'AbortError') {
+                return;
+            }
+            clearLink();
+            setStatus('No se pudo consultar el titular en este momento.', 'error');
+        }
+    };
+
+    const scheduleLookup = () => {
+        if (debounceTimer !== null) {
+            window.clearTimeout(debounceTimer);
+        }
+        debounceTimer = window.setTimeout(runLookup, 350);
+    };
+
+    tipoInput.addEventListener('change', () => {
+        lastLookupKey = '';
+        if (String(tipoInput.value || '').trim().toLowerCase() === 'externo') {
+            clearLink();
+        }
+        scheduleLookup();
+    });
+
+    cedulaInput.addEventListener('input', () => {
+        cedulaInput.value = normalizeCedula(cedulaInput.value);
+        lastLookupKey = '';
+        scheduleLookup();
+    });
+
+    cedulaInput.addEventListener('blur', scheduleLookup);
+    runLookup();
+})();
+</script>
 <?php $view->endSection() ?>

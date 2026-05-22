@@ -212,6 +212,13 @@ final class Bootstrap
             ),
         );
         $container->singleton(
+            \DigiSecure\Ficha\Application\EnviarRevisionFichaService::class,
+            static fn(Container $c) => new \DigiSecure\Ficha\Application\EnviarRevisionFichaService(
+                $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
             \DigiSecure\Ficha\Application\EliminarFichaService::class,
             static fn(Container $c) => new \DigiSecure\Ficha\Application\EliminarFichaService(
                 $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
@@ -755,6 +762,7 @@ final class Bootstrap
         $router->get('/guardias/{id}', [FichaController::class, 'show'], name: 'fichas.show', permission: 'guardias.ver');
         $router->get('/guardias/{id}/editar', [FichaController::class, 'edit'], name: 'fichas.edit', permission: 'guardias.editar');
         $router->post('/guardias/{id}/editar', [FichaController::class, 'update'], name: 'fichas.update', permission: 'guardias.editar');
+        $router->post('/guardias/{id}/revision', [FichaController::class, 'enviarRevision'], name: 'fichas.revision', permission: 'guardias.editar');
         $router->post('/guardias/{id}/completar', [FichaController::class, 'completar'], name: 'fichas.completar', permission: 'guardias.editar');
         $router->post('/guardias/{id}/eliminar', [FichaController::class, 'destroy'], name: 'fichas.destroy', permission: 'guardias.eliminar');
         $router->post('/guardias/{id}/recuperar', [FichaController::class, 'recover'], name: 'fichas.recover', permission: 'guardias.eliminar');
@@ -830,6 +838,7 @@ final class Bootstrap
         $router->get('/lopdp/solicitudes', [LopdpController::class, 'listarSolicitudes'], name: 'lopdp.solicitudes.index', permission: 'lopdp.gestionar');
         $router->get('/lopdp/solicitudes/crear', [LopdpController::class, 'crearSolicitudForm'], name: 'lopdp.solicitudes.create', permission: 'lopdp.gestionar');
         $router->post('/lopdp/solicitudes/crear', [LopdpController::class, 'crearSolicitud'], name: 'lopdp.solicitudes.store', permission: 'lopdp.gestionar');
+        $router->post('/lopdp/solicitudes/titular/buscar', [LopdpController::class, 'buscarTitular'], name: 'lopdp.solicitudes.titular.buscar', permission: 'lopdp.gestionar');
         $router->get('/lopdp/solicitudes/{id}', [LopdpController::class, 'verSolicitud'], name: 'lopdp.solicitudes.show', permission: 'lopdp.gestionar');
         $router->post('/lopdp/solicitudes/{id}/responder', [LopdpController::class, 'responderSolicitud'], name: 'lopdp.solicitudes.responder', permission: 'lopdp.gestionar');
         $router->get('/lopdp/consentimientos', [LopdpController::class, 'listarConsentimientos'], name: 'lopdp.consentimientos.index', permission: 'lopdp.gestionar');
