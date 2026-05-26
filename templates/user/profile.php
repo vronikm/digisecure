@@ -25,7 +25,7 @@ $tenantTone = $user->tenantEstado === 'activo' ? 'tone-success' : 'tone-warning'
 $initials = mb_strtoupper(mb_substr($user->nombres, 0, 1) . mb_substr($user->apellidos, 0, 1));
 ?>
 
-<?php $view->section('title') ?>Mi perfil — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Mi perfil - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/dashboard') ?>">Dashboard</a></li>

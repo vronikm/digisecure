@@ -46,7 +46,7 @@ $toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
 $puedeCargarDocumentos = $user->tienePermiso('expedientes.cargar') || $user->tienePermiso('expedientes.subir');
 ?>
 
-<?php $view->section('title') ?>Expediente — <?= $e($ficha['correlativo']) ?><?php $view->endSection() ?>
+<?php $view->section('title') ?>Expediente - <?= $e($ficha['correlativo']) ?><?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
@@ -217,7 +217,7 @@ $puedeCargarDocumentos = $user->tienePermiso('expedientes.cargar') || $user->tie
                                 <span class="ds-cell-mono"><?= $vence->format('d/m/Y') ?></span>
                             <?php endif ?>
                         <?php else: ?>
-                            <span class="ds-cell-sub">—</span>
+                                    <span class="ds-cell-sub">-</span>
                         <?php endif ?>
                     </td>
                     <td class="ds-cell-end">
@@ -297,7 +297,7 @@ $puedeCargarDocumentos = $user->tienePermiso('expedientes.cargar') || $user->tie
                             <span class="ds-badge tone-muted no-dot"><i class="bi bi-dash-circle"></i>Sin subir</span>
                         <?php endif ?>
                     </td>
-                    <td><span class="ds-cell-sub">—</span></td>
+                            <td><span class="ds-cell-sub">-</span></td>
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <?php if ($doc): ?>

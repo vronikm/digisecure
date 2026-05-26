@@ -94,9 +94,10 @@ $formSubmitLabel = 'Guardar Cambios';
 $formSubmitIcon = 'bi bi-check2-circle';
 $formShowCancel = false;
 $formRequireConfirm = true;
-$formConfirmTitle = '¿Guardar cambios en la ficha?';
-$formConfirmText = 'Se actualizarán los datos del guardia con la información actual del formulario.';
-$formConfirmButton = 'Sí, guardar cambios';
+$formConfirmTitle = 'Guardar cambios en la ficha?';
+$formConfirmText = 'Se actualizaran los datos del guardia con la informacion actual del formulario.';
+$formConfirmButton = 'Si, guardar cambios';
 $formConfirmCancel = 'No, revisar';
+$formEnableCedulaPrefill = false;
 
 require __DIR__ . '/create.php';

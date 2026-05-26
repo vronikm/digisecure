@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Listado global de tenants (Fase 13).
  *
@@ -32,6 +32,21 @@ $baseParams = array_filter([
 
 <?php $view->section('title') ?>Empresas | Superadmin<?php $view->endSection() ?>
 
+<?php $view->section('head') ?>
+<style>
+    .ds-op-filter .ds-filter-bar {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .ds-op-filter .ds-filter-row {
+        padding: 0;
+    }
+</style>
+<?php $view->endSection() ?>
+
 <?php $view->section('content') ?>
 <div class="ds-page-header">
     <div class="ds-page-title">
@@ -51,68 +66,86 @@ $baseParams = array_filter([
     </div>
 </div>
 
-<!-- Filtros -->
-<div class="ds-filter-bar">
-    <form method="GET" action="<?= $view->url('/admin/tenants') ?>" class="ds-filter-row ds-form-filter">
-<div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Buscar</label>
-                <input type="text" class="form-control form-control-sm" name="q"
-                       placeholder="Razon social, RUC o email..."
-                       value="<?= $e((string) ($busqueda ?? '')) ?>">
-            </div>
+<div class="ds-card ds-op-filter">
+    <div class="ds-card-header tone-success">
+        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
+        <div>
+            <div class="ds-card-title">Filtros de empresas</div>
+            <div class="ds-card-subtitle">Consulta por nombre, estado y plan contratado</div>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Estado</label>
-                <select class="form-select form-select-sm" name="estado">
-                    <option value="">Todos</option>
-                    <?php foreach (['activo','pendiente','suspendido','cancelado'] as $est): ?>
-                        <option value="<?= $est ?>" <?= ($estadoFiltro ?? '') === $est ? 'selected' : '' ?>><?= ucfirst($est) ?></option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+    </div>
+    <div class="ds-card-body">
+        <div class="ds-filter-bar">
+            <form method="GET" action="<?= $view->url('/admin/tenants') ?>" class="ds-filter-row ds-form-filter">
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Buscar</label>
+                        <input type="text" class="form-control form-control-sm" name="q"
+                               placeholder="Razon social, RUC o email..."
+                               value="<?= $e((string) ($busqueda ?? '')) ?>">
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Estado</label>
+                        <select class="form-select form-select-sm" name="estado">
+                            <option value="">Todos</option>
+                            <?php foreach (['activo','pendiente','suspendido','cancelado'] as $est): ?>
+                                <option value="<?= $est ?>" <?= ($estadoFiltro ?? '') === $est ? 'selected' : '' ?>><?= ucfirst($est) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Plan</label>
+                        <select class="form-select form-select-sm" name="plan">
+                            <option value="">Todos</option>
+                            <?php foreach ($planes as $p): ?>
+                                <option value="<?= $e($p->codigo) ?>" <?= ($planFiltro ?? '') === $p->codigo ? 'selected' : '' ?>><?= $e($p->nombre) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-actions">
+                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                        <i class="bi bi-search"></i>Buscar
+                    </button>
+                    <?php if ($hasFilters): ?>
+                    <a href="<?= $view->url('/admin/tenants') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                        <i class="bi bi-x-lg"></i>Limpiar
+                    </a>
+                    <?php endif ?>
+                </div>
+            </form>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Plan</label>
-                <select class="form-select form-select-sm" name="plan">
-                    <option value="">Todos</option>
-                    <?php foreach ($planes as $p): ?>
-                        <option value="<?= $e($p->codigo) ?>" <?= ($planFiltro ?? '') === $p->codigo ? 'selected' : '' ?>><?= $e($p->nombre) ?></option>
-                    <?php endforeach ?>
-                </select>
-            </div>
-        </div>
-        <div class="ds-filter-actions">
-            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Buscar
-            </button>
-            <?php if ($hasFilters): ?>
-            <a href="<?= $view->url('/admin/tenants') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-x-lg"></i>Limpiar
-            </a>
-            <?php endif ?>
-        </div>
-    </form>
-</div>
-
-<?php if ($tenants === []): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-building-slash"></i></div>
-        <h3>No hay empresas para mostrar</h3>
-        <p>
-            <?php if ($hasFilters): ?>
-                Ninguna empresa coincide con los filtros aplicados.
-            <?php else: ?>
-                Cuando una empresa complete el registro publico, aparecera en este listado.
-            <?php endif ?>
-        </p>
     </div>
 </div>
-<?php else: ?>
-<div class="ds-table-card">
+
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-building"></i></span>
+        <div>
+            <div class="ds-card-title">Listado de empresas</div>
+            <div class="ds-card-subtitle">Seguimiento de plan, usuarios y estado comercial</div>
+        </div>
+    </div>
+
+    <?php if ($tenants === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-building-slash"></i></div>
+            <h3>No hay empresas para mostrar</h3>
+            <p>
+                <?php if ($hasFilters): ?>
+                    Ninguna empresa coincide con los filtros aplicados.
+                <?php else: ?>
+                    Cuando una empresa complete el registro publico, aparecera en este listado.
+                <?php endif ?>
+            </p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -163,7 +196,7 @@ $baseParams = array_filter([
                                 <span class="ds-cell-mono"><?= $e(substr($venc, 0, 10)) ?></span>
                             <?php endif ?>
                         <?php else: ?>
-                            <span class="ds-cell-sub">&mdash;</span>
+                            <span class="ds-cell-sub">-</span>
                         <?php endif ?>
                     </td>
                     <td><span class="ds-badge <?= $tone ?>"><?= $e((string) $t['estado']) ?></span></td>
@@ -198,7 +231,6 @@ $baseParams = array_filter([
         </ul>
     </div>
     <?php endif ?>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>
-

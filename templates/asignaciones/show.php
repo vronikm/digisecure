@@ -15,12 +15,69 @@ $e = ViewRenderer::e(...);
 $estado = EstadoAsignacion::tryFrom((string) $asignacion['estado']);
 $tone = $estado ? $estado->tone() : 'tone-muted';
 $puedeCerrar = $estado === EstadoAsignacion::ACTIVA;
-
-$ds_dt = 'font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ds-text-soft); margin-bottom: .15rem;';
-$ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
 ?>
 
-<?php $view->section('title') ?>Asignacion — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Asignacion - DigiSecure<?php $view->endSection() ?>
+
+<?php $view->section('head') ?>
+<style>
+    .ds-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .7rem;
+    }
+
+    .ds-detail-item {
+        grid-column: span 6;
+        padding: .72rem .82rem;
+        border: 1px solid rgba(21, 48, 79, 0.09);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fcfdff, #f7f9fc);
+        min-width: 0;
+    }
+
+    .ds-detail-item.span-4 { grid-column: span 4; }
+    .ds-detail-item.span-6 { grid-column: span 6; }
+    .ds-detail-item.span-8 { grid-column: span 8; }
+    .ds-detail-item.span-12 { grid-column: span 12; }
+
+    .ds-detail-label {
+        font-size: .66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--ds-text-soft);
+        margin-bottom: .2rem;
+        line-height: 1.2;
+    }
+
+    .ds-detail-value {
+        font-size: .93rem;
+        font-weight: 600;
+        color: var(--ds-text);
+        line-height: 1.3;
+    }
+
+    .ds-detail-value.break {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    @media (max-width: 1199.98px) {
+        .ds-detail-item.span-8 { grid-column: span 12; }
+    }
+
+    @media (max-width: 767.98px) {
+        .ds-detail-item,
+        .ds-detail-item.span-4,
+        .ds-detail-item.span-6,
+        .ds-detail-item.span-8,
+        .ds-detail-item.span-12 {
+            grid-column: span 12;
+        }
+    }
+</style>
+<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/asignaciones') ?>">Asignaciones</a></li>
@@ -55,7 +112,6 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
 
 <div class="row g-4">
     <div class="col-lg-8">
-        <!-- Guardia -->
         <div class="ds-card">
             <div class="ds-card-header">
                 <span class="ds-card-mark"><i class="bi bi-person-badge"></i></span>
@@ -70,16 +126,19 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div style="font-size: 1.05rem; font-weight: 700; color: var(--ds-text);">
-                    <?= $e((string) $asignacion['ficha_apellidos']) ?> <?= $e((string) $asignacion['ficha_nombres']) ?>
-                </div>
-                <div class="ds-cell-sub" style="margin-top: .15rem;">
-                    Correlativo <span class="ds-cell-mono"><?= $e((string) $asignacion['ficha_correlativo']) ?></span>
+                <div class="ds-detail-grid">
+                    <div class="ds-detail-item span-8">
+                        <div class="ds-detail-label">Nombre completo</div>
+                        <div class="ds-detail-value"><?= $e((string) $asignacion['ficha_apellidos']) ?> <?= $e((string) $asignacion['ficha_nombres']) ?></div>
+                    </div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Correlativo</div>
+                        <div class="ds-cell-mono"><?= $e((string) $asignacion['ficha_correlativo']) ?></div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Puesto -->
         <div class="ds-card">
             <div class="ds-card-header tone-purple">
                 <span class="ds-card-mark"><i class="bi bi-geo-alt"></i></span>
@@ -94,17 +153,23 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div style="font-size: 1.05rem; font-weight: 700; color: var(--ds-text);"><?= $e((string) $asignacion['puesto_nombre']) ?></div>
-                <?php if (!empty($asignacion['puesto_codigo'])): ?>
-                <div class="ds-cell-sub" style="margin-top: .15rem;">Codigo <span class="ds-cell-mono"><?= $e((string) $asignacion['puesto_codigo']) ?></span></div>
-                <?php endif ?>
-                <div style="margin-top: .65rem;">
-                    <span class="ds-chip"><i class="bi bi-briefcase"></i><?= $e((string) $asignacion['cliente_razon_social']) ?></span>
+                <div class="ds-detail-grid">
+                    <div class="ds-detail-item span-8">
+                        <div class="ds-detail-label">Puesto</div>
+                        <div class="ds-detail-value"><?= $e((string) $asignacion['puesto_nombre']) ?></div>
+                    </div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Codigo</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($asignacion['puesto_codigo'] ?? '-')) ?></div>
+                    </div>
+                    <div class="ds-detail-item span-12">
+                        <div class="ds-detail-label">Cliente</div>
+                        <div><span class="ds-chip"><i class="bi bi-briefcase"></i><?= $e((string) $asignacion['cliente_razon_social']) ?></span></div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Periodo y rol -->
         <div class="ds-card">
             <div class="ds-card-header tone-success">
                 <span class="ds-card-mark"><i class="bi bi-calendar-range"></i></span>
@@ -114,21 +179,21 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Fecha de inicio</div>
+                <div class="ds-detail-grid">
+                    <div class="ds-detail-item span-6">
+                        <div class="ds-detail-label">Fecha de inicio</div>
                         <div class="ds-cell-mono" style="font-weight: 700;"><?= date('d/m/Y', strtotime((string) $asignacion['fecha_inicio'])) ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Fecha de fin</div>
+                    <div class="ds-detail-item span-6">
+                        <div class="ds-detail-label">Fecha de fin</div>
                         <?php if (!empty($asignacion['fecha_fin'])): ?>
                         <div class="ds-cell-mono" style="font-weight: 700;"><?= date('d/m/Y', strtotime((string) $asignacion['fecha_fin'])) ?></div>
                         <?php else: ?>
                         <div><span class="ds-badge tone-success no-dot">Vigente</span></div>
                         <?php endif ?>
                     </div>
-                    <div class="col-md-12">
-                        <div style="<?= $ds_dt ?>">Rol en el sitio</div>
+                    <div class="ds-detail-item span-12">
+                        <div class="ds-detail-label">Rol en el sitio</div>
                         <?php if (!empty($asignacion['rol_en_puesto'])): ?>
                         <div><span class="ds-chip"><?= $e((string) $asignacion['rol_en_puesto']) ?></span></div>
                         <?php else: ?>
@@ -170,7 +235,6 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
         <?php endif ?>
     </div>
 
-    <!-- Sidebar -->
     <div class="col-lg-4">
         <div class="ds-card">
             <div class="ds-card-header">
@@ -184,7 +248,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 <div style="text-align: center; padding: 1rem 0;">
                     <span class="ds-badge <?= $tone ?>" style="font-size: .9rem; padding: .35rem .8rem;"><?= $estado ? $e($estado->label()) : $e((string) $asignacion['estado']) ?></span>
                 </div>
-                <div style="<?= $ds_dt ?>">Creada el</div>
+                <div class="ds-detail-label">Creada el</div>
                 <div class="ds-cell-mono"><?= $e(substr((string) $asignacion['created_at'], 0, 16)) ?></div>
             </div>
         </div>

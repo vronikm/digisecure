@@ -53,7 +53,7 @@ $globalTone = match ($estadoGlobal) {
 };
 ?>
 
-<?php $view->section('title') ?>Suscripcion — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Suscripcion - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-gem me-1"></i>Suscripcion</li>
@@ -130,7 +130,7 @@ $globalTone = match ($estadoGlobal) {
                         <div class="ds-card-subtitle">Plan actual</div>
                         <div class="ds-card-title" style="font-size: 1.05rem;"><?= $e($plan?->nombre ?? ($tenant['plan_codigo'] ?? 'Sin plan')) ?></div>
                     </div>
-                    <span class="ds-chip"><i class="bi bi-tag"></i><?= $e($plan?->codigo ?? '—') ?></span>
+                    <span class="ds-chip"><i class="bi bi-tag"></i><?= $e($plan?->codigo ?? '-') ?></span>
                 </div>
             </div>
             <div class="ds-card-body">
@@ -168,8 +168,8 @@ $globalTone = match ($estadoGlobal) {
                 <?php endif ?>
             </div>
             <div style="padding: .75rem 1.25rem; background: #f4f7fb; border-top: 1px solid #eef1f5; display: flex; gap: 1rem; flex-wrap: wrap; font-size: .78rem; color: var(--ds-text-soft);">
-                <span><i class="bi bi-calendar-check"></i> Inicio: <strong style="color: var(--ds-text);"><?= $e((string) ($tenant['plan_inicio'] ?? '—')) ?></strong></span>
-                <span><i class="bi bi-calendar-x"></i> Vence: <strong style="color: var(--ds-text);"><?= $e((string) ($tenant['plan_vencimiento'] ?? '—')) ?></strong></span>
+                <span><i class="bi bi-calendar-check"></i> Inicio: <strong style="color: var(--ds-text);"><?= $e((string) ($tenant['plan_inicio'] ?? '-')) ?></strong></span>
+                <span><i class="bi bi-calendar-x"></i> Vence: <strong style="color: var(--ds-text);"><?= $e((string) ($tenant['plan_vencimiento'] ?? '-')) ?></strong></span>
             </div>
         </div>
     </div>
@@ -272,12 +272,12 @@ $globalTone = match ($estadoGlobal) {
                     <td><span class="ds-cell-mono"><?= $e((string) $h['fecha_fin']) ?></span></td>
                     <td class="ds-cell-end ds-cell-mono">$<?= number_format((float) $h['precio_usd'], 2) ?></td>
                     <td><span class="ds-badge <?= $pagoTone((string) $h['estado_pago']) ?>"><?= $e((string) $h['estado_pago']) ?></span></td>
-                    <td><span class="ds-cell-sub"><?= $e((string) ($h['metodo_pago'] ?? '—')) ?></span></td>
+                    <td><span class="ds-cell-sub"><?= $e((string) ($h['metodo_pago'] ?? '-')) ?></span></td>
                     <td>
                         <?php if (!empty($h['pagado_at'])): ?>
                             <span class="ds-cell-mono"><?= date('d/m/Y', strtotime((string) $h['pagado_at'])) ?></span>
                         <?php else: ?>
-                            <span class="ds-cell-sub">—</span>
+                            <span class="ds-cell-sub">-</span>
                         <?php endif ?>
                     </td>
                 </tr>

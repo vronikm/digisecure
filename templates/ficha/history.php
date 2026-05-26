@@ -74,6 +74,15 @@ $estadoTone = [
         line-height: 1.3;
         color: var(--ds-text);
     }
+    .ds-history-filter .ds-filter-bar {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .ds-history-filter .ds-filter-row {
+        padding: 0;
+    }
     @media (max-width: 1199.98px) {
         .ds-company-item.span-3 { grid-column: span 4; }
         .ds-company-item.span-8 { grid-column: span 12; }
@@ -106,6 +115,15 @@ $estadoTone = [
         </div>
     </div>
     <div class="ds-row-actions">
+        <?php if ($user->tienePermiso('guardias.crear')): ?>
+        <?php
+        $createFichaUrl = $view->url('/guardias/crear');
+        $queryGlue = str_contains($createFichaUrl, '?') ? '&' : '?';
+        ?>
+        <a href="<?= $createFichaUrl . $queryGlue . 'base_ficha=' . urlencode((string) ($guardia['id'] ?? '')) ?>" class="ds-btn ds-btn-primary ds-btn-sm">
+            <i class="bi bi-plus-lg"></i>Nueva ficha
+        </a>
+        <?php endif ?>
         <a href="<?= $view->url((string) ($exportPath ?? '/guardias')) ?>" class="ds-btn ds-btn-outline ds-btn-sm">
             <i class="bi bi-filetype-csv"></i>Exportar CSV
         </a>
@@ -159,71 +177,89 @@ $estadoTone = [
     </div>
 </div>
 
-<div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/guardias/' . $guardia['id'] . '/fichas') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Estado</label>
-                <select name="estado" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    <?php foreach (EstadoFicha::cases() as $estado): ?>
-                    <option value="<?= $estado->value ?>" <?= $estadoActual === $estado->value ? 'selected' : '' ?>><?= $e($estado->label()) ?></option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+<div class="ds-card ds-history-filter">
+    <div class="ds-card-header tone-success">
+        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
+        <div>
+            <div class="ds-card-title">Filtros del historial</div>
+            <div class="ds-card-subtitle">Refina por estado, tipo y rango de fechas</div>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Tipo</label>
-                <select name="tipo_ficha" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    <?php foreach (TipoFicha::cases() as $tipo): ?>
-                    <option value="<?= $tipo->value ?>" <?= $tipoActual === $tipo->value ? 'selected' : '' ?>><?= $e($tipo->label()) ?></option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+    </div>
+    <div class="ds-card-body">
+        <div class="ds-filter-bar">
+            <form method="get" action="<?= $view->url('/guardias/' . $guardia['id'] . '/fichas') ?>" class="ds-filter-row ds-form-filter">
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Estado</label>
+                        <select name="estado" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach (EstadoFicha::cases() as $estado): ?>
+                            <option value="<?= $estado->value ?>" <?= $estadoActual === $estado->value ? 'selected' : '' ?>><?= $e($estado->label()) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Tipo</label>
+                        <select name="tipo_ficha" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach (TipoFicha::cases() as $tipo): ?>
+                            <option value="<?= $tipo->value ?>" <?= $tipoActual === $tipo->value ? 'selected' : '' ?>><?= $e($tipo->label()) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Desde</label>
+                        <input type="date" name="desde" class="form-control form-control-sm" value="<?= $e($desdeActual) ?>">
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Hasta</label>
+                        <input type="date" name="hasta" class="form-control form-control-sm" value="<?= $e($hastaActual) ?>">
+                    </div>
+                </div>
+                <div class="ds-filter-actions">
+                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                        <i class="bi bi-search"></i>Buscar
+                    </button>
+                    <?php if ($hasFilters): ?>
+                    <a href="<?= $view->url('/guardias/' . $guardia['id'] . '/fichas') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                        <i class="bi bi-x-lg"></i>Limpiar
+                    </a>
+                    <?php endif ?>
+                </div>
+            </form>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Desde</label>
-                <input type="date" name="desde" class="form-control form-control-sm" value="<?= $e($desdeActual) ?>">
-            </div>
-        </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Hasta</label>
-                <input type="date" name="hasta" class="form-control form-control-sm" value="<?= $e($hastaActual) ?>">
-            </div>
-        </div>
-        <div class="ds-filter-actions">
-            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Buscar
-            </button>
-            <?php if ($hasFilters): ?>
-            <a href="<?= $view->url('/guardias/' . $guardia['id'] . '/fichas') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-x-lg"></i>Limpiar
-            </a>
-            <?php endif ?>
-        </div>
-    </form>
-</div>
-
-<?php if ($fichas === []): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-collection"></i></div>
-        <h3>No hay fichas para mostrar</h3>
-        <p>
-            <?php if ($hasFilters): ?>
-                Ninguna ficha coincide con los filtros seleccionados.
-            <?php else: ?>
-                Este guardia aun no tiene fichas registradas.
-            <?php endif ?>
-        </p>
     </div>
 </div>
-<?php else: ?>
-<div class="ds-table-card">
+
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-collection"></i></span>
+        <div>
+            <div class="ds-card-title">Historial de fichas</div>
+            <div class="ds-card-subtitle">Linea temporal del guardia (ingreso, reingreso y actualizaciones)</div>
+        </div>
+    </div>
+    <?php if ($fichas === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-collection"></i></div>
+            <h3>No hay fichas para mostrar</h3>
+            <p>
+                <?php if ($hasFilters): ?>
+                    Ninguna ficha coincide con los filtros seleccionados.
+                <?php else: ?>
+                    Este guardia aun no tiene fichas registradas.
+                <?php endif ?>
+            </p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -277,6 +313,6 @@ $estadoTone = [
             </tbody>
         </table>
     </div>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>

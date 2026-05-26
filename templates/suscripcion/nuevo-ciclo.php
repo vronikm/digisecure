@@ -23,7 +23,7 @@ $preseleccionEstado = (string) ($old['estado_pago'] ?? 'pagado');
 $hoy = date('Y-m-d');
 ?>
 
-<?php $view->section('title') ?>Nueva renovacion — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Nueva renovacion - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/suscripcion') ?>">Suscripcion</a></li>
@@ -73,13 +73,13 @@ $hoy = date('Y-m-d');
                     <div class="ds-form-field" style="margin-bottom: 1rem;">
                         <label class="ds-form-label">Plan <span class="ds-required">*</span></label>
                         <select name="plan_codigo" class="form-select" required id="planSelect">
-                            <option value="">— Selecciona un plan —</option>
+                            <option value="">- Selecciona un plan -</option>
                             <?php foreach ($catalogo as $p): ?>
                             <option value="<?= $e($p->codigo) ?>"
                                     data-mensual="<?= $p->precioMensualUsd ?>"
                                     data-anual="<?= $p->precioAnualUsd ?>"
                                     <?= $p->codigo === $preseleccionPlan ? 'selected' : '' ?>>
-                                <?= $e($p->nombre) ?> — $<?= number_format($p->precioMensualUsd, 2) ?>/mes
+                                <?= $e($p->nombre) ?> - $<?= number_format($p->precioMensualUsd, 2) ?>/mes
                             </option>
                             <?php endforeach ?>
                         </select>
@@ -177,16 +177,16 @@ $hoy = date('Y-m-d');
                 <div class="ds-card-body">
                     <dl style="margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: .65rem 0;">
                         <dt class="ds-cell-sub">Plan seleccionado</dt>
-                        <dd id="rPlan" style="margin: 0; font-weight: 600; color: var(--ds-text); text-align: right;">—</dd>
+                        <dd id="rPlan" style="margin: 0; font-weight: 600; color: var(--ds-text); text-align: right;">-</dd>
 
                         <dt class="ds-cell-sub">Duracion</dt>
-                        <dd id="rDur" style="margin: 0; font-weight: 600; color: var(--ds-text); text-align: right;">—</dd>
+                        <dd id="rDur" style="margin: 0; font-weight: 600; color: var(--ds-text); text-align: right;">-</dd>
 
                         <dt class="ds-cell-sub">Precio mensual</dt>
-                        <dd id="rMensual" class="ds-cell-mono" style="margin: 0; text-align: right;">—</dd>
+                        <dd id="rMensual" class="ds-cell-mono" style="margin: 0; text-align: right;">-</dd>
 
                         <dt class="ds-cell-sub">Precio anual</dt>
-                        <dd id="rAnual" class="ds-cell-mono" style="margin: 0; text-align: right;">—</dd>
+                        <dd id="rAnual" class="ds-cell-mono" style="margin: 0; text-align: right;">-</dd>
                     </dl>
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #eef1f5; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-weight: 700; font-size: .95rem; color: var(--ds-text);">Total estimado</span>
@@ -213,10 +213,10 @@ $hoy = date('Y-m-d');
     function recalcular() {
         const opt = sel.options[sel.selectedIndex];
         if (!opt || !opt.value) {
-            document.getElementById('rPlan').textContent = '—';
-            document.getElementById('rDur').textContent = '—';
-            document.getElementById('rMensual').textContent = '—';
-            document.getElementById('rAnual').textContent = '—';
+            document.getElementById('rPlan').textContent = '-';
+            document.getElementById('rDur').textContent = '-';
+            document.getElementById('rMensual').textContent = '-';
+            document.getElementById('rAnual').textContent = '-';
             document.getElementById('rTotal').textContent = '$ 0.00';
             return;
         }
@@ -224,7 +224,7 @@ $hoy = date('Y-m-d');
         const a = parseFloat(opt.dataset.anual || '0');
         const n = parseInt(meses.value || '1', 10);
 
-        document.getElementById('rPlan').textContent = opt.textContent.split('—')[0].trim();
+        document.getElementById('rPlan').textContent = opt.textContent.split('-')[0].trim();
         document.getElementById('rDur').textContent = n + (n === 1 ? ' mes' : ' meses');
         document.getElementById('rMensual').textContent = fmt(m);
         document.getElementById('rAnual').textContent = fmt(a);

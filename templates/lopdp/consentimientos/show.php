@@ -20,6 +20,64 @@ $detailPath = '/lopdp/consentimientos/' . (string) $consentimiento['id'];
 
 <?php $view->section('title') ?>Detalle consentimiento LOPDP<?php $view->endSection() ?>
 
+<?php $view->section('head') ?>
+<style>
+    .ds-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .7rem;
+    }
+
+    .ds-detail-item {
+        grid-column: span 6;
+        padding: .72rem .82rem;
+        border: 1px solid rgba(21, 48, 79, 0.09);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fcfdff, #f7f9fc);
+        min-width: 0;
+    }
+
+    .ds-detail-item.span-4 { grid-column: span 4; }
+    .ds-detail-item.span-8 { grid-column: span 8; }
+    .ds-detail-item.span-12 { grid-column: span 12; }
+
+    .ds-detail-label {
+        font-size: .66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--ds-text-soft);
+        margin-bottom: .2rem;
+        line-height: 1.2;
+    }
+
+    .ds-detail-value {
+        font-size: .93rem;
+        font-weight: 600;
+        color: var(--ds-text);
+        line-height: 1.3;
+    }
+
+    .ds-detail-value.break {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    @media (max-width: 1199.98px) {
+        .ds-detail-item.span-8 { grid-column: span 12; }
+    }
+
+    @media (max-width: 767.98px) {
+        .ds-detail-item,
+        .ds-detail-item.span-4,
+        .ds-detail-item.span-8,
+        .ds-detail-item.span-12 {
+            grid-column: span 12;
+        }
+    }
+</style>
+<?php $view->endSection() ?>
+
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/lopdp') ?>">LOPDP</a></li>
 <li class="breadcrumb-item"><a href="<?= $view->url('/lopdp/consentimientos') ?>">Consentimientos</a></li>
@@ -64,57 +122,55 @@ $detailPath = '/lopdp/consentimientos/' . (string) $consentimiento['id'];
         </div>
     </div>
     <div class="ds-card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="ds-form-label">Titular tipo</label>
-                <div class="ds-cell-name"><?= $e(ucfirst((string) $consentimiento['titular_tipo'])) ?></div>
+        <div class="ds-detail-grid">
+            <div class="ds-detail-item span-4">
+                <div class="ds-detail-label">Titular tipo</div>
+                <div class="ds-detail-value"><?= $e(ucfirst((string) $consentimiento['titular_tipo'])) ?></div>
             </div>
-            <div class="col-md-8">
-                <label class="ds-form-label">Titular ID</label>
+            <div class="ds-detail-item span-8">
+                <div class="ds-detail-label">Titular ID</div>
                 <div class="ds-cell-mono"><?= $e((string) $consentimiento['titular_id']) ?></div>
             </div>
-            <div class="col-md-8">
-                <label class="ds-form-label">Proposito</label>
-                <div><?= $e((string) $consentimiento['proposito']) ?></div>
+            <div class="ds-detail-item span-8">
+                <div class="ds-detail-label">Proposito</div>
+                <div class="ds-detail-value break"><?= $e((string) $consentimiento['proposito']) ?></div>
             </div>
-            <div class="col-md-4">
-                <label class="ds-form-label">Base legal</label>
-                <div><?= $e(ucfirst(str_replace('_', ' ', (string) $consentimiento['base_legal']))) ?></div>
+            <div class="ds-detail-item span-4">
+                <div class="ds-detail-label">Base legal</div>
+                <div class="ds-detail-value"><?= $e(ucfirst(str_replace('_', ' ', (string) $consentimiento['base_legal']))) ?></div>
             </div>
-            <div class="col-md-4">
-                <label class="ds-form-label">Version texto legal</label>
+            <div class="ds-detail-item span-4">
+                <div class="ds-detail-label">Version texto legal</div>
                 <div class="ds-cell-mono"><?= $e((string) $consentimiento['texto_legal_version']) ?></div>
             </div>
-            <div class="col-md-8">
-                <label class="ds-form-label">Hash texto legal</label>
+            <div class="ds-detail-item span-8">
+                <div class="ds-detail-label">Hash texto legal</div>
                 <div class="ds-cell-mono" style="word-break: break-all;"><?= $e((string) $consentimiento['texto_legal_hash']) ?></div>
             </div>
-            <div class="col-md-4">
-                <label class="ds-form-label">Fecha aceptacion</label>
+            <div class="ds-detail-item span-4">
+                <div class="ds-detail-label">Fecha aceptacion</div>
                 <div class="ds-cell-mono"><?= $e((string) $consentimiento['aceptado_at']) ?></div>
             </div>
-            <div class="col-md-4">
-                <label class="ds-form-label">IP aceptacion</label>
+            <div class="ds-detail-item span-4">
+                <div class="ds-detail-label">IP aceptacion</div>
                 <div class="ds-cell-mono"><?= $e((string) ($ipAceptacion ?? '-')) ?></div>
             </div>
-            <div class="col-md-4">
-                <label class="ds-form-label">Estado</label>
+            <div class="ds-detail-item span-4">
+                <div class="ds-detail-label">Estado</div>
                 <div><span class="ds-badge <?= $estadoTone ?>"><?= $e($estadoLabel) ?></span></div>
             </div>
-            <div class="col-12">
-                <label class="ds-form-label">User-Agent aceptacion</label>
-                <div style="color: var(--ds-text-soft); font-size: .85rem; word-break: break-word;">
-                    <?= $e((string) ($consentimiento['user_agent_aceptacion'] ?? '-')) ?>
-                </div>
+            <div class="ds-detail-item span-12">
+                <div class="ds-detail-label">User-Agent aceptacion</div>
+                <div class="ds-detail-value break" style="color: var(--ds-text-soft); font-weight: 500;"><?= $e((string) ($consentimiento['user_agent_aceptacion'] ?? '-')) ?></div>
             </div>
             <?php if ($revocado): ?>
-            <div class="col-md-4">
-                <label class="ds-form-label">Fecha revocacion</label>
+            <div class="ds-detail-item span-4">
+                <div class="ds-detail-label">Fecha revocacion</div>
                 <div class="ds-cell-mono"><?= $e((string) $consentimiento['revocado_at']) ?></div>
             </div>
-            <div class="col-md-8">
-                <label class="ds-form-label">Motivo revocacion</label>
-                <div style="white-space: pre-wrap;"><?= $e((string) ($consentimiento['revocado_motivo'] ?? '')) ?></div>
+            <div class="ds-detail-item span-8">
+                <div class="ds-detail-label">Motivo revocacion</div>
+                <div class="ds-detail-value break"><?= $e((string) ($consentimiento['revocado_motivo'] ?? '')) ?></div>
             </div>
             <?php endif ?>
         </div>

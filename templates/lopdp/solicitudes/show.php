@@ -24,7 +24,65 @@ $today = date('Y-m-d');
 $vencida = !$cerrada && $solicitud['fecha_limite'] < $today;
 ?>
 
-<?php $view->section('title') ?>Solicitud ARCO-P — LOPDP<?php $view->endSection() ?>
+<?php $view->section('title') ?>Solicitud ARCO-P - LOPDP<?php $view->endSection() ?>
+
+<?php $view->section('head') ?>
+<style>
+    .ds-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .7rem;
+    }
+
+    .ds-detail-item {
+        grid-column: span 6;
+        padding: .72rem .82rem;
+        border: 1px solid rgba(21, 48, 79, 0.09);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fcfdff, #f7f9fc);
+        min-width: 0;
+    }
+
+    .ds-detail-item.span-4 { grid-column: span 4; }
+    .ds-detail-item.span-8 { grid-column: span 8; }
+    .ds-detail-item.span-12 { grid-column: span 12; }
+
+    .ds-detail-label {
+        font-size: .66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--ds-text-soft);
+        margin-bottom: .2rem;
+        line-height: 1.2;
+    }
+
+    .ds-detail-value {
+        font-size: .93rem;
+        font-weight: 600;
+        color: var(--ds-text);
+        line-height: 1.3;
+    }
+
+    .ds-detail-value.break {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    @media (max-width: 1199.98px) {
+        .ds-detail-item.span-8 { grid-column: span 12; }
+    }
+
+    @media (max-width: 767.98px) {
+        .ds-detail-item,
+        .ds-detail-item.span-4,
+        .ds-detail-item.span-8,
+        .ds-detail-item.span-12 {
+            grid-column: span 12;
+        }
+    }
+</style>
+<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/lopdp') ?>">LOPDP</a></li>
@@ -74,11 +132,6 @@ $vencida = !$cerrada && $solicitud['fecha_limite'] < $today;
 </div>
 <?php endif ?>
 
-<?php
-$ds_dt = 'font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ds-text-soft); margin-bottom: .15rem;';
-$ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
-?>
-
 <div class="row g-4">
     <div class="col-lg-7">
         <div class="ds-card">
@@ -90,26 +143,26 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Tipo</div>
-                        <div style="<?= $ds_dd ?>"><?= $e(ucfirst((string) $solicitud['titular_tipo'])) ?></div>
+                <div class="ds-detail-grid">
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Tipo</div>
+                        <div class="ds-detail-value"><?= $e(ucfirst((string) $solicitud['titular_tipo'])) ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Nombre</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) $solicitud['titular_nombre']) ?></div>
+                    <div class="ds-detail-item span-8">
+                        <div class="ds-detail-label">Nombre</div>
+                        <div class="ds-detail-value"><?= $e((string) $solicitud['titular_nombre']) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Cedula</div>
-                        <div class="ds-cell-mono"><?= $e((string) ($solicitud['titular_cedula'] ?? '—')) ?></div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Cedula</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($solicitud['titular_cedula'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Email</div>
-                        <div class="ds-cell-mono"><?= $e((string) ($solicitud['titular_email'] ?? '—')) ?></div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Email</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($solicitud['titular_email'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Telefono</div>
-                        <div class="ds-cell-mono"><?= $e((string) ($solicitud['titular_telefono'] ?? '—')) ?></div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Telefono</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($solicitud['titular_telefono'] ?? '-')) ?></div>
                     </div>
                 </div>
             </div>
@@ -169,20 +222,26 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div style="<?= $ds_dt ?>">Recepcion</div>
-                <div class="ds-cell-mono" style="margin-bottom: .65rem;"><?= $e((string) $solicitud['fecha_recepcion']) ?></div>
-
-                <div style="<?= $ds_dt ?>">Vence</div>
-                <div style="margin-bottom: .65rem;">
-                    <?php if ($vencida): ?>
-                        <span class="ds-badge tone-danger no-dot"><i class="bi bi-exclamation-triangle"></i><?= $e((string) $solicitud['fecha_limite']) ?> &middot; vencida</span>
-                    <?php else: ?>
-                        <span class="ds-cell-mono" style="font-weight: 700;"><?= $e((string) $solicitud['fecha_limite']) ?></span>
-                    <?php endif ?>
+                <div class="ds-detail-grid">
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Recepcion</div>
+                        <div class="ds-cell-mono"><?= $e((string) $solicitud['fecha_recepcion']) ?></div>
+                    </div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Vence</div>
+                        <div>
+                            <?php if ($vencida): ?>
+                                <span class="ds-badge tone-danger no-dot"><i class="bi bi-exclamation-triangle"></i><?= $e((string) $solicitud['fecha_limite']) ?> &middot; vencida</span>
+                            <?php else: ?>
+                                <span class="ds-cell-mono" style="font-weight: 700;"><?= $e((string) $solicitud['fecha_limite']) ?></span>
+                            <?php endif ?>
+                        </div>
+                    </div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Canal de recepcion</div>
+                        <div><span class="ds-chip"><?= $e(ucfirst(str_replace('_', ' ', (string) $solicitud['canal_recepcion']))) ?></span></div>
+                    </div>
                 </div>
-
-                <div style="<?= $ds_dt ?>">Canal de recepcion</div>
-                <div><span class="ds-chip"><?= $e(ucfirst(str_replace('_', ' ', (string) $solicitud['canal_recepcion']))) ?></span></div>
             </div>
         </div>
 

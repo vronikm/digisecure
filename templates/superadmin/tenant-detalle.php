@@ -325,7 +325,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                         <tr>
                             <td><div class="ds-cell-name"><?= $e(trim(($u['nombres'] ?? '') . ' ' . ($u['apellidos'] ?? ''))) ?></div></td>
                             <td><span class="ds-cell-mono"><?= $e((string) $u['email']) ?></span></td>
-                            <td><span class="ds-cell-sub"><?= $e((string) ($u['roles'] ?? 'â€”')) ?></span></td>
+                            <td><span class="ds-cell-sub"><?= $e((string) ($u['roles'] ?? '-')) ?></span></td>
                             <td>
                                 <?php if (!empty($u['ultimo_login_at'])): ?>
                                     <span class="ds-cell-mono"><?= $e(substr((string) $u['ultimo_login_at'], 0, 16)) ?></span>
@@ -477,8 +477,8 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                                 <?php foreach ($usuariosDisponibles as $u): ?>
                                 <option value="<?= $e((string) $u['id']) ?>">
                                     <?= $e(trim((string) $u['apellidos'] . ' ' . (string) $u['nombres'])) ?>
-                                    Â· <?= $e((string) $u['email']) ?>
-                                    Â· <?= $e((string) $u['tenant_actual']) ?>
+                                    &middot; <?= $e((string) $u['email']) ?>
+                                    &middot; <?= $e((string) $u['tenant_actual']) ?>
                                 </option>
                                 <?php endforeach ?>
                             </select>

@@ -15,7 +15,7 @@ $totalSistema = count(array_filter($roles, static fn(array $r): bool => (int) ($
 $totalEmpresa = $total - $totalSistema;
 ?>
 
-<?php $view->section('title') ?>Roles — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Roles - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-shield-lock me-1"></i>Roles</li>
@@ -29,7 +29,7 @@ $totalEmpresa = $total - $totalSistema;
             <h1>Roles y permisos</h1>
             <small>
                 <?= $total ?> rol<?= $total !== 1 ? 'es' : '' ?> disponible<?= $total !== 1 ? 's' : '' ?>
-                · Empresa: <?= $totalEmpresa ?> · Sistema: <?= $totalSistema ?>
+                &middot; Empresa: <?= $totalEmpresa ?> &middot; Sistema: <?= $totalSistema ?>
             </small>
         </div>
     </div>
@@ -40,21 +40,29 @@ $totalEmpresa = $total - $totalSistema;
     <?php endif ?>
 </div>
 
-<?php if ($roles === []): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-shield-lock"></i></div>
-        <h3>No hay roles disponibles</h3>
-        <p>Crea tu primer rol para definir los permisos que se asignaran a los usuarios.</p>
-        <?php if ($user->tienePermiso('roles.crear')): ?>
-        <a href="<?= $view->url('/roles/crear') ?>" class="ds-btn ds-btn-primary">
-            <i class="bi bi-plus-lg"></i>Crear el primer rol
-        </a>
-        <?php endif ?>
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
+        <div>
+            <div class="ds-card-title">Listado de roles</div>
+            <div class="ds-card-subtitle">Roles de sistema y empresa con permisos asignados</div>
+        </div>
     </div>
-</div>
-<?php else: ?>
-<div class="ds-table-card">
+
+    <?php if ($roles === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-shield-lock"></i></div>
+            <h3>No hay roles disponibles</h3>
+            <p>Crea tu primer rol para definir los permisos que se asignaran a los usuarios.</p>
+            <?php if ($user->tienePermiso('roles.crear')): ?>
+            <a href="<?= $view->url('/roles/crear') ?>" class="ds-btn ds-btn-primary">
+                <i class="bi bi-plus-lg"></i>Crear el primer rol
+            </a>
+            <?php endif ?>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -107,6 +115,6 @@ $totalEmpresa = $total - $totalSistema;
             </tbody>
         </table>
     </div>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>

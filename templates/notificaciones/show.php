@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Detalle de una notificacion + historial de intentos.
  *
@@ -31,7 +31,7 @@ $ds_dt = 'font-size: .72rem; font-weight: 700; text-transform: uppercase; letter
 $ds_dd = 'font-size: .88rem; color: var(--ds-text); padding: 0 0 .55rem; margin: 0; border-bottom: 1px solid #f1f5f9;';
 ?>
 
-<?php $view->section('title') ?>Notificacion — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Notificacion - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/notificaciones') ?>">Notificaciones</a></li>
@@ -116,10 +116,10 @@ $ds_dd = 'font-size: .88rem; color: var(--ds-text); padding: 0 0 .55rem; margin:
                     <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) $notificacion['created_at']) ?></span></dd>
 
                     <dt style="<?= $ds_dt ?>">Programada</dt>
-                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) ($notificacion['scheduled_at'] ?? '—')) ?></span></dd>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) ($notificacion['scheduled_at'] ?? '-')) ?></span></dd>
 
                     <dt style="<?= $ds_dt ?>">Enviada</dt>
-                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) ($notificacion['enviada_at'] ?? '—')) ?></span></dd>
+                    <dd style="<?= $ds_dd ?>"><span class="ds-cell-mono"><?= $e((string) ($notificacion['enviada_at'] ?? '-')) ?></span></dd>
 
                     <dt style="<?= $ds_dt ?>">Intentos</dt>
                     <dd style="<?= $ds_dd ?>"><span class="ds-chip"><?= (int) $notificacion['intentos'] ?> / <?= (int) $notificacion['max_intentos'] ?></span></dd>
@@ -209,3 +209,4 @@ $ds_dd = 'font-size: .88rem; color: var(--ds-text); padding: 0 0 .55rem; margin:
     </div>
 </div>
 <?php $view->endSection() ?>
+

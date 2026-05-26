@@ -14,7 +14,7 @@ $e = ViewRenderer::e(...);
 $valor = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $puesto[$k] ?? $d);
 ?>
 
-<?php $view->section('title') ?>Editar puesto — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Editar puesto - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/puestos') ?>">Puestos</a></li>

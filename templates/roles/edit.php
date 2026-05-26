@@ -14,7 +14,7 @@ $e = ViewRenderer::e(...);
 $esSistema = (int) ($rol['es_sistema'] ?? 0) === 1;
 ?>
 
-<?php $view->section('title') ?>Editar rol — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Editar rol - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/roles') ?>">Roles</a></li>

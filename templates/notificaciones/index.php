@@ -33,7 +33,22 @@ $hasFilters = !empty($filters['estado'] ?? null)
     || !empty($filters['evento'] ?? null);
 ?>
 
-<?php $view->section('title') ?>Notificaciones â€” DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Notificaciones - DigiSecure<?php $view->endSection() ?>
+
+<?php $view->section('head') ?>
+<style>
+    .ds-op-filter .ds-filter-bar {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .ds-op-filter .ds-filter-row {
+        padding: 0;
+    }
+</style>
+<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-bell me-1"></i>Notificaciones</li>
@@ -50,7 +65,6 @@ $hasFilters = !empty($filters['estado'] ?? null)
     </div>
 </div>
 
-<!-- KPIs -->
 <div class="ds-kpi-grid ds-kpi-grid-solid">
     <div class="ds-kpi-card tone-muted">
         <span class="ds-kpi-icon"><i class="bi bi-hourglass-split"></i></span>
@@ -82,67 +96,85 @@ $hasFilters = !empty($filters['estado'] ?? null)
     </div>
 </div>
 
-<!-- Filtros -->
-<div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/notificaciones') ?>" class="ds-filter-row ds-form-filter">
-<div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Estado</label>
-                <select name="estado" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    <?php foreach (['PENDIENTE', 'ENVIADA', 'FALLIDA', 'CANCELADA'] as $est): ?>
-                    <option value="<?= $est ?>" <?= ($filters['estado'] ?? '') === $est ? 'selected' : '' ?>><?= ucfirst(strtolower($est)) ?></option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+<div class="ds-card ds-op-filter">
+    <div class="ds-card-header tone-success">
+        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
+        <div>
+            <div class="ds-card-title">Filtros de notificaciones</div>
+            <div class="ds-card-subtitle">Busca por estado, canal y tipo de evento</div>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Canal</label>
-                <select name="canal" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    <?php foreach (['EMAIL', 'WHATSAPP', 'SMS'] as $canal): ?>
-                    <option value="<?= $canal ?>" <?= ($filters['canal'] ?? '') === $canal ? 'selected' : '' ?>><?= $canal ?></option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+    </div>
+    <div class="ds-card-body">
+        <div class="ds-filter-bar">
+            <form method="get" action="<?= $view->url('/notificaciones') ?>" class="ds-filter-row ds-form-filter">
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Estado</label>
+                        <select name="estado" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach (['PENDIENTE', 'ENVIADA', 'FALLIDA', 'CANCELADA'] as $est): ?>
+                            <option value="<?= $est ?>" <?= ($filters['estado'] ?? '') === $est ? 'selected' : '' ?>><?= ucfirst(strtolower($est)) ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Canal</label>
+                        <select name="canal" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach (['EMAIL', 'WHATSAPP', 'SMS'] as $canal): ?>
+                            <option value="<?= $canal ?>" <?= ($filters['canal'] ?? '') === $canal ? 'selected' : '' ?>><?= $canal ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Evento</label>
+                        <input type="text" name="evento" class="form-control form-control-sm"
+                               value="<?= $e($filters['evento'] ?? '') ?>" placeholder="Ej: doc.vencido">
+                    </div>
+                </div>
+                <div class="ds-filter-actions">
+                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                        <i class="bi bi-search"></i>Buscar
+                    </button>
+                    <?php if ($hasFilters): ?>
+                    <a href="<?= $view->url('/notificaciones') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                        <i class="bi bi-x-lg"></i>Limpiar
+                    </a>
+                    <?php endif ?>
+                </div>
+            </form>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Evento</label>
-                <input type="text" name="evento" class="form-control form-control-sm"
-                       value="<?= $e($filters['evento'] ?? '') ?>" placeholder="Ej: doc.vencido">
-            </div>
-        </div>
-        <div class="ds-filter-actions">
-            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Buscar
-            </button>
-            <?php if ($hasFilters): ?>
-            <a href="<?= $view->url('/notificaciones') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-x-lg"></i>Limpiar
-            </a>
-            <?php endif ?>
-        </div>
-    </form>
-</div>
-
-<?php if (empty($notificaciones)): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-bell-slash"></i></div>
-        <h3>No hay notificaciones</h3>
-        <p>
-            <?php if ($hasFilters): ?>
-                No se encontraron notificaciones con los filtros aplicados.
-            <?php else: ?>
-                Las notificaciones se generan automaticamente al ocurrir eventos del sistema (vencimientos, registros, etc.).
-            <?php endif ?>
-        </p>
     </div>
 </div>
-<?php else: ?>
-<div class="ds-table-card">
+
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-send"></i></span>
+        <div>
+            <div class="ds-card-title">Listado de notificaciones</div>
+            <div class="ds-card-subtitle">Historial de mensajes generados por eventos del sistema</div>
+        </div>
+    </div>
+
+    <?php if (empty($notificaciones)): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-bell-slash"></i></div>
+            <h3>No hay notificaciones</h3>
+            <p>
+                <?php if ($hasFilters): ?>
+                    No se encontraron notificaciones con los filtros aplicados.
+                <?php else: ?>
+                    Las notificaciones se generan automaticamente al ocurrir eventos del sistema (vencimientos, registros, etc.).
+                <?php endif ?>
+            </p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -163,7 +195,7 @@ $hasFilters = !empty($filters['estado'] ?? null)
                     <td><span class="ds-cell-mono"><?= $e(substr((string) $n['created_at'], 0, 16)) ?></span></td>
                     <td><span class="ds-cell-mono"><?= $e((string) $n['evento']) ?></span></td>
                     <td><span class="ds-chip"><i class="bi <?= $canalIcon((string) $n['canal']) ?>"></i><?= $e((string) $n['canal']) ?></span></td>
-                    <td class="ds-cell-mono"><?= $e((string) ($n['destinatario_email'] ?? $n['destinatario_telefono'] ?? 'â€”')) ?></td>
+                    <td class="ds-cell-mono"><?= $e((string) ($n['destinatario_email'] ?? $n['destinatario_telefono'] ?? '-')) ?></td>
                     <td>
                         <div style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= $e((string) $n['asunto']) ?>">
                             <?= $e((string) $n['asunto']) ?>
@@ -212,7 +244,6 @@ $hasFilters = !empty($filters['estado'] ?? null)
         </ul>
     </div>
     <?php endif ?>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>
-

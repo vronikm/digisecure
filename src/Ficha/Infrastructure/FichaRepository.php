@@ -195,17 +195,28 @@ final class FichaRepository extends BaseRepository
         ];
 
         $conditions = [];
-        if (!empty($filters['busqueda'])) {
-            $conditions[] = '(apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4)';
+        $hasBusqueda = !empty($filters['busqueda']);
+        $hasCedulaHash = !empty($filters['cedula_hash']);
+
+        if ($hasBusqueda) {
             $busq = '%' . $filters['busqueda'] . '%';
             $bindings['busq'] = $busq;
             $bindings['busq2'] = $busq;
             $bindings['busq3'] = $busq;
             $bindings['busq4'] = $busq;
         }
-        if (!empty($filters['cedula_hash'])) {
-            $conditions[] = 'cedula_hash = :cedula_hash';
+        if ($hasCedulaHash) {
             $bindings['cedula_hash'] = (string) $filters['cedula_hash'];
+        }
+
+        if ($hasBusqueda && $hasCedulaHash) {
+            // Si el usuario busca por cedula, no forzamos un AND con filtros textuales:
+            // debe coincidir por texto O por hash de cedula.
+            $conditions[] = '((apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4) OR cedula_hash = :cedula_hash)';
+        } elseif ($hasBusqueda) {
+            $conditions[] = '(apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4)';
+        } elseif ($hasCedulaHash) {
+            $conditions[] = 'cedula_hash = :cedula_hash';
         }
 
         $sql = 'SELECT
@@ -241,18 +252,26 @@ final class FichaRepository extends BaseRepository
     {
         $bindings = [];
         $conditions = [];
+        $hasBusqueda = !empty($filters['busqueda']);
+        $hasCedulaHash = !empty($filters['cedula_hash']);
 
-        if (!empty($filters['busqueda'])) {
-            $conditions[] = '(apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4)';
+        if ($hasBusqueda) {
             $busq = '%' . $filters['busqueda'] . '%';
             $bindings['busq'] = $busq;
             $bindings['busq2'] = $busq;
             $bindings['busq3'] = $busq;
             $bindings['busq4'] = $busq;
         }
-        if (!empty($filters['cedula_hash'])) {
-            $conditions[] = 'cedula_hash = :cedula_hash';
+        if ($hasCedulaHash) {
             $bindings['cedula_hash'] = (string) $filters['cedula_hash'];
+        }
+
+        if ($hasBusqueda && $hasCedulaHash) {
+            $conditions[] = '((apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4) OR cedula_hash = :cedula_hash)';
+        } elseif ($hasBusqueda) {
+            $conditions[] = '(apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4)';
+        } elseif ($hasCedulaHash) {
+            $conditions[] = 'cedula_hash = :cedula_hash';
         }
 
         $sql = 'SELECT COUNT(*) FROM (

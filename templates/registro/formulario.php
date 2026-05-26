@@ -1,7 +1,7 @@
 <?php
 /**
  * Formulario publico de registro de empresas (Fase 12).
- * Standalone — sin sidebar.
+ * Standalone - sin sidebar.
  *
  * Variables:
  *   $csrfToken:string
@@ -24,7 +24,7 @@ $checked = static fn(string $k): bool => !empty($form[$k]);
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Registra tu empresa — DigiSecure</title>
+    <title>Registra tu empresa - DigiSecure</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>">

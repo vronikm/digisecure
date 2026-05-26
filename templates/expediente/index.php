@@ -29,7 +29,22 @@ $qs = http_build_query(array_filter([
 $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
-<?php $view->section('title') ?><?= $e($titulo) ?> — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?><?= $e($titulo) ?> - DigiSecure<?php $view->endSection() ?>
+
+<?php $view->section('head') ?>
+<style>
+    .ds-op-filter .ds-filter-bar {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .ds-op-filter .ds-filter-row {
+        padding: 0;
+    }
+</style>
+<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-folder2-open me-1"></i>Expedientes</li>
@@ -46,59 +61,77 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     </div>
 </div>
 
-<!-- Filtros -->
-<div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url($currentPath) ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Buscar</label>
-                <input type="text" name="q" class="form-control form-control-sm"
-                       placeholder="Nombre, apellido o correlativo..."
-                       value="<?= $e($filters['busqueda'] ?? '') ?>">
-            </div>
+<div class="ds-card ds-op-filter">
+    <div class="ds-card-header tone-success">
+        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
+        <div>
+            <div class="ds-card-title">Filtros de expedientes</div>
+            <div class="ds-card-subtitle">Busqueda por guardia, correlativo y estado</div>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Estado</label>
-                <select name="estado" class="form-select form-select-sm">
-                    <option value="">Todos los estados</option>
-                    <?php foreach (EstadoExpediente::cases() as $est): ?>
-                    <option value="<?= $est->value ?>" <?= ($filters['estado'] ?? '') === $est->value ? 'selected' : '' ?>>
-                        <?= $e($est->label()) ?>
-                    </option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+    </div>
+    <div class="ds-card-body">
+        <div class="ds-filter-bar">
+            <form method="get" action="<?= $view->url($currentPath) ?>" class="ds-filter-row ds-form-filter">
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Buscar</label>
+                        <input type="text" name="q" class="form-control form-control-sm"
+                               placeholder="Nombre, apellido o correlativo..."
+                               value="<?= $e($filters['busqueda'] ?? '') ?>">
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Estado</label>
+                        <select name="estado" class="form-select form-select-sm">
+                            <option value="">Todos los estados</option>
+                            <?php foreach (EstadoExpediente::cases() as $est): ?>
+                            <option value="<?= $est->value ?>" <?= ($filters['estado'] ?? '') === $est->value ? 'selected' : '' ?>>
+                                <?= $e($est->label()) ?>
+                            </option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-actions">
+                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                        <i class="bi bi-search"></i>Buscar
+                    </button>
+                    <?php if ($hasFilters): ?>
+                    <a href="<?= $view->url($currentPath) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                        <i class="bi bi-x-lg"></i>Limpiar
+                    </a>
+                    <?php endif ?>
+                </div>
+            </form>
         </div>
-        <div class="ds-filter-actions">
-            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Buscar
-            </button>
-            <?php if ($hasFilters): ?>
-            <a href="<?= $view->url($currentPath) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-x-lg"></i>Limpiar
-            </a>
-            <?php endif ?>
-        </div>
-    </form>
-</div>
-
-<?php if ($expedientes === []): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-folder2"></i></div>
-        <h3>No hay expedientes para mostrar</h3>
-        <p>
-            <?php if ($hasFilters): ?>
-                Ningun expediente coincide con los criterios. Ajusta los filtros o limpia los criterios.
-            <?php else: ?>
-                Los expedientes se generan automaticamente al crear una ficha de guardia.
-            <?php endif ?>
-        </p>
     </div>
 </div>
-<?php else: ?>
-<div class="ds-table-card">
+
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-folder2"></i></span>
+        <div>
+            <div class="ds-card-title">Listado de expedientes</div>
+            <div class="ds-card-subtitle">Control documental por estado y avance de bloques</div>
+        </div>
+    </div>
+
+    <?php if ($expedientes === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-folder2"></i></div>
+            <h3>No hay expedientes para mostrar</h3>
+            <p>
+                <?php if ($hasFilters): ?>
+                    Ningun expediente coincide con los criterios. Ajusta los filtros o limpia los criterios.
+                <?php else: ?>
+                    Los expedientes se generan automaticamente al crear una ficha de guardia.
+                <?php endif ?>
+            </p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -185,6 +218,6 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </ul>
     </div>
     <?php endif ?>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>

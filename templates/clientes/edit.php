@@ -14,7 +14,7 @@ $e = ViewRenderer::e(...);
 $valor = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $cliente[$k] ?? $d);
 ?>
 
-<?php $view->section('title') ?>Editar cliente — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Editar cliente - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/clientes') ?>">Clientes</a></li>

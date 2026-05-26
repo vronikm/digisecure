@@ -35,16 +35,24 @@ $eventoTone = [
     </a>
 </div>
 
-<?php if ($registros === []): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-inbox"></i></div>
-        <h3>Aun no hay registros de empresa</h3>
-        <p>Cuando una empresa intente auto-registrarse desde el portal publico, los eventos apareceran aqui.</p>
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-list-columns"></i></span>
+        <div>
+            <div class="ds-card-title">Listado de eventos de registro</div>
+            <div class="ds-card-subtitle">Trazabilidad de altas, activaciones y fallos del portal publico</div>
+        </div>
     </div>
-</div>
-<?php else: ?>
-<div class="ds-table-card">
+
+    <?php if ($registros === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-inbox"></i></div>
+            <h3>Aun no hay registros de empresa</h3>
+            <p>Cuando una empresa intente auto-registrarse desde el portal publico, los eventos apareceran aqui.</p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -91,7 +99,7 @@ $eventoTone = [
                         <?php if ($detalles !== ''): ?>
                             <div class="ds-cell-sub" style="max-width: 360px;"><?= $e($detalles) ?></div>
                         <?php else: ?>
-                            <span class="ds-cell-sub">—</span>
+                            <span class="ds-cell-sub">-</span>
                         <?php endif ?>
                     </td>
                 </tr>
@@ -99,6 +107,6 @@ $eventoTone = [
             </tbody>
         </table>
     </div>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>

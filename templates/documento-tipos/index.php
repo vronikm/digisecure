@@ -12,7 +12,24 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 ?>
 
-<?php $view->section('title') ?>Tipos de documento — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Tipos de documento - DigiSecure<?php $view->endSection() ?>
+
+<?php $view->section('head') ?>
+<style>
+    .ds-op-filter .ds-filter-bar {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .ds-doc-block-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .6rem;
+    }
+</style>
+<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/configuracion/documentos') ?>">Configuracion</a></li>
@@ -30,7 +47,6 @@ $e = ViewRenderer::e(...);
     </div>
 </div>
 
-<!-- KPIs -->
 <div class="ds-kpi-grid ds-kpi-grid-solid">
     <div class="ds-kpi-card">
         <span class="ds-kpi-icon"><i class="bi bi-toggle-on"></i></span>
@@ -62,20 +78,32 @@ $e = ViewRenderer::e(...);
     </div>
 </div>
 
-<!-- Filtro de bloque -->
-<div class="ds-filter-bar" style="display: flex; flex-direction: row; align-items: center; gap: .75rem; flex-wrap: nowrap; overflow-x: auto; padding: .85rem 1.1rem;">
-    <a href="<?= $view->url('/configuracion/documentos') ?>"
-       class="ds-btn ds-btn-sm <?= $bloqueFilter === null ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
-        Todos
-    </a>
-    <a href="<?= $view->url('/configuracion/documentos?bloque=A') ?>"
-       class="ds-btn ds-btn-sm <?= $bloqueFilter === 'A' ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
-        <i class="bi bi-1-square"></i>Bloque A &middot; Pre-empleo
-    </a>
-    <a href="<?= $view->url('/configuracion/documentos?bloque=B') ?>"
-       class="ds-btn ds-btn-sm <?= $bloqueFilter === 'B' ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
-        <i class="bi bi-2-square"></i>Bloque B &middot; Post-vinculacion
-    </a>
+<div class="ds-card ds-op-filter">
+    <div class="ds-card-header tone-success">
+        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
+        <div>
+            <div class="ds-card-title">Filtros de tipos de documento</div>
+            <div class="ds-card-subtitle">Visualiza por bloque documental</div>
+        </div>
+    </div>
+    <div class="ds-card-body">
+        <div class="ds-filter-bar">
+            <div class="ds-doc-block-filters">
+                <a href="<?= $view->url('/configuracion/documentos') ?>"
+                   class="ds-btn ds-btn-sm <?= $bloqueFilter === null ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
+                    Todos
+                </a>
+                <a href="<?= $view->url('/configuracion/documentos?bloque=A') ?>"
+                   class="ds-btn ds-btn-sm <?= $bloqueFilter === 'A' ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
+                    <i class="bi bi-1-square"></i>Bloque A &middot; Pre-empleo
+                </a>
+                <a href="<?= $view->url('/configuracion/documentos?bloque=B') ?>"
+                   class="ds-btn ds-btn-sm <?= $bloqueFilter === 'B' ? 'ds-btn-primary' : 'ds-btn-outline' ?>">
+                    <i class="bi bi-2-square"></i>Bloque B &middot; Post-vinculacion
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="login-info" style="margin-bottom: 1.25rem;">
@@ -87,16 +115,24 @@ $e = ViewRenderer::e(...);
     </div>
 </div>
 
-<?php if (empty($tipos)): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-files"></i></div>
-        <h3>No hay tipos configurados</h3>
-        <p>El catalogo se construye desde la base del sistema. Si no ves tipos, contacta a soporte.</p>
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-files"></i></span>
+        <div>
+            <div class="ds-card-title">Listado de tipos de documento</div>
+            <div class="ds-card-subtitle">Configuracion documental por bloque, vigencia y estado</div>
+        </div>
     </div>
-</div>
-<?php else: ?>
-<div class="ds-table-card">
+
+    <?php if (empty($tipos)): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-files"></i></div>
+            <h3>No hay tipos configurados</h3>
+            <p>El catalogo se construye desde la base del sistema. Si no ves tipos, contacta a soporte.</p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -148,7 +184,7 @@ $e = ViewRenderer::e(...);
                         <?php if ((int) $t['tiene_vencimiento'] === 1 && $t['dias_vigencia'] !== null): ?>
                             <span class="ds-cell-mono"><?= (int) $t['dias_vigencia'] ?>d</span>
                         <?php else: ?>
-                            <span class="ds-cell-sub">—</span>
+                            <span class="ds-cell-sub">-</span>
                         <?php endif ?>
                     </td>
                     <td class="ds-cell-end">
@@ -180,6 +216,6 @@ $e = ViewRenderer::e(...);
             </tbody>
         </table>
     </div>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>

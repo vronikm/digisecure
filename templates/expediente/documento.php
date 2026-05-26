@@ -32,7 +32,7 @@ $ds_dt = 'font-size: .68rem; font-weight: 700; text-transform: uppercase; letter
 $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
 ?>
 
-<?php $view->section('title') ?>Documento — <?= $e($doc['tipo_nombre']) ?><?php $view->endSection() ?>
+<?php $view->section('title') ?>Documento - <?= $e($doc['tipo_nombre']) ?><?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
@@ -97,27 +97,27 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 <div class="row g-3">
                     <div class="col-md-12">
                         <div style="<?= $ds_dt ?>">Nombre original</div>
-                        <div style="<?= $ds_dd ?>"><?= $e($doc['archivo_nombre_original'] ?? '—') ?></div>
+                    <div style="<?= $ds_dd ?>"><?= $e($doc['archivo_nombre_original'] ?? '-') ?></div>
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Tipo MIME</div>
-                        <div class="ds-cell-mono"><?= $e($doc['archivo_mime'] ?? '—') ?></div>
+                    <div class="ds-cell-mono"><?= $e($doc['archivo_mime'] ?? '-') ?></div>
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Tamano</div>
                         <div class="ds-cell-mono">
                             <?php if (!empty($doc['archivo_tamano_bytes'])): ?>
                                 <?= number_format($doc['archivo_tamano_bytes'] / 1024, 1) ?> KB
-                            <?php else: ?>—<?php endif ?>
+                    <?php else: ?>-<?php endif ?>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Subido por</div>
-                        <div style="<?= $ds_dd ?>"><?= $e($doc['subido_por'] ?? '—') ?></div>
+                    <div style="<?= $ds_dd ?>"><?= $e($doc['subido_por'] ?? '-') ?></div>
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Fecha subida</div>
-                        <div class="ds-cell-mono"><?= $doc['subido_at'] ? date('d/m/Y H:i', strtotime($doc['subido_at'])) : '—' ?></div>
+                    <div class="ds-cell-mono"><?= $doc['subido_at'] ? date('d/m/Y H:i', strtotime($doc['subido_at'])) : '-' ?></div>
                     </div>
                 </div>
                 <?php if (!empty($doc['archivo_nombre_storage'])): ?>
@@ -146,7 +146,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Fecha emision doc.</div>
-                        <div class="ds-cell-mono"><?= $doc['fecha_emision_documento'] ? date('d/m/Y', strtotime($doc['fecha_emision_documento'])) : '—' ?></div>
+                    <div class="ds-cell-mono"><?= $doc['fecha_emision_documento'] ? date('d/m/Y', strtotime($doc['fecha_emision_documento'])) : '-' ?></div>
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Fecha vencimiento</div>
@@ -164,13 +164,13 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                                     <span class="ds-cell-mono" style="font-weight: 700;"><?= $vence->format('d/m/Y') ?></span>
                                 <?php endif ?>
                             <?php else: ?>
-                                <span class="ds-cell-sub">—</span>
+                                    <span class="ds-cell-sub">-</span>
                             <?php endif ?>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Fecha obj. actualizacion</div>
-                        <div class="ds-cell-mono"><?= $doc['fecha_objetivo_actualizacion'] ? date('d/m/Y', strtotime($doc['fecha_objetivo_actualizacion'])) : '—' ?></div>
+                    <div class="ds-cell-mono"><?= $doc['fecha_objetivo_actualizacion'] ? date('d/m/Y', strtotime($doc['fecha_objetivo_actualizacion'])) : '-' ?></div>
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Vigencia del tipo</div>

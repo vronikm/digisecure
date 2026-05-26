@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DigiSecure\Ficha\Controller;
 
-use DigiSecure\Ficha\Domain\ValueObject\Cedula;
 use DigiSecure\Ficha\Domain\Enum\EstadoFicha;
 use DigiSecure\Ficha\Domain\Enum\TipoFicha;
 use DigiSecure\Ficha\Application\ActualizarFichaService;
@@ -76,7 +75,7 @@ final class FichaController
             $digits = preg_replace('/\D+/', '', $busqueda) ?? '';
             if (strlen($digits) === 10) {
                 try {
-                    $filters['cedula_hash'] = Cedula::fromString($digits)->hash();
+                    $filters['cedula_hash'] = hash('sha256', $digits);
                 } catch (DomainException) {
                     // Si la cédula no valida, se mantiene búsqueda textual.
                 }
@@ -191,13 +190,61 @@ final class FichaController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
         $cursos = $this->loadCatalogoCursos();
+        $input = [];
+        $prefillFromLast = false;
+
+        $baseFichaId = trim((string) $request->query('base_ficha', ''));
+        if ($baseFichaId !== '') {
+            $input = $this->buildCreatePrefillFromFicha($baseFichaId);
+            $prefillFromLast = $input !== [];
+        }
 
         return $this->view->response('ficha/create', [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
             'cursos' => $cursos,
-            'input' => [],
+            'input' => $input,
+            'prefillFromLast' => $prefillFromLast,
+            'prefillByCedulaUrl' => '/guardias/prefill/cedula',
+            'formEnableCedulaPrefill' => true,
+        ]);
+    }
+
+    public function prefillByCedula(Request $request): Response
+    {
+        $cedulaRaw = preg_replace('/\D+/', '', (string) $request->query('cedula', '')) ?? '';
+        if (strlen($cedulaRaw) !== 10) {
+            return Response::json([
+                'found' => false,
+                'error' => 'cedula_invalida',
+            ], Response::STATUS_BAD_REQUEST);
+        }
+
+        $latestFicha = $this->fichaRepo->findLatestByCedulaHash(hash('sha256', $cedulaRaw));
+        if ($latestFicha === null) {
+            return Response::json(['found' => false]);
+        }
+
+        $baseFichaId = (string) ($latestFicha['id'] ?? '');
+        if ($baseFichaId === '') {
+            return Response::json(['found' => false]);
+        }
+
+        $input = $this->buildCreatePrefillFromFicha($baseFichaId);
+        if ($input === []) {
+            return Response::json(['found' => false]);
+        }
+
+        return Response::json([
+            'found' => true,
+            'input' => $input,
+            'source' => [
+                'id' => $baseFichaId,
+                'correlativo' => (string) ($latestFicha['correlativo'] ?? ''),
+                'nombres' => (string) ($latestFicha['nombres'] ?? ''),
+                'apellidos' => (string) ($latestFicha['apellidos'] ?? ''),
+            ],
         ]);
     }
 
@@ -221,6 +268,8 @@ final class FichaController
                 'cursos' => $cursos,
                 'input' => $input,
                 'error' => $e->getMessage(),
+                'prefillByCedulaUrl' => '/guardias/prefill/cedula',
+                'formEnableCedulaPrefill' => true,
             ]);
         }
     }
@@ -483,6 +532,124 @@ final class FichaController
         }
 
         return \is_string($secure) && $secure !== '' ? $secure : $path;
+    }
+
+    /**
+     * Construye un prefill para crear una nueva ficha usando la ultima ficha
+     * registrada del mismo guardia (por cedula_hash).
+     *
+     * @return array<string, mixed>
+     */
+    private function buildCreatePrefillFromFicha(string $baseFichaId): array
+    {
+        $baseFicha = $this->fichaRepo->findFichaById($baseFichaId);
+        if ($baseFicha === null) {
+            return [];
+        }
+
+        $sourceFicha = $baseFicha;
+        $cedulaHash = (string) ($baseFicha['cedula_hash'] ?? '');
+        if ($cedulaHash !== '') {
+            $historial = $this->fichaRepo->findByCedulaHashFiltered($cedulaHash);
+            $latestId = (string) ($historial[0]['id'] ?? '');
+            if ($latestId !== '') {
+                $latestFicha = $this->fichaRepo->findFichaById($latestId);
+                if ($latestFicha !== null) {
+                    $sourceFicha = $latestFicha;
+                }
+            }
+        }
+
+        $input = [];
+        $scalarKeys = [
+            'nombres',
+            'apellidos',
+            'genero',
+            'fecha_nacimiento',
+            'lugar_nacimiento_ciudad',
+            'lugar_nacimiento_provincia',
+            'tipo_sangre',
+            'estatura',
+            'estado_civil',
+            'celular',
+            'email',
+            'domicilio_ciudad',
+            'domicilio_tipo_vivienda',
+            'domicilio_telefono',
+            'domicilio_calle',
+            'domicilio_numero',
+            'domicilio_barrio',
+            'domicilio_referencia',
+            'contacto_emergencia_nombre',
+            'contacto_emergencia_telefono',
+            'banco',
+            'tipo_cuenta',
+            'instruccion_primaria',
+            'instruccion_secundaria',
+            'instruccion_superior',
+            'fecha_ultimo_reentrenamiento',
+        ];
+
+        foreach ($scalarKeys as $key) {
+            if (\array_key_exists($key, $sourceFicha)) {
+                $input[$key] = $sourceFicha[$key];
+            }
+        }
+
+        $input['cedula'] = $this->decryptSafe($sourceFicha['cedula_cifrada'] ?? null);
+        $input['cuenta_bancaria'] = $this->decryptSafe($sourceFicha['cuenta_bancaria_cifrada'] ?? null);
+
+        $sourceId = (string) ($sourceFicha['id'] ?? '');
+        if ($sourceId === '') {
+            return $input;
+        }
+
+        $input['trabajos_anteriores'] = array_map(
+            static fn(array $t): array => [
+                'empresa' => (string) ($t['empresa'] ?? ''),
+                'cargo' => (string) ($t['cargo'] ?? ''),
+                'tiempo' => (string) ($t['tiempo'] ?? ''),
+                'direccion' => (string) ($t['direccion'] ?? ''),
+                'telefonos' => (string) ($t['telefonos'] ?? ''),
+            ],
+            $this->fichaRepo->getTrabajosAnteriores($sourceId),
+        );
+
+        $input['hijos_menores'] = array_map(
+            static fn(array $h): array => [
+                'nombre' => (string) ($h['nombre'] ?? ''),
+                'edad' => (string) ($h['edad'] ?? ''),
+                'justifica_con_cedula' => (string) ($h['justifica_con_cedula'] ?? '0'),
+            ],
+            $this->fichaRepo->getHijosMenores($sourceId),
+        );
+
+        $input['referencias'] = array_map(
+            static fn(array $r): array => [
+                'parentesco' => (string) ($r['parentesco'] ?? 'OTRO'),
+                'nombre' => (string) ($r['nombre'] ?? ''),
+                'direccion' => (string) ($r['direccion'] ?? ''),
+                'telefono' => (string) ($r['telefono'] ?? ''),
+            ],
+            $this->fichaRepo->getReferencias($sourceId),
+        );
+
+        $input['cursos'] = array_values(array_filter(array_map(
+            static function (array $c): array {
+                $cursoId = (string) ($c['curso_id'] ?? '');
+                if ($cursoId === '') {
+                    return [];
+                }
+                return [
+                    'curso_id' => $cursoId,
+                    'fecha_obtencion' => (string) ($c['fecha_obtencion'] ?? ''),
+                    'observacion' => (string) ($c['observacion'] ?? ''),
+                ];
+            },
+            $this->fichaRepo->getCursos($sourceId),
+        )));
+
+        return $input;
     }
 
     /**

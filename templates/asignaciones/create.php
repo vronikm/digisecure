@@ -14,7 +14,7 @@ $e = ViewRenderer::e(...);
 $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $d);
 ?>
 
-<?php $view->section('title') ?>Nueva asignacion — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Nueva asignacion - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/asignaciones') ?>">Asignaciones</a></li>
@@ -64,7 +64,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
                     <div class="ds-form-field">
                         <label class="ds-form-label">Guardia (ficha) <span class="ds-required">*</span></label>
                         <select name="ficha_id" class="form-select" required>
-                            <option value="">— Seleccione un guardia —</option>
+                            <option value="">- Seleccione un guardia -</option>
                             <?php foreach ($fichas as $f): ?>
                             <option value="<?= $e($f['id']) ?>" <?= $old('ficha_id') === $f['id'] ? 'selected' : '' ?>>
                                 <?= $e($f['label']) ?> &middot; <?= $e($f['correlativo']) ?>
@@ -78,7 +78,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
                     <div class="ds-form-field">
                         <label class="ds-form-label">Puesto <span class="ds-required">*</span></label>
                         <select name="puesto_id" class="form-select" required>
-                            <option value="">— Seleccione un puesto —</option>
+                            <option value="">- Seleccione un puesto -</option>
                             <?php foreach ($puestos as $p):
                                 $disponibles = max(0, $p['plazas'] - $p['ocupadas']);
                                 $disabled = $disponibles === 0;

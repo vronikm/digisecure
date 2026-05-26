@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 /**
- * Visor de auditoria — listado filtrable.
+ * Visor de auditoria - listado filtrable.
  *
  * Variables: $user, $csrfToken, $currentPath, $eventos, $total, $page, $totalPages, $filters, $eventosDisponibles
  */
@@ -34,7 +34,22 @@ $qs = http_build_query(array_filter([
 $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
-<?php $view->section('title') ?>Auditoria — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Auditoria - DigiSecure<?php $view->endSection() ?>
+
+<?php $view->section('head') ?>
+<style>
+    .ds-op-filter .ds-filter-bar {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .ds-op-filter .ds-filter-row {
+        padding: 0;
+    }
+</style>
+<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-shield-check me-1"></i>Auditoria</li>
@@ -57,77 +72,95 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     <?php endif ?>
 </div>
 
-<!-- Filtros -->
-<div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/auditoria') ?>" class="ds-filter-row ds-form-filter ds-filter-row-auditoria">
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Evento</label>
-                <input type="text" name="evento" class="form-control form-control-sm" list="eventos-list"
-                       value="<?= $e($filters['evento'] ?? '') ?>" placeholder="ej: auth.login_ok">
-                <datalist id="eventos-list">
-                    <?php foreach ($eventosDisponibles as $ev): ?>
-                    <option value="<?= $e($ev) ?>"></option>
-                    <?php endforeach ?>
-                </datalist>
-            </div>
+<div class="ds-card ds-op-filter">
+    <div class="ds-card-header tone-success">
+        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
+        <div>
+            <div class="ds-card-title">Filtros de auditoria</div>
+            <div class="ds-card-subtitle">Consulta por evento, nivel y rango de fechas</div>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Nivel</label>
-                <select name="nivel" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    <?php foreach (['info','warning','critical'] as $niv): ?>
-                    <option value="<?= $niv ?>" <?= ($filters['nivel'] ?? '') === $niv ? 'selected' : '' ?>>
-                        <?= $e(ucfirst($niv)) ?>
-                    </option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+    </div>
+    <div class="ds-card-body">
+        <div class="ds-filter-bar">
+            <form method="get" action="<?= $view->url('/auditoria') ?>" class="ds-filter-row ds-form-filter ds-filter-row-auditoria">
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Evento</label>
+                        <input type="text" name="evento" class="form-control form-control-sm" list="eventos-list"
+                               value="<?= $e($filters['evento'] ?? '') ?>" placeholder="ej: auth.login_ok">
+                        <datalist id="eventos-list">
+                            <?php foreach ($eventosDisponibles as $ev): ?>
+                            <option value="<?= $e($ev) ?>"></option>
+                            <?php endforeach ?>
+                        </datalist>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Nivel</label>
+                        <select name="nivel" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach (['info','warning','critical'] as $niv): ?>
+                            <option value="<?= $niv ?>" <?= ($filters['nivel'] ?? '') === $niv ? 'selected' : '' ?>>
+                                <?= $e(ucfirst($niv)) ?>
+                            </option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Desde</label>
+                        <input type="date" name="desde" class="form-control form-control-sm"
+                               value="<?= $e($filters['desde'] ?? '') ?>">
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Hasta</label>
+                        <input type="date" name="hasta" class="form-control form-control-sm"
+                               value="<?= $e($filters['hasta'] ?? '') ?>">
+                    </div>
+                </div>
+                <div class="ds-filter-actions">
+                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                        <i class="bi bi-search"></i>Buscar
+                    </button>
+                    <?php if ($hasFilters): ?>
+                    <a href="<?= $view->url('/auditoria') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                        <i class="bi bi-x-lg"></i>Limpiar
+                    </a>
+                    <?php endif ?>
+                </div>
+            </form>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Desde</label>
-                <input type="date" name="desde" class="form-control form-control-sm"
-                       value="<?= $e($filters['desde'] ?? '') ?>">
-            </div>
-        </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Hasta</label>
-                <input type="date" name="hasta" class="form-control form-control-sm"
-                       value="<?= $e($filters['hasta'] ?? '') ?>">
-            </div>
-        </div>
-        <div class="ds-filter-actions">
-            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Buscar
-            </button>
-            <?php if ($hasFilters): ?>
-            <a href="<?= $view->url('/auditoria') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-x-lg"></i>Limpiar
-            </a>
-            <?php endif ?>
-        </div>
-    </form>
-</div>
-
-<?php if ($eventos === []): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-journal-text"></i></div>
-        <h3>No hay eventos en auditoria</h3>
-        <p>
-            <?php if ($hasFilters): ?>
-                Ningun evento coincide con los filtros aplicados. Ajusta los criterios o limpia los filtros.
-            <?php else: ?>
-                Los eventos se registran automaticamente cuando los usuarios realizan acciones en el sistema.
-            <?php endif ?>
-        </p>
     </div>
 </div>
-<?php else: ?>
-<div class="ds-table-card">
+
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-journal-text"></i></span>
+        <div>
+            <div class="ds-card-title">Eventos de auditoria</div>
+            <div class="ds-card-subtitle">Bitacora de acciones y trazabilidad de seguridad</div>
+        </div>
+    </div>
+
+    <?php if ($eventos === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-journal-text"></i></div>
+            <h3>No hay eventos en auditoria</h3>
+            <p>
+                <?php if ($hasFilters): ?>
+                    Ningun evento coincide con los filtros aplicados. Ajusta los criterios o limpia los filtros.
+                <?php else: ?>
+                    Los eventos se registran automaticamente cuando los usuarios realizan acciones en el sistema.
+                <?php endif ?>
+            </p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -152,7 +185,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                         <div class="ds-cell-name"><?= $e($ev['usuario_apellidos'] ?? '') ?> <?= $e($ev['usuario_nombres'] ?? '') ?></div>
                         <div class="ds-cell-sub"><?= $e($ev['usuario_email']) ?></div>
                         <?php else: ?>
-                        <span class="ds-cell-sub">—</span>
+                        <span class="ds-cell-sub">-</span>
                         <?php endif ?>
                     </td>
                     <td>
@@ -160,10 +193,10 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                         <span class="ds-chip"><i class="bi bi-tag"></i><?= $e($ev['entidad_tipo']) ?></span>
                         <div class="ds-cell-sub" style="margin-top:.2rem;"><span class="ds-cell-mono"><?= $e($ev['entidad_id'] ?? '') ?></span></div>
                         <?php else: ?>
-                        <span class="ds-cell-sub">—</span>
+                        <span class="ds-cell-sub">-</span>
                         <?php endif ?>
                     </td>
-                    <td><span class="ds-cell-mono"><?= $e($ev['ip_text'] ?? '—') ?></span></td>
+                    <td><span class="ds-cell-mono"><?= $e($ev['ip_text'] ?? '-') ?></span></td>
                     <td>
                         <?php if (!empty($ev['detalles_json'])): ?>
                         <details>
@@ -171,7 +204,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                             <pre style="background:#0f172a; color:#e2e8f0; padding:.6rem .75rem; border-radius:8px; max-width:400px; max-height:240px; overflow:auto; font-size:.72rem; margin:.4rem 0 0; white-space:pre-wrap; word-break:break-word;"><?= $e(json_encode(json_decode((string) $ev['detalles_json'], true), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?></pre>
                         </details>
                         <?php else: ?>
-                        <span class="ds-cell-sub">—</span>
+                        <span class="ds-cell-sub">-</span>
                         <?php endif ?>
                     </td>
                 </tr>
@@ -205,6 +238,6 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </ul>
     </div>
     <?php endif ?>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>

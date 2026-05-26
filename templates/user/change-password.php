@@ -16,7 +16,7 @@ $error = $error ?? null;
 $success = $success ?? null;
 ?>
 
-<?php $view->section('title') ?>Cambiar contrasena — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Cambiar contrasena - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/dashboard') ?>">Dashboard</a></li>

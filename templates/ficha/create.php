@@ -81,12 +81,16 @@ $formConfirmButton = isset($formConfirmButton) && is_string($formConfirmButton) 
 $formConfirmCancel = isset($formConfirmCancel) && is_string($formConfirmCancel) && $formConfirmCancel !== ''
     ? $formConfirmCancel
     : 'Cancelar';
+$prefillByCedulaUrl = isset($prefillByCedulaUrl) && is_string($prefillByCedulaUrl) && $prefillByCedulaUrl !== ''
+    ? $prefillByCedulaUrl
+    : '/guardias/prefill/cedula';
+$formEnableCedulaPrefill = isset($formEnableCedulaPrefill) ? (bool)$formEnableCedulaPrefill : false;
 $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha']) && $input['tipo_ficha'] !== ''
     ? $input['tipo_ficha']
     : 'INGRESO';
 ?>
 
-<?php $view->section('title') ?><?= $e($formPageTitle) ?> — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?><?= $e($formPageTitle) ?> - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('head') ?>
 <style>
@@ -604,6 +608,9 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
 <?php if (!empty($error)): ?>
 <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?= $e($error) ?></div>
 <?php endif ?>
+<?php if (!empty($prefillFromLast)): ?>
+<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>Se precargo la informacion de la ultima ficha del guardia. Revisa y actualiza solo los cambios necesarios.</div>
+<?php endif ?>
 <?php if ($formSuccessMessage !== ''): ?>
 <div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><?= $e($formSuccessMessage) ?></div>
 <?php endif ?>
@@ -1010,7 +1017,11 @@ const SUBMIT_CONFIRM_CONFIG = <?= json_encode([
     'confirmButtonText' => $formConfirmButton,
     'cancelButtonText' => $formConfirmCancel,
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+const CEDULA_PREFILL_ENABLED = <?= $formEnableCedulaPrefill ? 'true' : 'false' ?>;
+const CEDULA_PREFILL_URL = <?= json_encode($view->url($prefillByCedulaUrl), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 let currentStepIndex = 0;
+let prefillLookupInProgress = false;
+let lastCedulaPrefilled = '';
 
 function esc(v) {
     if (v == null) return '';
@@ -1226,6 +1237,144 @@ function checkEmpty(section) {
     empty.style.display = container.querySelector(selectors[section]) ? 'none' : '';
 }
 
+function clearRepeater(section) {
+    const container = document.getElementById(section + '-container');
+    if (!container) return;
+    const selectors = {
+        trabajos: '.trabajo-row',
+        hijos: '.hijo-row',
+        referencias: '.ref-row'
+    };
+    container.querySelectorAll(selectors[section] || '').forEach(node => node.remove());
+    checkEmpty(section);
+}
+
+function applyCursosPrefill(cursos = []) {
+    document.querySelectorAll('.curso-check').forEach(cb => {
+        const idx = cb.dataset.index;
+        const fecha = document.querySelector(`.curso-fecha[data-index="${idx}"]`);
+        const obs = document.querySelector(`.curso-obs[data-index="${idx}"]`);
+        cb.checked = false;
+        if (fecha) {
+            fecha.value = '';
+            fecha.disabled = true;
+        }
+        if (obs) {
+            obs.value = '';
+            obs.disabled = true;
+        }
+        cb.closest('tr')?.classList.remove('table-primary');
+    });
+
+    const mapByCursoId = new Map();
+    document.querySelectorAll('.curso-id').forEach(hidden => {
+        const idx = hidden.dataset.index;
+        if (!idx) return;
+        mapByCursoId.set(String(hidden.value || ''), idx);
+    });
+
+    (Array.isArray(cursos) ? cursos : []).forEach(curso => {
+        const cursoId = String(curso?.curso_id || '');
+        if (!cursoId || !mapByCursoId.has(cursoId)) return;
+        const idx = mapByCursoId.get(cursoId);
+        const cb = document.querySelector(`.curso-check[data-index="${idx}"]`);
+        const fecha = document.querySelector(`.curso-fecha[data-index="${idx}"]`);
+        const obs = document.querySelector(`.curso-obs[data-index="${idx}"]`);
+        if (cb instanceof HTMLInputElement) {
+            cb.checked = true;
+            cb.closest('tr')?.classList.add('table-primary');
+        }
+        if (fecha instanceof HTMLInputElement) {
+            fecha.disabled = false;
+            fecha.value = String(curso?.fecha_obtencion || '');
+        }
+        if (obs instanceof HTMLInputElement) {
+            obs.disabled = false;
+            obs.value = String(curso?.observacion || '');
+        }
+    });
+}
+
+function applyFichaPrefill(prefill = {}) {
+    if (!(prefill && typeof prefill === 'object')) return;
+
+    const scalarKeys = [
+        'nombres',
+        'apellidos',
+        'genero',
+        'fecha_nacimiento',
+        'lugar_nacimiento_ciudad',
+        'lugar_nacimiento_provincia',
+        'tipo_sangre',
+        'estatura',
+        'estado_civil',
+        'celular',
+        'email',
+        'domicilio_ciudad',
+        'domicilio_tipo_vivienda',
+        'domicilio_telefono',
+        'domicilio_calle',
+        'domicilio_numero',
+        'domicilio_barrio',
+        'domicilio_referencia',
+        'contacto_emergencia_nombre',
+        'contacto_emergencia_telefono',
+        'banco',
+        'tipo_cuenta',
+        'cuenta_bancaria',
+        'instruccion_primaria',
+        'instruccion_secundaria',
+        'instruccion_superior',
+        'fecha_ultimo_reentrenamiento'
+    ];
+
+    scalarKeys.forEach(key => {
+        const field = document.querySelector(`[name="${key}"]`);
+        if (!(field instanceof HTMLInputElement) && !(field instanceof HTMLSelectElement) && !(field instanceof HTMLTextAreaElement)) {
+            return;
+        }
+        const value = prefill[key];
+        field.value = value == null ? '' : String(value);
+        field.dataset.touched = '1';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    clearRepeater('trabajos');
+    (Array.isArray(prefill.trabajos_anteriores) ? prefill.trabajos_anteriores : []).forEach(row => addTrabajo(row || {}));
+
+    clearRepeater('hijos');
+    (Array.isArray(prefill.hijos_menores) ? prefill.hijos_menores : []).forEach(row => addHijo(row || {}));
+
+    clearRepeater('referencias');
+    (Array.isArray(prefill.referencias) ? prefill.referencias : []).forEach(row => addReferencia(row || {}));
+
+    checkEmpty('trabajos');
+    checkEmpty('hijos');
+    checkEmpty('referencias');
+    applyCursosPrefill(prefill.cursos || []);
+    refreshSummary();
+}
+
+function hasManualDataBeyondCedula() {
+    const fields = [
+        'nombres', 'apellidos', 'celular', 'email', 'domicilio_calle',
+        'domicilio_numero', 'banco', 'cuenta_bancaria'
+    ];
+    for (const key of fields) {
+        const el = document.querySelector(`[name="${key}"]`);
+        if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLSelectElement) && !(el instanceof HTMLTextAreaElement)) {
+            continue;
+        }
+        const value = String(el.value || '').trim();
+        if (value !== '') return true;
+    }
+
+    if (document.querySelector('.trabajo-row, .hijo-row, .ref-row')) return true;
+    if (document.querySelector('.curso-check:checked')) return true;
+    return false;
+}
+
 // ---- Cursos: habilitar campos al marcar checkbox ----
 document.querySelectorAll('.curso-check').forEach(cb => {
     const row = cb.closest('tr');
@@ -1322,10 +1471,82 @@ if (fichaForm) {
         }
     };
 
+    const confirmarSobrescrituraPrefill = async () => {
+        if (!hasManualDataBeyondCedula()) {
+            return true;
+        }
+
+        const msg = 'Ya ingresaste datos en el formulario. Se reemplazaran con la ultima ficha encontrada. Deseas continuar?';
+        if (typeof Swal !== 'undefined') {
+            const result = await Swal.fire({
+                icon: 'question',
+                title: 'Usar datos de la ultima ficha?',
+                text: msg,
+                showCancelButton: true,
+                confirmButtonText: 'Si, reemplazar',
+                cancelButtonText: 'No, mantener',
+                reverseButtons: true,
+                focusCancel: true
+            });
+            return Boolean(result.isConfirmed);
+        }
+
+        return window.confirm(msg);
+    };
+
+    const prefillDesdeCedula = async (cedulaDigits) => {
+        if (!CEDULA_PREFILL_ENABLED || !CEDULA_PREFILL_URL) {
+            return;
+        }
+        if (!/^\d{10}$/.test(cedulaDigits)) {
+            return;
+        }
+        if (prefillLookupInProgress || lastCedulaPrefilled === cedulaDigits) {
+            return;
+        }
+
+        prefillLookupInProgress = true;
+        try {
+            const endpoint = new URL(CEDULA_PREFILL_URL, window.location.origin);
+            endpoint.searchParams.set('cedula', cedulaDigits);
+            const response = await fetch(endpoint.toString(), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            if (!payload || payload.found !== true || typeof payload.input !== 'object') {
+                return;
+            }
+
+            const shouldApply = await confirmarSobrescrituraPrefill();
+            if (!shouldApply) {
+                return;
+            }
+
+            applyFichaPrefill(payload.input);
+            lastCedulaPrefilled = cedulaDigits;
+        } catch (error) {
+            // Silencioso: no bloquea al usuario si falla prefill.
+        } finally {
+            prefillLookupInProgress = false;
+        }
+    };
+
     if (cedulaInput) {
         cedulaInput.addEventListener('input', () => {
             cedulaInput.value = cedulaInput.value.replace(/\D/g, '').slice(0, 10);
             cedulaInput.setCustomValidity('');
+            if (cedulaInput.value.length !== 10) {
+                lastCedulaPrefilled = '';
+            }
             // Validación en vivo solo cuando completa los 10 dígitos
             if (cedulaInput.value.length === 10) {
                 const r = validarCedulaEcuador(cedulaInput.value);
@@ -1339,7 +1560,7 @@ if (fichaForm) {
                 setCedulaEstado('none');
             }
         });
-        const verificarCedula = () => {
+        const verificarCedula = (allowPrefillFetch = true) => {
             const val = cedulaInput.value;
             if (val === '') {
                 cedulaInput.setCustomValidity('');
@@ -1350,15 +1571,18 @@ if (fichaForm) {
             if (r.valid) {
                 setCedulaEstado('valid');
                 cedulaInput.setCustomValidity('');
+                if (allowPrefillFetch) {
+                    void prefillDesdeCedula(val);
+                }
             } else {
                 setCedulaEstado('invalid', 'Cédula incorrecta');
                 cedulaInput.setCustomValidity(r.reason);
             }
         };
-        cedulaInput.addEventListener('blur', verificarCedula);
-        cedulaInput.addEventListener('change', verificarCedula);
+        cedulaInput.addEventListener('blur', () => verificarCedula(true));
+        cedulaInput.addEventListener('change', () => verificarCedula(true));
         // Si viene precargada del servidor, validar al cargar
-        if (cedulaInput.value.length === 10) verificarCedula();
+        if (cedulaInput.value.length === 10) verificarCedula(false);
     }
 
     fichaForm.addEventListener('input', event => {

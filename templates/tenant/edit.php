@@ -13,7 +13,7 @@ $e = ViewRenderer::e(...);
 $canEditSensitive = (bool) ($canEditSensitive ?? false);
 ?>
 
-<?php $view->section('title') ?>Editar empresa — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Editar empresa - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/empresa') ?>">Empresa</a></li>

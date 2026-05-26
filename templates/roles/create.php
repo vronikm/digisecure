@@ -15,7 +15,7 @@ $input = $input ?? [];
 $selectedPermisos = $input['permisos_ids'] ?? [];
 ?>
 
-<?php $view->section('title') ?>Crear rol — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Crear rol - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/roles') ?>">Roles</a></li>

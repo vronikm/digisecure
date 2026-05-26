@@ -135,7 +135,7 @@ $normalizeMenuSearch = static function (array $parts): string {
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=20.1">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=20.3">
     <style>
         @keyframes dsMenuActivePulse {
             0% {
@@ -203,7 +203,7 @@ $normalizeMenuSearch = static function (array $parts): string {
 </div>
 <?php endif; ?>
 <nav class="ds-topbar">
-    <button class="btn btn-link text-white d-lg-none p-0" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
+    <button class="btn btn-link text-white p-0 ds-sidebar-toggle-btn" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
         <i class="bi bi-list fs-3"></i>
     </button>
 
@@ -500,6 +500,7 @@ $normalizeMenuSearch = static function (array $parts): string {
 })();
 (() => {
     const sidebar = document.querySelector('.ds-sidebar');
+    const main = document.querySelector('.ds-main');
     const overlay = document.getElementById('sidebar-overlay');
     const toggles = document.querySelectorAll('[data-sidebar-toggle]');
     const searchInput = document.getElementById('ds-menu-search');
@@ -507,6 +508,9 @@ $normalizeMenuSearch = static function (array $parts): string {
     const menuScroll = document.querySelector('.ds-menu-scroll');
     const menuSections = Array.from(document.querySelectorAll('[data-menu-section]'));
     const MENU_SCROLL_KEY = 'digisecure.sidebar.scrollTop.v1';
+    const DESKTOP_COLLAPSE_KEY = 'digisecure.sidebar.desktopCollapsed.v1';
+
+    const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
 
     const syncOverlay = () => {
         if (!sidebar || !overlay) {
@@ -601,9 +605,43 @@ $normalizeMenuSearch = static function (array $parts): string {
         }, 1100);
     };
 
+    const applyDesktopCollapse = (collapsed) => {
+        if (!sidebar || !main) {
+            return;
+        }
+        sidebar.classList.toggle('is-collapsed', collapsed);
+        main.classList.toggle('ds-main-expanded', collapsed);
+        if (collapsed) {
+            sidebar.classList.remove('show');
+        }
+        syncOverlay();
+    };
+
+    const saveDesktopCollapse = (collapsed) => {
+        try {
+            window.localStorage.setItem(DESKTOP_COLLAPSE_KEY, collapsed ? '1' : '0');
+        } catch (error) {
+            // noop
+        }
+    };
+
+    const loadDesktopCollapse = () => {
+        try {
+            return window.localStorage.getItem(DESKTOP_COLLAPSE_KEY) === '1';
+        } catch (error) {
+            return false;
+        }
+    };
+
     toggles.forEach((toggle) => {
         toggle.addEventListener('click', () => {
             if (!sidebar) {
+                return;
+            }
+            if (isDesktop()) {
+                const collapsed = !sidebar.classList.contains('is-collapsed');
+                applyDesktopCollapse(collapsed);
+                saveDesktopCollapse(collapsed);
                 return;
             }
             sidebar.classList.toggle('show');
@@ -619,6 +657,23 @@ $normalizeMenuSearch = static function (array $parts): string {
             syncOverlay();
         });
     }
+
+    if (sidebar && main && isDesktop()) {
+        applyDesktopCollapse(loadDesktopCollapse());
+    }
+
+    window.addEventListener('resize', () => {
+        if (!sidebar || !main) {
+            return;
+        }
+        if (isDesktop()) {
+            applyDesktopCollapse(loadDesktopCollapse());
+            return;
+        }
+        sidebar.classList.remove('is-collapsed');
+        main.classList.remove('ds-main-expanded');
+        syncOverlay();
+    });
 
     document.querySelectorAll('.ds-sidebar a[href]').forEach((link) => {
         link.addEventListener('click', () => {

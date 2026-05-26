@@ -14,7 +14,7 @@ $e = ViewRenderer::e(...);
 $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $d);
 ?>
 
-<?php $view->section('title') ?>Nuevo puesto — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Nuevo puesto - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/puestos') ?>">Puestos</a></li>
@@ -64,7 +64,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
                     <div class="ds-form-field">
                         <label class="ds-form-label">Cliente <span class="ds-required">*</span></label>
                         <select name="cliente_id" class="form-select" required>
-                            <option value="">— Seleccione un cliente —</option>
+                            <option value="">- Seleccione un cliente -</option>
                             <?php foreach ($clientes as $cl): ?>
                             <option value="<?= $e($cl['id']) ?>" <?= ($input['cliente_id'] ?? '') === $cl['id'] ? 'selected' : '' ?>>
                                 <?= $e($cl['razon_social']) ?>

@@ -20,6 +20,20 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 
 <?php $view->section('title') ?>Guardias - DigiSecure<?php $view->endSection() ?>
 
+<?php $view->section('head') ?>
+<style>
+    .ds-guardias-filter .ds-filter-bar {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .ds-guardias-filter .ds-filter-row {
+        padding: 0;
+    }
+</style>
+<?php $view->endSection() ?>
+
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active">Guardias</li>
 <?php $view->endSection() ?>
@@ -40,45 +54,63 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     <?php endif ?>
 </div>
 
-<div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/guardias') ?>" class="ds-filter-row ds-form-filter">
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Buscar</label>
-                <input type="text" name="q" class="form-control form-control-sm"
-                       placeholder="Cedula, apellido, nombre, celular o correo"
-                       value="<?= $e((string) ($filters['busqueda'] ?? '')) ?>">
-            </div>
+<div class="ds-card ds-guardias-filter">
+    <div class="ds-card-header tone-success">
+        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
+        <div>
+            <div class="ds-card-title">Filtros de guardias</div>
+            <div class="ds-card-subtitle">Busqueda por identidad y datos de contacto</div>
         </div>
-        <div class="ds-filter-actions">
-            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Buscar
-            </button>
-            <?php if ($hasFilters): ?>
-            <a href="<?= $view->url('/guardias') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-x-lg"></i>Limpiar
-            </a>
-            <?php endif ?>
+    </div>
+    <div class="ds-card-body">
+        <div class="ds-filter-bar">
+            <form method="get" action="<?= $view->url('/guardias') ?>" class="ds-filter-row ds-form-filter">
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Buscar</label>
+                        <input type="text" name="q" class="form-control form-control-sm"
+                               placeholder="Cedula, apellido, nombre, celular o correo"
+                               value="<?= $e((string) ($filters['busqueda'] ?? '')) ?>">
+                    </div>
+                </div>
+                <div class="ds-filter-actions">
+                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                        <i class="bi bi-search"></i>Buscar
+                    </button>
+                    <?php if ($hasFilters): ?>
+                    <a href="<?= $view->url('/guardias') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                        <i class="bi bi-x-lg"></i>Limpiar
+                    </a>
+                    <?php endif ?>
+                </div>
+            </form>
         </div>
-    </form>
-</div>
-
-<?php if ($guardias === []): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-person-badge"></i></div>
-        <h3>No hay guardias para mostrar</h3>
-        <p>
-            <?php if ($hasFilters): ?>
-                Ningun guardia coincide con los criterios de busqueda.
-            <?php else: ?>
-                Cuando registres fichas de guardias, se mostraran aqui agrupadas por persona.
-            <?php endif ?>
-        </p>
     </div>
 </div>
-<?php else: ?>
-<div class="ds-table-card">
+
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-people"></i></span>
+        <div>
+            <div class="ds-card-title">Listado de guardias</div>
+            <div class="ds-card-subtitle">Un registro por persona con acceso a su historial de fichas</div>
+        </div>
+    </div>
+    <?php if ($guardias === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-person-badge"></i></div>
+            <h3>No hay guardias para mostrar</h3>
+            <p>
+                <?php if ($hasFilters): ?>
+                    Ningun guardia coincide con los criterios de busqueda.
+                <?php else: ?>
+                    Cuando registres fichas de guardias, se mostraran aqui agrupadas por persona.
+                <?php endif ?>
+            </p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -161,8 +193,8 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </ul>
     </div>
     <?php endif ?>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>
 
 <?php $view->section('scripts') ?>

@@ -20,7 +20,7 @@ $esReemplazo = $docExistente !== null;
 $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
 ?>
 
-<?php $view->section('title') ?><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>

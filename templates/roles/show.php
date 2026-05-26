@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Detalle de un rol con sus permisos asignados.
  *
@@ -17,7 +17,7 @@ foreach ($permisos as $p) {
 }
 ?>
 
-<?php $view->section('title') ?>Rol <?= $e($rol['nombre']) ?> — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Rol <?= $e($rol['nombre']) ?> - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/roles') ?>">Roles</a></li>
@@ -99,3 +99,4 @@ foreach ($permisos as $p) {
     </div>
 </div>
 <?php $view->endSection() ?>
+

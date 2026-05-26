@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard LOPDP — KPIs y accesos rapidos.
+ * Dashboard LOPDP - KPIs y accesos rapidos.
  *
  * Variables: $user, $csrfToken, $currentPath, $urgencia, $recientesSolicitudes,
  *            $consentActivos, $recientesConsentimientos
@@ -21,7 +21,7 @@ $estadoTone = static fn(string $estado) => match ($estado) {
 };
 ?>
 
-<?php $view->section('title') ?>LOPDP — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>LOPDP - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-file-earmark-lock me-1"></i>LOPDP</li>

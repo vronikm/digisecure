@@ -6,8 +6,8 @@
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
-use DigiSecure\Puesto\Domain\Enum\TipoPuesto;
 use DigiSecure\Puesto\Domain\Enum\ModalidadPuesto;
+use DigiSecure\Puesto\Domain\Enum\TipoPuesto;
 
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
@@ -22,12 +22,67 @@ $estadoTone = match ($puesto['estado']) {
     'archivado' => 'tone-muted',
     default     => 'tone-muted',
 };
-
-$ds_dt = 'font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ds-text-soft); margin-bottom: .15rem;';
-$ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
 ?>
 
-<?php $view->section('title') ?><?= $e((string) $puesto['nombre']) ?> — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?><?= $e((string) $puesto['nombre']) ?> - DigiSecure<?php $view->endSection() ?>
+
+<?php $view->section('head') ?>
+<style>
+    .ds-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .7rem;
+    }
+
+    .ds-detail-item {
+        grid-column: span 6;
+        padding: .72rem .82rem;
+        border: 1px solid rgba(21, 48, 79, 0.09);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fcfdff, #f7f9fc);
+        min-width: 0;
+    }
+
+    .ds-detail-item.span-4 { grid-column: span 4; }
+    .ds-detail-item.span-8 { grid-column: span 8; }
+    .ds-detail-item.span-12 { grid-column: span 12; }
+
+    .ds-detail-label {
+        font-size: .66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--ds-text-soft);
+        margin-bottom: .2rem;
+        line-height: 1.2;
+    }
+
+    .ds-detail-value {
+        font-size: .93rem;
+        font-weight: 600;
+        color: var(--ds-text);
+        line-height: 1.3;
+    }
+
+    .ds-detail-value.break {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    @media (max-width: 1199.98px) {
+        .ds-detail-item.span-8 { grid-column: span 12; }
+    }
+
+    @media (max-width: 767.98px) {
+        .ds-detail-item,
+        .ds-detail-item.span-4,
+        .ds-detail-item.span-8,
+        .ds-detail-item.span-12 {
+            grid-column: span 12;
+        }
+    }
+</style>
+<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/puestos') ?>">Puestos</a></li>
@@ -40,7 +95,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
         <span class="ds-page-mark"><i class="bi <?= $tipo ? $tipo->icon() : 'bi-geo-alt-fill' ?>"></i></span>
         <div>
             <h1><?= $e((string) $puesto['nombre']) ?></h1>
-            <small style="display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;">
+            <small style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
                 <?php if (!empty($puesto['codigo'])): ?>
                     <span class="ds-cell-mono"><?= $e((string) $puesto['codigo']) ?></span>
                 <?php endif ?>
@@ -51,7 +106,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
             </small>
         </div>
     </div>
-    <div style="display: flex; gap: .5rem;">
+    <div style="display:flex;gap:.5rem;">
         <?php if ($user->tienePermiso('puestos.editar') && $puesto['estado'] !== 'archivado'): ?>
         <a href="<?= $view->url('/puestos/' . $puesto['id'] . '/editar') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
             <i class="bi bi-pencil"></i>Editar
@@ -63,13 +118,21 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
     </div>
 </div>
 
+<?php
+$asignacionesActivas = $asignacionesActivas ?? [];
+$plazasOcupadas = count($asignacionesActivas);
+$plazasTotales = (int) $puesto['num_guardias_requeridos'];
+$plazasLibres = max(0, $plazasTotales - $plazasOcupadas);
+$coberturaPct = $plazasTotales > 0 ? min(100, (int) round($plazasOcupadas / $plazasTotales * 100)) : 0;
+$coberturaTone = $coberturaPct >= 100 ? 'tone-success' : ($coberturaPct >= 60 ? '' : 'tone-warning');
+?>
+
 <div class="row g-4">
     <div class="col-lg-8">
-        <!-- Cliente vinculado -->
         <div class="ds-card">
             <div class="ds-card-header">
                 <span class="ds-card-mark"><i class="bi bi-briefcase"></i></span>
-                <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                <div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
                     <div>
                         <div class="ds-card-title">Cliente vinculado</div>
                         <div class="ds-card-subtitle">A quien se presta el servicio</div>
@@ -80,14 +143,13 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div style="font-size: 1.05rem; font-weight: 700; color: var(--ds-text);"><?= $e((string) $puesto['cliente_razon_social']) ?></div>
+                <div style="font-size:1.05rem;font-weight:700;color:var(--ds-text);"><?= $e((string) $puesto['cliente_razon_social']) ?></div>
                 <?php if (!empty($puesto['cliente_nombre_comercial'])): ?>
-                <div class="ds-cell-sub" style="margin-top: .15rem;"><?= $e((string) $puesto['cliente_nombre_comercial']) ?></div>
+                <div class="ds-cell-sub" style="margin-top:.15rem;"><?= $e((string) $puesto['cliente_nombre_comercial']) ?></div>
                 <?php endif ?>
             </div>
         </div>
 
-        <!-- Operacion -->
         <div class="ds-card">
             <div class="ds-card-header tone-success">
                 <span class="ds-card-mark"><i class="bi bi-clock-history"></i></span>
@@ -97,36 +159,35 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Modalidad</div>
-                        <div style="<?= $ds_dd ?>"><?= $modalidad ? $e($modalidad->label()) : $e((string) $puesto['modalidad']) ?></div>
+                <div class="ds-detail-grid">
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Modalidad</div>
+                        <div class="ds-detail-value"><?= $modalidad ? $e($modalidad->label()) : $e((string) $puesto['modalidad']) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Plazas requeridas</div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Plazas requeridas</div>
                         <div><span class="ds-chip"><i class="bi bi-people"></i><?= (int) $puesto['num_guardias_requeridos'] ?> guardia<?= (int) $puesto['num_guardias_requeridos'] !== 1 ? 's' : '' ?></span></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Tipo</div>
-                        <div style="<?= $ds_dd ?>"><?= $tipo ? $e($tipo->label()) : $e((string) $puesto['tipo']) ?></div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Tipo</div>
+                        <div class="ds-detail-value"><?= $tipo ? $e($tipo->label()) : $e((string) $puesto['tipo']) ?></div>
                     </div>
-                    <div class="col-md-12">
-                        <div style="<?= $ds_dt ?>">Horario / Cobertura</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($puesto['horario_descripcion'] ?? '—')) ?></div>
+                    <div class="ds-detail-item span-12">
+                        <div class="ds-detail-label">Horario / Cobertura</div>
+                        <div class="ds-detail-value break"><?= $e((string) ($puesto['horario_descripcion'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Contacto en el sitio</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($puesto['contacto_sitio'] ?? '—')) ?></div>
+                    <div class="ds-detail-item span-6">
+                        <div class="ds-detail-label">Contacto en el sitio</div>
+                        <div class="ds-detail-value"><?= $e((string) ($puesto['contacto_sitio'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Telefono del sitio</div>
-                        <div class="ds-cell-mono"><?= $e((string) ($puesto['telefono_sitio'] ?? '—')) ?></div>
+                    <div class="ds-detail-item span-6">
+                        <div class="ds-detail-label">Telefono del sitio</div>
+                        <div class="ds-cell-mono"><?= $e((string) ($puesto['telefono_sitio'] ?? '-')) ?></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Ubicacion -->
         <div class="ds-card">
             <div class="ds-card-header tone-purple">
                 <span class="ds-card-mark"><i class="bi bi-geo-alt"></i></span>
@@ -136,31 +197,31 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <div style="<?= $ds_dt ?>">Direccion</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($puesto['direccion'] ?? '—')) ?></div>
+                <div class="ds-detail-grid">
+                    <div class="ds-detail-item span-12">
+                        <div class="ds-detail-label">Direccion</div>
+                        <div class="ds-detail-value break"><?= $e((string) ($puesto['direccion'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Ciudad</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($puesto['ciudad'] ?? '—')) ?></div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Ciudad</div>
+                        <div class="ds-detail-value"><?= $e((string) ($puesto['ciudad'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Provincia</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($puesto['provincia'] ?? '—')) ?></div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Provincia</div>
+                        <div class="ds-detail-value"><?= $e((string) ($puesto['provincia'] ?? '-')) ?></div>
                     </div>
-                    <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Pais</div>
-                        <div style="<?= $ds_dd ?>"><?= $e((string) ($puesto['pais'] ?? 'EC')) ?></div>
+                    <div class="ds-detail-item span-4">
+                        <div class="ds-detail-label">Pais</div>
+                        <div class="ds-detail-value"><?= $e((string) ($puesto['pais'] ?? 'EC')) ?></div>
                     </div>
                     <?php if (!empty($puesto['latitud']) && !empty($puesto['longitud'])): ?>
-                    <div class="col-md-12">
-                        <div style="<?= $ds_dt ?>">Coordenadas GPS</div>
+                    <div class="ds-detail-item span-12">
+                        <div class="ds-detail-label">Coordenadas GPS</div>
                         <div class="ds-cell-mono">
                             <?= $e((string) $puesto['latitud']) ?>, <?= $e((string) $puesto['longitud']) ?>
                             &middot;
                             <a href="https://www.google.com/maps?q=<?= $e((string) $puesto['latitud']) ?>,<?= $e((string) $puesto['longitud']) ?>"
-                               target="_blank" rel="noopener" style="color: #2563eb; text-decoration: none;">
+                               target="_blank" rel="noopener" style="color:#2563eb;text-decoration:none;">
                                 <i class="bi bi-box-arrow-up-right"></i> Abrir en Google Maps
                             </a>
                         </div>
@@ -180,24 +241,16 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div style="white-space: pre-wrap; color: var(--ds-text); font-size: .92rem; line-height: 1.55;"><?= $e((string) $puesto['observaciones']) ?></div>
+                <div style="white-space:pre-wrap;color:var(--ds-text);font-size:.92rem;line-height:1.55;"><?= $e((string) $puesto['observaciones']) ?></div>
             </div>
         </div>
         <?php endif ?>
 
-        <?php
-        $asignacionesActivas = $asignacionesActivas ?? [];
-        $plazasOcupadas = count($asignacionesActivas);
-        $plazasTotales = (int) $puesto['num_guardias_requeridos'];
-        $plazasLibres = max(0, $plazasTotales - $plazasOcupadas);
-        $coberturaPct = $plazasTotales > 0 ? min(100, (int) round($plazasOcupadas / $plazasTotales * 100)) : 0;
-        $coberturaTone = $coberturaPct >= 100 ? 'tone-success' : ($coberturaPct >= 60 ? '' : 'tone-warning');
-        ?>
         <?php if ($user->tienePermiso('asignaciones.ver') && $puesto['estado'] === 'activo'): ?>
         <div class="ds-card">
             <div class="ds-card-header">
                 <span class="ds-card-mark"><i class="bi bi-link-45deg"></i></span>
-                <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                <div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
                     <div>
                         <div class="ds-card-title">Asignaciones activas</div>
                         <div class="ds-card-subtitle"><?= $plazasOcupadas ?> de <?= $plazasTotales ?> plaza<?= $plazasTotales !== 1 ? 's' : '' ?> cubierta<?= $plazasTotales !== 1 ? 's' : '' ?></div>
@@ -209,17 +262,17 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                     <?php endif ?>
                 </div>
             </div>
-            <div class="ds-card-body" style="padding-bottom: .85rem;">
-                <div style="display: flex; gap: .65rem; align-items: center; margin-bottom: 1rem;">
-                    <div class="ds-progress" style="height: 10px; flex: 1;">
+            <div class="ds-card-body" style="padding-bottom:.85rem;">
+                <div style="display:flex;gap:.65rem;align-items:center;margin-bottom:1rem;">
+                    <div class="ds-progress" style="height:10px;flex:1;">
                         <div class="ds-progress-bar <?= $coberturaTone ?>" style="width: <?= $coberturaPct ?>%"></div>
                     </div>
-                    <span class="ds-cell-mono" style="font-weight: 700; min-width: 3rem; text-align: right;"><?= $coberturaPct ?>%</span>
+                    <span class="ds-cell-mono" style="font-weight:700;min-width:3rem;text-align:right;"><?= $coberturaPct ?>%</span>
                 </div>
             </div>
             <?php if ($asignacionesActivas === []): ?>
-            <div class="ds-card-body" style="padding-top: 0;">
-                <div class="ds-empty-state" style="padding: 1.25rem 1rem;">
+            <div class="ds-card-body" style="padding-top:0;">
+                <div class="ds-empty-state" style="padding:1.25rem 1rem;">
                     <div class="ds-empty-icon"><i class="bi bi-people"></i></div>
                     <p>Aun no hay guardias asignados a este puesto.</p>
                     <?php if ($user->tienePermiso('asignaciones.crear')): ?>
@@ -244,7 +297,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                         <?php foreach ($asignacionesActivas as $a): ?>
                         <tr>
                             <td>
-                                <a href="<?= $view->url('/asignaciones/' . $a['id']) ?>" class="ds-cell-name" style="text-decoration: none;">
+                                <a href="<?= $view->url('/asignaciones/' . $a['id']) ?>" class="ds-cell-name" style="text-decoration:none;">
                                     <?= $e((string) $a['ficha_apellidos']) ?> <?= $e((string) $a['ficha_nombres']) ?>
                                 </a>
                                 <div class="ds-cell-sub"><span class="ds-cell-mono"><?= $e((string) $a['ficha_correlativo']) ?></span></div>
@@ -259,7 +312,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                                 <?php if (!empty($a['rol_en_puesto'])): ?>
                                     <span class="ds-chip"><?= $e((string) $a['rol_en_puesto']) ?></span>
                                 <?php else: ?>
-                                    <span class="ds-cell-sub">—</span>
+                                    <span class="ds-cell-sub">-</span>
                                 <?php endif ?>
                             </td>
                             <td class="ds-cell-end">
@@ -287,14 +340,14 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 </div>
             </div>
             <div class="ds-card-body">
-                <div style="text-align: center; padding: 1rem 0;">
-                    <span class="ds-badge <?= $estadoTone ?>" style="font-size: .9rem; padding: .35rem .8rem;"><?= $e(ucfirst((string) $puesto['estado'])) ?></span>
+                <div style="text-align:center;padding:1rem 0;">
+                    <span class="ds-badge <?= $estadoTone ?>" style="font-size:.9rem;padding:.35rem .8rem;"><?= $e(ucfirst((string) $puesto['estado'])) ?></span>
                 </div>
                 <?php if (!empty($puesto['archivado_at'])): ?>
-                <div style="<?= $ds_dt ?>">Archivado el</div>
-                <div class="ds-cell-mono" style="margin-bottom: .85rem;"><?= $e(substr((string) $puesto['archivado_at'], 0, 16)) ?></div>
+                <div class="ds-detail-label">Archivado el</div>
+                <div class="ds-cell-mono" style="margin-bottom:.85rem;"><?= $e(substr((string) $puesto['archivado_at'], 0, 16)) ?></div>
                 <?php endif ?>
-                <div style="<?= $ds_dt ?>">Registrado el</div>
+                <div class="ds-detail-label">Registrado el</div>
                 <div class="ds-cell-mono"><?= $e(substr((string) $puesto['created_at'], 0, 16)) ?></div>
             </div>
         </div>
@@ -308,22 +361,24 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                     <div class="ds-card-subtitle">Activar, pausar o archivar</div>
                 </div>
             </div>
-            <div class="ds-card-body" style="padding: .65rem .75rem;">
+            <div class="ds-card-body" style="padding:.65rem .75rem;">
                 <?php
                 $opciones = [
                     'activo'    => ['icon' => 'bi-play-circle', 'label' => 'Activar', 'tone' => 'success', 'confirm' => 'Reactivar este puesto?'],
                     'inactivo'  => ['icon' => 'bi-pause-circle', 'label' => 'Marcar inactivo', 'tone' => 'warning', 'confirm' => 'Marcar este puesto como inactivo?'],
-                    'archivado' => ['icon' => 'bi-archive', 'label' => 'Archivar', 'tone' => 'danger', 'confirm' => 'Archivar este puesto? Conservara su historico pero no aparecera en operaciones.'],
+                    'archivado' => ['icon' => 'bi-archive', 'label' => 'Archivar', 'tone' => 'danger', 'confirm' => 'Archivar este puesto? Conserva su historico, pero no aparecera en operaciones.'],
                 ];
                 foreach ($opciones as $estado => $cfg):
-                    if ($puesto['estado'] === $estado) continue;
+                    if ($puesto['estado'] === $estado) {
+                        continue;
+                    }
                 ?>
                 <form class="ds-form-main" method="post" action="<?= $view->url('/puestos/' . $puesto['id'] . '/estado') ?>"
                       onsubmit="return confirm('<?= $e($cfg['confirm']) ?>');"
-                      style="margin: .35rem 0;">
+                      style="margin:.35rem 0;">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <input type="hidden" name="estado" value="<?= $estado ?>">
-                    <button type="submit" class="ds-btn ds-btn-<?= $cfg['tone'] === 'success' ? 'success' : ($cfg['tone'] === 'danger' ? 'danger' : 'outline') ?> ds-btn-sm" style="width: 100%; justify-content: flex-start;">
+                    <button type="submit" class="ds-btn ds-btn-<?= $cfg['tone'] === 'success' ? 'success' : ($cfg['tone'] === 'danger' ? 'danger' : 'outline') ?> ds-btn-sm" style="width:100%;justify-content:flex-start;">
                         <i class="bi <?= $cfg['icon'] ?>"></i><?= $e($cfg['label']) ?>
                     </button>
                 </form>

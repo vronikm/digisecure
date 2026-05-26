@@ -14,7 +14,7 @@ $e = ViewRenderer::e(...);
 $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
 ?>
 
-<?php $view->section('title') ?>Configurar tipo — DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Configurar tipo - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/configuracion/documentos') ?>">Tipos de documento</a></li>

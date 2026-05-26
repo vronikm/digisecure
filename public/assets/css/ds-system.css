@@ -57,6 +57,25 @@ body {
     box-shadow: 0 2px 20px rgba(5,16,30,.22);
 }
 
+.ds-sidebar-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.08);
+    color: #fff;
+}
+
+.ds-sidebar-toggle-btn:hover,
+.ds-sidebar-toggle-btn:focus {
+    color: #fff;
+    background: rgba(255,255,255,.16);
+    border-color: rgba(255,255,255,.26);
+}
+
 .ds-topbar .brand {
     display: inline-flex;
     align-items: center;
@@ -811,6 +830,10 @@ body {
     padding: 1.6rem;
 }
 
+.ds-main.ds-main-expanded {
+    margin-left: 0;
+}
+
 .ds-shell {
     min-height: calc(100vh - var(--ds-topbar-h) - 3.2rem);
     padding: 1.75rem 2rem 2rem;
@@ -856,6 +879,10 @@ body {
     white-space: nowrap;
     font-size: 0.75rem;
     color: var(--ds-text-soft);
+}
+
+.ds-breadcrumb .breadcrumb-item i {
+    display: none !important;
 }
 
 .ds-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
@@ -1431,6 +1458,19 @@ body {
     white-space: nowrap;
 }
 
+.ds-filter-bar .form-control-sm,
+.ds-filter-bar .form-select-sm,
+.ds-filter-bar .ds-btn-sm {
+    height: var(--ds-control-h-sm);
+    min-height: var(--ds-control-h-sm);
+}
+
+.ds-filter-bar .form-control,
+.ds-filter-bar .form-select,
+.ds-filter-bar .ds-btn {
+    min-height: var(--ds-control-h);
+}
+
 @media (max-width: 1199.98px) {
     .ds-filter-bar .ds-filter-row {
         flex-wrap: wrap;
@@ -1495,6 +1535,15 @@ body {
     gap: .35rem;
     align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
+}
+.ds-table .ds-row-actions .ds-btn,
+.ds-table .ds-row-actions .btn {
+    min-height: var(--ds-control-h-sm);
+}
+
+.ds-table .ds-row-actions i {
+    display: none !important;
 }
 .ds-icon-btn {
     display: inline-flex;
@@ -1770,6 +1819,10 @@ a.ds-kpi-card:hover, a.ds-kpi-card:focus {
 @media (min-width: 992px) {
     .ds-topbar-tenant { display: flex; }
     .ds-topbar-sep { display: block; }
+
+    .ds-sidebar.is-collapsed {
+        transform: translateX(calc(-1 * var(--ds-sidebar-w)));
+    }
 }
 
 @media (max-width: 991.98px) {

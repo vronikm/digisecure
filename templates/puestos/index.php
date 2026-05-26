@@ -30,7 +30,21 @@ $qs = http_build_query(array_filter([
 $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 ?>
 
-<?php $view->section('title') ?>Puestos â€” DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?>Puestos - DigiSecure<?php $view->endSection() ?>
+
+<?php $view->section('head') ?>
+<style>
+    .ds-op-filter .ds-filter-bar {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .ds-op-filter .ds-filter-row {
+        padding: 0;
+    }
+</style>
+<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item active"><i class="bi bi-geo-alt me-1"></i>Puestos</li>
@@ -85,89 +99,106 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 
 <!-- Filtros -->
-<div class="ds-filter-bar">
-    <form method="get" action="<?= $view->url('/puestos') ?>" class="ds-filter-row ds-form-filter">
-<div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Buscar</label>
-                <input type="text" name="q" class="form-control form-control-sm"
-                       placeholder="Nombre, codigo, cliente o direccion..."
-                       value="<?= $e((string) ($filters['q'] ?? '')) ?>">
-            </div>
+<div class="ds-card ds-op-filter">
+    <div class="ds-card-header tone-success">
+        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
+        <div>
+            <div class="ds-card-title">Filtros de puestos</div>
+            <div class="ds-card-subtitle">Busqueda por sitio, cliente, tipo y estado</div>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Cliente</label>
-                <select name="cliente_id" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    <?php foreach ($clientes as $cl): ?>
-                    <option value="<?= $e($cl['id']) ?>" <?= ($filters['cliente_id'] ?? '') === $cl['id'] ? 'selected' : '' ?>>
-                        <?= $e($cl['razon_social']) ?>
-                    </option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+    </div>
+    <div class="ds-card-body">
+        <div class="ds-filter-bar">
+            <form method="get" action="<?= $view->url('/puestos') ?>" class="ds-filter-row ds-form-filter">
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Buscar</label>
+                        <input type="text" name="q" class="form-control form-control-sm"
+                               placeholder="Nombre, codigo, cliente o direccion..."
+                               value="<?= $e((string) ($filters['q'] ?? '')) ?>">
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Cliente</label>
+                        <select name="cliente_id" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach ($clientes as $cl): ?>
+                            <option value="<?= $e($cl['id']) ?>" <?= ($filters['cliente_id'] ?? '') === $cl['id'] ? 'selected' : '' ?>>
+                                <?= $e($cl['razon_social']) ?>
+                            </option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Tipo</label>
+                        <select name="tipo" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach ($tiposPuesto as $tp): ?>
+                            <option value="<?= $tp->value ?>" <?= ($filters['tipo'] ?? '') === $tp->value ? 'selected' : '' ?>>
+                                <?= $e($tp->label()) ?>
+                            </option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-field">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Estado</label>
+                        <select name="estado" class="form-select form-select-sm">
+                            <option value="">Activos e inactivos</option>
+                            <?php foreach (['activo', 'inactivo', 'archivado'] as $est): ?>
+                            <option value="<?= $est ?>" <?= ($filters['estado'] ?? '') === $est ? 'selected' : '' ?>>
+                                <?= ucfirst($est) ?>
+                            </option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="ds-filter-actions">
+                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                        <i class="bi bi-search"></i>Buscar
+                    </button>
+                    <?php if ($hasFilters): ?>
+                    <a href="<?= $view->url('/puestos') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                        <i class="bi bi-x-lg"></i>Limpiar
+                    </a>
+                    <?php endif ?>
+                </div>
+            </form>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Tipo</label>
-                <select name="tipo" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    <?php foreach ($tiposPuesto as $tp): ?>
-                    <option value="<?= $tp->value ?>" <?= ($filters['tipo'] ?? '') === $tp->value ? 'selected' : '' ?>>
-                        <?= $e($tp->label()) ?>
-                    </option>
-                    <?php endforeach ?>
-                </select>
-            </div>
+    </div>
+</div>
+<div class="ds-card">
+    <div class="ds-card-header tone-purple">
+        <span class="ds-card-mark"><i class="bi bi-geo-alt"></i></span>
+        <div>
+            <div class="ds-card-title">Listado de puestos</div>
+            <div class="ds-card-subtitle">Sitios operativos con cliente asociado y plazas requeridas</div>
         </div>
-        <div class="ds-filter-field">
-            <div class="ds-form-field">
-                <label class="ds-form-label">Estado</label>
-                <select name="estado" class="form-select form-select-sm">
-                    <option value="">Activos e inactivos</option>
-                    <?php foreach (['activo', 'inactivo', 'archivado'] as $est): ?>
-                    <option value="<?= $est ?>" <?= ($filters['estado'] ?? '') === $est ? 'selected' : '' ?>>
-                        <?= ucfirst($est) ?>
-                    </option>
-                    <?php endforeach ?>
-                </select>
-            </div>
-        </div>
-        <div class="ds-filter-actions">
-            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-search"></i>Buscar
-            </button>
-            <?php if ($hasFilters): ?>
-            <a href="<?= $view->url('/puestos') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-x-lg"></i>Limpiar
+    </div>
+    <?php if ($puestos === []): ?>
+    <div class="ds-card-body">
+        <div class="ds-empty-state">
+            <div class="ds-empty-icon"><i class="bi bi-geo-alt"></i></div>
+            <h3>No hay puestos para mostrar</h3>
+            <p>
+                <?php if ($hasFilters): ?>
+                    Ningun puesto coincide con los criterios. Ajusta los filtros o limpialos.
+                <?php else: ?>
+                    Crea el primer puesto para asociarlo a un cliente y poder asignar guardias.
+                <?php endif ?>
+            </p>
+            <?php if ($user->tienePermiso('puestos.crear') && !$hasFilters): ?>
+            <a href="<?= $view->url('/puestos/crear') ?>" class="ds-btn ds-btn-primary">
+                <i class="bi bi-plus-lg"></i>Crear el primer puesto
             </a>
             <?php endif ?>
         </div>
-    </form>
-</div>
-
-<?php if ($puestos === []): ?>
-<div class="ds-table-card">
-    <div class="ds-empty-state">
-        <div class="ds-empty-icon"><i class="bi bi-geo-alt"></i></div>
-        <h3>No hay puestos para mostrar</h3>
-        <p>
-            <?php if ($hasFilters): ?>
-                Ningun puesto coincide con los criterios. Ajusta los filtros o limpialos.
-            <?php else: ?>
-                Crea el primer puesto para asociarlo a un cliente y poder asignar guardias.
-            <?php endif ?>
-        </p>
-        <?php if ($user->tienePermiso('puestos.crear') && !$hasFilters): ?>
-        <a href="<?= $view->url('/puestos/crear') ?>" class="ds-btn ds-btn-primary">
-            <i class="bi bi-plus-lg"></i>Crear el primer puesto
-        </a>
-        <?php endif ?>
     </div>
-</div>
-<?php else: ?>
-<div class="ds-table-card">
+    <?php else: ?>
     <div class="table-responsive">
         <table class="ds-table">
             <thead>
@@ -196,7 +227,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                             <?php if (!empty($p['codigo'])): ?>
                                 <span class="ds-cell-mono"><?= $e((string) $p['codigo']) ?></span> &middot;
                             <?php endif ?>
-                            <?= $e((string) ($p['ciudad'] ?? 'â€”')) ?>
+                            <?= $e((string) ($p['ciudad'] ?? '-')) ?>
                         </div>
                     </td>
                     <td><div class="ds-cell-name" style="font-weight: 500;"><?= $e((string) $p['cliente_razon_social']) ?></div></td>
@@ -253,7 +284,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </ul>
     </div>
     <?php endif ?>
+    <?php endif ?>
 </div>
-<?php endif ?>
 <?php $view->endSection() ?>
 

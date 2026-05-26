@@ -760,6 +760,7 @@ final class Bootstrap
         $router->get('/guardias/{id}/fichas', [FichaController::class, 'historial'], name: 'fichas.historial', permission: 'guardias.ver');
         $router->get('/guardias/{id}/fichas/exportar', [FichaController::class, 'exportarHistorial'], name: 'fichas.historial.export', permission: 'guardias.ver');
         $router->get('/guardias/crear', [FichaController::class, 'create'], name: 'fichas.create', permission: 'guardias.crear');
+        $router->get('/guardias/prefill/cedula', [FichaController::class, 'prefillByCedula'], name: 'fichas.prefill.cedula', permission: 'guardias.crear');
         $router->post('/guardias/crear', [FichaController::class, 'store'], name: 'fichas.store', permission: 'guardias.crear');
         $router->get('/guardias/{id}', [FichaController::class, 'show'], name: 'fichas.show', permission: 'guardias.ver');
         $router->get('/guardias/{id}/editar', [FichaController::class, 'edit'], name: 'fichas.edit', permission: 'guardias.editar');
