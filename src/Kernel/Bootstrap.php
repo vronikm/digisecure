@@ -757,6 +757,8 @@ final class Bootstrap
 
         // Fichas de guardia (Fase 1)
         $router->get('/guardias', [FichaController::class, 'index'], name: 'fichas.index', permission: 'guardias.ver');
+        $router->get('/guardias/{id}/fichas', [FichaController::class, 'historial'], name: 'fichas.historial', permission: 'guardias.ver');
+        $router->get('/guardias/{id}/fichas/exportar', [FichaController::class, 'exportarHistorial'], name: 'fichas.historial.export', permission: 'guardias.ver');
         $router->get('/guardias/crear', [FichaController::class, 'create'], name: 'fichas.create', permission: 'guardias.crear');
         $router->post('/guardias/crear', [FichaController::class, 'store'], name: 'fichas.store', permission: 'guardias.crear');
         $router->get('/guardias/{id}', [FichaController::class, 'show'], name: 'fichas.show', permission: 'guardias.ver');
@@ -842,6 +844,8 @@ final class Bootstrap
         $router->get('/lopdp/solicitudes/{id}', [LopdpController::class, 'verSolicitud'], name: 'lopdp.solicitudes.show', permission: 'lopdp.gestionar');
         $router->post('/lopdp/solicitudes/{id}/responder', [LopdpController::class, 'responderSolicitud'], name: 'lopdp.solicitudes.responder', permission: 'lopdp.gestionar');
         $router->get('/lopdp/consentimientos', [LopdpController::class, 'listarConsentimientos'], name: 'lopdp.consentimientos.index', permission: 'lopdp.gestionar');
+        $router->get('/lopdp/consentimientos/{id}', [LopdpController::class, 'verConsentimiento'], name: 'lopdp.consentimientos.show', permission: 'lopdp.gestionar');
+        $router->post('/lopdp/consentimientos/{id}/revocar', [LopdpController::class, 'revocarConsentimiento'], name: 'lopdp.consentimientos.revocar', permission: 'lopdp.gestionar');
 
         // Clientes (Fase 16)
         $router->get('/clientes', [ClienteController::class, 'index'], name: 'clientes.index', permission: 'clientes.ver');

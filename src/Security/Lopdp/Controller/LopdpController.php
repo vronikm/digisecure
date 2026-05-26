@@ -12,6 +12,7 @@ use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Csrf\CsrfGuard;
+use DigiSecure\Security\Lopdp\Application\ConsentManager;
 use DigiSecure\Security\Lopdp\Application\RegistrarSolicitudArcopService;
 use DigiSecure\Security\Lopdp\Application\ResponderSolicitudArcopService;
 use DigiSecure\Security\Lopdp\Infrastructure\ConsentimientoRepository;
@@ -35,6 +36,7 @@ final class LopdpController
         private readonly ConsentimientoRepository $consentRepo,
         private readonly FichaRepository $fichaRepo,
         private readonly UserRepository $userRepo,
+        private readonly ConsentManager $consentManager,
         private readonly RegistrarSolicitudArcopService $registrarService,
         private readonly ResponderSolicitudArcopService $responderService,
         private readonly FlashBag $flash,
@@ -261,8 +263,31 @@ final class LopdpController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
+        $page = max(1, (int) $request->query('page', 1));
+        $limit = 25;
 
-        $consentimientos = $this->consentRepo->listarRecientes(100);
+        $estado = $this->normalizeConsentStatus((string)($request->query('estado', '')));
+        $desde = $this->normalizeDate((string)($request->query('desde', '')));
+        $hasta = $this->normalizeDate((string)($request->query('hasta', '')));
+
+        if ($desde !== null && $hasta !== null && $desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
+        }
+
+        $filters = array_filter([
+            'estado' => $estado,
+            'desde' => $desde,
+            'hasta' => $hasta,
+        ], static fn($v) => $v !== null && $v !== '');
+
+        $total = $this->consentRepo->contarFiltrados($filters);
+        $totalPages = max(1, (int) ceil($total / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        $offset = ($page - 1) * $limit;
+        $consentimientos = $this->consentRepo->listarFiltrados($limit, $offset, $filters);
         $activos = $this->consentRepo->contarActivos();
 
         return $this->view->response('lopdp/consentimientos/index', [
@@ -271,7 +296,59 @@ final class LopdpController
             'currentPath' => $request->path,
             'consentimientos' => $consentimientos,
             'activos' => $activos,
+            'total' => $total,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'filters' => $filters,
         ]);
+    }
+
+    public function verConsentimiento(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        $consentimiento = $this->consentRepo->findById($id);
+        if ($consentimiento === null) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        return $this->view->response('lopdp/consentimientos/show', [
+            'user' => $user,
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'consentimiento' => $consentimiento,
+            'ipAceptacion' => $this->formatIp((string) ($consentimiento['ip_aceptacion'] ?? '')),
+        ]);
+    }
+
+    public function revocarConsentimiento(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        $motivo = trim((string) ($request->post['motivo'] ?? ''));
+        $returnTo = (string) ($request->post['return_to'] ?? '/lopdp/consentimientos');
+
+        try {
+            $this->consentManager->revocar($id, $motivo, $user->id, $request->clientIp());
+            $this->flash->success('Consentimiento revocado correctamente.');
+            return Response::redirect($this->safeRedirect($request, $returnTo));
+        } catch (DomainException $e) {
+            $consentimiento = $this->consentRepo->findById($id);
+            if ($consentimiento === null) {
+                return $this->view->response('errors/404', [], 404);
+            }
+
+            return $this->view->response('lopdp/consentimientos/show', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => $request->path,
+                'consentimiento' => $consentimiento,
+                'ipAceptacion' => $this->formatIp((string) ($consentimiento['ip_aceptacion'] ?? '')),
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function securePath(Request $request, string $path): string
@@ -288,5 +365,54 @@ final class LopdpController
         }
 
         return \is_string($secure) && $secure !== '' ? $secure : $path;
+    }
+
+    private function safeRedirect(Request $request, string $path): string
+    {
+        $trimmed = trim($path);
+        if ($trimmed === '' || !str_starts_with($trimmed, '/')) {
+            return '/lopdp/consentimientos';
+        }
+
+        return $this->securePath($request, $trimmed);
+    }
+
+    private function formatIp(string $packed): ?string
+    {
+        if ($packed === '') {
+            return null;
+        }
+
+        $decoded = @inet_ntop($packed);
+        if ($decoded === false || $decoded === '') {
+            return null;
+        }
+
+        return $decoded;
+    }
+
+    private function normalizeConsentStatus(string $status): string
+    {
+        $status = strtolower(trim($status));
+        return in_array($status, ['activo', 'revocado', 'rechazado'], true) ? $status : '';
+    }
+
+    private function normalizeDate(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        [$y, $m, $d] = array_map(static fn(string $p): int => (int)$p, explode('-', $value));
+        if (!checkdate($m, $d, $y)) {
+            return null;
+        }
+
+        return $value;
     }
 }

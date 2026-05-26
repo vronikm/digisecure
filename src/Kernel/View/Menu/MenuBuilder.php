@@ -91,11 +91,11 @@ final class MenuBuilder
                     description: 'Altas, fichas y seguimiento del personal',
                     children: [
                         new MenuItem(
-                            label: 'Listado general',
+                            label: 'Listado de guardias',
                             icon: 'bi-list-ul',
                             url: '/guardias',
                             permisos: ['guardias.ver'],
-                            description: 'Consulta y filtra todas las fichas',
+                            description: 'Datos personales y acceso al historial de fichas',
                         ),
                         new MenuItem(
                             label: 'Nueva ficha',
@@ -331,6 +331,7 @@ final class MenuBuilder
                             url: '/lopdp/consentimientos',
                             permisos: ['lopdp.gestionar'],
                             description: 'Control y revocacion de consentimientos',
+                            activeWhenPrefixes: ['/lopdp/consentimientos/'],
                         ),
                     ],
                 ),

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace DigiSecure\Ficha\Controller;
 
+use DigiSecure\Ficha\Domain\ValueObject\Cedula;
+use DigiSecure\Ficha\Domain\Enum\EstadoFicha;
+use DigiSecure\Ficha\Domain\Enum\TipoFicha;
 use DigiSecure\Ficha\Application\ActualizarFichaService;
 use DigiSecure\Ficha\Application\CompletarFichaService;
 use DigiSecure\Ficha\Application\CrearFichaService;
@@ -65,28 +68,120 @@ final class FichaController
 
         $page = max(1, (int)$request->query('page', 1));
         $limit = 25;
+        $busqueda = trim((string) $request->query('q', ''));
+        $filters = [];
+
+        if ($busqueda !== '') {
+            $filters['busqueda'] = $busqueda;
+            $digits = preg_replace('/\D+/', '', $busqueda) ?? '';
+            if (strlen($digits) === 10) {
+                try {
+                    $filters['cedula_hash'] = Cedula::fromString($digits)->hash();
+                } catch (DomainException) {
+                    // Si la cédula no valida, se mantiene búsqueda textual.
+                }
+            }
+        }
+
+        $total = $this->fichaRepo->countGuardias($filters);
+        $totalPages = max(1, (int)ceil($total / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
         $offset = ($page - 1) * $limit;
-
-        $filters = array_filter([
-            'estado' => $request->query('estado'),
-            'tipo_ficha' => $request->query('tipo_ficha'),
-            'busqueda' => $request->query('q'),
-        ]);
-
-        $fichas = $this->fichaRepo->listFichas($limit, $offset, $filters);
-        $total = $this->fichaRepo->countFichas($filters);
-        $totalPages = (int)ceil($total / $limit);
+        $guardias = $this->fichaRepo->listGuardias($limit, $offset, $filters);
+        foreach ($guardias as &$guardia) {
+            $guardia['cedula_display'] = $this->decryptSafe($guardia['cedula_cifrada'] ?? null);
+        }
+        unset($guardia);
 
         return $this->view->response('ficha/index', [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
-            'fichas' => $fichas,
+            'guardias' => $guardias,
             'total' => $total,
             'page' => $page,
             'totalPages' => $totalPages,
-            'filters' => $filters,
+            'filters' => ['busqueda' => $busqueda],
         ]);
+    }
+
+    public function historial(Request $request, CsrfGuard $csrf, string $id): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        $fichaBase = $this->fichaRepo->findFichaById($id);
+        if ($fichaBase === null) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $filters = $this->normalizeHistorialFilters($request);
+        $fichas = $this->fichaRepo->findByCedulaHashFiltered((string) $fichaBase['cedula_hash'], $filters);
+        $guardia = [
+            'id' => $fichaBase['id'],
+            'nombres' => $fichaBase['nombres'] ?? '',
+            'apellidos' => $fichaBase['apellidos'] ?? '',
+            'fecha_nacimiento' => $fichaBase['fecha_nacimiento'] ?? null,
+            'celular' => $fichaBase['celular'] ?? null,
+            'email' => $fichaBase['email'] ?? null,
+            'cedula_display' => $this->decryptSafe($fichaBase['cedula_cifrada'] ?? null),
+        ];
+
+        $exportQuery = \http_build_query(\array_filter([
+            'estado' => $filters['estado'] ?? '',
+            'tipo_ficha' => $filters['tipo_ficha'] ?? '',
+            'desde' => $filters['desde'] ?? '',
+            'hasta' => $filters['hasta'] ?? '',
+        ], static fn(string $v): bool => $v !== ''));
+        $exportPath = "/guardias/{$id}/fichas/exportar" . ($exportQuery !== '' ? '?' . $exportQuery : '');
+
+        return $this->view->response('ficha/history', [
+            'user' => $user,
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'guardia' => $guardia,
+            'fichas' => $fichas,
+            'filters' => $filters,
+            'exportPath' => $exportPath,
+        ]);
+    }
+
+    public function exportarHistorial(Request $request, string $id): Response
+    {
+        $fichaBase = $this->fichaRepo->findFichaById($id);
+        if ($fichaBase === null) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $filters = $this->normalizeHistorialFilters($request);
+        $fichas = $this->fichaRepo->findByCedulaHashFiltered((string) $fichaBase['cedula_hash'], $filters);
+
+        $guardia = [
+            'nombres' => (string) ($fichaBase['nombres'] ?? ''),
+            'apellidos' => (string) ($fichaBase['apellidos'] ?? ''),
+            'fecha_nacimiento' => (string) ($fichaBase['fecha_nacimiento'] ?? ''),
+            'celular' => (string) ($fichaBase['celular'] ?? ''),
+            'email' => (string) ($fichaBase['email'] ?? ''),
+            'cedula_display' => $this->decryptSafe($fichaBase['cedula_cifrada'] ?? null),
+        ];
+
+        $csv = $this->buildHistorialCsv($guardia, $fichas);
+        $safeName = preg_replace('/[^a-z0-9]+/i', '_', strtolower(trim(($guardia['apellidos'] . '_' . $guardia['nombres']))));
+        $filename = 'historial_guardia_' . trim((string) $safeName, '_') . '_' . date('Ymd_His') . '.csv';
+
+        return new Response(
+            body: $csv,
+            status: Response::STATUS_OK,
+            headers: [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+                'Cache-Control' => 'no-store',
+                'X-Content-Type-Options' => 'nosniff',
+            ],
+        );
     }
 
     // ======================== CREAR ========================
@@ -388,6 +483,138 @@ final class FichaController
         }
 
         return \is_string($secure) && $secure !== '' ? $secure : $path;
+    }
+
+    /**
+     * @return array{estado: string, tipo_ficha: string, desde: string, hasta: string}
+     */
+    private function normalizeHistorialFilters(Request $request): array
+    {
+        $estado = strtoupper(trim((string) $request->query('estado', '')));
+        $tipo = strtoupper(trim((string) $request->query('tipo_ficha', '')));
+        $desde = $this->normalizeDate((string) $request->query('desde', '')) ?? '';
+        $hasta = $this->normalizeDate((string) $request->query('hasta', '')) ?? '';
+
+        $estadosValidos = array_map(static fn(EstadoFicha $e): string => $e->value, EstadoFicha::cases());
+        $tiposValidos = array_map(static fn(TipoFicha $t): string => $t->value, TipoFicha::cases());
+
+        if (!in_array($estado, $estadosValidos, true)) {
+            $estado = '';
+        }
+        if (!in_array($tipo, $tiposValidos, true)) {
+            $tipo = '';
+        }
+
+        if ($desde !== '' && $hasta !== '' && $desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
+        }
+
+        return [
+            'estado' => $estado,
+            'tipo_ficha' => $tipo,
+            'desde' => $desde,
+            'hasta' => $hasta,
+        ];
+    }
+
+    private function normalizeDate(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        [$y, $m, $d] = array_map(static fn(string $p): int => (int) $p, explode('-', $value));
+        if (!checkdate($m, $d, $y)) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array{
+     *   nombres: string,
+     *   apellidos: string,
+     *   fecha_nacimiento: string,
+     *   celular: string,
+     *   email: string,
+     *   cedula_display: string
+     * } $guardia
+     * @param list<array<string, mixed>> $fichas
+     */
+    private function buildHistorialCsv(array $guardia, array $fichas): string
+    {
+        $stream = fopen('php://temp', 'r+');
+        if ($stream === false) {
+            return '';
+        }
+
+        fwrite($stream, "\xEF\xBB\xBF");
+        fputcsv($stream, [
+            'Cedula',
+            'Apellidos',
+            'Nombres',
+            'Fecha nacimiento',
+            'Celular',
+            'Correo',
+            'Correlativo',
+            'Tipo ficha',
+            'Estado',
+            'Fecha emision',
+            'Fecha revision',
+            'Creada',
+            'Actualizada',
+        ], ';');
+
+        foreach ($fichas as $ficha) {
+            $tipo = (string) ($ficha['tipo_ficha'] ?? '');
+            $estado = (string) ($ficha['estado'] ?? '');
+            $tipoLabel = $tipo;
+            $estadoLabel = $estado;
+
+            try {
+                if ($tipo !== '') {
+                    $tipoLabel = TipoFicha::from($tipo)->label();
+                }
+            } catch (\ValueError) {
+                $tipoLabel = $tipo;
+            }
+
+            try {
+                if ($estado !== '') {
+                    $estadoLabel = EstadoFicha::from($estado)->label();
+                }
+            } catch (\ValueError) {
+                $estadoLabel = $estado;
+            }
+
+            fputcsv($stream, [
+                $guardia['cedula_display'],
+                $guardia['apellidos'],
+                $guardia['nombres'],
+                $guardia['fecha_nacimiento'],
+                $guardia['celular'],
+                $guardia['email'],
+                (string) ($ficha['correlativo'] ?? ''),
+                $tipoLabel,
+                $estadoLabel,
+                (string) ($ficha['fecha_emision'] ?? ''),
+                (string) ($ficha['fecha_revision'] ?? ''),
+                (string) ($ficha['created_at'] ?? ''),
+                (string) ($ficha['updated_at'] ?? ''),
+            ], ';');
+        }
+
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+
+        return $csv !== false ? $csv : '';
     }
 
     private function decryptSafe(mixed $ciphertext): string

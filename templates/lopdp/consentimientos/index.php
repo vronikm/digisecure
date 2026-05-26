@@ -2,7 +2,7 @@
 /**
  * Listado de consentimientos LOPDP.
  *
- * Variables: $user, $csrfToken, $currentPath, $consentimientos, $activos
+ * Variables: $user, $csrfToken, $currentPath, $consentimientos, $activos, $total, $page, $totalPages, $filters?
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -10,6 +10,23 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+$filters = is_array($filters ?? null) ? $filters : [];
+$hasFilters = !empty($filters['estado'] ?? null)
+    || !empty($filters['desde'] ?? null)
+    || !empty($filters['hasta'] ?? null);
+$qs = http_build_query(array_filter([
+    'estado' => $filters['estado'] ?? '',
+    'desde' => $filters['desde'] ?? '',
+    'hasta' => $filters['hasta'] ?? '',
+], static fn(string $v): bool => $v !== ''));
+$qsPrefix = $qs !== '' ? "&{$qs}" : '';
+$returnQuery = http_build_query(array_filter([
+    'page' => (int) ($page ?? 1) > 1 ? (int) ($page ?? 1) : null,
+    'estado' => $filters['estado'] ?? '',
+    'desde' => $filters['desde'] ?? '',
+    'hasta' => $filters['hasta'] ?? '',
+], static fn($v): bool => $v !== null && $v !== ''));
+$returnTo = '/lopdp/consentimientos' . ($returnQuery !== '' ? '?' . $returnQuery : '');
 ?>
 
 <?php $view->section('title') ?>Consentimientos LOPDP<?php $view->endSection() ?>
@@ -25,7 +42,7 @@ $e = ViewRenderer::e(...);
         <span class="ds-page-mark"><i class="bi bi-shield-check"></i></span>
         <div>
             <h1>Consentimientos LOPDP</h1>
-            <small><?= (int) $activos ?> consentimiento<?= $activos !== 1 ? 's' : '' ?> activo<?= $activos !== 1 ? 's' : '' ?></small>
+            <small><?= (int) ($total ?? 0) ?> registro<?= ((int) ($total ?? 0)) !== 1 ? 's' : '' ?> (<?= (int) $activos ?> activo<?= $activos !== 1 ? 's' : '' ?>)</small>
         </div>
     </div>
     <a href="<?= $view->url('/lopdp') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
@@ -33,12 +50,58 @@ $e = ViewRenderer::e(...);
     </a>
 </div>
 
+<div class="ds-filter-bar">
+    <form method="get" action="<?= $view->url('/lopdp/consentimientos') ?>" class="ds-filter-row ds-form-filter">
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Estado</label>
+                <select name="estado" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="activo" <?= ($filters['estado'] ?? '') === 'activo' ? 'selected' : '' ?>>Activo</option>
+                    <option value="revocado" <?= ($filters['estado'] ?? '') === 'revocado' ? 'selected' : '' ?>>Revocado</option>
+                    <option value="rechazado" <?= ($filters['estado'] ?? '') === 'rechazado' ? 'selected' : '' ?>>Rechazado</option>
+                </select>
+            </div>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Desde</label>
+                <input type="date" name="desde" class="form-control form-control-sm"
+                       value="<?= $e((string) ($filters['desde'] ?? '')) ?>">
+            </div>
+        </div>
+        <div class="ds-filter-field">
+            <div class="ds-form-field">
+                <label class="ds-form-label">Hasta</label>
+                <input type="date" name="hasta" class="form-control form-control-sm"
+                       value="<?= $e((string) ($filters['hasta'] ?? '')) ?>">
+            </div>
+        </div>
+        <div class="ds-filter-actions">
+            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
+                <i class="bi bi-search"></i>Buscar
+            </button>
+            <?php if ($hasFilters): ?>
+            <a href="<?= $view->url('/lopdp/consentimientos') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                <i class="bi bi-x-lg"></i>Limpiar
+            </a>
+            <?php endif ?>
+        </div>
+    </form>
+</div>
+
 <?php if ($consentimientos === []): ?>
 <div class="ds-table-card">
     <div class="ds-empty-state">
         <div class="ds-empty-icon"><i class="bi bi-shield-check"></i></div>
         <h3>Sin consentimientos registrados</h3>
-        <p>Cuando un titular acepte el tratamiento de sus datos, el consentimiento quedara registrado aqui con trazabilidad completa.</p>
+        <p>
+            <?php if ($hasFilters): ?>
+                Ningun consentimiento coincide con los filtros seleccionados.
+            <?php else: ?>
+                Cuando un titular acepte el tratamiento de sus datos, el consentimiento quedara registrado aqui con trazabilidad completa.
+            <?php endif ?>
+        </p>
     </div>
 </div>
 <?php else: ?>
@@ -52,12 +115,14 @@ $e = ViewRenderer::e(...);
                     <th>Aceptado</th>
                     <th>Estado</th>
                     <th>Revocado</th>
+                    <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($consentimientos as $c):
                     $revocado = !empty($c['revocado_at']);
                     $aceptado = (int) $c['aceptado'] === 1;
+                    $titularText = ucfirst((string) $c['titular_tipo']) . ' ' . (string) $c['titular_id'];
                 ?>
                 <tr>
                     <td>
@@ -79,14 +144,143 @@ $e = ViewRenderer::e(...);
                         <?php if ($revocado): ?>
                             <span class="ds-cell-mono"><?= date('d/m/Y', strtotime((string) $c['revocado_at'])) ?></span>
                         <?php else: ?>
-                            <span class="ds-cell-sub">—</span>
+                            <span class="ds-cell-sub">-</span>
                         <?php endif ?>
+                    </td>
+                    <td class="ds-cell-end">
+                        <div class="ds-row-actions">
+                            <a href="<?= $view->url('/lopdp/consentimientos/' . $c['id']) ?>"
+                               class="ds-btn ds-btn-outline ds-btn-sm"
+                               title="Ver detalle">
+                                Ver
+                            </a>
+                            <?php if (!$revocado && $aceptado): ?>
+                            <form method="post"
+                                  action="<?= $view->url('/lopdp/consentimientos/' . $c['id'] . '/revocar') ?>"
+                                  class="d-inline ds-form-inline js-consent-revoke-form"
+                                  data-titular="<?= $e($titularText) ?>"
+                                  data-proposito="<?= $e((string) $c['proposito']) ?>">
+                                <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                                <input type="hidden" name="return_to" value="<?= $e($returnTo) ?>">
+                                <input type="hidden" name="motivo" value="">
+                                <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm" title="Revocar">
+                                    Revocar
+                                </button>
+                            </form>
+                            <?php endif ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>
             </tbody>
         </table>
     </div>
+
+    <?php if (($totalPages ?? 1) > 1): ?>
+    <div class="ds-table-foot">
+        <span>Pagina <strong><?= (int) $page ?></strong> de <?= (int) $totalPages ?> &middot; <?= (int) $total ?> consentimiento<?= ((int) $total) !== 1 ? 's' : '' ?></span>
+        <ul class="ds-pagination">
+            <li>
+                <a class="ds-page <?= ((int) $page) <= 1 ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/lopdp/consentimientos') ?>?page=<?= max(1, (int) $page - 1) ?><?= $qsPrefix ?>" aria-label="Anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            <?php for ($p = max(1, (int) $page - 2); $p <= min((int) $totalPages, (int) $page + 2); $p++): ?>
+            <li>
+                <a class="ds-page <?= $p === (int) $page ? 'is-active' : '' ?>"
+                   href="<?= $view->url('/lopdp/consentimientos') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
+            </li>
+            <?php endfor ?>
+            <li>
+                <a class="ds-page <?= ((int) $page) >= (int) $totalPages ? 'is-disabled' : '' ?>"
+                   href="<?= $view->url('/lopdp/consentimientos') ?>?page=<?= min((int) $totalPages, (int) $page + 1) ?><?= $qsPrefix ?>" aria-label="Siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <?php endif ?>
 </div>
 <?php endif ?>
+<?php $view->endSection() ?>
+
+<?php $view->section('scripts') ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+(() => {
+    const forms = document.querySelectorAll('.js-consent-revoke-form');
+    if (!forms.length) {
+        return;
+    }
+
+    const isValidReason = (value) => String(value || '').trim().length >= 5;
+
+    forms.forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const titular = form.dataset.titular || 'titular';
+            const proposito = form.dataset.proposito || 'proposito no especificado';
+            const motivoInput = form.querySelector('input[name="motivo"]');
+            if (!motivoInput) {
+                return;
+            }
+
+            const submitWithReason = (motivo) => {
+                motivoInput.value = String(motivo || '').trim();
+                form.submit();
+            };
+
+            if (typeof window.Swal === 'undefined') {
+                const fallback = window.prompt(
+                    `Motivo de revocacion para ${titular} (${proposito}). Minimo 5 caracteres:`,
+                    ''
+                );
+                if (fallback !== null && isValidReason(fallback)) {
+                    submitWithReason(fallback);
+                    return;
+                }
+                if (fallback !== null) {
+                    window.alert('Ingresa un motivo valido (minimo 5 caracteres).');
+                }
+                return;
+            }
+
+            window.Swal.fire({
+                icon: 'warning',
+                title: 'Revocar consentimiento',
+                html: `<div style="text-align:left;font-size:.9rem;color:var(--ds-text-soft);">` +
+                    `<div><strong>Titular:</strong> ${titular}</div>` +
+                    `<div style="margin-top:.25rem;"><strong>Proposito:</strong> ${proposito}</div>` +
+                    `</div>`,
+                input: 'textarea',
+                inputLabel: 'Motivo de revocacion',
+                inputPlaceholder: 'Ejemplo: solicitud expresa del titular para retirar su autorizacion.',
+                inputAttributes: {
+                    maxlength: '255',
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Si, revocar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                focusCancel: true,
+                preConfirm: (value) => {
+                    const motivo = String(value || '').trim();
+                    if (!isValidReason(motivo)) {
+                        window.Swal.showValidationMessage('Ingresa un motivo de al menos 5 caracteres.');
+                        return false;
+                    }
+                    return motivo;
+                },
+            }).then((result) => {
+                if (!result.isConfirmed) {
+                    return;
+                }
+                submitWithReason(result.value);
+            });
+        });
+    });
+})();
+</script>
 <?php $view->endSection() ?>

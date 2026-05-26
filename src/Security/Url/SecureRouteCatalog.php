@@ -20,6 +20,8 @@ final class SecureRouteCatalog
      */
     private const ROUTE_PARAM_SCOPES = [
         // Guardias
+        'fichas.historial' => ['id' => 'guardias.id'],
+        'fichas.historial.export' => ['id' => 'guardias.id'],
         'fichas.show' => ['id' => 'guardias.id'],
         'fichas.edit' => ['id' => 'guardias.id'],
         'fichas.update' => ['id' => 'guardias.id'],
@@ -58,6 +60,8 @@ final class SecureRouteCatalog
         // LOPDP
         'lopdp.solicitudes.show' => ['id' => 'lopdp_solicitudes.id'],
         'lopdp.solicitudes.responder' => ['id' => 'lopdp_solicitudes.id'],
+        'lopdp.consentimientos.show' => ['id' => 'consentimientos_lopdp.id'],
+        'lopdp.consentimientos.revocar' => ['id' => 'consentimientos_lopdp.id'],
 
         // Clientes
         'clientes.show' => ['id' => 'clientes.id'],
@@ -117,6 +121,8 @@ final class SecureRouteCatalog
      */
     private const PATH_RULES = [
         ['segments' => ['guardias', '{id}'], 'scopes' => ['id' => 'guardias.id']],
+        ['segments' => ['guardias', '{id}', 'fichas'], 'scopes' => ['id' => 'guardias.id']],
+        ['segments' => ['guardias', '{id}', 'fichas', 'exportar'], 'scopes' => ['id' => 'guardias.id']],
         ['segments' => ['guardias', '{id}', 'editar'], 'scopes' => ['id' => 'guardias.id']],
         ['segments' => ['guardias', '{id}', 'completar'], 'scopes' => ['id' => 'guardias.id']],
         ['segments' => ['guardias', '{id}', 'eliminar'], 'scopes' => ['id' => 'guardias.id']],
@@ -138,6 +144,8 @@ final class SecureRouteCatalog
         ['segments' => ['roles', '{id}', 'eliminar'], 'scopes' => ['id' => 'roles.id']],
         ['segments' => ['lopdp', 'solicitudes', '{id}'], 'scopes' => ['id' => 'lopdp_solicitudes.id']],
         ['segments' => ['lopdp', 'solicitudes', '{id}', 'responder'], 'scopes' => ['id' => 'lopdp_solicitudes.id']],
+        ['segments' => ['lopdp', 'consentimientos', '{id}'], 'scopes' => ['id' => 'consentimientos_lopdp.id']],
+        ['segments' => ['lopdp', 'consentimientos', '{id}', 'revocar'], 'scopes' => ['id' => 'consentimientos_lopdp.id']],
         ['segments' => ['clientes', '{id}'], 'scopes' => ['id' => 'clientes.id']],
         ['segments' => ['clientes', '{id}', 'editar'], 'scopes' => ['id' => 'clientes.id']],
         ['segments' => ['clientes', '{id}', 'estado'], 'scopes' => ['id' => 'clientes.id']],

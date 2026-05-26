@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DigiSecure\Security\Session;
 
 use DigiSecure\Kernel\Config\Config;
+use DigiSecure\Kernel\Http\BasePath;
 
 /**
  * Gestor de sesiones seguras (wrapper de session_* nativo de PHP).
@@ -78,12 +79,35 @@ final class SessionManager
         }
 
         // Configuración de cookies (debe hacerse ANTES de session_start)
+        $basePath = trim(BasePath::get());
+        $cookiePath = $basePath === '' ? '/' : rtrim($basePath, '/');
+        if ($cookiePath === '') {
+            $cookiePath = '/';
+        }
+
+        // Evita colisiones entre apps en localhost cuando comparten nombre de cookie.
+        // Si corre en subdirectorio, invalida cualquier cookie raiz previa.
+        if ($cookiePath !== '/' && isset($_COOKIE[$this->name])) {
+            \setcookie(
+                $this->name,
+                '',
+                [
+                    'expires' => \time() - 42000,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => $this->cookieSecure,
+                    'httponly' => $this->cookieHttpOnly,
+                    'samesite' => $this->cookieSameSite,
+                ],
+            );
+        }
+
         \session_name($this->name);
         \session_save_path($this->savePath);
 
         \session_set_cookie_params([
             'lifetime' => 0,                  // cookie de sesión (hasta cerrar navegador)
-            'path' => '/',
+            'path' => $cookiePath,
             'domain' => '',                   // host-only
             'secure' => $this->cookieSecure,
             'httponly' => $this->cookieHttpOnly,
@@ -94,12 +118,16 @@ final class SessionManager
         \ini_set('session.use_strict_mode', '1');
         \ini_set('session.use_only_cookies', '1');
         \ini_set('session.use_trans_sid', '0');
+        \ini_set('session.cookie_path', $cookiePath);
         \ini_set('session.cookie_samesite', $this->cookieSameSite);
         \ini_set('session.sid_length', '48');
-        \ini_set('session.sid_bits_per_character', '6');
+        // 5 bits evita caracteres especiales (como coma) en el identificador.
+        \ini_set('session.sid_bits_per_character', '5');
         \ini_set('session.gc_maxlifetime', (string)$this->lifetimeSeconds);
 
-        \session_start();
+        if (!\session_start()) {
+            throw new \RuntimeException('No se pudo iniciar la sesión segura.');
+        }
         $this->started = true;
 
         $this->handleIdleTimeout();
@@ -115,7 +143,10 @@ final class SessionManager
         if ($lastActivity !== null && ($now - $lastActivity) > $this->lifetimeSeconds) {
             // Sesión inactiva demasiado tiempo → destruir y recrear
             $this->destroy();
-            \session_start();
+            if (!\session_start()) {
+                throw new \RuntimeException('No se pudo reiniciar la sesión tras timeout de inactividad.');
+            }
+            $this->started = true;
         }
 
         $_SESSION['_digisecure.last_activity'] = $now;
@@ -204,7 +235,7 @@ final class SessionManager
 
     public function isStarted(): bool
     {
-        return $this->started && \session_status() === PHP_SESSION_ACTIVE;
+        return \session_status() === PHP_SESSION_ACTIVE;
     }
 
     private function ensureStarted(): void

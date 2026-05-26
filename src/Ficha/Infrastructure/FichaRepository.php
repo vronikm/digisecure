@@ -45,10 +45,44 @@ final class FichaRepository extends BaseRepository
      */
     public function findByCedulaHash(string $cedulaHash): array
     {
+        return $this->findByCedulaHashFiltered($cedulaHash);
+    }
+
+    /**
+     * Lista fichas del guardia por hash de cédula con filtros opcionales.
+     *
+     * @param array{estado?: string, tipo_ficha?: string, desde?: string, hasta?: string} $filters
+     * @return list<array<string, mixed>>
+     */
+    public function findByCedulaHashFiltered(string $cedulaHash, array $filters = []): array
+    {
+        $bindings = ['hash' => $cedulaHash];
+        $conditions = ['cedula_hash = :hash'];
+
+        if (!empty($filters['estado'])) {
+            $conditions[] = 'estado = :estado';
+            $bindings['estado'] = (string) $filters['estado'];
+        }
+        if (!empty($filters['tipo_ficha'])) {
+            $conditions[] = 'tipo_ficha = :tipo_ficha';
+            $bindings['tipo_ficha'] = (string) $filters['tipo_ficha'];
+        }
+        if (!empty($filters['desde'])) {
+            $conditions[] = 'fecha_emision >= :desde';
+            $bindings['desde'] = (string) $filters['desde'];
+        }
+        if (!empty($filters['hasta'])) {
+            $conditions[] = 'fecha_emision <= :hasta';
+            $bindings['hasta'] = (string) $filters['hasta'];
+        }
+
         return $this->tenantQuery(
-            'SELECT id, correlativo, tipo_ficha, estado, fecha_emision, nombres, apellidos
-             FROM fichas WHERE cedula_hash = :hash ORDER BY created_at DESC',
-            ['hash' => $cedulaHash],
+            'SELECT id, correlativo, tipo_ficha, estado, fecha_emision, fecha_revision,
+                    nombres, apellidos, created_at, updated_at
+             FROM fichas
+             WHERE ' . implode(' AND ', $conditions) . '
+             ORDER BY fecha_emision DESC, created_at DESC',
+            $bindings,
         );
     }
 
@@ -145,6 +179,93 @@ final class FichaRepository extends BaseRepository
         }
 
         return $this->tenantCount($where, $bindings);
+    }
+
+    /**
+     * Lista guardias únicos (agrupados por cédula hash) para la vista principal.
+     *
+     * @param array<string, mixed> $filters Filtros: busqueda, cedula_hash
+     * @return list<array<string, mixed>>
+     */
+    public function listGuardias(int $limit = 25, int $offset = 0, array $filters = []): array
+    {
+        $bindings = [
+            'lim' => $limit,
+            'off' => $offset,
+        ];
+
+        $conditions = [];
+        if (!empty($filters['busqueda'])) {
+            $conditions[] = '(apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4)';
+            $busq = '%' . $filters['busqueda'] . '%';
+            $bindings['busq'] = $busq;
+            $bindings['busq2'] = $busq;
+            $bindings['busq3'] = $busq;
+            $bindings['busq4'] = $busq;
+        }
+        if (!empty($filters['cedula_hash'])) {
+            $conditions[] = 'cedula_hash = :cedula_hash';
+            $bindings['cedula_hash'] = (string) $filters['cedula_hash'];
+        }
+
+        $sql = 'SELECT
+                    MAX(id) AS ficha_id,
+                    cedula_hash,
+                    MAX(cedula_cifrada) AS cedula_cifrada,
+                    MAX(apellidos) AS apellidos,
+                    MAX(nombres) AS nombres,
+                    MAX(fecha_nacimiento) AS fecha_nacimiento,
+                    MAX(celular) AS celular,
+                    MAX(email) AS email,
+                    MAX(created_at) AS ultima_ficha_at,
+                    COUNT(*) AS total_fichas
+                FROM fichas';
+
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+
+        $sql .= ' GROUP BY cedula_hash
+                  ORDER BY MAX(created_at) DESC
+                  LIMIT :lim OFFSET :off';
+
+        return $this->tenantQuery($sql, $bindings);
+    }
+
+    /**
+     * Cuenta guardias únicos (1 por cédula hash) con filtros opcionales.
+     *
+     * @param array<string, mixed> $filters Filtros: busqueda, cedula_hash
+     */
+    public function countGuardias(array $filters = []): int
+    {
+        $bindings = [];
+        $conditions = [];
+
+        if (!empty($filters['busqueda'])) {
+            $conditions[] = '(apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4)';
+            $busq = '%' . $filters['busqueda'] . '%';
+            $bindings['busq'] = $busq;
+            $bindings['busq2'] = $busq;
+            $bindings['busq3'] = $busq;
+            $bindings['busq4'] = $busq;
+        }
+        if (!empty($filters['cedula_hash'])) {
+            $conditions[] = 'cedula_hash = :cedula_hash';
+            $bindings['cedula_hash'] = (string) $filters['cedula_hash'];
+        }
+
+        $sql = 'SELECT COUNT(*) FROM (
+                    SELECT cedula_hash
+                    FROM fichas';
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+        $sql .= ' GROUP BY cedula_hash
+                ) AS guardias_unicos';
+
+        $result = $this->tenantScalar($sql, $bindings);
+        return (int) $result;
     }
 
     /**

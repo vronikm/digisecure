@@ -31,6 +31,16 @@ final class ConsentimientoRepository extends BaseRepository
     }
 
     /**
+     * Obtiene un consentimiento por ID dentro del tenant actual.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findById(string $id): ?array
+    {
+        return parent::findById($id);
+    }
+
+    /**
      * Verifica si existe un consentimiento activo para titular+propósito.
      */
     public function consentimientoActivo(string $titularTipo, string $titularId, string $proposito): bool
@@ -118,5 +128,79 @@ final class ConsentimientoRepository extends BaseRepository
              LIMIT :lim',
             ['lim' => $limit],
         );
+    }
+
+    /**
+     * Lista consentimientos con filtros opcionales para la vista operativa.
+     *
+     * Filtros soportados:
+     *  - estado: activo|revocado|rechazado
+     *  - desde: YYYY-MM-DD (fecha aceptación)
+     *  - hasta: YYYY-MM-DD (fecha aceptación)
+     *
+     * @param array{estado?: string, desde?: string, hasta?: string} $filters
+     * @return list<array<string, mixed>>
+     */
+    public function listarFiltrados(int $limit = 25, int $offset = 0, array $filters = []): array
+    {
+        $bindings = [
+            'lim' => $limit,
+            'off' => $offset,
+        ];
+        $where = $this->buildFilteredWhere($filters, $bindings);
+
+        $sql = 'SELECT id, titular_tipo, titular_id, proposito, aceptado, aceptado_at, revocado_at
+                FROM consentimientos_lopdp';
+        if ($where !== '') {
+            $sql .= ' WHERE ' . $where;
+        }
+        $sql .= ' ORDER BY aceptado_at DESC LIMIT :lim OFFSET :off';
+
+        return $this->tenantQuery($sql, $bindings);
+    }
+
+    /**
+     * Cuenta consentimientos con filtros opcionales.
+     *
+     * @param array{estado?: string, desde?: string, hasta?: string} $filters
+     */
+    public function contarFiltrados(array $filters = []): int
+    {
+        $bindings = [];
+        $where = $this->buildFilteredWhere($filters, $bindings);
+
+        return $this->tenantCount($where, $bindings);
+    }
+
+    /**
+     * @param array{estado?: string, desde?: string, hasta?: string} $filters
+     * @param array<string, scalar|null> $bindings
+     */
+    private function buildFilteredWhere(array $filters, array &$bindings): string
+    {
+        $conditions = [];
+
+        $estado = (string)($filters['estado'] ?? '');
+        if ($estado === 'activo') {
+            $conditions[] = 'aceptado = 1 AND revocado_at IS NULL';
+        } elseif ($estado === 'revocado') {
+            $conditions[] = 'revocado_at IS NOT NULL';
+        } elseif ($estado === 'rechazado') {
+            $conditions[] = 'aceptado = 0';
+        }
+
+        $desde = (string)($filters['desde'] ?? '');
+        if ($desde !== '') {
+            $conditions[] = 'DATE(aceptado_at) >= :desde';
+            $bindings['desde'] = $desde;
+        }
+
+        $hasta = (string)($filters['hasta'] ?? '');
+        if ($hasta !== '') {
+            $conditions[] = 'DATE(aceptado_at) <= :hasta';
+            $bindings['hasta'] = $hasta;
+        }
+
+        return implode(' AND ', $conditions);
     }
 }
