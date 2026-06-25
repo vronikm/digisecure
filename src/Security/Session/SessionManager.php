@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace DigiSecure\Security\Session;
 
 use DigiSecure\Kernel\Config\Config;
-use DigiSecure\Kernel\Http\BasePath;
 
 /**
  * Gestor de sesiones seguras (wrapper de session_* nativo de PHP).
@@ -78,29 +77,10 @@ final class SessionManager
             }
         }
 
-        // Configuración de cookies (debe hacerse ANTES de session_start)
-        $basePath = trim(BasePath::get());
-        $cookiePath = $basePath === '' ? '/' : rtrim($basePath, '/');
-        if ($cookiePath === '') {
-            $cookiePath = '/';
-        }
-
-        // Evita colisiones entre apps en localhost cuando comparten nombre de cookie.
-        // Si corre en subdirectorio, invalida cualquier cookie raiz previa.
-        if ($cookiePath !== '/' && isset($_COOKIE[$this->name])) {
-            \setcookie(
-                $this->name,
-                '',
-                [
-                    'expires' => \time() - 42000,
-                    'path' => '/',
-                    'domain' => '',
-                    'secure' => $this->cookieSecure,
-                    'httponly' => $this->cookieHttpOnly,
-                    'samesite' => $this->cookieSameSite,
-                ],
-            );
-        }
+        // La cookie debe viajar tanto en /login como en cualquier ruta protegida.
+        // En cPanel/Apache SCRIPT_NAME puede detectar /public como base path aunque
+        // el dominio sirva la app desde la raiz, causando CSRF al no reenviar cookie.
+        $cookiePath = '/';
 
         \session_name($this->name);
         \session_save_path($this->savePath);
