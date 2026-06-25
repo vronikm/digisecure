@@ -18,7 +18,8 @@ No debe apuntar a la raiz del proyecto.
 
 ## 2. Dependencias
 
-Ejecutar en la raiz del proyecto:
+Modo recomendado si el servidor permite SSH/Composer: ejecutar en la raiz del
+proyecto:
 
 ```bash
 composer install --no-dev --optimize-autoloader
@@ -30,9 +31,17 @@ Debe existir:
 vendor/autoload.php
 ```
 
-Si el despliegue se hace desde Git en cPanel, el repositorio debe subir codigo,
-plantillas y documentacion, pero no secretos. El archivo `.env` real se crea
-una sola vez en el servidor y no se versiona.
+Si el despliegue se hace solo desde Git en cPanel y no se ejecuta Composer en
+el servidor, subir tambien `vendor/` en el repo. Prepararlo localmente con:
+
+```bash
+composer install --no-dev --optimize-autoloader
+git add vendor composer.json composer.lock
+```
+
+El repositorio debe subir codigo, plantillas, documentacion y `vendor/` si se
+usa modo Git-only, pero nunca secretos. El archivo `.env` real se crea una sola
+vez en el servidor y no se versiona.
 
 ## 3. Archivo .env de produccion
 
