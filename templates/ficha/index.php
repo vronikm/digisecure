@@ -10,6 +10,7 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+$listError = (bool) ($listError ?? false);
 
 $hasFilters = !empty($filters['busqueda'] ?? null);
 $qs = http_build_query(array_filter([
@@ -53,6 +54,15 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     </a>
     <?php endif ?>
 </div>
+
+<?php if ($listError): ?>
+    <div class="alert alert-warning d-flex align-items-start gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>
+            No se pudo cargar el listado de guardias. Puedes continuar navegando mientras soporte revisa el log del servidor.
+        </div>
+    </div>
+<?php endif; ?>
 
 <div class="ds-card ds-guardias-filter">
     <div class="ds-card-header tone-success">

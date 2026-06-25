@@ -16,6 +16,8 @@ use DigiSecure\Ficha\Application\GenerarFormatoHuellasService;
 use DigiSecure\Ficha\Application\RecuperarFichaService;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
+use DigiSecure\Kernel\Container\Container;
+use DigiSecure\Kernel\Error\ErrorHandler;
 use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
@@ -40,18 +42,13 @@ use DigiSecure\Subscription\Application\VerificarLimiteService;
  */
 final class FichaController
 {
+    private bool $cryptoIssueReported = false;
+
     public function __construct(
         private readonly ViewRenderer $view,
         private readonly FichaRepository $fichaRepo,
-        private readonly CrearFichaService $crearService,
-        private readonly ActualizarFichaService $actualizarService,
-        private readonly EnviarRevisionFichaService $enviarRevisionService,
-        private readonly CompletarFichaService $completarService,
-        private readonly EliminarFichaService $eliminarService,
-        private readonly RecuperarFichaService $recuperarService,
-        private readonly GenerarDeclaracionLealtadService $declaracionLealtadService,
-        private readonly GenerarFormatoHuellasService $formatoHuellasService,
-        private readonly Encryption $encryption,
+        private readonly Container $container,
+        private readonly ErrorHandler $errorHandler,
         private readonly PdoConnection $db,
         private readonly VerificarLimiteService $verificarLimite,
         private readonly FlashBag $flash,
@@ -82,18 +79,28 @@ final class FichaController
             }
         }
 
-        $total = $this->fichaRepo->countGuardias($filters);
-        $totalPages = max(1, (int)ceil($total / $limit));
-        if ($page > $totalPages) {
-            $page = $totalPages;
-        }
+        $listError = false;
+        try {
+            $total = $this->fichaRepo->countGuardias($filters);
+            $totalPages = max(1, (int)ceil($total / $limit));
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
 
-        $offset = ($page - 1) * $limit;
-        $guardias = $this->fichaRepo->listGuardias($limit, $offset, $filters);
-        foreach ($guardias as &$guardia) {
-            $guardia['cedula_display'] = $this->decryptSafe($guardia['cedula_cifrada'] ?? null);
+            $offset = ($page - 1) * $limit;
+            $guardias = $this->fichaRepo->listGuardias($limit, $offset, $filters);
+            foreach ($guardias as &$guardia) {
+                $guardia['cedula_display'] = $this->decryptSafe($guardia['cedula_cifrada'] ?? null);
+            }
+            unset($guardia);
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            $listError = true;
+            $total = 0;
+            $totalPages = 1;
+            $page = 1;
+            $guardias = [];
         }
-        unset($guardia);
 
         return $this->view->response('ficha/index', [
             'user' => $user,
@@ -104,6 +111,7 @@ final class FichaController
             'page' => $page,
             'totalPages' => $totalPages,
             'filters' => ['busqueda' => $busqueda],
+            'listError' => $listError,
         ]);
     }
 
@@ -256,7 +264,7 @@ final class FichaController
 
         try {
             $this->verificarLimite->verificarCrearGuardia();
-            $result = $this->crearService->execute($input, $user->id, $request->clientIp());
+            $result = $this->crearFichaService()->execute($input, $user->id, $request->clientIp());
             $this->flash->success('Ficha de guardia creada correctamente.');
             return Response::redirect($this->securePath($request, "/guardias/{$result['id']}"));
         } catch (DomainException $e) {
@@ -349,7 +357,7 @@ final class FichaController
         $input = $request->post;
 
         try {
-            $this->actualizarService->execute($id, $input, $user->id, $request->clientIp());
+            $this->actualizarFichaService()->execute($id, $input, $user->id, $request->clientIp());
             $this->flash->success('Ficha actualizada correctamente.');
             return Response::redirect($this->securePath($request, "/guardias/{$id}/editar"));
         } catch (DomainException $e) {
@@ -378,7 +386,7 @@ final class FichaController
         $user = $request->attribute('auth_user');
 
         try {
-            $this->enviarRevisionService->execute($id, $user->id, $request->clientIp());
+            $this->enviarRevisionService()->execute($id, $user->id, $request->clientIp());
             $this->flash->success('Ficha enviada a revision correctamente.');
             return Response::redirect($this->securePath($request, "/guardias/{$id}"));
         } catch (DomainException $e) {
@@ -395,7 +403,7 @@ final class FichaController
         $user = $request->attribute('auth_user');
 
         try {
-            $incumplimientos = $this->completarService->execute($id, $user->id, $request->clientIp());
+            $incumplimientos = $this->completarService()->execute($id, $user->id, $request->clientIp());
 
             if ($incumplimientos !== []) {
                 // Volver al detalle con los incumplimientos
@@ -432,7 +440,7 @@ final class FichaController
         $user = $request->attribute('auth_user');
 
         try {
-            $this->eliminarService->execute($id, $user->id, $request->clientIp());
+            $this->eliminarService()->execute($id, $user->id, $request->clientIp());
             $this->flash->success('Ficha eliminada correctamente.');
             return Response::redirect('/guardias');
         } catch (DomainException $e) {
@@ -447,7 +455,7 @@ final class FichaController
         $user = $request->attribute('auth_user');
 
         try {
-            $this->recuperarService->execute($id, $user->id, $request->clientIp());
+            $this->recuperarService()->execute($id, $user->id, $request->clientIp());
             $this->flash->success('Ficha recuperada correctamente (estado Borrador).');
             return Response::redirect('/guardias');
         } catch (DomainException $e) {
@@ -464,7 +472,7 @@ final class FichaController
         $user = $request->attribute('auth_user');
 
         try {
-            $result = $this->declaracionLealtadService->execute($id, $user->id, $request->clientIp());
+            $result = $this->declaracionLealtadService()->execute($id, $user->id, $request->clientIp());
         } catch (DomainException) {
             return $this->view->response('errors/404', [], 404);
         }
@@ -488,7 +496,7 @@ final class FichaController
         $user = $request->attribute('auth_user');
 
         try {
-            $result = $this->formatoHuellasService->execute($id, $user->id, $request->clientIp());
+            $result = $this->formatoHuellasService()->execute($id, $user->id, $request->clientIp());
         } catch (DomainException) {
             return $this->view->response('errors/404', [], 404);
         }
@@ -790,9 +798,94 @@ final class FichaController
             return '';
         }
         try {
-            return $this->encryption->decrypt($ciphertext);
-        } catch (\Throwable) {
+            return $this->encryption()->decrypt($ciphertext);
+        } catch (\Throwable $e) {
+            if (!$this->cryptoIssueReported) {
+                $this->errorHandler->report($e);
+                $this->cryptoIssueReported = true;
+            }
             return '[cifrado]';
         }
+    }
+
+    private function crearFichaService(): CrearFichaService
+    {
+        $service = $this->container->get(CrearFichaService::class);
+        if (!$service instanceof CrearFichaService) {
+            throw new \RuntimeException('No se pudo resolver CrearFichaService.');
+        }
+        return $service;
+    }
+
+    private function actualizarFichaService(): ActualizarFichaService
+    {
+        $service = $this->container->get(ActualizarFichaService::class);
+        if (!$service instanceof ActualizarFichaService) {
+            throw new \RuntimeException('No se pudo resolver ActualizarFichaService.');
+        }
+        return $service;
+    }
+
+    private function enviarRevisionService(): EnviarRevisionFichaService
+    {
+        $service = $this->container->get(EnviarRevisionFichaService::class);
+        if (!$service instanceof EnviarRevisionFichaService) {
+            throw new \RuntimeException('No se pudo resolver EnviarRevisionFichaService.');
+        }
+        return $service;
+    }
+
+    private function completarService(): CompletarFichaService
+    {
+        $service = $this->container->get(CompletarFichaService::class);
+        if (!$service instanceof CompletarFichaService) {
+            throw new \RuntimeException('No se pudo resolver CompletarFichaService.');
+        }
+        return $service;
+    }
+
+    private function eliminarService(): EliminarFichaService
+    {
+        $service = $this->container->get(EliminarFichaService::class);
+        if (!$service instanceof EliminarFichaService) {
+            throw new \RuntimeException('No se pudo resolver EliminarFichaService.');
+        }
+        return $service;
+    }
+
+    private function recuperarService(): RecuperarFichaService
+    {
+        $service = $this->container->get(RecuperarFichaService::class);
+        if (!$service instanceof RecuperarFichaService) {
+            throw new \RuntimeException('No se pudo resolver RecuperarFichaService.');
+        }
+        return $service;
+    }
+
+    private function declaracionLealtadService(): GenerarDeclaracionLealtadService
+    {
+        $service = $this->container->get(GenerarDeclaracionLealtadService::class);
+        if (!$service instanceof GenerarDeclaracionLealtadService) {
+            throw new \RuntimeException('No se pudo resolver GenerarDeclaracionLealtadService.');
+        }
+        return $service;
+    }
+
+    private function formatoHuellasService(): GenerarFormatoHuellasService
+    {
+        $service = $this->container->get(GenerarFormatoHuellasService::class);
+        if (!$service instanceof GenerarFormatoHuellasService) {
+            throw new \RuntimeException('No se pudo resolver GenerarFormatoHuellasService.');
+        }
+        return $service;
+    }
+
+    private function encryption(): Encryption
+    {
+        $service = $this->container->get(Encryption::class);
+        if (!$service instanceof Encryption) {
+            throw new \RuntimeException('No se pudo resolver Encryption.');
+        }
+        return $service;
     }
 }
