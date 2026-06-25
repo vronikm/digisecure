@@ -11,18 +11,18 @@
     RewriteEngine On
 
     # Si la petición no empieza con public/, reescribir
-    RewriteCond %{REQUEST_URI} !^/digisecure/public/
-    RewriteRule ^(.*)$ public/$1 [L]
+    RewriteRule ^(?!public/)(.*)$ public/$1 [L]
 </IfModule>
 
 # Bloquear acceso a directorios sensibles incluso si el DocumentRoot está mal
-<FilesMatch "\.(env|gitignore|md|json|lock|neon|dist|example)$">
+<FilesMatch "^\.|(\.(env|gitignore|md|json|lock|neon|dist|example|sql|log|txt|bak|backup|old|ini|yml|yaml|xml))$">
     Require all denied
 </FilesMatch>
 
 # Bloquear acceso a directorios sensibles vía RewriteRule
 # (DirectoryMatch no está permitido en .htaccess)
 <IfModule mod_rewrite.c>
+    RewriteRule ^(\.git|\.claude|\.agents|\.codex)(/|$) - [F,L]
     RewriteRule ^(src|var|config|tests|migrations|bin|vendor|docs)(/|$) - [F,L]
 </IfModule>
 

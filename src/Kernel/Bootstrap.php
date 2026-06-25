@@ -614,7 +614,7 @@ final class Bootstrap
 
         // 14. Router con rutas registradas
         $router = new Router();
-        $this->registerRoutes($router);
+        $this->registerRoutes($router, $config);
         $container->instance(Router::class, $router);
 
         // 7. Detectar base path y crear Request
@@ -726,7 +726,7 @@ final class Bootstrap
         return new Config($values);
     }
 
-    private function registerRoutes(Router $router): void
+    private function registerRoutes(Router $router, Config $config): void
     {
         // Las rutas se moverán a config/routes.php cuando crezcan.
 
@@ -899,30 +899,41 @@ final class Bootstrap
         $router->post('/registro', [RegistroController::class, 'procesarForm'], name: 'registro.store');
         $router->get('/activar/{token}', [RegistroController::class, 'activar'], name: 'registro.activar');
 
-        // --- Healthcheck y smoke tests (mantener para monitoreo) ---
-        $router->get('/healthcheck', static fn(
+        // --- Healthcheck publico y smoke tests solo fuera de produccion ---
+        $router->get('/healthcheck', static function (
+            Config $config,
             SessionManager $session,
             CsrfGuard $csrf,
             Authenticator $auth,
-        ) => \DigiSecure\Kernel\Http\Response::json([
-            'status' => 'ok',
-            'service' => 'DigiSecure',
-            'phase' => '18.0',
-            'timestamp' => date('c'),
-            'php' => PHP_VERSION,
-            'session_active' => $session->isStarted(),
-            'csrf_token_present' => $csrf->token() !== '',
-            'authenticated' => $auth->isAuthenticated(),
-        ]), name: 'healthcheck');
+        ) {
+            $payload = [
+                'status' => 'ok',
+                'service' => 'DigiSecure',
+                'timestamp' => date('c'),
+            ];
 
-        $router->get('/_smoke/session', static function (SessionManager $session, CsrfGuard $csrf) {
-            $hits = (int)($session->get('_smoke.hits', 0)) + 1;
-            $session->set('_smoke.hits', $hits);
-            return \DigiSecure\Kernel\Http\Response::json([
-                'session_id' => $session->id(),
-                'hits' => $hits,
-                'csrf_token' => $csrf->token(),
-            ]);
-        }, name: 'smoke.session');
+            if ($config->string('app.env', 'production') !== 'production') {
+                $payload += [
+                    'phase' => '18.0',
+                    'php' => PHP_VERSION,
+                    'session_active' => $session->isStarted(),
+                    'csrf_token_present' => $csrf->token() !== '',
+                    'authenticated' => $auth->isAuthenticated(),
+                ];
+            }
+
+            return \DigiSecure\Kernel\Http\Response::json($payload);
+        }, name: 'healthcheck');
+
+        if ($config->string('app.env', 'production') !== 'production') {
+            $router->get('/_smoke/session', static function (SessionManager $session, CsrfGuard $csrf) {
+                $hits = (int)($session->get('_smoke.hits', 0)) + 1;
+                $session->set('_smoke.hits', $hits);
+                return \DigiSecure\Kernel\Http\Response::json([
+                    'hits' => $hits,
+                    'csrf_token_present' => $csrf->token() !== '',
+                ]);
+            }, name: 'smoke.session');
+        }
     }
 }

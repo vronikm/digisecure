@@ -19,11 +19,36 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
     {
         $response = $next->handle($request);
 
-        return $response
+        $response = $response
             ->withHeader('X-Content-Type-Options', 'nosniff')
             ->withHeader('X-Frame-Options', 'SAMEORIGIN')
             ->withHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
-            ->withHeader('Permissions-Policy', 'geolocation=(self), microphone=(), camera=()')
-            ->withHeader('X-XSS-Protection', '0');
+            ->withHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+            ->withHeader('Cross-Origin-Opener-Policy', 'same-origin')
+            ->withHeader('Cross-Origin-Resource-Policy', 'same-origin')
+            ->withHeader('X-Permitted-Cross-Domain-Policies', 'none')
+            ->withHeader('X-XSS-Protection', '0')
+            ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+            ->withHeader('Pragma', 'no-cache')
+            ->withHeader('Expires', '0');
+
+        if ($this->isHttps($request)) {
+            $response = $response->withHeader(
+                'Strict-Transport-Security',
+                'max-age=31536000; includeSubDomains'
+            );
+        }
+
+        return $response;
+    }
+
+    private function isHttps(Request $request): bool
+    {
+        $https = strtolower((string)($request->server['HTTPS'] ?? ''));
+        if ($https === 'on' || $https === '1') {
+            return true;
+        }
+
+        return strtolower((string)($request->server['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     }
 }

@@ -42,6 +42,11 @@ if (!is_file(DIGISECURE_ROOT . '/.env')) {
 }
 
 $envVars = EnvLoader::load(DIGISECURE_ROOT . '/.env');
+if (($envVars['APP_ENV'] ?? 'production') === 'production') {
+    fwrite(STDERR, "ERROR: seed-dev.php no puede ejecutarse con APP_ENV=production.\n");
+    exit(1);
+}
+
 $config = new Config([
     'db' => [
         'host' => $envVars['DB_HOST'] ?? '127.0.0.1',
@@ -77,7 +82,7 @@ if ($existing !== null) {
 $tenantId = IdGenerator::ulid();
 $adminId = IdGenerator::ulid();
 $email = 'admin@digisecure.test';
-$password = 'DigiSecure2024!';
+$password = 'Dev-' . bin2hex(random_bytes(8)) . '-9a';
 $passwordHash = password_hash($password, PASSWORD_ARGON2ID, [
     'memory_cost' => 65536,
     'time_cost' => 4,

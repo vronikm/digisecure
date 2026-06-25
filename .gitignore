@@ -27,6 +27,9 @@ composer.lock.bak
 # --- IDEs / Editores ---
 /.idea/
 /.vscode/
+/.claude/
+/.agents/
+/.codex/
 *.swp
 *.swo
 *~
@@ -57,6 +60,8 @@ phpstan.neon.local
 
 # --- Logs sueltos ---
 *.log
+tmp_*.txt
+/var/*.txt
 
 # --- Backups ---
 *.bak
