@@ -7,6 +7,7 @@ namespace DigiSecure\Security\Auth\Controller;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
+use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Auth\AuthenticationException;
 use DigiSecure\Security\Auth\Authenticator;
 use DigiSecure\Security\Csrf\CsrfGuard;
@@ -48,7 +49,7 @@ final class LoginController
         }
 
         try {
-            $auth->login($email, $password, $request->clientIp(), $request->userAgent());
+            $user = $auth->login($email, $password, $request->clientIp(), $request->userAgent());
         } catch (AuthenticationException $e) {
             return $this->renderLogin(
                 $csrf->token(),
@@ -61,7 +62,7 @@ final class LoginController
         // Re-emitir token CSRF al cambiar de contexto anonimo -> autenticado.
         $csrf->rotateToken();
 
-        $target = $this->sanitizeReturnTo($returnTo);
+        $target = $this->sanitizeReturnTo($returnTo, $user);
         return Response::redirect($target);
     }
 
@@ -82,7 +83,7 @@ final class LoginController
     /**
      * Sanitiza la URL de retorno para evitar open redirect.
      */
-    private function sanitizeReturnTo(string $returnTo): string
+    private function sanitizeReturnTo(string $returnTo, AuthenticatedUser $user): string
     {
         if ($returnTo === '') {
             return '/dashboard';
@@ -93,6 +94,10 @@ final class LoginController
         }
 
         if (preg_match('#[a-z]+://#i', $returnTo)) {
+            return '/dashboard';
+        }
+
+        if (str_starts_with($returnTo, '/admin') && !$user->tienePermiso('superadmin.panel')) {
             return '/dashboard';
         }
 

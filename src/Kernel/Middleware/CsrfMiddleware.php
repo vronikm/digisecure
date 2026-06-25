@@ -5,6 +5,7 @@ namespace DigiSecure\Kernel\Middleware;
 
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
+use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Csrf\CsrfException;
 use DigiSecure\Security\Csrf\CsrfGuard;
 
@@ -31,6 +32,7 @@ final class CsrfMiddleware implements MiddlewareInterface
 
     public function __construct(
         private readonly CsrfGuard $csrf,
+        private readonly ViewRenderer $view,
     ) {
     }
 
@@ -44,6 +46,15 @@ final class CsrfMiddleware implements MiddlewareInterface
 
         $submitted = $this->extractToken($request);
         if (!$this->csrf->isValid($submitted)) {
+            if ($request->method === 'POST' && $request->path === '/login') {
+                return $this->view->response('auth/login', [
+                    'csrfToken' => $this->csrf->rotateToken(),
+                    'returnTo' => $request->post('return_to'),
+                    'error' => 'Tu sesion expiro o el formulario estaba desactualizado. Intenta iniciar sesion otra vez.',
+                    'email' => (string)$request->post('email', ''),
+                ], 403);
+            }
+
             throw new CsrfException(
                 'Token CSRF inválido o ausente para ' . $request->method . ' ' . $request->path
             );
