@@ -37,7 +37,7 @@ CREATE TABLE planes (
     UNIQUE KEY uq_planes_codigo (codigo),
     KEY ix_planes_nivel (nivel),
     KEY ix_planes_activo (activo)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE suscripcion_ciclos (
     id CHAR(26) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE suscripcion_ciclos (
     KEY ix_ciclos_plan (plan_codigo),
     CONSTRAINT fk_ciclos_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_ciclos_creador FOREIGN KEY (created_by) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- ---------------------------------------------------------------------
 -- Seed: catálogo de planes estándar

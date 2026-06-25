@@ -54,7 +54,7 @@ CREATE TABLE clientes (
     UNIQUE KEY uq_clientes_tenant_documento (tenant_id, documento),
     KEY ix_clientes_tenant_razon (tenant_id, razon_social),
     CONSTRAINT fk_clientes_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- Permisos del modulo
 INSERT INTO permisos (id, codigo, recurso, accion, descripcion, es_sistema, created_at) VALUES

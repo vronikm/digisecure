@@ -482,7 +482,7 @@ Todas las acciones sensibles registran:
 3. **Particionamiento por `KEY(tenant_id)`** en tablas que crecerán mucho (`fichas`, `auditoria_acciones`, `lopdp_accesos`, `archivos_seguros`).
 4. **Soft delete** vía `deleted_at NULL` en tablas de negocio.
 5. **JSON columns** para datos semi-estructurados (cambios de auditoría, parámetros de reglas).
-6. **InnoDB** siempre, charset `utf8mb4`, collation `utf8mb4_0900_ai_ci`.
+6. **InnoDB** siempre, charset `utf8mb4`, collation `utf8mb4_unicode_ci`.
 
 ---
 

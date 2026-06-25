@@ -20,7 +20,7 @@
 --   - PK CHAR(26) (ULID) para todas las entidades de negocio
 --   - id BIGINT autoincrement solo en tablas de log de alto volumen
 --   - timestamps DATETIME(6) en UTC (PdoConnection fija +00:00)
---   - InnoDB + utf8mb4 + utf8mb4_0900_ai_ci
+--   - InnoDB + utf8mb4 + utf8mb4_unicode_ci
 --   - ROW_FORMAT=DYNAMIC para soportar índices grandes y JSON eficiente
 --   - FK ON DELETE RESTRICT por defecto (no borrado físico — anonimización)
 --   - índices preparados para los WHERE más frecuentes que usaremos
@@ -58,7 +58,7 @@ CREATE TABLE tenants (
     UNIQUE KEY uq_tenants_ruc (ruc),
     KEY ix_tenants_estado (estado),
     KEY ix_tenants_plan_vencimiento (plan_vencimiento)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE usuarios (
     id CHAR(26) NOT NULL,
@@ -93,7 +93,7 @@ CREATE TABLE usuarios (
     KEY ix_usuarios_token_recuperacion (token_recuperacion_hash),
     CONSTRAINT fk_usuarios_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_usuarios_creador FOREIGN KEY (created_by) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE permisos (
     id CHAR(26) NOT NULL,
@@ -106,7 +106,7 @@ CREATE TABLE permisos (
     PRIMARY KEY (id),
     UNIQUE KEY uq_permisos_codigo (codigo),
     KEY ix_permisos_recurso (recurso)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE roles (
     id CHAR(26) NOT NULL,
@@ -121,7 +121,7 @@ CREATE TABLE roles (
     UNIQUE KEY uq_roles_tenant_codigo (tenant_id, codigo),
     KEY ix_roles_es_sistema (es_sistema),
     CONSTRAINT fk_roles_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE roles_permisos (
     role_id CHAR(26) NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE roles_permisos (
     KEY ix_roles_permisos_permiso (permiso_id),
     CONSTRAINT fk_rp_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT fk_rp_permiso FOREIGN KEY (permiso_id) REFERENCES permisos(id) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE usuarios_roles (
     usuario_id CHAR(26) NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE usuarios_roles (
     CONSTRAINT fk_ur_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT fk_ur_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT fk_ur_assigned_by FOREIGN KEY (assigned_by) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE intentos_login (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -162,7 +162,7 @@ CREATE TABLE intentos_login (
     KEY ix_intentos_ip_created (ip, created_at),
     KEY ix_intentos_tenant_created (tenant_id, created_at),
     KEY ix_intentos_usuario_created (usuario_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE auditoria (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -182,7 +182,7 @@ CREATE TABLE auditoria (
     KEY ix_auditoria_entidad (entidad_tipo, entidad_id),
     KEY ix_auditoria_evento_created (evento, created_at),
     KEY ix_auditoria_nivel_created (nivel, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE consentimientos_lopdp (
     id CHAR(26) NOT NULL,
@@ -205,7 +205,7 @@ CREATE TABLE consentimientos_lopdp (
     KEY ix_consentimientos_proposito (proposito),
     KEY ix_consentimientos_revocado (revocado_at),
     CONSTRAINT fk_consentimientos_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- ---------------------------------------------------------------------
 -- SEMILLAS CATÁLOGO DE PERMISOS (sistema, todas con es_sistema=1)

@@ -13,7 +13,7 @@
 -- Convenciones:
 --   - PK CHAR(26) ULID
 --   - tenant_id NOT NULL en todas las tablas tenant-aware
---   - DATETIME(6) UTC, ROW_FORMAT=DYNAMIC, utf8mb4_0900_ai_ci
+--   - DATETIME(6) UTC, ROW_FORMAT=DYNAMIC, utf8mb4_unicode_ci
 --   - payload_json para datos arbitrarios renderizables por la plantilla
 -- =====================================================================
 
@@ -71,7 +71,7 @@ CREATE TABLE notificaciones (
     KEY ix_notif_evento (tenant_id, evento, created_at),
     CONSTRAINT fk_notif_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_notif_usuario FOREIGN KEY (destinatario_usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------
@@ -101,7 +101,7 @@ CREATE TABLE notificaciones_log (
     KEY ix_notiflog_resultado (tenant_id, resultado, intentado_at),
     CONSTRAINT fk_notiflog_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_notiflog_notif FOREIGN KEY (notificacion_id) REFERENCES notificaciones(id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- @down

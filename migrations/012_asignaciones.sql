@@ -51,7 +51,7 @@ CREATE TABLE asignaciones (
     CONSTRAINT fk_asign_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     CONSTRAINT fk_asign_ficha FOREIGN KEY (ficha_id) REFERENCES fichas(id) ON DELETE RESTRICT,
     CONSTRAINT fk_asign_puesto FOREIGN KEY (puesto_id) REFERENCES puestos(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- Permisos del modulo
 INSERT INTO permisos (id, codigo, recurso, accion, descripcion, es_sistema, created_at) VALUES

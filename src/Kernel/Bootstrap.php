@@ -680,7 +680,7 @@ final class Bootstrap
                 'username' => $envVars['DB_USERNAME'] ?? '',
                 'password' => $envVars['DB_PASSWORD'] ?? '',
                 'charset' => $envVars['DB_CHARSET'] ?? 'utf8mb4',
-                'collation' => $envVars['DB_COLLATION'] ?? 'utf8mb4_0900_ai_ci',
+                'collation' => $envVars['DB_COLLATION'] ?? 'utf8mb4_unicode_ci',
             ],
             'session' => [
                 'name' => $envVars['SESSION_NAME'] ?? 'DIGISECURE_SID',

@@ -103,7 +103,7 @@ CREATE TABLE fichas (
     CONSTRAINT fk_fichas_creador FOREIGN KEY (created_by) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT,
     CONSTRAINT fk_fichas_editor FOREIGN KEY (updated_by) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT,
     CONSTRAINT fk_fichas_anterior FOREIGN KEY (ficha_anterior_id) REFERENCES fichas(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------
@@ -125,7 +125,7 @@ CREATE TABLE fichas_trabajos_anteriores (
     KEY ix_fta_tenant_ficha (tenant_id, ficha_id),
     CONSTRAINT fk_fta_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_fta_ficha FOREIGN KEY (ficha_id) REFERENCES fichas(id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------
@@ -145,7 +145,7 @@ CREATE TABLE fichas_hijos_menores (
     KEY ix_fhm_tenant_ficha (tenant_id, ficha_id),
     CONSTRAINT fk_fhm_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_fhm_ficha FOREIGN KEY (ficha_id) REFERENCES fichas(id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------
@@ -166,7 +166,7 @@ CREATE TABLE fichas_referencias (
     KEY ix_fref_tenant_ficha (tenant_id, ficha_id),
     CONSTRAINT fk_fref_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_fref_ficha FOREIGN KEY (ficha_id) REFERENCES fichas(id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------
@@ -184,7 +184,7 @@ CREATE TABLE catalogo_cursos (
     PRIMARY KEY (id),
     UNIQUE KEY uq_catalogo_cursos_codigo (codigo),
     KEY ix_catalogo_cursos_orden (orden)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------
@@ -202,7 +202,7 @@ CREATE TABLE fichas_cursos (
     CONSTRAINT fk_fc_ficha FOREIGN KEY (ficha_id) REFERENCES fichas(id) ON DELETE CASCADE ON UPDATE RESTRICT,
     CONSTRAINT fk_fc_curso FOREIGN KEY (curso_id) REFERENCES catalogo_cursos(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_fc_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------

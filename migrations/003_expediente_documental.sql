@@ -54,7 +54,7 @@ CREATE TABLE documento_tipos (
     UNIQUE KEY uq_doctipo_tenant_codigo (tenant_id, codigo),
     KEY ix_doctipo_bloque (tenant_id, bloque, orden),
     CONSTRAINT fk_doctipo_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------
@@ -90,7 +90,7 @@ CREATE TABLE expedientes (
     CONSTRAINT fk_expediente_ficha FOREIGN KEY (ficha_id) REFERENCES fichas(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_expediente_creador FOREIGN KEY (created_by) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT,
     CONSTRAINT fk_expediente_editor FOREIGN KEY (updated_by) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------
@@ -143,7 +143,7 @@ CREATE TABLE expediente_documentos (
     CONSTRAINT fk_expdoc_tipo FOREIGN KEY (documento_tipo_id) REFERENCES documento_tipos(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_expdoc_revisor FOREIGN KEY (revisado_por) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT,
     CONSTRAINT fk_expdoc_subidor FOREIGN KEY (subido_por) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------

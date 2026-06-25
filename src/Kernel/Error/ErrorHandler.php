@@ -20,11 +20,13 @@ use DigiSecure\Security\Csrf\CsrfException;
 final class ErrorHandler
 {
     private ?string $templatesPath = null;
+    private string $requestId;
 
     public function __construct(
         private readonly bool $debug,
         private readonly string $logPath,
     ) {
+        $this->requestId = $this->generateRequestId();
     }
 
     /**
@@ -41,6 +43,8 @@ final class ErrorHandler
      */
     public function register(): void
     {
+        $this->ensureLogDirectoryExists();
+
         error_reporting(E_ALL);
         ini_set('display_errors', $this->debug ? '1' : '0');
         ini_set('display_startup_errors', $this->debug ? '1' : '0');
@@ -142,6 +146,7 @@ final class ErrorHandler
                     ob_start();
                     $debug = false;
                     $message = '';
+                    $requestId = $this->requestId;
                     $permiso = '';
                     $userName = '';
                     include $templateFile;
@@ -174,8 +179,9 @@ final class ErrorHandler
     private function logException(\Throwable $e): void
     {
         $line = sprintf(
-            "[%s] %s: %s in %s:%d\n%s\n",
+            "[%s] request_id=%s %s: %s in %s:%d\n%s\n",
             date('Y-m-d H:i:s'),
+            $this->requestId,
             $e::class,
             $e->getMessage(),
             $e->getFile(),
@@ -183,5 +189,24 @@ final class ErrorHandler
             $e->getTraceAsString(),
         );
         @error_log($line, 3, $this->logPath);
+    }
+
+    private function ensureLogDirectoryExists(): void
+    {
+        $dir = dirname($this->logPath);
+        if ($dir === '' || is_dir($dir)) {
+            return;
+        }
+
+        @mkdir($dir, 0770, true);
+    }
+
+    private function generateRequestId(): string
+    {
+        try {
+            return bin2hex(random_bytes(8));
+        } catch (\Throwable) {
+            return substr(hash('sha256', uniqid('', true)), 0, 16);
+        }
     }
 }

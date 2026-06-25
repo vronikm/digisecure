@@ -14,7 +14,7 @@
 -- Convenciones:
 --   - PK CHAR(26) ULID
 --   - tenant-aware (tenant_id NOT NULL)
---   - DATETIME(6) UTC, ROW_FORMAT=DYNAMIC, utf8mb4_0900_ai_ci
+--   - DATETIME(6) UTC, ROW_FORMAT=DYNAMIC, utf8mb4_unicode_ci
 -- =====================================================================
 
 -- @up
@@ -65,7 +65,7 @@ CREATE TABLE lopdp_solicitudes_arcop (
     CONSTRAINT fk_lopdp_solicitudes_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     CONSTRAINT fk_lopdp_solicitudes_creador FOREIGN KEY (created_by) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT,
     CONSTRAINT fk_lopdp_solicitudes_respondedor FOREIGN KEY (respondida_por) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
 -- -----------------------------------------------------------------

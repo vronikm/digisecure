@@ -40,7 +40,7 @@ final class PdoConnection
         private readonly string $username,
         private readonly string $password,
         private readonly string $charset = 'utf8mb4',
-        private readonly string $collation = 'utf8mb4_0900_ai_ci',
+        private readonly string $collation = 'utf8mb4_unicode_ci',
     ) {
     }
 
@@ -53,7 +53,7 @@ final class PdoConnection
             username: $config->string('db.username', ''),
             password: $config->string('db.password', ''),
             charset: $config->string('db.charset', 'utf8mb4'),
-            collation: $config->string('db.collation', 'utf8mb4_0900_ai_ci'),
+            collation: $config->string('db.collation', 'utf8mb4_unicode_ci'),
         );
     }
 
@@ -74,23 +74,18 @@ final class PdoConnection
             $this->charset,
         );
 
-        $options = [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-            PDO::ATTR_STRINGIFY_FETCHES => false,
-            PDO::MYSQL_ATTR_INIT_COMMAND => \sprintf(
-                "SET NAMES %s COLLATE %s, "
-                . "sql_mode='STRICT_ALL_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO', "
-                . "time_zone='+00:00'",
-                $this->charset,
-                $this->collation,
-            ),
-        ];
-
         try {
-            $this->pdo = new PDO($dsn, $this->username, $this->password, $options);
+            $this->pdo = new PDO($dsn, $this->username, $this->password, $this->options($this->collation));
         } catch (PDOException $e) {
+            if ($this->isUnknownCollationError($e) && $this->collation !== 'utf8mb4_unicode_ci') {
+                try {
+                    $this->pdo = new PDO($dsn, $this->username, $this->password, $this->options('utf8mb4_unicode_ci'));
+                    return $this->pdo;
+                } catch (PDOException $retryException) {
+                    $e = $retryException;
+                }
+            }
+
             // Re-lanzar sin exponer credenciales
             throw new DatabaseException(
                 "No se pudo conectar a MySQL en {$this->host}:{$this->port}/{$this->database}: "
@@ -101,6 +96,34 @@ final class PdoConnection
         }
 
         return $this->pdo;
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private function options(string $collation): array
+    {
+        return [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_STRINGIFY_FETCHES => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => \sprintf(
+                "SET NAMES %s COLLATE %s, "
+                . "sql_mode='STRICT_ALL_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO', "
+                . "time_zone='+00:00'",
+                $this->charset,
+                $collation,
+            ),
+        ];
+    }
+
+    private function isUnknownCollationError(PDOException $e): bool
+    {
+        $message = strtolower($e->getMessage());
+        return str_contains($message, 'unknown collation')
+            || str_contains($message, 'collation')
+            || str_contains($message, 'character set');
     }
 
     public function isConnected(): bool

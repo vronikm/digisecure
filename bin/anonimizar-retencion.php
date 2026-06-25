@@ -101,7 +101,7 @@ $config = new Config([
         'username' => $envVars['DB_USERNAME'] ?? '',
         'password' => $envVars['DB_PASSWORD'] ?? '',
         'charset' => $envVars['DB_CHARSET'] ?? 'utf8mb4',
-        'collation' => $envVars['DB_COLLATION'] ?? 'utf8mb4_0900_ai_ci',
+        'collation' => $envVars['DB_COLLATION'] ?? 'utf8mb4_unicode_ci',
     ],
 ]);
 date_default_timezone_set($envVars['APP_TIMEZONE'] ?? 'America/Guayaquil');

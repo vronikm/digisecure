@@ -406,7 +406,7 @@ final class ExpedienteRepository extends BaseRepository
              INNER JOIN expedientes e ON e.id = ed.expediente_id
              INNER JOIN fichas f ON f.id = e.ficha_id
              INNER JOIN tenants t
-                     ON t.id COLLATE utf8mb4_0900_ai_ci = ed.tenant_id COLLATE utf8mb4_0900_ai_ci
+                     ON t.id COLLATE utf8mb4_unicode_ci = ed.tenant_id COLLATE utf8mb4_unicode_ci
              WHERE ed.tenant_id = :tid
                AND ed.estado = 'ACEPTADO'
                AND ed.fecha_vencimiento IS NOT NULL
@@ -437,7 +437,7 @@ final class ExpedienteRepository extends BaseRepository
              INNER JOIN expedientes e ON e.id = ed.expediente_id
              INNER JOIN fichas f ON f.id = e.ficha_id
              INNER JOIN tenants t
-                     ON t.id COLLATE utf8mb4_0900_ai_ci = ed.tenant_id COLLATE utf8mb4_0900_ai_ci
+                     ON t.id COLLATE utf8mb4_unicode_ci = ed.tenant_id COLLATE utf8mb4_unicode_ci
              WHERE ed.tenant_id = :tid
                AND ed.estado = 'ACEPTADO'
                AND ed.fecha_vencimiento IS NOT NULL

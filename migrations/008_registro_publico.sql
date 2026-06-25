@@ -45,7 +45,7 @@ CREATE TABLE registros_empresa (
     KEY ix_registros_ip_fecha (ip, created_at),
     KEY ix_registros_tenant (tenant_id),
     CONSTRAINT fk_registros_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- @down
 

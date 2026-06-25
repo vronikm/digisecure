@@ -68,7 +68,7 @@ final class SuperadminRepository
             'SELECT re.*, t.razon_social AS tenant_razon_social
                FROM registros_empresa re
                LEFT JOIN tenants t
-                      ON t.id COLLATE utf8mb4_0900_ai_ci = re.tenant_id COLLATE utf8mb4_0900_ai_ci
+                      ON t.id COLLATE utf8mb4_unicode_ci = re.tenant_id COLLATE utf8mb4_unicode_ci
               ORDER BY re.created_at DESC
               LIMIT :lim',
             ['lim' => $limit],
@@ -138,11 +138,11 @@ final class SuperadminRepository
             "SELECT t.*,
                     (SELECT COUNT(*)
                        FROM usuarios u
-                      WHERE u.tenant_id COLLATE utf8mb4_0900_ai_ci = t.id COLLATE utf8mb4_0900_ai_ci
+                      WHERE u.tenant_id COLLATE utf8mb4_unicode_ci = t.id COLLATE utf8mb4_unicode_ci
                         AND u.estado = 'activo') AS usuarios_activos,
                     (SELECT COUNT(*)
                        FROM fichas f
-                      WHERE f.tenant_id COLLATE utf8mb4_0900_ai_ci = t.id COLLATE utf8mb4_0900_ai_ci) AS total_fichas
+                      WHERE f.tenant_id COLLATE utf8mb4_unicode_ci = t.id COLLATE utf8mb4_unicode_ci) AS total_fichas
                FROM tenants t
                {$whereClause}
               ORDER BY t.created_at DESC
@@ -166,7 +166,7 @@ final class SuperadminRepository
                     p.precio_mensual_usd, p.precio_anual_usd
                FROM tenants t
                LEFT JOIN planes p
-                      ON p.codigo COLLATE utf8mb4_0900_ai_ci = t.plan_codigo COLLATE utf8mb4_0900_ai_ci
+                      ON p.codigo COLLATE utf8mb4_unicode_ci = t.plan_codigo COLLATE utf8mb4_unicode_ci
               WHERE t.id = :id',
             ['id' => $tenantId],
         );
@@ -339,7 +339,7 @@ final class SuperadminRepository
                     t.id AS tenant_actual_id, t.razon_social AS tenant_actual
                FROM usuarios u
                INNER JOIN tenants t
-                       ON t.id COLLATE utf8mb4_0900_ai_ci = u.tenant_id COLLATE utf8mb4_0900_ai_ci
+                       ON t.id COLLATE utf8mb4_unicode_ci = u.tenant_id COLLATE utf8mb4_unicode_ci
               WHERE u.tenant_id <> :tid
                 AND u.estado IN ('activo','pendiente_verificacion','inactivo')
               ORDER BY t.razon_social, u.apellidos, u.nombres
@@ -384,7 +384,7 @@ final class SuperadminRepository
                     t.razon_social AS tenant_actual
                FROM usuarios u
                INNER JOIN tenants t
-                       ON t.id COLLATE utf8mb4_0900_ai_ci = u.tenant_id COLLATE utf8mb4_0900_ai_ci
+                       ON t.id COLLATE utf8mb4_unicode_ci = u.tenant_id COLLATE utf8mb4_unicode_ci
               WHERE u.id = :id',
             ['id' => $usuarioId],
         );
