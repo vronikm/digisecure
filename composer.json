@@ -1,6 +1,6 @@
 {
     "name": "digisecure/digisecure",
-    "description": "DigiSecure - Sistema Integral SaaS multi-tenant para administración de fichas y documentación de guardias de seguridad. Desarrollado en PHP 8.3 vanilla.",
+    "description": "DigiSecure - Sistema Integral SaaS multi-tenant para administración de fichas y documentación de guardias de seguridad. Desarrollado en PHP 8.2+ vanilla.",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
@@ -10,11 +10,11 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "platform": {
-            "php": "8.3.0"
+            "php": "8.2.31"
         }
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.2",
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "ext-openssl": "*",

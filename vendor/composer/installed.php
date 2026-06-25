@@ -3,7 +3,7 @@
         'name' => 'digisecure/digisecure',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '0164da2c84681be8c3a54e005a13c756b4b0be58',
+        'reference' => 'd9d2af09a55032f1ec6bc3bfe6e515c9dbb22ae0',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'digisecure/digisecure' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '0164da2c84681be8c3a54e005a13c756b4b0be58',
+            'reference' => 'd9d2af09a55032f1ec6bc3bfe6e515c9dbb22ae0',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

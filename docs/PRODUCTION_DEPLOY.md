@@ -18,6 +18,12 @@ No debe apuntar a la raiz del proyecto.
 
 ## 2. Dependencias
 
+Version minima de PHP en produccion:
+
+```text
+PHP 8.2.31 o superior
+```
+
 Modo recomendado si el servidor permite SSH/Composer: ejecutar en la raiz del
 proyecto:
 
