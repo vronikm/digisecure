@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Kernel\Middleware;
 
+use DigiSecure\Kernel\Container\Container;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\Routing\Route;
@@ -25,7 +26,7 @@ use DigiSecure\Shared\Infrastructure\IdGenerator;
 final class SecureUrlMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private readonly SecureUrlTokenService $tokens,
+        private readonly Container $container,
         private readonly ViewRenderer $view,
         private readonly SessionManager $session,
     ) {
@@ -50,9 +51,11 @@ final class SecureUrlMiddleware implements MiddlewareInterface
             return $next->handle($request);
         }
 
-        $secureUrl = function (string $path) use ($user, $sessionId): string {
+        $tokens = $this->container->get(SecureUrlTokenService::class);
+
+        $secureUrl = function (string $path) use ($tokens, $user, $sessionId): string {
             try {
-                return $this->tokens->tokenizePath($path, $user, $sessionId);
+                return $tokens->tokenizePath($path, $user, $sessionId);
             } catch (\Throwable) {
                 // Disponibilidad primero: si falla tokenización, mantener URL original.
                 return $path;
@@ -62,20 +65,24 @@ final class SecureUrlMiddleware implements MiddlewareInterface
         $this->view->setUrlTransformer($secureUrl);
         $request = $request->withAttribute('secure_url', $secureUrl);
 
-        $decoded = $this->decodeRouteParams($request, $user, $sessionId);
+        $decoded = $this->decodeRouteParams($request, $tokens, $user, $sessionId);
         if ($decoded instanceof Response) {
             return $decoded;
         }
 
-        $decoded = $this->decodeQueryParams($decoded, $user, $sessionId);
+        $decoded = $this->decodeQueryParams($decoded, $tokens, $user, $sessionId);
         return $next->handle($decoded);
     }
 
     /**
      * @return Request|Response
      */
-    private function decodeRouteParams(Request $request, AuthenticatedUser $user, string $sessionId): Request|Response
-    {
+    private function decodeRouteParams(
+        Request $request,
+        SecureUrlTokenService $tokens,
+        AuthenticatedUser $user,
+        string $sessionId,
+    ): Request|Response {
         $route = $request->attribute('route');
         if (!$route instanceof Route) {
             return $request;
@@ -112,12 +119,12 @@ final class SecureUrlMiddleware implements MiddlewareInterface
                 continue;
             }
 
-            if (!$this->tokens->isToken($value)) {
+            if (!$tokens->isToken($value)) {
                 return $this->invalidTokenResponse();
             }
 
             try {
-                $decodedId = $this->tokens->decodeResourceId(
+                $decodedId = $tokens->decodeResourceId(
                     $value,
                     $scope,
                     $paramName,
@@ -152,8 +159,12 @@ final class SecureUrlMiddleware implements MiddlewareInterface
         return $request;
     }
 
-    private function decodeQueryParams(Request $request, AuthenticatedUser $user, string $sessionId): Request
-    {
+    private function decodeQueryParams(
+        Request $request,
+        SecureUrlTokenService $tokens,
+        AuthenticatedUser $user,
+        string $sessionId,
+    ): Request {
         $route = $request->attribute('route');
         if (!$route instanceof Route) {
             return $request;
@@ -182,13 +193,13 @@ final class SecureUrlMiddleware implements MiddlewareInterface
                 continue;
             }
 
-            if (!$this->tokens->isToken($rawValue)) {
+            if (!$tokens->isToken($rawValue)) {
                 $request = $request->withAttribute("query.{$paramName}", null);
                 continue;
             }
 
             try {
-                $decodedId = $this->tokens->decodeResourceId(
+                $decodedId = $tokens->decodeResourceId(
                     $rawValue,
                     $scope,
                     $paramName,
