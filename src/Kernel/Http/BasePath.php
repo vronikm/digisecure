@@ -24,9 +24,32 @@ final class BasePath
      */
     public static function detect(): void
     {
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
-        $dir = dirname($scriptName);
-        self::$basePath = $dir === '/' || $dir === '\\' ? '' : rtrim($dir, '/');
+        $scriptName = self::pathOnly((string)($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
+        $requestPath = self::pathOnly((string)($_SERVER['REQUEST_URI'] ?? '/'));
+        $dir = str_replace('\\', '/', dirname($scriptName));
+        $basePath = $dir === '/' || $dir === '\\' ? '' : rtrim($dir, '/');
+
+        if ($basePath === '') {
+            self::$basePath = '';
+            return;
+        }
+
+        // En hosting compartido es comun apuntar el dominio a la raiz del
+        // proyecto y reescribir internamente hacia public/index.php. En ese
+        // caso /public no debe aparecer en links, formularios ni redirects.
+        if (str_ends_with($basePath, '/public')) {
+            $withoutPublic = substr($basePath, 0, -7) ?: '';
+            $requestUsesPublic = $requestPath === $basePath || str_starts_with($requestPath, $basePath . '/');
+            $requestUsesParent = $withoutPublic === ''
+                || $requestPath === $withoutPublic
+                || str_starts_with($requestPath, $withoutPublic . '/');
+
+            if (!$requestUsesPublic && $requestUsesParent) {
+                $basePath = $withoutPublic;
+            }
+        }
+
+        self::$basePath = $basePath;
     }
 
     /**
@@ -82,5 +105,15 @@ final class BasePath
         }
 
         return $path;
+    }
+
+    private static function pathOnly(string $uri): string
+    {
+        $path = parse_url($uri, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            return '/';
+        }
+
+        return '/' . ltrim($path, '/');
     }
 }

@@ -46,7 +46,7 @@ final class SessionManager
         return new self(
             name: $config->string('session.name', 'DIGISECURE_SID'),
             lifetimeSeconds: $config->int('session.lifetime', 120) * 60,
-            cookieSecure: $config->bool('session.cookie_secure', false),
+            cookieSecure: $config->bool('session.cookie_secure', false) || self::isHttpsRequest(),
             cookieHttpOnly: $config->bool('session.cookie_httponly', true),
             cookieSameSite: $config->string('session.cookie_samesite', 'Strict'),
             savePath: $savePath,
@@ -81,6 +81,8 @@ final class SessionManager
         // En cPanel/Apache SCRIPT_NAME puede detectar /public como base path aunque
         // el dominio sirva la app desde la raiz, causando CSRF al no reenviar cookie.
         $cookiePath = '/';
+        $this->expireLegacyPathCookies($cookiePath);
+        $this->preferRootCookieWhenDuplicated();
 
         \session_name($this->name);
         \session_save_path($this->savePath);
@@ -130,6 +132,90 @@ final class SessionManager
         }
 
         $_SESSION['_digisecure.last_activity'] = $now;
+    }
+
+    private static function isHttpsRequest(): bool
+    {
+        $https = strtolower((string)($_SERVER['HTTPS'] ?? ''));
+        if ($https === 'on' || $https === '1') {
+            return true;
+        }
+
+        if ((string)($_SERVER['SERVER_PORT'] ?? '') === '443') {
+            return true;
+        }
+
+        $forwardedProto = strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+        if (str_contains($forwardedProto, 'https')) {
+            return true;
+        }
+
+        return strtolower((string)($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '')) === 'on';
+    }
+
+    private function expireLegacyPathCookies(string $cookiePath): void
+    {
+        foreach ($this->legacyCookiePaths($cookiePath) as $path) {
+            \setcookie(
+                $this->name,
+                '',
+                [
+                    'expires' => \time() - 42000,
+                    'path' => $path,
+                    'domain' => '',
+                    'secure' => $this->cookieSecure,
+                    'httponly' => $this->cookieHttpOnly,
+                    'samesite' => $this->cookieSameSite,
+                ],
+            );
+        }
+    }
+
+    /**
+     * Browsers send the most specific cookie path first. If an old /public
+     * cookie coexists with the new root cookie, PHP may pick the stale one.
+     */
+    private function preferRootCookieWhenDuplicated(): void
+    {
+        $rawCookie = (string)($_SERVER['HTTP_COOKIE'] ?? '');
+        if ($rawCookie === '' || !str_contains($rawCookie, $this->name . '=')) {
+            return;
+        }
+
+        $values = [];
+        foreach (explode(';', $rawCookie) as $part) {
+            $part = trim($part);
+            if (!str_starts_with($part, $this->name . '=')) {
+                continue;
+            }
+
+            $value = urldecode(substr($part, strlen($this->name) + 1));
+            if ($value !== '' && preg_match('/^[A-Za-z0-9,-]{22,256}$/', $value) === 1) {
+                $values[] = $value;
+            }
+        }
+
+        if (count($values) > 1) {
+            $_COOKIE[$this->name] = $values[count($values) - 1];
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function legacyCookiePaths(string $cookiePath): array
+    {
+        $paths = ['/public'];
+        $scriptDir = str_replace('\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ?? '')));
+        $scriptDir = rtrim($scriptDir, '/');
+        if ($scriptDir !== '' && $scriptDir !== '.' && $scriptDir !== '/') {
+            $paths[] = $scriptDir;
+        }
+
+        return array_values(array_unique(array_filter(
+            $paths,
+            static fn(string $path): bool => $path !== '' && $path !== $cookiePath,
+        )));
     }
 
     public function get(string $key, mixed $default = null): mixed
