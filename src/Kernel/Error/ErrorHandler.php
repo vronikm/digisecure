@@ -71,6 +71,11 @@ final class ErrorHandler
         $response->send();
     }
 
+    public function report(\Throwable $e): void
+    {
+        $this->logException($e);
+    }
+
     public function handleShutdown(): void
     {
         $error = error_get_last();

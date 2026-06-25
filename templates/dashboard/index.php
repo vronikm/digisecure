@@ -13,6 +13,7 @@ use DigiSecure\Kernel\View\ViewRenderer;
 
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+$statsError = (bool) ($statsError ?? false);
 
 $guardiasActivos = (int) ($stats['guardias_activos'] ?? 0);
 $fichasRevision = (int) ($stats['fichas_revision'] ?? 0);
@@ -404,6 +405,15 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
         <?php endif; ?>
     </div>
 </div>
+
+<?php if ($statsError): ?>
+    <div class="alert alert-warning d-flex align-items-start gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>
+            No se pudieron cargar las metricas del dashboard. Puedes continuar usando el sistema mientras soporte revisa el log del servidor.
+        </div>
+    </div>
+<?php endif; ?>
 
 <section class="ds-dashboard-section">
     <div class="row g-4">

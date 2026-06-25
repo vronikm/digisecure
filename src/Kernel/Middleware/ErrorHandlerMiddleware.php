@@ -25,6 +25,7 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
         try {
             return $next->handle($request);
         } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
             return $this->errorHandler->renderException($e);
         }
     }

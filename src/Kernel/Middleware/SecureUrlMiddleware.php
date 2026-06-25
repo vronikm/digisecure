@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\Kernel\Middleware;
 
 use DigiSecure\Kernel\Container\Container;
+use DigiSecure\Kernel\Error\ErrorHandler;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\Routing\Route;
@@ -27,6 +28,7 @@ final class SecureUrlMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private readonly Container $container,
+        private readonly ErrorHandler $errorHandler,
         private readonly ViewRenderer $view,
         private readonly SessionManager $session,
     ) {
@@ -51,7 +53,12 @@ final class SecureUrlMiddleware implements MiddlewareInterface
             return $next->handle($request);
         }
 
-        $tokens = $this->container->get(SecureUrlTokenService::class);
+        try {
+            $tokens = $this->container->get(SecureUrlTokenService::class);
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            return $next->handle($request);
+        }
 
         $secureUrl = function (string $path) use ($tokens, $user, $sessionId): string {
             try {
