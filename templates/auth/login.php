@@ -20,18 +20,23 @@ $returnTo = $returnTo ?? null;
     <meta name="robots" content="noindex, nofollow">
     <title>Iniciar sesion - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260625">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260625-3">
 </head>
 <body class="gemeseg-login">
     <div class="login-shell">
         <aside class="login-aside">
             <div class="login-brand gemeseg-brand">
-                <img src="<?= $view->url('/assets/img/gemeseg-logo.png') ?>" alt="GEMESEG Seguridad">
+                <img class="brand-main-logo" src="<?= $view->url('/assets/img/gemeseg-logo.png') ?>" alt="GEMESEG Seguridad">
                 <span class="brand-system">Plataforma DigiSecure</span>
+                <img class="brand-secondary-logo" src="<?= $view->url('/assets/img/gemeseg-shield-logo.png') ?>" alt="" aria-hidden="true">
+                <hr class="login-brand-divider">
+                <a class="login-work-button" href="https://gemeseg.com/" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-person-plus"></i>Trabaja con Nosotros
+                </a>
             </div>
 
             <div class="login-foot">
-                &copy; <?= date('Y') ?> GEMESEG Seguridad &middot; Plataforma DigiSecure
+                &copy; <?= date('Y') ?> GEMESEG Seguridad &middot; Plataforma DigiSecure &middot; DigiTech
             </div>
         </aside>
 
