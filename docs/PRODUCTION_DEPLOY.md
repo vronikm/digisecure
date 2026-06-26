@@ -104,6 +104,7 @@ El usuario del servidor web debe poder escribir en:
 
 ```text
 var/cache
+var/imports
 var/logs
 var/sessions
 var/storage
@@ -113,11 +114,41 @@ El directorio `var/storage` debe estar fuera del webroot; en este proyecto ya es
 
 ## 5. Base de datos
 
-Ejecutar migraciones:
+Revisar estado de migraciones:
 
 ```bash
-php bin/migrate.php
+php bin/migrate.php status
 ```
+
+Si aparecen migraciones aplicadas con `CHECKSUM_MISMATCH` por cambios ya
+versionados en Git, reparar primero el historial de checksums. El primer comando
+solo muestra lo que cambiaria:
+
+```bash
+php bin/repair-migration-checksums.php
+php bin/repair-migration-checksums.php --apply
+```
+
+Luego ejecutar migraciones pendientes:
+
+```bash
+php bin/migrate.php migrate
+php bin/migrate.php status
+```
+
+La migracion `020_importaciones_gemeseg_permission` habilita el permiso
+`importaciones.gemeseg`. Despues de aplicarla, la opcion queda en:
+
+```text
+Control > Importaciones > Excel GEMESEG
+```
+
+Flujo recomendado para GEMESEG:
+
+1. Subir el `.xlsx` desde la pantalla.
+2. Guardar staging cifrado.
+3. Procesar las filas pendientes desde `Staging reciente`.
+4. Revisar fichas creadas en `Guardias` y expedientes/documentos pendientes.
 
 Crear el superadmin inicial con una contrasena temporal fuerte:
 

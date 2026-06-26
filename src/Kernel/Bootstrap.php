@@ -54,6 +54,7 @@ use DigiSecure\Superadmin\Controller\SuperadminController;
 use DigiSecure\Cliente\Controller\ClienteController;
 use DigiSecure\Puesto\Controller\PuestoController;
 use DigiSecure\Asignacion\Controller\AsignacionController;
+use DigiSecure\Infrastructure\Import\Controller\ImportacionGemesegController;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -612,6 +613,41 @@ final class Bootstrap
             ),
         );
 
+        // 27. Importaciones controladas
+        $container->singleton(
+            \DigiSecure\Infrastructure\Import\XlsxReader::class,
+            static fn(): \DigiSecure\Infrastructure\Import\XlsxReader => new \DigiSecure\Infrastructure\Import\XlsxReader(),
+        );
+        $container->singleton(
+            \DigiSecure\Infrastructure\Import\GemesegExcelImportService::class,
+            fn(Container $c): \DigiSecure\Infrastructure\Import\GemesegExcelImportService => new \DigiSecure\Infrastructure\Import\GemesegExcelImportService(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+                $c->get(Encryption::class),
+                $c->get(AuditLogger::class),
+                $c->get(\DigiSecure\Infrastructure\Import\XlsxReader::class),
+                "{$this->rootPath}/var/imports/gemeseg",
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Infrastructure\Import\GemesegStagingProcessorService::class,
+            static fn(Container $c): \DigiSecure\Infrastructure\Import\GemesegStagingProcessorService => new \DigiSecure\Infrastructure\Import\GemesegStagingProcessorService(
+                $c->get(PdoConnection::class),
+                $c->get(TenantContext::class),
+                $c->get(Encryption::class),
+                $c->get(AuditLogger::class),
+            ),
+        );
+        $container->singleton(
+            ImportacionGemesegController::class,
+            static fn(Container $c): ImportacionGemesegController => new ImportacionGemesegController(
+                $c->get(ViewRenderer::class),
+                $c->get(\DigiSecure\Infrastructure\Import\GemesegExcelImportService::class),
+                $c->get(\DigiSecure\Infrastructure\Import\GemesegStagingProcessorService::class),
+                $c->get(\DigiSecure\Kernel\Http\FlashBag::class),
+            ),
+        );
+
         // 14. Router con rutas registradas
         $router = new Router();
         $this->registerRoutes($router, $config);
@@ -792,6 +828,12 @@ final class Bootstrap
         $router->get('/reportes/exportar/expedientes', [KpiController::class, 'exportarExpedientes'], name: 'reportes.exportar.expedientes', permission: 'reportes.exportar');
         $router->get('/reportes/exportar/vencimientos', [KpiController::class, 'exportarVencimientos'], name: 'reportes.exportar.vencimientos', permission: 'reportes.exportar');
         $router->get('/reportes/exportar', [KpiController::class, 'exportar'], name: 'reportes.exportar', permission: 'reportes.exportar');
+
+        // Importaciones controladas
+        $router->get('/importaciones/gemeseg', [ImportacionGemesegController::class, 'index'], name: 'importaciones.gemeseg', permission: 'importaciones.gemeseg');
+        $router->post('/importaciones/gemeseg/analizar', [ImportacionGemesegController::class, 'analyze'], name: 'importaciones.gemeseg.analyze', permission: 'importaciones.gemeseg');
+        $router->post('/importaciones/gemeseg/aplicar', [ImportacionGemesegController::class, 'apply'], name: 'importaciones.gemeseg.apply', permission: 'importaciones.gemeseg');
+        $router->post('/importaciones/gemeseg/procesar', [ImportacionGemesegController::class, 'process'], name: 'importaciones.gemeseg.process', permission: 'importaciones.gemeseg');
 
         // Administración de usuarios (Fase 4)
         $router->get('/usuarios', [UserController::class, 'index'], name: 'usuarios.index', permission: 'usuarios.ver');

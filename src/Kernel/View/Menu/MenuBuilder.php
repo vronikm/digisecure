@@ -187,6 +187,24 @@ final class MenuBuilder
             [
                 'type' => 'item',
                 'item' => new MenuItem(
+                    label: 'Importaciones',
+                    icon: 'bi-file-earmark-spreadsheet',
+                    permisos: ['importaciones.gemeseg'],
+                    description: 'Carga controlada de archivos operativos',
+                    children: [
+                        new MenuItem(
+                            label: 'Excel GEMESEG',
+                            icon: 'bi-upload',
+                            url: '/importaciones/gemeseg',
+                            permisos: ['importaciones.gemeseg'],
+                            description: 'Analizar y guardar staging cifrado',
+                        ),
+                    ],
+                ),
+            ],
+            [
+                'type' => 'item',
+                'item' => new MenuItem(
                     label: 'Auditoria',
                     icon: 'bi-journal-text',
                     url: '/auditoria',

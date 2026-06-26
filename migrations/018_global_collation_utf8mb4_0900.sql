@@ -19,8 +19,6 @@
 
 -- @up
 
-ALTER DATABASE digisecure CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 ALTER TABLE asignaciones CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE auditoria CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE catalogo_cursos CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -52,4 +50,3 @@ ALTER TABLE usuarios_roles CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unic
 
 -- @down
 -- No reversible sin conocer la collation historica de cada entorno.
-

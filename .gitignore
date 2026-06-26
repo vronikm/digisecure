@@ -22,6 +22,8 @@ composer.lock.bak
 !/var/sessions/.gitkeep
 /var/storage/*
 !/var/storage/.gitkeep
+/var/imports/*
+!/var/imports/.gitkeep
 
 # --- IDEs / Editores ---
 /.idea/
@@ -73,5 +75,12 @@ tmp_*.txt
 *.crt
 *.p12
 *.pfx
+*.xls
+*.xlsx
+*.csv
+*.sql.gz
+*.sql.zip
+*_dump.sql
+*_backup.sql
 secrets/
 private/

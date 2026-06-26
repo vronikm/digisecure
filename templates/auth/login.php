@@ -18,41 +18,38 @@ $returnTo = $returnTo ?? null;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>Iniciar sesion - DigiSecure</title>
+    <title>Iniciar sesion - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260625">
 </head>
-<body>
+<body class="gemeseg-login">
     <div class="login-shell">
         <aside class="login-aside">
-            <div class="login-brand">
-                <span class="mark"><i class="bi bi-shield-lock-fill"></i></span>
-                <div>
-                    <strong>DigiSecure</strong>
-                    <small>Plataforma de seguridad privada</small>
-                </div>
+            <div class="login-brand gemeseg-brand">
+                <img src="<?= $view->url('/assets/img/gemeseg-logo.png') ?>" alt="GEMESEG Seguridad">
+                <span class="brand-system">Plataforma DigiSecure</span>
             </div>
 
             <div>
-                <h2>Gestiona a tu equipo de seguridad con confianza</h2>
+                <h2>Gestion segura del personal operativo</h2>
                 <p class="lead">
-                    Fichas, expedientes, vencimientos, auditoria y cumplimiento LOPDP en un solo lugar.
+                    Centraliza fichas, expedientes, cursos y cumplimiento LOPDP del personal GEMESEG.
                 </p>
                 <ul class="login-features">
-                    <li><i class="bi bi-shield-check"></i>Cumplimiento LOPDP Ecuador</li>
-                    <li><i class="bi bi-clock-history"></i>Alertas de vencimientos automaticas</li>
-                    <li><i class="bi bi-people"></i>Multi-tenant aislado por empresa</li>
+                    <li><i class="bi bi-person-vcard"></i>Control documental de guardias</li>
+                    <li><i class="bi bi-file-earmark-spreadsheet"></i>Importacion y procesamiento Excel GEMESEG</li>
+                    <li><i class="bi bi-shield-lock"></i>Auditoria y proteccion de datos personales</li>
                 </ul>
             </div>
 
             <div class="login-foot">
-                &copy; <?= date('Y') ?> DigiSecure &middot; Todos los derechos reservados
+                &copy; <?= date('Y') ?> GEMESEG Seguridad &middot; Plataforma DigiSecure
             </div>
         </aside>
 
         <section class="login-form">
-            <h1>Bienvenido de vuelta</h1>
-            <div class="subtitle">Ingresa tus credenciales para acceder al panel.</div>
+            <h1>Acceso GEMESEG</h1>
+            <div class="subtitle">Ingresa con tu cuenta autorizada para administrar guardias y expedientes.</div>
 
             <?php if ($error !== null): ?>
                 <div class="login-error" role="alert">
@@ -75,7 +72,7 @@ $returnTo = $returnTo ?? null;
                     <div class="login-input-wrap">
                         <i class="bi bi-envelope field-icon"></i>
                         <input type="email" class="login-input" id="email" name="email"
-                               placeholder="correo@empresa.com" value="<?= $e($email) ?>"
+                               placeholder="usuario@gemeseg.com" value="<?= $e($email) ?>"
                                required autofocus autocomplete="email">
                     </div>
                 </div>
@@ -96,15 +93,6 @@ $returnTo = $returnTo ?? null;
                 <div class="login-links">
                     <a href="<?= $view->url('/password/forgot') ?>">
                         <i class="bi bi-question-circle"></i> Olvide mi contrasena
-                    </a>
-                </div>
-
-                <div class="login-divider">o</div>
-
-                <div class="login-links">
-                    <span class="muted">Tu empresa aun no esta en DigiSecure?</span><br>
-                    <a href="<?= $view->url('/registro') ?>">
-                        <i class="bi bi-building-add"></i> Registra tu empresa
                     </a>
                 </div>
             </form>
