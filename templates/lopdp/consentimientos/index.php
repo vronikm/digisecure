@@ -116,6 +116,39 @@ $returnTo = '/lopdp/consentimientos' . ($returnQuery !== '' ? '?' . $returnQuery
     </div>
 </div>
 
+<?php if (!empty($policyResources ?? [])): ?>
+<div class="ds-card" style="margin-top:1rem;">
+    <div class="ds-card-header tone-info">
+        <span class="ds-card-mark"><i class="bi bi-file-earmark-pdf"></i></span>
+        <div>
+            <div class="ds-card-title">Política de Privacidad (TDP)</div>
+            <div class="ds-card-subtitle">Recursos basados en el documento PoliticaPrivacidad_TDP.pdf</div>
+        </div>
+    </div>
+    <div class="ds-card-body">
+        <div style="display:flex;gap:1rem;align-items:flex-start;">
+            <div style="flex:1;min-width:320px;">
+                <embed src="<?= $view->url('/lopdp/consentimientos/PoliticaPrivacidad_TDP.pdf') ?>" type="application/pdf" width="100%" height="450px" />
+                <div style="margin-top:.5rem;"><a href="<?= $view->url('/lopdp/consentimientos/PoliticaPrivacidad_TDP.pdf') ?>" target="_blank" rel="noopener">Abrir PDF en nueva pestaña</a></div>
+            </div>
+            <div style="width:420px;">
+                <h4 style="margin-top:0;">Consentimientos asociados</h4>
+                <ul style="padding-left:1rem;">
+                    <?php foreach ($policyResources as $pr): ?>
+                        <li>
+                            <div><strong><?= $e(ucfirst((string)$pr['titular_tipo'])) ?>:</strong> <span class="ds-cell-mono"><?= $e((string)$pr['titular_id']) ?></span></div>
+                            <div style="font-size:.9rem;color:var(--ds-text-soft);">Propósito: <?= $e((string)$pr['proposito']) ?></div>
+                            <div style="font-size:.8rem;color:var(--ds-text-soft);">Aceptado: <?= date('d/m/Y H:i', strtotime((string)$pr['aceptado_at'])) ?></div>
+                            <div style="margin-bottom:.5rem;"><a href="<?= $view->url('/lopdp/consentimientos/' . $pr['id']) ?>">Ver detalle</a></div>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif ?>
+
 <div class="ds-card">
     <div class="ds-card-header tone-purple">
         <span class="ds-card-mark"><i class="bi bi-person-check"></i></span>

@@ -296,11 +296,11 @@ body {
     align-items: center;
     gap: .3rem;
     margin-top: .3rem;
-    font-size: .73rem;
-    color: var(--ds-text-soft);
-    line-height: 1.35;
+    font-size: .78rem;
+    color: #334155;
+    line-height: 1.45;
 }
-.login-help i { font-size: .85rem; }
+.login-help i { font-size: .85rem; color: #334155; }
 
 /* Password strength meter */
 .password-strength {
@@ -335,9 +335,9 @@ body {
     border: 0;
     font-size: .92rem;
     font-weight: 700;
-    color: #fff;
-    background: linear-gradient(135deg, #2f80ed, #1e63c5);
-    box-shadow: 0 6px 18px rgba(47,128,237,.4);
+    color: #111;
+    background: linear-gradient(135deg, #f5d547, #ddb81a);
+    box-shadow: 0 6px 18px rgba(133,94,0,.35);
     cursor: pointer;
     transition: transform .12s, box-shadow .12s;
     display: inline-flex;
@@ -347,11 +347,11 @@ body {
     margin-top: .5rem;
     margin-bottom: 1rem;
 }
-.login-submit:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(47,128,237,.5); }
+.login-submit:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(133,94,0,.45); }
 .login-submit:active { transform: translateY(0); }
 
-.login-submit.tone-success { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 6px 18px rgba(5,150,105,.35); }
-.login-submit.tone-success:hover { box-shadow: 0 10px 24px rgba(5,150,105,.45); }
+.login-submit.tone-success { background: linear-gradient(135deg, #f5d547, #ddb81a); box-shadow: 0 6px 18px rgba(133,94,0,.35); }
+.login-submit.tone-success:hover { box-shadow: 0 10px 24px rgba(133,94,0,.45); }
 
 .login-secondary-btn {
     display: inline-flex;
@@ -361,15 +361,15 @@ body {
     width: 100%;
     padding: .65rem 1rem;
     border-radius: 10px;
-    border: 1px solid #d8dfe7;
-    background: #fff;
-    color: var(--ds-text);
+    border: 1px solid #e8d76d;
+    background: linear-gradient(135deg, #f8d347, #e3b51b);
+    color: #111;
     font-size: .88rem;
     font-weight: 600;
     text-decoration: none;
-    transition: background .12s, border-color .12s;
+    transition: transform .12s, box-shadow .12s, border-color .12s;
 }
-.login-secondary-btn:hover { background: #f4f7fb; color: var(--ds-text); border-color: #c4cdd9; }
+.login-secondary-btn:hover { background: linear-gradient(135deg, #f8d347, #e3b51b); color: #111; border-color: #d4b725; box-shadow: 0 6px 18px rgba(133,94,0,.25); }
 
 /* ---------- Links y divisores ---------- */
 .login-links {
@@ -410,33 +410,52 @@ body {
 
 /* ---------- Login corporativo GEMESEG ---------- */
 body.gemeseg-login {
-    --ds-text: #151515;
-    --ds-text-soft: #667085;
+    --ds-text: #eff6ff;
+    --ds-text-soft: #cbd5e1;
     background:
-        radial-gradient(circle at 12% 16%, rgba(239,48,31,.24), transparent 30%),
-        radial-gradient(circle at 86% 78%, rgba(255,255,255,.12), transparent 28%),
-        linear-gradient(135deg, #050505 0%, #121212 58%, #2a0805 100%);
+        radial-gradient(circle at 12% 16%, rgba(96,165,250,.42), transparent 30%),
+        radial-gradient(circle at 86% 78%, rgba(59,130,246,.32), transparent 28%),
+        linear-gradient(135deg, #0b1133 0%, #10264e 52%, #132f63 100%);
 }
 
 .gemeseg-login .login-shell {
     max-width: 1040px;
     border-radius: 18px;
     border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 34px 90px rgba(0,0,0,.5);
+    box-shadow: 0 34px 90px rgba(0,0,0,.45);
 }
 
 .gemeseg-login .login-aside {
-    background: linear-gradient(155deg, #050505 0%, #171717 54%, #3a0b05 100%);
+    background: linear-gradient(155deg, #0d1f4f 0%, #122f7f 54%, #0a1d3d 100%);
 }
 
 .gemeseg-login .login-aside::before {
-    background: rgba(239,48,31,.34);
+    background: rgba(96,165,250,.34);
 }
 
 .gemeseg-login .login-aside::after {
-    background: rgba(255,255,255,.14);
+    background: rgba(59,130,246,.18);
+}
+.gemeseg-login .login-form {
+    color: #030303;
 }
 
+.gemeseg-login .login-form h1,
+.gemeseg-login .login-form .subtitle,
+.gemeseg-login .login-field label,
+.gemeseg-login .login-check label,
+.gemeseg-login .login-links a,
+.gemeseg-login .login-links .muted {
+    color: #0f172a;
+}
+
+.gemeseg-login .login-input {
+    color: #0f172a;
+}
+
+.gemeseg-login .login-input::placeholder {
+    color: #8b9abb;
+}
 .gemeseg-brand {
     display: flex;
     align-items: flex-start;
@@ -481,26 +500,27 @@ body.gemeseg-login {
 }
 
 .gemeseg-login .login-features li i {
-    background: rgba(239,48,31,.16);
-    color: #ff5a45;
+    background: rgba(96,165,250,.16);
+    color: #60a5fa;
 }
 
 .gemeseg-login .login-input:focus {
-    border-color: #ef301f;
-    box-shadow: 0 0 0 3px rgba(239,48,31,.15);
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96,165,250,.15);
 }
 
 .gemeseg-login .login-submit {
-    background: linear-gradient(135deg, #ef301f, #b91c1c);
-    box-shadow: 0 8px 22px rgba(185,28,28,.34);
+    background: linear-gradient(135deg, #f8d347, #e3b51b);
+    color: #111;
+    box-shadow: 0 8px 22px rgba(133,94,0,.34);
 }
 
 .gemeseg-login .login-submit:hover {
-    box-shadow: 0 12px 28px rgba(185,28,28,.44);
+    box-shadow: 0 12px 28px rgba(133,94,0,.44);
 }
 
 .gemeseg-login .login-links a {
-    color: #b91c1c;
+    color: #1d4ed8;
 }
 
 .gemeseg-login .login-brand-divider {
@@ -754,4 +774,158 @@ body.gemeseg-login {
     .gemeseg-brand .brand-main-logo { max-width: 230px; }
     .gemeseg-brand .brand-secondary-logo { width: min(200px, 100%); }
     .gemeseg-login .login-aside h2 { font-size: 1.45rem; }
+}
+
+/* ---------- Acciones de login (botones lado a lado) ---------- */
+.login-actions {
+    display: flex;
+    gap: .75rem;
+    margin-top: .5rem;
+    margin-bottom: 1rem;
+}
+.login-actions .login-submit {
+    flex: 1 1 0;
+    margin: 0;
+}
+.login-register-btn {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: .75rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #d8dfe7;
+    background: #fff;
+    color: var(--ds-text);
+    font-size: .92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, transform .12s, box-shadow .12s;
+}
+.login-register-btn:hover {
+    background: #f4f7fb;
+    border-color: #c4cdd9;
+    transform: translateY(-1px);
+}
+.login-register-btn:active { transform: translateY(0); }
+
+/* Variante GEMESEG: contorno rojo corporativo */
+.gemeseg-login .login-register-btn {
+    border-color: rgba(185, 28, 28, .32);
+    color: #060af4;
+}
+.gemeseg-login .login-register-btn:hover {
+    background: #fff7f7;
+    border-color: rgba(185, 28, 28, .5);
+    color: #991b1b;
+}
+
+/* Select con el mismo look que login-input + chevron propio */
+.login-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2394a3b8'%3E%3Cpath d='M3 5.5l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .85rem center;
+    background-size: .9rem;
+    padding-right: 2.4rem;
+    cursor: pointer;
+}
+
+/* ---------- Modal genérico (registro de aspirantes) ---------- */
+.ds-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+.ds-modal[hidden] { display: none; }
+.ds-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 6, 12, .66);
+    backdrop-filter: blur(3px);
+}
+.ds-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 580px;
+    max-height: calc(100vh - 3rem);
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(2, 6, 16, .55);
+    animation: ds-modal-in .18s ease-out;
+}
+@keyframes ds-modal-in {
+    from { opacity: 0; transform: translateY(12px) scale(.98); }
+    to   { opacity: 1; transform: none; }
+}
+.ds-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    color: #f2f4f8;
+    background: linear-gradient(135deg, #0f4ea1 0%, #1f72d2 100%);
+}
+.ds-modal-header h2 {
+    margin: 0 0 .2rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+.ds-modal-header p {
+    margin: 0;
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .72);
+    line-height: 1.4;
+}
+.ds-modal-close {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .12s;
+}
+.ds-modal-close:hover { background: rgba(255, 255, 255, .24); }
+.ds-modal-body {
+    padding: 1.4rem 1.5rem 1.6rem;
+    overflow-y: auto;
+}
+.ds-field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .35rem 1rem;
+}
+.ds-modal .login-field { margin-bottom: .85rem; }
+body.ds-modal-open { overflow: hidden; }
+
+/* Errores de validacion en cliente + widget reCAPTCHA del modal */
+.ds-client-errors { margin-bottom: 1rem; }
+.ds-client-errors[hidden] { display: none; }
+.ds-client-errors ul { font-size: .82rem; line-height: 1.45; }
+.ds-recaptcha { margin: 1rem 0 .25rem; display: flex; justify-content: center; }
+
+@media (max-width: 560px) {
+    .login-actions { flex-direction: column; }
+    .ds-field-grid { grid-template-columns: 1fr; }
 }

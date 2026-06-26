@@ -320,23 +320,6 @@ $normalizeMenuSearch = static function (array $parts): string {
 <aside class="ds-sidebar">
     <div class="ds-sidebar-inner">
         <div class="ds-sidebar-profile">
-            <div class="ds-sidebar-caption">Empresa activa</div>
-            <div class="ds-sidebar-company"><?= $e($user->tenantNombre) ?></div>
-
-            <div class="ds-sidebar-caption">Tu acceso actual</div>
-            <div class="ds-role-list">
-                <?php if ($roleLabels === []): ?>
-                    <span class="ds-role-chip">Sin roles visibles</span>
-                <?php else: ?>
-                    <?php foreach (array_slice($roleLabels, 0, 3) as $roleLabel): ?>
-                        <span class="ds-role-chip"><?= $e($roleLabel) ?></span>
-                    <?php endforeach; ?>
-                    <?php if (count($roleLabels) > 3): ?>
-                        <span class="ds-role-chip">+<?= count($roleLabels) - 3 ?> mas</span>
-                    <?php endif; ?>
-                <?php endif; ?>
-            </div>
-
             <label class="ds-search-wrap" for="ds-menu-search">
                 <i class="bi bi-search"></i>
                 <input id="ds-menu-search" type="search" placeholder="Buscar modulo o accion" autocomplete="off">

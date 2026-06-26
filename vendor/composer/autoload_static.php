@@ -27,6 +27,7 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
             'DigiSecure\\Ficha\\' => 17,
             'DigiSecure\\Expediente\\' => 22,
             'DigiSecure\\Cliente\\' => 19,
+            'DigiSecure\\Aspirante\\' => 21,
             'DigiSecure\\Asignacion\\' => 22,
         ),
     );
@@ -92,6 +93,10 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
         array (
             0 => __DIR__ . '/../..' . '/src/Cliente',
         ),
+        'DigiSecure\\Aspirante\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/Aspirante',
+        ),
         'DigiSecure\\Asignacion\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src/Asignacion',
@@ -104,6 +109,14 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
         'DigiSecure\\Asignacion\\Controller\\AsignacionController' => __DIR__ . '/../..' . '/src/Asignacion/Controller/AsignacionController.php',
         'DigiSecure\\Asignacion\\Domain\\Enum\\EstadoAsignacion' => __DIR__ . '/../..' . '/src/Asignacion/Domain/Enum/EstadoAsignacion.php',
         'DigiSecure\\Asignacion\\Infrastructure\\AsignacionRepository' => __DIR__ . '/../..' . '/src/Asignacion/Infrastructure/AsignacionRepository.php',
+        'DigiSecure\\Aspirante\\Application\\GestionarAspirantesService' => __DIR__ . '/../..' . '/src/Aspirante/Application/GestionarAspirantesService.php',
+        'DigiSecure\\Aspirante\\Application\\RegistrarAspiranteService' => __DIR__ . '/../..' . '/src/Aspirante/Application/RegistrarAspiranteService.php',
+        'DigiSecure\\Aspirante\\Application\\VerificarEmailService' => __DIR__ . '/../..' . '/src/Aspirante/Application/VerificarEmailService.php',
+        'DigiSecure\\Aspirante\\Controller\\AspiranteAdminController' => __DIR__ . '/../..' . '/src/Aspirante/Controller/AspiranteAdminController.php',
+        'DigiSecure\\Aspirante\\Controller\\AspiranteController' => __DIR__ . '/../..' . '/src/Aspirante/Controller/AspiranteController.php',
+        'DigiSecure\\Aspirante\\Controller\\VerificacionController' => __DIR__ . '/../..' . '/src/Aspirante/Controller/VerificacionController.php',
+        'DigiSecure\\Aspirante\\Domain\\TipoDocumento' => __DIR__ . '/../..' . '/src/Aspirante/Domain/TipoDocumento.php',
+        'DigiSecure\\Aspirante\\Infrastructure\\AspiranteRepository' => __DIR__ . '/../..' . '/src/Aspirante/Infrastructure/AspiranteRepository.php',
         'DigiSecure\\Cliente\\Application\\GestionarClientesService' => __DIR__ . '/../..' . '/src/Cliente/Application/GestionarClientesService.php',
         'DigiSecure\\Cliente\\Controller\\ClienteController' => __DIR__ . '/../..' . '/src/Cliente/Controller/ClienteController.php',
         'DigiSecure\\Cliente\\Infrastructure\\ClienteRepository' => __DIR__ . '/../..' . '/src/Cliente/Infrastructure/ClienteRepository.php',
@@ -136,6 +149,10 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
         'DigiSecure\\Ficha\\Domain\\Enum\\TipoSangre' => __DIR__ . '/../..' . '/src/Ficha/Domain/Enum/TipoSangre.php',
         'DigiSecure\\Ficha\\Domain\\ValueObject\\Cedula' => __DIR__ . '/../..' . '/src/Ficha/Domain/ValueObject/Cedula.php',
         'DigiSecure\\Ficha\\Infrastructure\\FichaRepository' => __DIR__ . '/../..' . '/src/Ficha/Infrastructure/FichaRepository.php',
+        'DigiSecure\\Infrastructure\\Import\\Controller\\ImportacionGemesegController' => __DIR__ . '/../..' . '/src/Infrastructure/Import/Controller/ImportacionGemesegController.php',
+        'DigiSecure\\Infrastructure\\Import\\GemesegExcelImportService' => __DIR__ . '/../..' . '/src/Infrastructure/Import/GemesegExcelImportService.php',
+        'DigiSecure\\Infrastructure\\Import\\GemesegStagingProcessorService' => __DIR__ . '/../..' . '/src/Infrastructure/Import/GemesegStagingProcessorService.php',
+        'DigiSecure\\Infrastructure\\Import\\XlsxReader' => __DIR__ . '/../..' . '/src/Infrastructure/Import/XlsxReader.php',
         'DigiSecure\\Infrastructure\\Persistence\\BaseRepository' => __DIR__ . '/../..' . '/src/Infrastructure/Persistence/BaseRepository.php',
         'DigiSecure\\Infrastructure\\Persistence\\DatabaseException' => __DIR__ . '/../..' . '/src/Infrastructure/Persistence/DatabaseException.php',
         'DigiSecure\\Infrastructure\\Persistence\\Migration' => __DIR__ . '/../..' . '/src/Infrastructure/Persistence/Migration.php',
@@ -206,6 +223,8 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
         'DigiSecure\\Security\\Auth\\Controller\\DashboardController' => __DIR__ . '/../..' . '/src/Security/Auth/Controller/DashboardController.php',
         'DigiSecure\\Security\\Auth\\Controller\\LoginController' => __DIR__ . '/../..' . '/src/Security/Auth/Controller/LoginController.php',
         'DigiSecure\\Security\\Auth\\Controller\\LogoutController' => __DIR__ . '/../..' . '/src/Security/Auth/Controller/LogoutController.php',
+        'DigiSecure\\Security\\Auth\\LoginRedirectGuard' => __DIR__ . '/../..' . '/src/Security/Auth/LoginRedirectGuard.php',
+        'DigiSecure\\Security\\Captcha\\RecaptchaVerifier' => __DIR__ . '/../..' . '/src/Security/Captcha/RecaptchaVerifier.php',
         'DigiSecure\\Security\\Crypto\\CryptoException' => __DIR__ . '/../..' . '/src/Security/Crypto/CryptoException.php',
         'DigiSecure\\Security\\Crypto\\Encryption' => __DIR__ . '/../..' . '/src/Security/Crypto/Encryption.php',
         'DigiSecure\\Security\\Crypto\\Hasher' => __DIR__ . '/../..' . '/src/Security/Crypto/Hasher.php',

@@ -27,6 +27,7 @@ use DigiSecure\Security\Audit\AuditLogger;
 use DigiSecure\Security\Auth\Authenticator;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Security\Crypto\Hasher;
+use DigiSecure\Security\Captcha\RecaptchaVerifier;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Security\Rbac\Authorizer;
 use DigiSecure\Security\Session\SessionManager;
@@ -55,6 +56,9 @@ use DigiSecure\Cliente\Controller\ClienteController;
 use DigiSecure\Puesto\Controller\PuestoController;
 use DigiSecure\Asignacion\Controller\AsignacionController;
 use DigiSecure\Infrastructure\Import\Controller\ImportacionGemesegController;
+use DigiSecure\Aspirante\Controller\AspiranteController;
+use DigiSecure\Aspirante\Controller\AspiranteAdminController;
+use DigiSecure\Aspirante\Controller\VerificacionController;
 
 /**
  * Orquestador del arranque de la aplicación.
@@ -133,6 +137,14 @@ final class Bootstrap
             static fn(Container $c): SecureUrlTokenService => new SecureUrlTokenService(
                 $c->get(Encryption::class),
                 $c->get(Config::class)->int('security.secure_url_ttl', 900),
+            ),
+        );
+        $container->singleton(
+            RecaptchaVerifier::class,
+            static fn(Container $c): RecaptchaVerifier => new RecaptchaVerifier(
+                $c->get(Config::class)->string('recaptcha.site_key', ''),
+                $c->get(Config::class)->string('recaptcha.secret', ''),
+                $c->get(Config::class)->int('recaptcha.timeout_seconds', 5),
             ),
         );
 
@@ -648,6 +660,33 @@ final class Bootstrap
             ),
         );
 
+        // 28. Modulo Aspirantes (registro publico desde el login)
+        // Se registra explicitamente para inyectar la lista negra de dominios
+        // de email desde configuracion (autowiring no resuelve el array).
+        $container->singleton(
+            \DigiSecure\Aspirante\Application\RegistrarAspiranteService::class,
+            static fn(Container $c) => new \DigiSecure\Aspirante\Application\RegistrarAspiranteService(
+                $c->get(\DigiSecure\Aspirante\Infrastructure\AspiranteRepository::class),
+                $c->get(Hasher::class),
+                array_values(array_filter(
+                    array_map(
+                        static fn(string $d): string => strtolower(trim($d)),
+                        explode(',', $c->get(Config::class)->string('registro.email_blacklist', '')),
+                    ),
+                    static fn(string $d): bool => $d !== '',
+                )),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Aspirante\Application\GestionarAspirantesService::class,
+            static fn(Container $c) => new \DigiSecure\Aspirante\Application\GestionarAspirantesService(
+                $c->get(\DigiSecure\Aspirante\Infrastructure\AspiranteRepository::class),
+                $c->get(PdoConnection::class),
+                $c->get(AuditLogger::class),
+                $c->get(Config::class)->string('registro.aprobacion_rol_codigo', ''),
+            ),
+        );
+
         // 14. Router con rutas registradas
         $router = new Router();
         $this->registerRoutes($router, $config);
@@ -731,6 +770,15 @@ final class Bootstrap
             ],
             'security' => [
                 'secure_url_ttl' => $envVars['SECURE_URL_TTL_SECONDS'] ?? '900',
+            ],
+            'recaptcha' => [
+                'site_key' => $envVars['RECAPTCHA_SITE_KEY'] ?? '',
+                'secret' => $envVars['RECAPTCHA_SECRET_KEY'] ?? '',
+                'timeout_seconds' => $envVars['RECAPTCHA_TIMEOUT_SECONDS'] ?? '5',
+            ],
+            'registro' => [
+                'email_blacklist' => $envVars['REGISTRO_EMAIL_BLACKLIST'] ?? '',
+                'aprobacion_rol_codigo' => $envVars['REGISTRO_APROBACION_ROL'] ?? '',
             ],
             'mail' => [
                 'driver' => $envVars['MAIL_DRIVER'] ?? 'smtp',
@@ -887,6 +935,7 @@ final class Bootstrap
         $router->get('/lopdp/solicitudes/{id}', [LopdpController::class, 'verSolicitud'], name: 'lopdp.solicitudes.show', permission: 'lopdp.gestionar');
         $router->post('/lopdp/solicitudes/{id}/responder', [LopdpController::class, 'responderSolicitud'], name: 'lopdp.solicitudes.responder', permission: 'lopdp.gestionar');
         $router->get('/lopdp/consentimientos', [LopdpController::class, 'listarConsentimientos'], name: 'lopdp.consentimientos.index', permission: 'lopdp.gestionar');
+        $router->get('/lopdp/consentimientos/PoliticaPrivacidad_TDP.pdf', [LopdpController::class, 'politicaPdf'], name: 'lopdp.consentimientos.politica');
         $router->get('/lopdp/consentimientos/{id}', [LopdpController::class, 'verConsentimiento'], name: 'lopdp.consentimientos.show', permission: 'lopdp.gestionar');
         $router->post('/lopdp/consentimientos/{id}/revocar', [LopdpController::class, 'revocarConsentimiento'], name: 'lopdp.consentimientos.revocar', permission: 'lopdp.gestionar');
 
@@ -940,6 +989,17 @@ final class Bootstrap
         $router->get('/registro', [RegistroController::class, 'showForm'], name: 'registro.form');
         $router->post('/registro', [RegistroController::class, 'procesarForm'], name: 'registro.store');
         $router->get('/activar/{token}', [RegistroController::class, 'activar'], name: 'registro.activar');
+
+        // Registro público de aspirantes (postulantes a guardia) desde el modal de login
+        $router->post('/aspirantes', [AspiranteController::class, 'registrar'], name: 'aspirantes.store');
+        // Verificación de email (enlace mágico) — pública
+        $router->get('/verificar', [VerificacionController::class, 'verificar'], name: 'aspirantes.verificar');
+
+        // Reclutamiento — revisión y aprobación de aspirantes (Fase 4, protegida)
+        $router->get('/reclutamiento', [AspiranteAdminController::class, 'index'], name: 'reclutamiento.index', permission: 'aspirantes.gestionar');
+        $router->get('/reclutamiento/{id}', [AspiranteAdminController::class, 'show'], name: 'reclutamiento.show', permission: 'aspirantes.gestionar');
+        $router->post('/reclutamiento/{id}/aprobar', [AspiranteAdminController::class, 'aprobar'], name: 'reclutamiento.aprobar', permission: 'aspirantes.gestionar');
+        $router->post('/reclutamiento/{id}/rechazar', [AspiranteAdminController::class, 'rechazar'], name: 'reclutamiento.rechazar', permission: 'aspirantes.gestionar');
 
         // --- Healthcheck publico y smoke tests solo fuera de produccion ---
         $router->get('/healthcheck', static function (

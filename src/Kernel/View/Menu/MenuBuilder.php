@@ -110,6 +110,17 @@ final class MenuBuilder
             [
                 'type' => 'item',
                 'item' => new MenuItem(
+                    label: 'Reclutamiento',
+                    icon: 'bi-person-plus-fill',
+                    url: '/reclutamiento',
+                    permisos: ['aspirantes.gestionar'],
+                    description: 'Aspirantes: revisión y aprobación de postulantes',
+                    activeWhenPrefixes: ['/reclutamiento/'],
+                ),
+            ],
+            [
+                'type' => 'item',
+                'item' => new MenuItem(
                     label: 'Asignaciones',
                     icon: 'bi-link-45deg',
                     permisos: ['asignaciones.ver'],

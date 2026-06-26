@@ -290,17 +290,67 @@ final class LopdpController
         $consentimientos = $this->consentRepo->listarFiltrados($limit, $offset, $filters);
         $activos = $this->consentRepo->contarActivos();
 
+        // Intentar localizar recursos asociados a la Política de Privacidad TDP
+        $policyResources = [];
+        $policyFile = dirname(__DIR__, 4) . '/templates/lopdp/consentimientos/PoliticaPrivacidad_TDP.pdf';
+        if (is_file($policyFile) && is_readable($policyFile)) {
+            $bin = file_get_contents($policyFile);
+            if ($bin !== false) {
+                $rawHash = hash('sha256', $bin);
+                // Hash sobre texto extraido naive (por si el sistema almacenó texto plano)
+                $text = $this->extractTextFromPdfNaive($bin);
+                $textHash = $text !== '' ? hash('sha256', $text) : '';
+
+                $byRaw = $this->consentRepo->findByTextoLegalHash($rawHash);
+                $byText = $textHash !== '' ? $this->consentRepo->findByTextoLegalHash($textHash) : [];
+
+                // Unificar resultados por id preservando orden (aceptado_at desc)
+                $seen = [];
+                foreach (array_merge($byRaw, $byText) as $r) {
+                    if (!isset($seen[$r['id']])) {
+                        $seen[$r['id']] = true;
+                        $policyResources[] = $r;
+                    }
+                }
+            }
+        }
+
         return $this->view->response('lopdp/consentimientos/index', [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
             'consentimientos' => $consentimientos,
             'activos' => $activos,
+            'policyResources' => $policyResources,
             'total' => $total,
             'page' => $page,
             'totalPages' => $totalPages,
             'filters' => $filters,
         ]);
+    }
+
+    /**
+     * Intento simple y robusto de extraer texto legible desde el binario de un PDF.
+     * No pretende ser perfecto, solo recuperar secuencias largas de caracteres
+     * alfanuméricos que podrían coincidir con el texto almacenado en la DB.
+     */
+    private function extractTextFromPdfNaive(string $bin): string
+    {
+        // Reemplazar saltos de línea por espacios y extraer secuencias unicode legibles
+        // Buscamos grupos de letras/dígitos/puntuación comunes de al menos 8 caracteres.
+        $clean = preg_replace('/[\r\n\t]+/', ' ', $bin);
+        if ($clean === null) {
+            return '';
+        }
+
+        if (preg_match_all('/[\p{L}\p{N}\s\.,;:\(\)\-\'"\\\/]{8,}/u', $clean, $m)) {
+            // Unir y truncar razonablemente
+            $text = implode(' ', $m[0]);
+            $text = preg_replace('/\s{2,}/', ' ', $text);
+            return mb_substr(trim($text), 0, 100000);
+        }
+
+        return '';
     }
 
     public function verConsentimiento(Request $request, CsrfGuard $csrf, string $id): Response
@@ -349,6 +399,25 @@ final class LopdpController
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Sirve el PDF de la Política de Privacidad TDP embebible en la app.
+     * Esta ruta se deja pública para poder enlazarla desde pantallas públicas.
+     */
+    public function politicaPdf(Request $request): Response
+    {
+        $policyFile = dirname(__DIR__, 4) . '/templates/lopdp/consentimientos/PoliticaPrivacidad_TDP.pdf';
+        if (!is_file($policyFile) || !is_readable($policyFile)) {
+            return Response::text('Recurso no encontrado', Response::STATUS_NOT_FOUND);
+        }
+
+        $bin = @file_get_contents($policyFile);
+        if ($bin === false) {
+            return Response::text('No se pudo leer el recurso', Response::STATUS_INTERNAL_ERROR);
+        }
+
+        return new Response(Response::STATUS_OK, $bin, ['Content-Type' => 'application/pdf']);
     }
 
     private function securePath(Request $request, string $path): string

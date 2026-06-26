@@ -10,6 +10,8 @@ use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Auth\AuthenticationException;
 use DigiSecure\Security\Auth\Authenticator;
+use DigiSecure\Security\Auth\LoginRedirectGuard;
+use DigiSecure\Security\Captcha\RecaptchaVerifier;
 use DigiSecure\Security\Csrf\CsrfGuard;
 
 /**
@@ -22,6 +24,8 @@ final class LoginController
 {
     public function __construct(
         private readonly ViewRenderer $viewRenderer,
+        private readonly RecaptchaVerifier $recaptcha,
+        private readonly LoginRedirectGuard $redirectGuard = new LoginRedirectGuard(),
     ) {
     }
 
@@ -39,12 +43,22 @@ final class LoginController
         $email = trim((string)$request->post('email', ''));
         $password = (string)$request->post('password', '');
         $returnTo = trim((string)$request->post('return_to', ''));
+        $acceptPolicies = $request->post('accept_policies', '') === '1' || $request->post('accept_policies', false) === true;
 
         if ($email === '' || $password === '') {
             return $this->renderLogin(
                 $csrf->token(),
                 $returnTo ?: null,
                 'Ingresa tu email y contraseña.',
+            );
+        }
+
+        if (!$acceptPolicies) {
+            return $this->renderLogin(
+                $csrf->token(),
+                $returnTo ?: null,
+                'Debes aceptar las Políticas de Privacidad y Tratamiento de Datos Personales para continuar.',
+                $email,
             );
         }
 
@@ -62,7 +76,7 @@ final class LoginController
         // Re-emitir token CSRF al cambiar de contexto anonimo -> autenticado.
         $csrf->rotateToken();
 
-        $target = $this->sanitizeReturnTo($returnTo, $user);
+        $target = $this->redirectGuard->resolve($returnTo, $user);
         return Response::redirect($target);
     }
 
@@ -77,30 +91,8 @@ final class LoginController
             'returnTo' => $returnTo,
             'error' => $error,
             'email' => $email,
+            'recaptchaSiteKey' => $this->recaptcha->siteKey(),
         ]);
     }
 
-    /**
-     * Sanitiza la URL de retorno para evitar open redirect.
-     */
-    private function sanitizeReturnTo(string $returnTo, AuthenticatedUser $user): string
-    {
-        if ($returnTo === '') {
-            return '/dashboard';
-        }
-
-        if (!str_starts_with($returnTo, '/') || str_starts_with($returnTo, '//')) {
-            return '/dashboard';
-        }
-
-        if (preg_match('#[a-z]+://#i', $returnTo)) {
-            return '/dashboard';
-        }
-
-        if (str_starts_with($returnTo, '/admin') && !$user->tienePermiso('superadmin.panel')) {
-            return '/dashboard';
-        }
-
-        return $returnTo;
-    }
 }

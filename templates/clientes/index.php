@@ -43,9 +43,9 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </style>
 <?php $view->endSection() ?>
 
-<?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item active"><i class="bi bi-briefcase me-1"></i>Clientes</li>
-<?php $view->endSection() ?>
+<!--?php $view->section('breadcrumb') ?>
+<li class="breadcrumb-item active"><i class="bi bi-briefcase me-1"></i>Clientes</li-->
+<!--?php $view->endSection() ?-->
 
 <?php $view->section('content') ?>
 <div class="ds-page-header">
@@ -97,13 +97,6 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 
 <!-- Filtros -->
 <div class="ds-card ds-op-filter">
-    <div class="ds-card-header tone-success">
-        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
-        <div>
-            <div class="ds-card-title">Filtros de clientes</div>
-            <div class="ds-card-subtitle">Busqueda por razon social, RUC y estado</div>
-        </div>
-    </div>
     <div class="ds-card-body">
         <div class="ds-filter-bar">
             <form method="get" action="<?= $view->url('/clientes') ?>" class="ds-filter-row ds-form-filter">

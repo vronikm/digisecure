@@ -45,7 +45,8 @@
             "DigiSecure\\Superadmin\\": "src/Superadmin/",
             "DigiSecure\\Cliente\\": "src/Cliente/",
             "DigiSecure\\Puesto\\": "src/Puesto/",
-            "DigiSecure\\Asignacion\\": "src/Asignacion/"
+            "DigiSecure\\Asignacion\\": "src/Asignacion/",
+            "DigiSecure\\Aspirante\\": "src/Aspirante/"
         }
     },
     "autoload-dev": {

@@ -131,6 +131,22 @@ final class ConsentimientoRepository extends BaseRepository
     }
 
     /**
+     * Busca consentimientos cuyo texto legal coincide con un hash SHA256 dado.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findByTextoLegalHash(string $hash): array
+    {
+        return $this->tenantQuery(
+            'SELECT id, titular_tipo, titular_id, proposito, aceptado, aceptado_at, revocado_at, texto_legal_version, texto_legal_hash
+             FROM consentimientos_lopdp
+             WHERE texto_legal_hash = :hash
+             ORDER BY aceptado_at DESC',
+            ['hash' => $hash],
+        );
+    }
+
+    /**
      * Lista consentimientos con filtros opcionales para la vista operativa.
      *
      * Filtros soportados:

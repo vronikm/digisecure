@@ -1,0 +1,374 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DigiSecure\Aspirante\Infrastructure;
+
+use DigiSecure\Infrastructure\Persistence\PdoConnection;
+use DigiSecure\Shared\Infrastructure\Clock;
+
+/**
+ * Repositorio de aspirantes (postulantes a guardia).
+ *
+ * Al igual que RegistroEmpresaRepository, NO es tenant-aware: el aspirante
+ * se registra desde la pantalla publica de login y aun no pertenece a ningun
+ * tenant (tenant_id se asigna recien cuando reclutamiento lo asocia a una
+ * empresa). Por eso depende solo de la conexion, sin TenantContext.
+ *
+ * No es `final` a proposito: permite un doble en memoria en los tests del
+ * servicio sin necesidad de una base de datos real.
+ */
+class AspiranteRepository
+{
+    public function __construct(
+        private readonly PdoConnection $db,
+    ) {
+    }
+
+    /**
+     * Inserta un nuevo aspirante. La capa de aplicacion ya validó y normalizó
+     * todos los campos; aqui solo se persiste con prepared statements.
+     *
+     * @param array{
+     *     id: string,
+     *     tenant_id: ?string,
+     *     tipo_documento: string,
+     *     documento: string,
+     *     apellidos: string,
+     *     nombres: string,
+     *     celular: string,
+     *     correo: string,
+     *     correo_normalizado: string,
+     *     password_hash: string,
+     *     estatura_cm: int,
+     *     fecha_nacimiento: string,
+     *     origen: string,
+     *     acepta_politicas: bool,
+     *     politicas_version: ?string,
+     *     verificacion_token_hash: ?string,
+     *     verificacion_token_expira_at: ?string,
+     *     ip: ?string,
+     *     user_agent: ?string,
+     *     created_at: string
+     * } $a
+     */
+    public function crear(array $a): void
+    {
+        $ipBinary = null;
+        if (!empty($a['ip'])) {
+            $packed = @inet_pton($a['ip']);
+            $ipBinary = $packed !== false ? $packed : null;
+        }
+
+        $this->db->execute(
+            'INSERT INTO aspirantes
+                (id, tenant_id, tipo_documento, documento, apellidos, nombres,
+                 celular, correo, correo_normalizado, password_hash, estatura_cm, fecha_nacimiento,
+                 estado, origen, acepta_politicas, politicas_version,
+                 verificacion_token_hash, verificacion_token_expira_at,
+                 ip, user_agent, created_at, updated_at)
+             VALUES
+                (:id, :tid, :tdoc, :doc, :ap, :no,
+                 :cel, :co, :con, :pwh, :est, :fn,
+                 :estado, :origen, :acepta, :pver,
+                 :vth, :vte,
+                 :ip, :ua, :ca, :ua2)',
+            [
+                'id'     => $a['id'],
+                'tid'    => $a['tenant_id'],
+                'tdoc'   => $a['tipo_documento'],
+                'doc'    => $a['documento'],
+                'ap'     => $a['apellidos'],
+                'no'     => $a['nombres'],
+                'cel'    => $a['celular'],
+                'co'     => $a['correo'],
+                'con'    => $a['correo_normalizado'],
+                'pwh'    => $a['password_hash'],
+                'est'    => $a['estatura_cm'],
+                'fn'     => $a['fecha_nacimiento'],
+                'estado' => 'nuevo',
+                'origen' => $a['origen'],
+                'acepta' => $a['acepta_politicas'] ? 1 : 0,
+                'pver'   => $a['politicas_version'],
+                'vth'    => $a['verificacion_token_hash'],
+                'vte'    => $a['verificacion_token_expira_at'],
+                'ip'     => $ipBinary,
+                'ua'     => $a['user_agent'],
+                'ca'     => $a['created_at'],
+                'ua2'    => $a['created_at'],
+            ],
+        );
+    }
+
+    public function existeDocumento(string $documento): bool
+    {
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM aspirantes WHERE documento = :doc',
+            ['doc' => $documento],
+        ) > 0;
+    }
+
+    public function existeCorreo(string $correoNormalizado): bool
+    {
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM aspirantes WHERE correo_normalizado = :co',
+            ['co' => $correoNormalizado],
+        ) > 0;
+    }
+
+    /**
+     * El correo tampoco debe pertenecer a un usuario del sistema.
+     */
+    public function existeCorreoEnUsuarios(string $correoNormalizado): bool
+    {
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM usuarios WHERE email_normalizado = :co',
+            ['co' => $correoNormalizado],
+        ) > 0;
+    }
+
+    /**
+     * Busca un aspirante por el hash de su token de verificacion de email.
+     *
+     * @return array{id: string, nombres: string, apellidos: string, email_verificado: int, expira_at: ?string}|null
+     */
+    public function findByTokenVerificacion(string $tokenHash): ?array
+    {
+        $row = $this->db->fetchOne(
+            'SELECT id, nombres, apellidos, email_verificado,
+                    verificacion_token_expira_at AS expira_at
+               FROM aspirantes
+              WHERE verificacion_token_hash = :h',
+            ['h' => $tokenHash],
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'id'               => (string) $row['id'],
+            'nombres'          => (string) $row['nombres'],
+            'apellidos'        => (string) $row['apellidos'],
+            'email_verificado' => (int) $row['email_verificado'],
+            'expira_at'        => $row['expira_at'] !== null ? (string) $row['expira_at'] : null,
+        ];
+    }
+
+    /**
+     * Marca el email como verificado y consume el token (single-use).
+     */
+    public function marcarEmailVerificado(string $id, string $cuando): void
+    {
+        $this->db->execute(
+            'UPDATE aspirantes
+                SET email_verificado = 1,
+                    email_verificado_at = :cuando,
+                    verificacion_token_hash = NULL,
+                    verificacion_token_expira_at = NULL,
+                    updated_at = :cuando2
+              WHERE id = :id',
+            ['cuando' => $cuando, 'cuando2' => $cuando, 'id' => $id],
+        );
+    }
+
+    /**
+     * Cuenta postulaciones recientes desde una IP. Sirve de rate-limit
+     * anti-spam antes de aceptar un nuevo registro.
+     */
+    public function contarIntentosRecientes(string $ip, int $ventanaMinutos = 60): int
+    {
+        $ipBinary = @inet_pton($ip);
+        if ($ipBinary === false) {
+            return 0;
+        }
+
+        $desde = Clock::now()->modify("-{$ventanaMinutos} minutes")->format('Y-m-d H:i:s.u');
+
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM aspirantes WHERE ip = :ip AND created_at >= :desde',
+            ['ip' => $ipBinary, 'desde' => $desde],
+        );
+    }
+
+    // ======================= Panel de reclutamiento (Fase 4) =======================
+
+    /**
+     * @param array{q?: ?string, estado?: ?string, verificado?: ?string} $filtros
+     * @return list<array<string, mixed>>
+     */
+    public function listarAdmin(array $filtros, int $limit, int $offset): array
+    {
+        [$where, $bind] = $this->whereAdmin($filtros);
+
+        $sql = "SELECT id, tipo_documento, documento, nombres, apellidos, correo, celular,
+                       estado, email_verificado, usuario_id, created_at
+                  FROM aspirantes
+                 {$where}
+                 ORDER BY created_at DESC
+                 LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
+
+        return $this->db->fetchAll($sql, $bind);
+    }
+
+    /**
+     * @param array{q?: ?string, estado?: ?string, verificado?: ?string} $filtros
+     */
+    public function contarAdmin(array $filtros): int
+    {
+        [$where, $bind] = $this->whereAdmin($filtros);
+        return (int) $this->db->fetchScalar("SELECT COUNT(*) FROM aspirantes {$where}", $bind);
+    }
+
+    /**
+     * @return array{total: int, pendientes: int, verificados: int, aprobados: int, descartados: int}
+     */
+    public function kpisAdmin(): array
+    {
+        $row = $this->db->fetchOne(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(email_verificado = 0 AND estado = 'nuevo') AS pendientes,
+                SUM(email_verificado = 1 AND estado = 'nuevo') AS verificados,
+                SUM(estado = 'aprobado') AS aprobados,
+                SUM(estado = 'descartado') AS descartados
+             FROM aspirantes",
+        ) ?? [];
+
+        return [
+            'total'       => (int) ($row['total'] ?? 0),
+            'pendientes'  => (int) ($row['pendientes'] ?? 0),
+            'verificados' => (int) ($row['verificados'] ?? 0),
+            'aprobados'   => (int) ($row['aprobados'] ?? 0),
+            'descartados' => (int) ($row['descartados'] ?? 0),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findDetalle(string $id): ?array
+    {
+        return $this->db->fetchOne('SELECT * FROM aspirantes WHERE id = :id', ['id' => $id]);
+    }
+
+    /**
+     * Busca el rol por codigo, prefiriendo el rol propio del tenant sobre el de sistema.
+     */
+    public function buscarRolId(string $codigo, string $tenantId): ?string
+    {
+        $id = $this->db->fetchScalar(
+            'SELECT id FROM roles
+              WHERE codigo = :codigo AND (tenant_id = :tid OR tenant_id IS NULL)
+              ORDER BY (tenant_id IS NULL) ASC
+              LIMIT 1',
+            ['codigo' => $codigo, 'tid' => $tenantId],
+        );
+
+        return $id !== null ? (string) $id : null;
+    }
+
+    /**
+     * @param array{id: string, tenant_id: string, email: string, email_normalizado: string,
+     *     password_hash: string, nombres: string, apellidos: string, telefono: ?string,
+     *     cargo: ?string, created_by: ?string, cuando: string} $u
+     */
+    public function crearUsuario(array $u): void
+    {
+        $this->db->execute(
+            'INSERT INTO usuarios
+                (id, tenant_id, email, email_normalizado, password_hash, nombres, apellidos,
+                 telefono, cargo, estado, mfa_habilitado, intentos_fallidos, debe_cambiar_password,
+                 password_changed_at, created_at, updated_at, created_by)
+             VALUES
+                (:id, :tid, :em, :emn, :pw, :no, :ap,
+                 :tel, :cargo, :estado, 0, 0, 0,
+                 :pca, :ca, :ua, :cb)',
+            [
+                'id'     => $u['id'],
+                'tid'    => $u['tenant_id'],
+                'em'     => $u['email'],
+                'emn'    => $u['email_normalizado'],
+                'pw'     => $u['password_hash'],
+                'no'     => $u['nombres'],
+                'ap'     => $u['apellidos'],
+                'tel'    => $u['telefono'],
+                'cargo'  => $u['cargo'],
+                'estado' => 'activo',
+                'pca'    => $u['cuando'],
+                'ca'     => $u['cuando'],
+                'ua'     => $u['cuando'],
+                'cb'     => $u['created_by'],
+            ],
+        );
+    }
+
+    public function asignarRol(string $usuarioId, string $roleId, ?string $asignadoPor, string $cuando): void
+    {
+        $this->db->execute(
+            'INSERT INTO usuarios_roles (usuario_id, role_id, assigned_at, assigned_by)
+             VALUES (:uid, :rid, :now, :by)',
+            ['uid' => $usuarioId, 'rid' => $roleId, 'now' => $cuando, 'by' => $asignadoPor],
+        );
+    }
+
+    public function marcarAprobado(string $aspiranteId, string $usuarioId, string $tenantId, ?string $revisadoPor, string $cuando): void
+    {
+        $this->db->execute(
+            "UPDATE aspirantes
+                SET estado = 'aprobado',
+                    usuario_id = :uid,
+                    tenant_id = :tid,
+                    aprobado_at = :cuando,
+                    revisado_por = :por,
+                    updated_at = :cuando2
+              WHERE id = :id",
+            ['uid' => $usuarioId, 'tid' => $tenantId, 'cuando' => $cuando, 'por' => $revisadoPor, 'cuando2' => $cuando, 'id' => $aspiranteId],
+        );
+    }
+
+    public function marcarDescartado(string $aspiranteId, ?string $motivo, ?string $revisadoPor, string $cuando): void
+    {
+        $this->db->execute(
+            "UPDATE aspirantes
+                SET estado = 'descartado',
+                    motivo_descarte = :motivo,
+                    revisado_por = :por,
+                    updated_at = :cuando
+              WHERE id = :id",
+            ['motivo' => $motivo, 'por' => $revisadoPor, 'cuando' => $cuando, 'id' => $aspiranteId],
+        );
+    }
+
+    /**
+     * @param array{q?: ?string, estado?: ?string, verificado?: ?string} $filtros
+     * @return array{0: string, 1: array<string, scalar|null>}
+     */
+    private function whereAdmin(array $filtros): array
+    {
+        $conds = [];
+        $bind = [];
+
+        $q = trim((string) ($filtros['q'] ?? ''));
+        if ($q !== '') {
+            $conds[] = '(nombres LIKE :q OR apellidos LIKE :q OR correo LIKE :q OR documento LIKE :q)';
+            $bind['q'] = '%' . $q . '%';
+        }
+
+        $estado = trim((string) ($filtros['estado'] ?? ''));
+        if ($estado !== '') {
+            $conds[] = 'estado = :estado';
+            $bind['estado'] = $estado;
+        }
+
+        $verificado = (string) ($filtros['verificado'] ?? '');
+        if ($verificado === '0' || $verificado === '1') {
+            $conds[] = 'email_verificado = :verificado';
+            $bind['verificado'] = (int) $verificado;
+        }
+
+        $where = $conds === [] ? '' : 'WHERE ' . implode(' AND ', $conds);
+
+        return [$where, $bind];
+    }
+}

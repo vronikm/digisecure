@@ -30,8 +30,11 @@ final class AuthenticationMiddleware implements MiddlewareInterface
         '/login',
         '/password/forgot',
         '/registro',
+        '/aspirantes',
+        '/verificar',
         '/healthcheck',
         '/_smoke/session',
+        '/lopdp/consentimientos/PoliticaPrivacidad_TDP.pdf',
     ];
 
     /** Prefijos públicos (si la ruta empieza con estos) */

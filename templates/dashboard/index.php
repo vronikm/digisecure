@@ -189,7 +189,7 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
         padding: 0.45rem 0.75rem;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.12);
-        color: #fff;
+        color: #040404;
         font-size: 0.82rem;
         font-weight: 600;
     }
@@ -375,36 +375,10 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
 <?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item active"><i class="bi bi-speedometer2 me-1"></i>Dashboard</li>
+<li class="breadcrumb-item active"> <i class="bi bi-clock"></i><?= date('d/m/Y H:i') ?> <i class="bi bi-speedometer2 me-1"></i>Dashboard</li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
-<div class="ds-page-header ds-dashboard-topbar">
-    <div class="ds-page-title">
-        <span class="ds-page-mark"><i class="bi bi-speedometer2"></i></span>
-        <div>
-            <h1>Dashboard operativo</h1>
-            <small>Seguimiento diario de guardias, expedientes y cumplimiento documental</small>
-        </div>
-    </div>
-    <div class="ds-dashboard-toolbar">
-        <?php if ($puedeCrearGuardia): ?>
-            <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
-                <i class="bi bi-person-plus"></i>Nueva ficha
-            </a>
-        <?php endif; ?>
-        <?php if ($puedeVerExpedientes): ?>
-            <a href="<?= $view->url('/expedientes/pendientes') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-clipboard-check"></i>Pendientes
-            </a>
-        <?php endif; ?>
-        <?php if ($puedeVerReportes): ?>
-            <a href="<?= $view->url('/reportes/kpis') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
-                <i class="bi bi-graph-up-arrow"></i>KPIs
-            </a>
-        <?php endif; ?>
-    </div>
-</div>
 
 <?php if ($statsError): ?>
     <div class="alert alert-warning d-flex align-items-start gap-2" role="alert">
@@ -414,81 +388,6 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
         </div>
     </div>
 <?php endif; ?>
-
-<section class="ds-dashboard-section">
-    <div class="row g-4">
-        <div class="col-12">
-            <section class="card ds-hero-card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="ds-hero-layout">
-                        <div class="ds-hero-copy">
-                            <span class="ds-dashboard-eyebrow">
-                                <i class="bi bi-stars"></i>Centro de control diario
-                            </span>
-                            <h2>Hola, <?= $e($user->nombres) ?>. Hoy la operacion pide foco en lo esencial.</h2>
-                            <p>
-                                Tienes <strong><?= $docsAtencion ?></strong> documentos que necesitan atencion
-                                y <strong><?= $expedientesIncompletos ?></strong> expedientes que aun no estan completos.
-                            </p>
-                            <div class="ds-hero-meta">
-                                <span class="ds-chip-soft">
-                                    <i class="bi bi-building"></i><?= $e($user->tenantNombre) ?>
-                                </span>
-                                <?php if ($roles !== []): ?>
-                                    <span class="ds-chip-soft">
-                                        <i class="bi bi-person-badge"></i><?= $e(implode(' / ', array_slice($roles, 0, 2))) ?>
-                                    </span>
-                                <?php endif; ?>
-                                <span class="ds-chip-soft">
-                                    <i class="bi bi-clock"></i><?= date('d/m/Y H:i') ?>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="ds-hero-ring-wrap">
-                            <div class="ds-hero-ring">
-                                <span>
-                                    <?= $guardiasCompletitud ?>%
-                                    <small>fichas activas sobre el total visible</small>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <div class="col-12">
-            <section class="card ds-priority-card shadow-sm h-100">
-                <div class="card-body">
-                    <div class="ds-priority-head">
-                        <div class="text-uppercase fw-bold small text-warning">Atencion prioritaria</div>
-                        <h2 class="ds-priority-title">Lo que conviene revisar primero</h2>
-                    </div>
-
-                    <div class="ds-priority-grid">
-                        <div class="ds-priority-stat">
-                            <span class="text-muted small">Documentos vencidos</span>
-                            <strong class="text-danger"><?= $docsVencidos ?></strong>
-                            <span class="text-muted small">Requieren renovacion o seguimiento inmediato.</span>
-                        </div>
-
-                        <div class="ds-priority-stat">
-                            <span class="text-muted small">Por vencer en 30 dias</span>
-                            <strong class="text-warning"><?= $docsPorVencer ?></strong>
-                            <span class="text-muted small">Ideal para activar recordatorios o carga preventiva.</span>
-                        </div>
-
-                        <div class="ds-priority-stat">
-                            <span class="text-muted small">Expedientes incompletos</span>
-                            <strong class="text-primary"><?= $expedientesIncompletos ?></strong>
-                            <span class="text-muted small">Seguimiento pendiente antes de cerrar el ciclo documental.</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </div>
-</section>
 
 <section class="ds-dashboard-section">
     <div class="ds-kpi-grid ds-kpi-grid-solid">
@@ -543,6 +442,86 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
                 </div>
             </div>
         </a>
+    </div>
+</section>
+
+<section class="ds-dashboard-section">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <section class="card ds-surface-card h-100">
+                <div class="card-header">
+                    <div>
+                        <h2 class="h5 mb-1"><i class="bi bi-heart-pulse me-2 text-success"></i>Salud operativa</h2>
+                        <p class="text-muted small mb-0">Lectura rapida de avance y cumplimiento.</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="ds-health-grid">
+                        <div class="ds-health-row">
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span>Fichas activas</span>
+                                <strong><?= $guardiasCompletitud ?>%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-primary" style="width: <?= $guardiasCompletitud ?>%"></div>
+                            </div>
+                        </div>
+
+                        <div class="ds-health-row">
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span>Expedientes completos</span>
+                                <strong><?= $expedientesCompletitud ?>%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: <?= $expedientesCompletitud ?>%"></div>
+                            </div>
+                        </div>
+
+                        <div class="ds-health-row">
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span>Salud documental</span>
+                                <strong><?= $saludDocumental ?>%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: <?= $saludDocumental ?>%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-lg-6">
+            <section class="card ds-surface-card h-100">
+                <div class="card-header">
+                    <div>
+                        <h2 class="h5 mb-1"><i class="bi bi-pie-chart me-2 text-info"></i>Distribucion de fichas</h2>
+                        <p class="text-muted small mb-0">Avance del registro de guardias.</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="ds-mini-chart-wrap">
+                        <div>
+                            <canvas id="miniChartFichas" style="max-height: 190px;"></canvas>
+                        </div>
+                        <div class="ds-mini-legend">
+                            <div class="ds-mini-legend-item">
+                                <span><i class="ds-dot" style="background:#27ae60"></i>Activas</span>
+                                <strong><?= $guardiasActivos ?></strong>
+                            </div>
+                            <div class="ds-mini-legend-item">
+                                <span><i class="ds-dot" style="background:#f39c12"></i>En revision</span>
+                                <strong><?= $fichasRevision ?></strong>
+                            </div>
+                            <div class="ds-mini-legend-item">
+                                <span><i class="ds-dot" style="background:#7f8c8d"></i>Borrador</span>
+                                <strong><?= $fichasBorrador ?></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
 </section>
 
@@ -643,85 +622,6 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
     </div>
 </section>
 
-<section class="ds-dashboard-section">
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <section class="card ds-surface-card h-100">
-                <div class="card-header">
-                    <div>
-                        <h2 class="h5 mb-1"><i class="bi bi-heart-pulse me-2 text-success"></i>Salud operativa</h2>
-                        <p class="text-muted small mb-0">Lectura rapida de avance y cumplimiento.</p>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="ds-health-grid">
-                        <div class="ds-health-row">
-                            <div class="d-flex justify-content-between small mb-2">
-                                <span>Fichas activas</span>
-                                <strong><?= $guardiasCompletitud ?>%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-primary" style="width: <?= $guardiasCompletitud ?>%"></div>
-                            </div>
-                        </div>
-
-                        <div class="ds-health-row">
-                            <div class="d-flex justify-content-between small mb-2">
-                                <span>Expedientes completos</span>
-                                <strong><?= $expedientesCompletitud ?>%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-success" style="width: <?= $expedientesCompletitud ?>%"></div>
-                            </div>
-                        </div>
-
-                        <div class="ds-health-row">
-                            <div class="d-flex justify-content-between small mb-2">
-                                <span>Salud documental</span>
-                                <strong><?= $saludDocumental ?>%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-warning" style="width: <?= $saludDocumental ?>%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <div class="col-lg-6">
-            <section class="card ds-surface-card h-100">
-                <div class="card-header">
-                    <div>
-                        <h2 class="h5 mb-1"><i class="bi bi-pie-chart me-2 text-info"></i>Distribucion de fichas</h2>
-                        <p class="text-muted small mb-0">Avance del registro de guardias.</p>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="ds-mini-chart-wrap">
-                        <div>
-                            <canvas id="miniChartFichas" style="max-height: 190px;"></canvas>
-                        </div>
-                        <div class="ds-mini-legend">
-                            <div class="ds-mini-legend-item">
-                                <span><i class="ds-dot" style="background:#27ae60"></i>Activas</span>
-                                <strong><?= $guardiasActivos ?></strong>
-                            </div>
-                            <div class="ds-mini-legend-item">
-                                <span><i class="ds-dot" style="background:#f39c12"></i>En revision</span>
-                                <strong><?= $fichasRevision ?></strong>
-                            </div>
-                            <div class="ds-mini-legend-item">
-                                <span><i class="ds-dot" style="background:#7f8c8d"></i>Borrador</span>
-                                <strong><?= $fichasBorrador ?></strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </div>
-</section>
 <?php $view->endSection() ?>
 
 <?php $view->section('scripts') ?>
