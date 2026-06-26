@@ -30,27 +30,12 @@ $returnTo = $returnTo ?? null;
                 <span class="brand-system">Plataforma DigiSecure</span>
             </div>
 
-            <div>
-                <h2>Gestion segura del personal operativo</h2>
-                <p class="lead">
-                    Centraliza fichas, expedientes, cursos y cumplimiento LOPDP del personal GEMESEG.
-                </p>
-                <ul class="login-features">
-                    <li><i class="bi bi-person-vcard"></i>Control documental de guardias</li>
-                    <li><i class="bi bi-file-earmark-spreadsheet"></i>Importacion y procesamiento Excel GEMESEG</li>
-                    <li><i class="bi bi-shield-lock"></i>Auditoria y proteccion de datos personales</li>
-                </ul>
-            </div>
-
             <div class="login-foot">
                 &copy; <?= date('Y') ?> GEMESEG Seguridad &middot; Plataforma DigiSecure
             </div>
         </aside>
 
         <section class="login-form">
-            <h1>Acceso GEMESEG</h1>
-            <div class="subtitle">Ingresa con tu cuenta autorizada para administrar guardias y expedientes.</div>
-
             <?php if ($error !== null): ?>
                 <div class="login-error" role="alert">
                     <i class="bi bi-exclamation-octagon-fill"></i>
