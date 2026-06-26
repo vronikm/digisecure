@@ -65,13 +65,6 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 <?php endif; ?>
 
 <div class="ds-card ds-guardias-filter">
-    <div class="ds-card-header tone-success">
-        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
-        <div>
-            <div class="ds-card-title">Filtros de guardias</div>
-            <div class="ds-card-subtitle">Busqueda por identidad y datos de contacto</div>
-        </div>
-    </div>
     <div class="ds-card-body">
         <div class="ds-filter-bar">
             <form method="get" action="<?= $view->url('/guardias') ?>" class="ds-filter-row ds-form-filter">

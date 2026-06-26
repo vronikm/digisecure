@@ -62,13 +62,6 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 
 <div class="ds-card ds-op-filter">
-    <div class="ds-card-header tone-success">
-        <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
-        <div>
-            <div class="ds-card-title">Filtros de expedientes</div>
-            <div class="ds-card-subtitle">Busqueda por guardia, correlativo y estado</div>
-        </div>
-    </div>
     <div class="ds-card-body">
         <div class="ds-filter-bar">
             <form method="get" action="<?= $view->url($currentPath) ?>" class="ds-filter-row ds-form-filter">

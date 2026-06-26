@@ -527,49 +527,6 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
 
 <section class="ds-dashboard-section">
     <div class="row g-4">
-        <div class="col-xl-7">
-            <section class="card ds-surface-card h-100">
-                <div class="card-header">
-                    <div>
-                        <h2 class="h5 mb-1"><i class="bi bi-activity me-2 text-primary"></i>Actividad reciente</h2>
-                        <p class="text-muted small mb-0">Ultimos movimientos relevantes del sistema.</p>
-                    </div>
-                    <?php if ($puedeVerAuditoria): ?>
-                        <a href="<?= $view->url('/auditoria') ?>" class="btn btn-outline-primary btn-sm">Ver auditoria</a>
-                    <?php endif; ?>
-                </div>
-                <div class="card-body">
-                    <?php if (empty($stats['actividad_reciente'])): ?>
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                            No hay actividad reciente registrada.
-                        </div>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table class="table ds-activity-table align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Evento</th>
-                                        <th>Usuario</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($stats['actividad_reciente'] as $act): ?>
-                                    <tr>
-                                        <td class="small text-muted"><?= $e($act['fecha']) ?></td>
-                                        <td><?= $e($act['evento']) ?></td>
-                                        <td class="small text-muted"><?= $e($act['usuario']) ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </section>
-        </div>
-
         <div class="col-xl-5">
             <section class="card ds-surface-card h-100">
                 <div class="card-header">
