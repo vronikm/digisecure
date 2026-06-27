@@ -65,6 +65,10 @@ final class Mailer
 
     private function logDev(string $mensaje): void
     {
+        $dir = dirname($this->devLogPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
         @file_put_contents($this->devLogPath, '[' . date('Y-m-d H:i:s') . "] {$mensaje}\n", FILE_APPEND);
         error_log('[DIGISECURE][MAIL] ' . str_replace("\n", ' | ', $mensaje));
     }

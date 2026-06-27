@@ -98,7 +98,42 @@ El valor real de `DB_PASSWORD` debe escribirse solo en el `.env` del servidor.
 Si la contrasena fue compartida por chat, correo o ticket, rotarla en cPanel y
 actualizar el `.env` con la nueva.
 
-## 4. Permisos
+## 4. Correo transaccional
+
+La recuperacion de contrasena y la verificacion de aspirantes usan los valores
+`MAIL_*` del `.env`. En produccion deben estar configurados antes de probar
+`/password/forgot`.
+
+```env
+MAIL_DRIVER=smtp
+MAIL_HOST=mail.tu-dominio.com
+MAIL_PORT=587
+MAIL_USERNAME=no-reply@tu-dominio.com
+MAIL_PASSWORD=NO_VERSIONAR_ESTE_VALOR
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=no-reply@tu-dominio.com
+MAIL_FROM_NAME="DigiSecure"
+```
+
+En cPanel, usar el host/puerto exacto de la cuenta de correo. Si el hosting
+requiere el MTA local en vez de SMTP autenticado, usar:
+
+```env
+MAIL_DRIVER=mail
+MAIL_FROM_ADDRESS=no-reply@tu-dominio.com
+MAIL_FROM_NAME="DigiSecure"
+```
+
+Validar desde la raiz del proyecto en el servidor:
+
+```bash
+php bin/test-mail.php --to=tu-correo@dominio.com
+```
+
+El script no imprime passwords. Si falla, revisar `Codigo` y `Detalle`, ademas
+de `var/logs/mail.log`.
+
+## 5. Permisos
 
 El usuario del servidor web debe poder escribir en:
 
@@ -112,7 +147,7 @@ var/storage
 
 El directorio `var/storage` debe estar fuera del webroot; en este proyecto ya esta fuera de `public/`.
 
-## 5. Base de datos
+## 6. Base de datos
 
 Revisar estado de migraciones:
 
@@ -158,7 +193,7 @@ php bin/create-superadmin.php --email=admin@digitech.com.ec
 
 El script imprime la contrasena generada si no se pasa `--password`.
 
-## 6. Archivos que no deben subirse
+## 7. Archivos que no deben subirse
 
 No subir:
 
@@ -174,7 +209,7 @@ var/logs/*.log locales
 tests/ en paquetes finales si no se necesita ejecutar pruebas en servidor
 ```
 
-## 7. Verificacion minima
+## 8. Verificacion minima
 
 ```bash
 php -l public/index.php

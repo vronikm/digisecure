@@ -39,9 +39,17 @@ final class EmailChannel implements NotificationChannel
         $subject = (string) ($notificacion['asunto'] ?? '(sin asunto)');
         $bodyHtml = $notificacion['cuerpo_html'] ?? null;
         $bodyText = $notificacion['cuerpo_texto'] ?? null;
+        $fromAddress = $this->resolveFromAddress();
 
         if ($bodyHtml === null && $bodyText === null) {
             return ChannelResult::fail('Notificación sin cuerpo', 'EMPTY_BODY');
+        }
+
+        if ($fromAddress === null) {
+            return ChannelResult::fail('Remitente email vacio o invalido', 'INVALID_FROM');
+        }
+        if ($this->driver !== 'mail' && trim($this->host) === '') {
+            return ChannelResult::fail('MAIL_HOST vacio para envio SMTP', 'MAIL_HOST_EMPTY');
         }
 
         $start = (int) (microtime(true) * 1000);
@@ -53,9 +61,9 @@ final class EmailChannel implements NotificationChannel
         $usarNativo = $this->driver === 'mail' || !class_exists('\\PHPMailer\\PHPMailer\\PHPMailer');
 
         if ($usarNativo) {
-            $result = $this->sendWithMailFunction($to, $subject, $bodyHtml, $bodyText);
+            $result = $this->sendWithMailFunction($to, $subject, $bodyHtml, $bodyText, $fromAddress);
         } else {
-            $result = $this->sendWithPhpMailer($to, (string) ($notificacion['destinatario_nombre'] ?? ''), $subject, $bodyHtml, $bodyText);
+            $result = $this->sendWithPhpMailer($to, (string) ($notificacion['destinatario_nombre'] ?? ''), $subject, $bodyHtml, $bodyText, $fromAddress);
         }
 
         $elapsed = (int) (microtime(true) * 1000) - $start;
@@ -70,7 +78,7 @@ final class EmailChannel implements NotificationChannel
     /**
      * @return array{ok:bool, code?:string, msg?:string}
      */
-    private function sendWithPhpMailer(string $to, string $toName, string $subject, ?string $bodyHtml, ?string $bodyText): array
+    private function sendWithPhpMailer(string $to, string $toName, string $subject, ?string $bodyHtml, ?string $bodyText, string $fromAddress): array
     {
         try {
             /** @psalm-suppress UndefinedClass */
@@ -88,7 +96,8 @@ final class EmailChannel implements NotificationChannel
             }
             $mail->CharSet = 'UTF-8';
 
-            $mail->setFrom($this->fromAddress, $this->fromName);
+            $mail->setFrom($fromAddress, $this->fromName);
+            $mail->Sender = $fromAddress;
             $mail->addAddress($to, $toName);
             $mail->Subject = $subject;
 
@@ -111,15 +120,15 @@ final class EmailChannel implements NotificationChannel
     /**
      * @return array{ok:bool, code?:string, msg?:string}
      */
-    private function sendWithMailFunction(string $to, string $subject, ?string $bodyHtml, ?string $bodyText): array
+    private function sendWithMailFunction(string $to, string $subject, ?string $bodyHtml, ?string $bodyText, string $fromAddress): array
     {
         $isHtml = $bodyHtml !== null;
         $body = $isHtml ? $bodyHtml : (string) $bodyText;
 
         $boundary = bin2hex(random_bytes(16));
         $fromHeader = $this->fromName !== ''
-            ? sprintf('%s <%s>', $this->encodeHeader($this->fromName), $this->fromAddress)
-            : $this->fromAddress;
+            ? sprintf('%s <%s>', $this->encodeHeader($this->fromName), $fromAddress)
+            : $fromAddress;
 
         $headers = [
             'MIME-Version: 1.0',
@@ -138,7 +147,10 @@ final class EmailChannel implements NotificationChannel
 
         $subjectEncoded = $this->encodeHeader($subject);
 
-        $ok = @mail($to, $subjectEncoded, $body, implode("\r\n", $headers));
+        $extraParams = PHP_OS_FAMILY !== 'Windows' ? "-f{$fromAddress}" : '';
+        $ok = $extraParams !== ''
+            ? @mail($to, $subjectEncoded, $body, implode("\r\n", $headers), $extraParams)
+            : @mail($to, $subjectEncoded, $body, implode("\r\n", $headers));
         if (!$ok) {
             $err = error_get_last();
             return [
@@ -148,6 +160,21 @@ final class EmailChannel implements NotificationChannel
             ];
         }
         return ['ok' => true, 'code' => 'MAIL_FN_OK', 'msg' => 'Sent via mail()'];
+    }
+
+    private function resolveFromAddress(): ?string
+    {
+        $from = trim($this->fromAddress);
+        if ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL) !== false) {
+            return $from;
+        }
+
+        $username = trim($this->username);
+        if ($username !== '' && filter_var($username, FILTER_VALIDATE_EMAIL) !== false) {
+            return $username;
+        }
+
+        return null;
     }
 
     private function buildMultipartBody(string $textPart, string $htmlPart, string $boundary): string

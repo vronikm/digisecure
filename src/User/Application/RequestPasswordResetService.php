@@ -154,13 +154,27 @@ final class RequestPasswordResetService
         $cuerpoTexto = $this->buildTextBody($nombreCompleto, $resetLink, self::DEFAULT_EXPIRATION_MIN);
 
         // Envío síncrono (la cola tenant-aware solo se despacha por cron).
-        $this->mailer->enviar(
+        $emailEnviado = $this->mailer->enviar(
             (string) $usuario['email'],
             $nombreCompleto,
             'DigiSecure · Recuperación de contraseña',
             $cuerpoTexto,
             $cuerpoHtml,
         );
+
+        if (!$emailEnviado) {
+            $this->audit->log(
+                'password_reset.mail_failed',
+                $usuario['id'],
+                'usuario',
+                $usuario['id'],
+                detalles: ['email' => $usuario['email'], 'expira_at' => $expira],
+                nivel: 'critical',
+                ip: $ip,
+                userAgent: $userAgent,
+            );
+            return;
+        }
 
         $this->audit->log(
             'password_reset.solicitado',
