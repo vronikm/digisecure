@@ -55,6 +55,11 @@ final class CsrfMiddleware implements MiddlewareInterface
                 ], 403);
             }
 
+            if ($request->method === 'POST' && $request->path === '/logout') {
+                $this->csrf->rotateToken();
+                return Response::redirect('/dashboard', Response::STATUS_SEE_OTHER);
+            }
+
             throw new CsrfException(
                 'Token CSRF inválido o ausente para ' . $request->method . ' ' . $request->path
             );

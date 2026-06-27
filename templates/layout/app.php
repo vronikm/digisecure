@@ -304,7 +304,7 @@ $normalizeMenuSearch = static function (array $parts): string {
                     <i class="bi bi-chevron-right item-arrow"></i>
                 </a>
                 <div class="ds-dm-footer">
-                    <form method="POST" action="<?= $view->url('/logout') ?>" class="ds-form-inline">
+                    <form method="POST" action="<?= $view->url('/logout') ?>" class="ds-form-inline" autocomplete="off">
                         <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                         <button type="submit" class="dropdown-item">
                             <i class="bi bi-box-arrow-right"></i>
