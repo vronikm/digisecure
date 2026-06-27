@@ -142,9 +142,9 @@ $step('024 FK aspirantes.usuario_id -> usuarios(id)', function () use ($db, $fk)
 $step('024 permiso aspirantes.gestionar (+grants)', function () use ($db) {
     if ((int) $db->fetchScalar("SELECT COUNT(*) FROM permisos WHERE codigo = 'aspirantes.gestionar'") > 0) { return false; }
     $db->rawExec("INSERT INTO permisos (id, codigo, recurso, accion, descripcion, es_sistema, created_at)
-        VALUES ('SEEDPERMASPIRANTGESTION001','aspirantes.gestionar','aspirantes','gestionar','Revisar, aprobar y rechazar aspirantes (postulantes)',1,UTC_TIMESTAMP(6))");
+        VALUES ('SEEDPERMASPIRANTGESTION001','aspirantes.gestionar','aspirantes','gestionar','Revisar, aprobar y rechazar aspirantes (postulantes)',1,NOW(6))");
     $db->rawExec("INSERT INTO roles_permisos (role_id, permiso_id, granted_at)
-        SELECT r.id, p.id, UTC_TIMESTAMP(6) FROM roles r
+        SELECT r.id, p.id, NOW(6) FROM roles r
         INNER JOIN permisos p ON p.codigo = 'aspirantes.gestionar'
         LEFT JOIN roles_permisos rp ON rp.role_id = r.id AND rp.permiso_id = p.id
         WHERE r.codigo IN ('admin_tenant','supervisor') AND rp.role_id IS NULL");
@@ -171,10 +171,10 @@ $step('025 rol aspirante (+grant guardias.crear)', function () use ($db) {
     if (!$ptid) { $ptid = $db->fetchScalar("SELECT id FROM tenants ORDER BY created_at ASC LIMIT 1"); }
     if (!$ptid) { return false; }
     $db->execute("INSERT INTO roles (id, tenant_id, codigo, nombre, descripcion, es_sistema, created_at, updated_at)
-        VALUES ('ASPIRANTEROLE0000000000001', :t, 'aspirante', 'Aspirante (registro de guardia)', 'Acceso restringido: solo completar su propia ficha de guardia', 0, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))",
+        VALUES ('ASPIRANTEROLE0000000000001', :t, 'aspirante', 'Aspirante (registro de guardia)', 'Acceso restringido: solo completar su propia ficha de guardia', 0, NOW(6), NOW(6))",
         ['t' => $ptid]);
     $db->rawExec("INSERT INTO roles_permisos (role_id, permiso_id, granted_at)
-        SELECT 'ASPIRANTEROLE0000000000001', p.id, UTC_TIMESTAMP(6) FROM permisos p
+        SELECT 'ASPIRANTEROLE0000000000001', p.id, NOW(6) FROM permisos p
         LEFT JOIN roles_permisos rp ON rp.role_id = 'ASPIRANTEROLE0000000000001' AND rp.permiso_id = p.id
         WHERE p.codigo = 'guardias.crear' AND rp.role_id IS NULL");
     return true;

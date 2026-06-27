@@ -111,11 +111,27 @@ final class PdoConnection
             PDO::MYSQL_ATTR_INIT_COMMAND => \sprintf(
                 "SET NAMES %s COLLATE %s, "
                 . "sql_mode='STRICT_ALL_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO', "
-                . "time_zone='+00:00'",
+                . "time_zone='%s'",
                 $this->charset,
                 $collation,
+                $this->sessionTimeZone(),
             ),
         ];
+    }
+
+    /**
+     * Offset de la zona horaria por defecto de PHP (APP_TIMEZONE), p. ej. '-05:00'
+     * para America/Guayaquil. Así MySQL (NOW(), CURRENT_TIMESTAMP) usa la MISMA
+     * hora local que Clock, y los DATETIME guardados quedan en hora de Ecuador.
+     */
+    private function sessionTimeZone(): string
+    {
+        $seconds = (new \DateTimeZone(date_default_timezone_get()))
+            ->getOffset(new \DateTimeImmutable('now', new \DateTimeZone('UTC')));
+        $sign = $seconds < 0 ? '-' : '+';
+        $seconds = abs($seconds);
+
+        return \sprintf('%s%02d:%02d', $sign, intdiv($seconds, 3600), intdiv($seconds % 3600, 60));
     }
 
     private function isUnknownCollationError(PDOException $e): bool

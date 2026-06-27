@@ -86,7 +86,7 @@ final class SuperadminRepository
             "SELECT DATE(created_at) AS dia, COUNT(*) AS cantidad
                FROM registros_empresa
               WHERE evento = 'creado'
-                AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL :d DAY)
+                AND created_at >= DATE_SUB(NOW(), INTERVAL :d DAY)
               GROUP BY dia
               ORDER BY dia",
             ['d' => $dias],

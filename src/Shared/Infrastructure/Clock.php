@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace DigiSecure\Shared\Infrastructure;
 
 use DateTimeImmutable;
-use DateTimeZone;
 
 /**
- * Reloj centralizado. En producción usa el reloj del sistema;
- * en tests se puede inyectar un momento fijo.
+ * Reloj centralizado. En producción usa el reloj del sistema en la zona horaria
+ * configurada de la aplicación (APP_TIMEZONE = America/Guayaquil), de modo que
+ * los registros de fecha/hora en la base de datos quedan en hora local de
+ * Ecuador (UTC-5, sin horario de verano). En tests se inyecta un momento fijo.
  */
 final class Clock
 {
@@ -21,7 +22,9 @@ final class Clock
             return self::$frozen;
         }
 
-        return new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        // Sin zona explícita: usa la zona por defecto fijada en el bootstrap
+        // (date_default_timezone_set con APP_TIMEZONE).
+        return new DateTimeImmutable('now');
     }
 
     public static function nowString(): string

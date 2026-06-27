@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DigiSecure\Aspirante\Application;
 
 use DateTimeImmutable;
-use DateTimeZone;
 use DigiSecure\Aspirante\Infrastructure\AspiranteEventLogger;
 use DigiSecure\Aspirante\Infrastructure\AspiranteRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
@@ -71,7 +70,9 @@ final class VerificarEmailService
 
         // Validar expiración (48h).
         if ($a['verificacion_token_expira_at'] !== null) {
-            $expira = new DateTimeImmutable((string) $a['verificacion_token_expira_at'], new DateTimeZone('UTC'));
+            // El valor almacenado está en la zona local (APP_TIMEZONE); se
+            // interpreta con la zona por defecto para comparar correctamente.
+            $expira = new DateTimeImmutable((string) $a['verificacion_token_expira_at']);
             if (Clock::now() > $expira) {
                 $this->eventos->registrar(AspiranteEventLogger::TOKEN_EXPIRADO, $email, $ref['id'], $ip, $userAgent);
                 throw new DomainException('El enlace de verificación expiró. Solicita un nuevo enlace para continuar.');
