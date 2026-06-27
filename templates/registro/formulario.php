@@ -161,7 +161,7 @@ $checked = static fn(string $k): bool => !empty($form[$k]);
                         </div>
                         <div class="col-md-6">
                             <div class="login-field" style="margin: 0;">
-                                <label for="password">Contrasena <span class="req-mark">*</span></label>
+                                <label for="password">Contraseña <span class="req-mark">*</span></label>
                                 <div class="login-input-wrap">
                                     <i class="bi bi-key field-icon"></i>
                                     <input type="password" class="login-input" id="password" name="password"
@@ -172,7 +172,7 @@ $checked = static fn(string $k): bool => !empty($form[$k]);
                         </div>
                         <div class="col-md-6">
                             <div class="login-field" style="margin: 0;">
-                                <label for="password_confirmacion">Confirmar contrasena <span class="req-mark">*</span></label>
+                                <label for="password_confirmacion">Confirmar contraseña <span class="req-mark">*</span></label>
                                 <div class="login-input-wrap">
                                     <i class="bi bi-check2-square field-icon"></i>
                                     <input type="password" class="login-input" id="password_confirmacion" name="password_confirmacion"

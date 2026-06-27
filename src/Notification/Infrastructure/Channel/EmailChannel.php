@@ -25,6 +25,7 @@ final class EmailChannel implements NotificationChannel
         private readonly string $encryption,
         private readonly string $fromAddress,
         private readonly string $fromName,
+        private readonly string $driver = 'smtp',
     ) {
     }
 
@@ -45,10 +46,16 @@ final class EmailChannel implements NotificationChannel
 
         $start = (int) (microtime(true) * 1000);
 
-        if (class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
-            $result = $this->sendWithPhpMailer($to, (string) ($notificacion['destinatario_nombre'] ?? ''), $subject, $bodyHtml, $bodyText);
-        } else {
+        // driver='mail' fuerza la funcion nativa mail() de PHP (igual que otros
+        // proyectos del servidor que usan el MTA del hosting via php.ini), sin
+        // requerir credenciales SMTP. Si no, se usa SMTP/PHPMailer cuando esta
+        // disponible; como ultimo recurso, mail() nativo.
+        $usarNativo = $this->driver === 'mail' || !class_exists('\\PHPMailer\\PHPMailer\\PHPMailer');
+
+        if ($usarNativo) {
             $result = $this->sendWithMailFunction($to, $subject, $bodyHtml, $bodyText);
+        } else {
+            $result = $this->sendWithPhpMailer($to, (string) ($notificacion['destinatario_nombre'] ?? ''), $subject, $bodyHtml, $bodyText);
         }
 
         $elapsed = (int) (microtime(true) * 1000) - $start;

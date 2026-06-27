@@ -1,6 +1,6 @@
 <?php
 /**
- * Formulario de solicitud de recuperacion de contrasena.
+ * Formulario de solicitud de recuperacion de contraseña.
  *
  * Variables: $csrfToken, $sent (bool), $email, $error
  */
@@ -18,7 +18,7 @@ $sent = $sent ?? false;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>Recuperar contrasena - DigiSecure</title>
+    <title>Recuperar contraseña - DigiSecure</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>">
 </head>
@@ -28,7 +28,7 @@ $sent = $sent ?? false;
             <div class="login-form-header">
                 <span class="mark tone-warning"><i class="bi bi-key-fill"></i></span>
                 <div>
-                    <h1>Recuperar contrasena</h1>
+                    <h1>Recuperar contraseña</h1>
                     <div class="subtitle">Te enviaremos un enlace seguro a tu correo</div>
                 </div>
             </div>
@@ -39,7 +39,7 @@ $sent = $sent ?? false;
                     <div>
                         <strong>Solicitud recibida</strong>
                         Si el correo corresponde a una cuenta activa,
-                        recibiras un enlace para restablecer tu contrasena en los proximos minutos.
+                        recibiras un enlace para restablecer tu contraseña en los proximos minutos.
                     </div>
                 </div>
 
@@ -69,7 +69,7 @@ $sent = $sent ?? false;
 
                 <p class="subtitle" style="margin-bottom: 1.25rem;">
                     Ingresa el correo electronico asociado a tu cuenta.
-                    Te enviaremos un enlace seguro para crear una nueva contrasena.
+                    Te enviaremos un enlace seguro para crear una nueva contraseña.
                 </p>
 
                 <form class="ds-form-main" method="POST" action="<?= $view->url('/password/forgot') ?>" autocomplete="on" novalidate>

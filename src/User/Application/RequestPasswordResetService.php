@@ -6,9 +6,7 @@ namespace DigiSecure\User\Application;
 
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Config\Config;
-use DigiSecure\Notification\Application\EncolarNotificacionService;
-use DigiSecure\Notification\Domain\Enum\CanalNotificacion;
-use DigiSecure\Notification\Domain\Enum\PrioridadNotificacion;
+use DigiSecure\Notification\Application\Mailer;
 use DigiSecure\Security\Audit\AuditLogger;
 use DigiSecure\Shared\Infrastructure\Clock;
 use DigiSecure\Tenant\Domain\TenantContext;
@@ -33,7 +31,7 @@ final class RequestPasswordResetService
 
     public function __construct(
         private readonly PdoConnection $db,
-        private readonly EncolarNotificacionService $encolar,
+        private readonly Mailer $mailer,
         private readonly AuditLogger $audit,
         private readonly TenantContext $tenantContext,
         private readonly Config $config,
@@ -155,21 +153,14 @@ final class RequestPasswordResetService
         $cuerpoHtml = $this->buildHtmlBody($nombreCompleto, $resetLink, self::DEFAULT_EXPIRATION_MIN);
         $cuerpoTexto = $this->buildTextBody($nombreCompleto, $resetLink, self::DEFAULT_EXPIRATION_MIN);
 
-        $this->encolar->execute([
-            'evento' => 'password.reset.solicitado',
-            'canal' => CanalNotificacion::EMAIL,
-            'prioridad' => PrioridadNotificacion::ALTA,
-            'destinatario_usuario_id' => $usuario['id'],
-            'destinatario_email' => $usuario['email'],
-            'destinatario_nombre' => $nombreCompleto,
-            'asunto' => 'DigiSecure · Recuperación de contraseña',
-            'cuerpo_texto' => $cuerpoTexto,
-            'cuerpo_html' => $cuerpoHtml,
-            'entidad_tipo' => 'usuario',
-            'entidad_id' => $usuario['id'],
-            'dedupe_key' => 'password_reset:' . $usuario['id'] . ':' . substr($tokenHash, 0, 16),
-            'max_intentos' => 3,
-        ], $usuario['id'], $ip);
+        // Envío síncrono (la cola tenant-aware solo se despacha por cron).
+        $this->mailer->enviar(
+            (string) $usuario['email'],
+            $nombreCompleto,
+            'DigiSecure · Recuperación de contraseña',
+            $cuerpoTexto,
+            $cuerpoHtml,
+        );
 
         $this->audit->log(
             'password_reset.solicitado',

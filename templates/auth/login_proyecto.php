@@ -68,11 +68,11 @@ $returnTo = $returnTo ?? null;
                 </div>
 
                 <div class="login-field">
-                    <label for="password">Contrasena</label>
+                    <label for="password">Contraseña</label>
                     <div class="login-input-wrap">
                         <i class="bi bi-key field-icon"></i>
                         <input type="password" class="login-input" id="password" name="password"
-                               placeholder="Tu contrasena" required autocomplete="current-password">
+                               placeholder="Tu contraseña" required autocomplete="current-password">
                     </div>
                 </div>
 
@@ -82,7 +82,7 @@ $returnTo = $returnTo ?? null;
 
                 <div class="login-links">
                     <a href="<?= $view->url('/password/forgot') ?>">
-                        <i class="bi bi-question-circle"></i> Olvide mi contrasena
+                        <i class="bi bi-question-circle"></i> Olvide mi contraseña
                     </a>
                 </div>
             </form>

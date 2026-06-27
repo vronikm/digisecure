@@ -1,6 +1,6 @@
 <?php
 /**
- * Formulario para establecer nueva contrasena (a partir de token valido).
+ * Formulario para establecer nueva contraseña (a partir de token valido).
  *
  * Variables: $csrfToken, $token, $email, $valid (bool), $error, $success (bool)
  */
@@ -17,7 +17,7 @@ $success = $success ?? false;
 if ($success) {
     $headerIcon = 'bi-check-circle-fill';
     $headerTone = 'tone-success';
-    $headerTitle = 'Contrasena actualizada';
+    $headerTitle = 'Contraseña actualizada';
     $headerSubtitle = 'Ya puedes iniciar sesion';
 } elseif (!$valid) {
     $headerIcon = 'bi-x-octagon-fill';
@@ -27,7 +27,7 @@ if ($success) {
 } else {
     $headerIcon = 'bi-shield-lock-fill';
     $headerTone = '';
-    $headerTitle = 'Nueva contrasena';
+    $headerTitle = 'Nueva contraseña';
     $headerSubtitle = 'Cuenta: ' . $email;
 }
 ?>
@@ -37,7 +37,7 @@ if ($success) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>Nueva contrasena - DigiSecure</title>
+    <title>Nueva contraseña - DigiSecure</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>">
 </head>
@@ -57,7 +57,7 @@ if ($success) {
                     <i class="bi bi-check-circle-fill"></i>
                     <div>
                         <strong>Listo!</strong>
-                        Tu contrasena se actualizo correctamente.
+                        Tu contraseña se actualizo correctamente.
                         Ya puedes iniciar sesion con tus nuevas credenciales.
                     </div>
                 </div>
@@ -87,14 +87,14 @@ if ($success) {
                     <div class="login-error" role="alert">
                         <i class="bi bi-exclamation-octagon-fill"></i>
                         <div>
-                            <strong>No se pudo actualizar la contrasena</strong>
+                            <strong>No se pudo actualizar la contraseña</strong>
                             <?= $e($error) ?>
                         </div>
                     </div>
                 <?php endif; ?>
 
                 <p class="subtitle" style="margin-bottom: 1.25rem;">
-                    Crea una contrasena segura. Debe tener al menos <strong>8 caracteres</strong>,
+                    Crea una contraseña segura. Debe tener al menos <strong>8 caracteres</strong>,
                     incluyendo letras y numeros.
                 </p>
 
@@ -102,11 +102,11 @@ if ($success) {
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
                     <div class="login-field">
-                        <label for="password">Nueva contrasena</label>
+                        <label for="password">Nueva contraseña</label>
                         <div class="login-input-wrap">
                             <i class="bi bi-key field-icon"></i>
                             <input type="password" class="login-input" id="password" name="password"
-                                   placeholder="Crea una contrasena segura" required minlength="8" autofocus
+                                   placeholder="Crea una contraseña segura" required minlength="8" autofocus
                                    autocomplete="new-password">
                         </div>
                         <div class="password-strength"><div class="password-strength-bar" id="strengthBar"></div></div>
@@ -116,18 +116,18 @@ if ($success) {
                     </div>
 
                     <div class="login-field">
-                        <label for="password_confirm">Confirmar contrasena</label>
+                        <label for="password_confirm">Confirmar contraseña</label>
                         <div class="login-input-wrap">
                             <i class="bi bi-check2-square field-icon"></i>
                             <input type="password" class="login-input" id="password_confirm" name="password_confirm"
-                                   placeholder="Repite la misma contrasena" required minlength="8"
+                                   placeholder="Repite la misma contraseña" required minlength="8"
                                    autocomplete="new-password">
                         </div>
-                        <div class="requirement" id="req-match"><i class="bi bi-circle"></i>Las contrasenas coinciden</div>
+                        <div class="requirement" id="req-match"><i class="bi bi-circle"></i>Las contraseñas coinciden</div>
                     </div>
 
                     <button type="submit" class="login-submit">
-                        <i class="bi bi-shield-check"></i>Actualizar contrasena
+                        <i class="bi bi-shield-check"></i>Actualizar contraseña
                     </button>
                 </form>
             <?php endif; ?>

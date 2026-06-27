@@ -104,6 +104,7 @@ return array(
     'DigiSecure\\Notification\\Application\\AlertasCentroService' => $baseDir . '/src/Notification/Application/AlertasCentroService.php',
     'DigiSecure\\Notification\\Application\\DespacharNotificacionesService' => $baseDir . '/src/Notification/Application/DespacharNotificacionesService.php',
     'DigiSecure\\Notification\\Application\\EncolarNotificacionService' => $baseDir . '/src/Notification/Application/EncolarNotificacionService.php',
+    'DigiSecure\\Notification\\Application\\Mailer' => $baseDir . '/src/Notification/Application/Mailer.php',
     'DigiSecure\\Notification\\Controller\\NotificacionController' => $baseDir . '/src/Notification/Controller/NotificacionController.php',
     'DigiSecure\\Notification\\Domain\\Enum\\CanalNotificacion' => $baseDir . '/src/Notification/Domain/Enum/CanalNotificacion.php',
     'DigiSecure\\Notification\\Domain\\Enum\\EstadoNotificacion' => $baseDir . '/src/Notification/Domain/Enum/EstadoNotificacion.php',

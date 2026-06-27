@@ -181,8 +181,8 @@ $tenantActualNombre = (string) ($tenantActualNombre ?? '');
     <div class="ds-card-header tone-warning">
         <span class="ds-card-mark"><i class="bi bi-shield-lock"></i></span>
         <div>
-            <div class="ds-card-title">Resetear contrasena</div>
-            <div class="ds-card-subtitle">Establece una contrasena temporal; el usuario debera cambiarla al iniciar sesion</div>
+            <div class="ds-card-title">Resetear contraseña</div>
+            <div class="ds-card-subtitle">Establece una contraseña temporal; el usuario debera cambiarla al iniciar sesion</div>
         </div>
     </div>
     <div class="ds-card-body">
@@ -192,10 +192,10 @@ $tenantActualNombre = (string) ($tenantActualNombre ?? '');
             <div class="ds-user-grid">
                 <div class="ds-col-12 ds-col-md-6 ds-col-lg-8">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Nueva contrasena temporal</label>
+                        <label class="ds-form-label">Nueva contraseña temporal</label>
                         <input type="text" name="new_password" class="form-control"
                                placeholder="Minimo 8 caracteres" required minlength="8">
-                        <span class="ds-form-help">Anota la contrasena para entregarla al usuario por un canal seguro.</span>
+                        <span class="ds-form-help">Anota la contraseña para entregarla al usuario por un canal seguro.</span>
                     </div>
                 </div>
                 <div class="ds-col-12 ds-col-md-6 ds-col-lg-4" style="align-self: end;">
@@ -236,7 +236,7 @@ $tenantActualNombre = (string) ($tenantActualNombre ?? '');
         };
 
         if (typeof window.Swal === 'undefined') {
-            if (window.confirm('Se reseteara la contrasena del usuario. Deseas continuar?')) {
+            if (window.confirm('Se reseteara la contraseña del usuario. Deseas continuar?')) {
                 submitConfirmed();
             }
             return;
@@ -244,7 +244,7 @@ $tenantActualNombre = (string) ($tenantActualNombre ?? '');
 
         window.Swal.fire({
             title: 'Confirmar reseteo',
-            text: 'La contrasena actual sera reemplazada por una temporal.',
+            text: 'La contraseña actual sera reemplazada por una temporal.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Si, resetear',

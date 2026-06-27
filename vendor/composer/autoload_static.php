@@ -202,6 +202,7 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
         'DigiSecure\\Notification\\Application\\AlertasCentroService' => __DIR__ . '/../..' . '/src/Notification/Application/AlertasCentroService.php',
         'DigiSecure\\Notification\\Application\\DespacharNotificacionesService' => __DIR__ . '/../..' . '/src/Notification/Application/DespacharNotificacionesService.php',
         'DigiSecure\\Notification\\Application\\EncolarNotificacionService' => __DIR__ . '/../..' . '/src/Notification/Application/EncolarNotificacionService.php',
+        'DigiSecure\\Notification\\Application\\Mailer' => __DIR__ . '/../..' . '/src/Notification/Application/Mailer.php',
         'DigiSecure\\Notification\\Controller\\NotificacionController' => __DIR__ . '/../..' . '/src/Notification/Controller/NotificacionController.php',
         'DigiSecure\\Notification\\Domain\\Enum\\CanalNotificacion' => __DIR__ . '/../..' . '/src/Notification/Domain/Enum/CanalNotificacion.php',
         'DigiSecure\\Notification\\Domain\\Enum\\EstadoNotificacion' => __DIR__ . '/../..' . '/src/Notification/Domain/Enum/EstadoNotificacion.php',

@@ -253,9 +253,9 @@ final class UserController
                 $request->clientIp(),
                 $user->esSuperAdmin(),
             );
-            $this->flash->success('Contrasena restablecida correctamente.');
+            $this->flash->success('Contraseña restablecida correctamente.');
         } catch (DomainException $e) {
-            $this->flash->error($e->getMessage(), 'No se pudo restablecer la contrasena');
+            $this->flash->error($e->getMessage(), 'No se pudo restablecer la contraseña');
             return Response::redirect($this->securePath($request, "/usuarios/{$id}/editar"));
         }
         return Response::redirect($this->securePath($request, "/usuarios/{$id}/editar"));

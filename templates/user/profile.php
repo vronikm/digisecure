@@ -42,7 +42,7 @@ $initials = mb_strtoupper(mb_substr($user->nombres, 0, 1) . mb_substr($user->ape
         </div>
     </div>
     <a href="<?= $view->url('/perfil/password') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
-        <i class="bi bi-key"></i>Cambiar contrasena
+        <i class="bi bi-key"></i>Cambiar contraseña
     </a>
 </div>
 
@@ -176,7 +176,7 @@ $initials = mb_strtoupper(mb_substr($user->nombres, 0, 1) . mb_substr($user->ape
                    onmouseover="this.style.background='#f4f7fb'" onmouseout="this.style.background='transparent'">
                     <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(47,128,237,.12); color: #2f80ed;"><i class="bi bi-key"></i></span>
                     <span style="flex: 1;">
-                        <span style="font-weight: 600; display: block; font-size: .88rem;">Cambiar contrasena</span>
+                        <span style="font-weight: 600; display: block; font-size: .88rem;">Cambiar contraseña</span>
                         <span class="ds-cell-sub">Actualiza tus credenciales</span>
                     </span>
                     <i class="bi bi-chevron-right" style="color: var(--ds-text-soft); font-size: .85rem;"></i>

@@ -171,7 +171,7 @@ $tenantSel = (string) ($input['tenant_id'] ?? '');
                 </div>
                 <div class="ds-col-12 ds-col-md-6 ds-col-lg-5">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Contrasena inicial <span class="ds-required">*</span></label>
+                        <label class="ds-form-label">Contraseña inicial <span class="ds-required">*</span></label>
                         <input type="text" name="password" class="form-control" required minlength="8"
                                value="<?= $e($input['password'] ?? '') ?>">
                         <span class="ds-form-help">Minimo 8 caracteres. El usuario debera cambiarla en su proximo login.</span>

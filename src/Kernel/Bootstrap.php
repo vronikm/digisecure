@@ -504,7 +504,7 @@ final class Bootstrap
             \DigiSecure\User\Application\RequestPasswordResetService::class,
             static fn(Container $c) => new \DigiSecure\User\Application\RequestPasswordResetService(
                 $c->get(PdoConnection::class),
-                $c->get(\DigiSecure\Notification\Application\EncolarNotificacionService::class),
+                $c->get(\DigiSecure\Notification\Application\Mailer::class),
                 $c->get(AuditLogger::class),
                 $c->get(TenantContext::class),
                 $c->get(Config::class),
@@ -686,20 +686,37 @@ final class Bootstrap
                 $c->get(Config::class)->string('registro.aprobacion_rol_codigo', ''),
             ),
         );
-        // Envío síncrono del correo de verificación (público, sin cola tenant-aware).
+        // Canal de email compartido + mailers SÍNCRONOS para correos
+        // transaccionales (verificación de aspirante, reset de contraseña) que no
+        // deben pasar por la cola tenant-aware (solo se despacha por cron).
+        $container->singleton(
+            \DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class,
+            static fn(Container $c) => new \DigiSecure\Notification\Infrastructure\Channel\EmailChannel(
+                $c->get(Config::class)->string('mail.host', ''),
+                $c->get(Config::class)->int('mail.port', 587),
+                $c->get(Config::class)->string('mail.username', ''),
+                $c->get(Config::class)->string('mail.password', ''),
+                $c->get(Config::class)->string('mail.encryption', 'tls'),
+                $c->get(Config::class)->string('mail.from_address', ''),
+                $c->get(Config::class)->string('mail.from_name', 'DigiSecure'),
+                $c->get(Config::class)->string('mail.driver', 'smtp'),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Notification\Application\Mailer::class,
+            fn(Container $c) => new \DigiSecure\Notification\Application\Mailer(
+                $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
+                $c->get(Config::class)->string('mail.driver', 'smtp') === 'mail'
+                    || $c->get(Config::class)->string('mail.host', '') !== '',
+                "{$this->rootPath}/var/logs/mail.log",
+            ),
+        );
         $container->singleton(
             \DigiSecure\Aspirante\Infrastructure\VerificationMailer::class,
             fn(Container $c) => new \DigiSecure\Aspirante\Infrastructure\VerificationMailer(
-                new \DigiSecure\Notification\Infrastructure\Channel\EmailChannel(
-                    $c->get(Config::class)->string('mail.host', ''),
-                    $c->get(Config::class)->int('mail.port', 587),
-                    $c->get(Config::class)->string('mail.username', ''),
-                    $c->get(Config::class)->string('mail.password', ''),
-                    $c->get(Config::class)->string('mail.encryption', 'tls'),
-                    $c->get(Config::class)->string('mail.from_address', ''),
-                    $c->get(Config::class)->string('mail.from_name', 'DigiSecure'),
-                ),
-                $c->get(Config::class)->string('mail.host', '') !== '',
+                $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
+                $c->get(Config::class)->string('mail.driver', 'smtp') === 'mail'
+                    || $c->get(Config::class)->string('mail.host', '') !== '',
                 "{$this->rootPath}/var/logs/verificacion.log",
             ),
         );
