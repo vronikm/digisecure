@@ -32,6 +32,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
         '/registro',
         '/aspirantes',
         '/verificar',
+        '/verificar/reenviar',
         '/healthcheck',
         '/_smoke/session',
         '/lopdp/consentimientos/PoliticaPrivacidad_TDP.pdf',

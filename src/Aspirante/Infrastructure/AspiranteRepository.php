@@ -340,6 +340,104 @@ class AspiranteRepository
         );
     }
 
+    // ======================= Flujo seguro de registro (Fase 5) =======================
+
+    /**
+     * Resuelve el tenant de plataforma (operador). Es donde queda el usuario
+     * restringido del aspirante hasta que un admin lo promueva a otra empresa.
+     */
+    public function tenantPlataforma(): ?string
+    {
+        $id = $this->db->fetchScalar(
+            "SELECT id FROM tenants
+              ORDER BY (platform_marker = 'Y') DESC, created_at ASC
+              LIMIT 1",
+        );
+
+        return $id !== null ? (string) $id : null;
+    }
+
+    /**
+     * Marca el correo verificado y promueve estado a 'aspirante', enlazando el
+     * usuario restringido recien creado. Consume el token (single-use).
+     */
+    public function marcarAspirante(string $aspiranteId, string $usuarioId, string $tenantId, string $cuando): void
+    {
+        $this->db->execute(
+            "UPDATE aspirantes
+                SET estado = 'aspirante',
+                    email_verificado = 1,
+                    email_verificado_at = :cuando,
+                    usuario_id = :uid,
+                    tenant_id = :tid,
+                    verificacion_token_hash = NULL,
+                    verificacion_token_expira_at = NULL,
+                    updated_at = :cuando2
+              WHERE id = :id",
+            ['cuando' => $cuando, 'uid' => $usuarioId, 'tid' => $tenantId, 'cuando2' => $cuando, 'id' => $aspiranteId],
+        );
+    }
+
+    /**
+     * Para el reenvio de enlace: aspirante con ese correo que AUN no validó.
+     *
+     * @return array{id: string, nombres: string, apellidos: string, correo: string}|null
+     */
+    public function findPendientePorCorreo(string $correoNormalizado): ?array
+    {
+        $row = $this->db->fetchOne(
+            "SELECT id, nombres, apellidos, correo
+               FROM aspirantes
+              WHERE correo_normalizado = :co
+                AND email_verificado = 0
+                AND estado = 'nuevo'
+              LIMIT 1",
+            ['co' => $correoNormalizado],
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'id'        => (string) $row['id'],
+            'nombres'   => (string) $row['nombres'],
+            'apellidos' => (string) $row['apellidos'],
+            'correo'    => (string) $row['correo'],
+        ];
+    }
+
+    /**
+     * Regenera el token de verificacion (nuevo hash + nueva expiracion 48h).
+     */
+    public function regenerarTokenVerificacion(string $aspiranteId, string $tokenHash, string $expira, string $cuando): void
+    {
+        $this->db->execute(
+            'UPDATE aspirantes
+                SET verificacion_token_hash = :hash,
+                    verificacion_token_expira_at = :expira,
+                    updated_at = :cuando
+              WHERE id = :id',
+            ['hash' => $tokenHash, 'expira' => $expira, 'cuando' => $cuando, 'id' => $aspiranteId],
+        );
+    }
+
+    public function quitarRol(string $usuarioId, string $roleId): void
+    {
+        $this->db->execute(
+            'DELETE FROM usuarios_roles WHERE usuario_id = :uid AND role_id = :rid',
+            ['uid' => $usuarioId, 'rid' => $roleId],
+        );
+    }
+
+    public function actualizarEstadoUsuario(string $usuarioId, string $estado, string $cuando): void
+    {
+        $this->db->execute(
+            'UPDATE usuarios SET estado = :estado, updated_at = :cuando WHERE id = :id',
+            ['estado' => $estado, 'cuando' => $cuando, 'id' => $usuarioId],
+        );
+    }
+
     /**
      * @param array{q?: ?string, estado?: ?string, verificado?: ?string} $filtros
      * @return array{0: string, 1: array<string, scalar|null>}

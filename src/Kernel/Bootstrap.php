@@ -686,6 +686,23 @@ final class Bootstrap
                 $c->get(Config::class)->string('registro.aprobacion_rol_codigo', ''),
             ),
         );
+        // Envío síncrono del correo de verificación (público, sin cola tenant-aware).
+        $container->singleton(
+            \DigiSecure\Aspirante\Infrastructure\VerificationMailer::class,
+            fn(Container $c) => new \DigiSecure\Aspirante\Infrastructure\VerificationMailer(
+                new \DigiSecure\Notification\Infrastructure\Channel\EmailChannel(
+                    $c->get(Config::class)->string('mail.host', ''),
+                    $c->get(Config::class)->int('mail.port', 587),
+                    $c->get(Config::class)->string('mail.username', ''),
+                    $c->get(Config::class)->string('mail.password', ''),
+                    $c->get(Config::class)->string('mail.encryption', 'tls'),
+                    $c->get(Config::class)->string('mail.from_address', ''),
+                    $c->get(Config::class)->string('mail.from_name', 'DigiSecure'),
+                ),
+                $c->get(Config::class)->string('mail.host', '') !== '',
+                "{$this->rootPath}/var/logs/verificacion.log",
+            ),
+        );
 
         // 14. Router con rutas registradas
         $router = new Router();
@@ -714,6 +731,7 @@ final class Bootstrap
             SessionMiddleware::class,
             CsrfMiddleware::class,
             AuthenticationMiddleware::class,
+            \DigiSecure\Kernel\Middleware\AspiranteGateMiddleware::class,
             LayoutContextMiddleware::class,
             TenantContextMiddleware::class,
             \DigiSecure\Kernel\Middleware\RouteResolverMiddleware::class,
@@ -994,6 +1012,8 @@ final class Bootstrap
         $router->post('/aspirantes', [AspiranteController::class, 'registrar'], name: 'aspirantes.store');
         // Verificación de email (enlace mágico) — pública
         $router->get('/verificar', [VerificacionController::class, 'verificar'], name: 'aspirantes.verificar');
+        $router->get('/verificar/reenviar', [VerificacionController::class, 'reenviarForm'], name: 'aspirantes.reenviar.form');
+        $router->post('/verificar/reenviar', [VerificacionController::class, 'reenviar'], name: 'aspirantes.reenviar');
 
         // Reclutamiento — revisión y aprobación de aspirantes (Fase 4, protegida)
         $router->get('/reclutamiento', [AspiranteAdminController::class, 'index'], name: 'reclutamiento.index', permission: 'aspirantes.gestionar');

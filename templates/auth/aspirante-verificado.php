@@ -38,8 +38,8 @@ $yaVerificado = $yaVerificado ?? false;
             <i class="bi bi-check-circle-fill"></i>
             <div>
                 <strong><?= $nombre !== '' ? $e($nombre) . ',' : '¡Listo!' ?></strong>
-                Confirmamos que tu correo electrónico es válido. Tu postulación
-                quedará en revisión por nuestro equipo de reclutamiento.
+                Confirmamos tu correo electrónico. Tu cuenta quedó habilitada para
+                <strong>completar tu ficha de guardia</strong>.
             </div>
         </div>
 
@@ -47,14 +47,14 @@ $yaVerificado = $yaVerificado ?? false;
             <i class="bi bi-info-circle"></i>
             <div>
                 <strong>¿Qué sigue?</strong>
-                Aún no puedes operar en la plataforma: la verificación solo
-                confirma que tu correo es real. Si tu perfil avanza, te
-                contactaremos con los siguientes pasos.
+                Inicia sesión con tu correo y la contraseña que registraste. Por
+                ahora solo tendrás acceso al formulario para completar tu ficha de
+                guardia.
             </div>
         </div>
 
-        <a href="<?= $view->url('/login') ?>" class="login-secondary-btn">
-            <i class="bi bi-box-arrow-in-right"></i>Ir al inicio de sesión
+        <a href="<?= $view->url('/login') ?>" class="login-submit" style="text-decoration:none;">
+            <i class="bi bi-box-arrow-in-right"></i>Iniciar sesión y completar mi ficha
         </a>
 
         <div class="login-foot-mini">

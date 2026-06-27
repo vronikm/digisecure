@@ -51,6 +51,10 @@ $mensaje = $mensaje ?? 'El enlace de verificación no es válido.';
             </div>
         </div>
 
+        <a href="<?= $view->url('/verificar/reenviar') ?>" class="login-submit" style="text-decoration:none;">
+            <i class="bi bi-envelope-arrow-up"></i>Solicitar un nuevo enlace
+        </a>
+
         <a href="<?= $view->url('/login') ?>" class="login-secondary-btn">
             <i class="bi bi-box-arrow-in-right"></i>Volver al inicio de sesión
         </a>

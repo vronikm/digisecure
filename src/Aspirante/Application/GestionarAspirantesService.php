@@ -47,31 +47,55 @@ final class GestionarAspirantesService
         if ((int) ($a['email_verificado'] ?? 0) !== 1) {
             throw new DomainException('No se puede aprobar: el aspirante aún no ha verificado su correo.');
         }
-        if (($a['estado'] ?? '') === 'aprobado' || ($a['usuario_id'] ?? null) !== null) {
+        if (($a['estado'] ?? '') === 'aprobado') {
             throw new DomainException('Este aspirante ya fue aprobado.');
         }
         if (($a['estado'] ?? '') === 'descartado') {
             throw new DomainException('Este aspirante fue descartado; no puede aprobarse.');
         }
-
-        $correoNorm = (string) $a['correo_normalizado'];
-        if ($this->repo->existeCorreo($correoNorm) === false) {
-            // El aspirante deberia existir; defensivo.
-        }
-        if ($this->repo->existeCorreoEnUsuarios($correoNorm)) {
-            throw new DomainException('Ya existe un usuario del sistema con este correo.');
-        }
-
         if ($tenantId === '') {
             throw new DomainException('No se pudo determinar la empresa destino del usuario.');
         }
 
-        $usuarioId = IdGenerator::ulid();
         $now = Clock::nowString();
         $roleId = $this->rolAprobacionCodigo !== ''
             ? $this->repo->buscarRolId($this->rolAprobacionCodigo, $tenantId)
             : null;
+        $usuarioExistente = ($a['usuario_id'] ?? null) !== null ? (string) $a['usuario_id'] : null;
 
+        if ($usuarioExistente !== null) {
+            // PROMOVER: el aspirante ya validó su correo y tiene una cuenta
+            // restringida. Aprobar levanta el confinamiento (quita el rol
+            // 'aspirante') y le asigna el rol de aprobación si está configurado.
+            $this->db->transactional(function () use ($usuarioExistente, $tenantId, $roleId, $adminId, $now, $aspiranteId): void {
+                $rolAspirante = $this->repo->buscarRolId('aspirante', $tenantId);
+                if ($rolAspirante !== null) {
+                    $this->repo->quitarRol($usuarioExistente, $rolAspirante);
+                }
+                if ($roleId !== null) {
+                    $this->repo->asignarRol($usuarioExistente, $roleId, $adminId, $now);
+                }
+                $this->repo->marcarAprobado($aspiranteId, $usuarioExistente, $tenantId, $adminId, $now);
+            });
+
+            $this->audit->log(
+                'aspirante.aprobado',
+                $adminId,
+                'aspirante',
+                $aspiranteId,
+                detalles: ['usuario_id' => $usuarioExistente, 'accion' => 'promovido', 'rol' => $this->rolAprobacionCodigo ?: null],
+                ip: $ip,
+            );
+
+            return $usuarioExistente;
+        }
+
+        // CREAR: aspirante verificado sin cuenta aún (camino de respaldo).
+        if ($this->repo->existeCorreoEnUsuarios((string) $a['correo_normalizado'])) {
+            throw new DomainException('Ya existe un usuario del sistema con este correo.');
+        }
+
+        $usuarioId = IdGenerator::ulid();
         $this->db->transactional(function () use ($a, $usuarioId, $tenantId, $adminId, $roleId, $now, $aspiranteId): void {
             $this->repo->crearUsuario([
                 'id'                => $usuarioId,
@@ -99,7 +123,7 @@ final class GestionarAspirantesService
             $adminId,
             'aspirante',
             $aspiranteId,
-            detalles: ['usuario_id' => $usuarioId, 'rol' => $this->rolAprobacionCodigo ?: null],
+            detalles: ['usuario_id' => $usuarioId, 'accion' => 'creado', 'rol' => $this->rolAprobacionCodigo ?: null],
             ip: $ip,
         );
 

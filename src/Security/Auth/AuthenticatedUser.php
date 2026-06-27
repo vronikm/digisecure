@@ -52,8 +52,13 @@ final readonly class AuthenticatedUser
 
     public function esSuperAdmin(): bool
     {
+        return $this->tieneRol('superadmin');
+    }
+
+    public function tieneRol(string $codigo): bool
+    {
         foreach ($this->roles as $rol) {
-            if ($rol['codigo'] === 'superadmin') {
+            if (($rol['codigo'] ?? null) === $codigo) {
                 return true;
             }
         }
