@@ -49,21 +49,27 @@ final class AspiranteEventLogger
             $ipBinary = $packed !== false ? $packed : null;
         }
 
-        $this->db->execute(
-            'INSERT INTO aspirante_eventos
-                (aspirante_id, email, evento, ip, user_agent, detalles_json, created_at)
-             VALUES
-                (:aid, :email, :evento, :ip, :ua, :det, :ca)',
-            [
-                'aid'    => $aspiranteId,
-                'email'  => $email !== null ? mb_substr($email, 0, 190) : null,
-                'evento' => $evento,
-                'ip'     => $ipBinary,
-                'ua'     => $userAgent !== null ? mb_substr($userAgent, 0, 500) : null,
-                'det'    => $detalles !== null ? json_encode($detalles, JSON_UNESCAPED_UNICODE) : null,
-                'ca'     => Clock::nowString(),
-            ],
-        );
+        try {
+            $this->db->execute(
+                'INSERT INTO aspirante_eventos
+                    (aspirante_id, email, evento, ip, user_agent, detalles_json, created_at)
+                 VALUES
+                    (:aid, :email, :evento, :ip, :ua, :det, :ca)',
+                [
+                    'aid'    => $aspiranteId,
+                    'email'  => $email !== null ? mb_substr($email, 0, 190) : null,
+                    'evento' => $evento,
+                    'ip'     => $ipBinary,
+                    'ua'     => $userAgent !== null ? mb_substr($userAgent, 0, 500) : null,
+                    'det'    => $detalles !== null ? json_encode($detalles, JSON_UNESCAPED_UNICODE) : null,
+                    'ca'     => Clock::nowString(),
+                ],
+            );
+        } catch (\Throwable $e) {
+            // La bitácora es best-effort: NUNCA debe romper el flujo del usuario
+            // (p. ej. si la tabla aún no existe). Se reporta al error_log.
+            error_log('[DIGISECURE][ASPIRANTE_EVENTO] No se pudo registrar "' . $evento . '": ' . $e->getMessage());
+        }
     }
 
     /**

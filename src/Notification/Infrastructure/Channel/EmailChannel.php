@@ -39,31 +39,25 @@ final class EmailChannel implements NotificationChannel
         $subject = (string) ($notificacion['asunto'] ?? '(sin asunto)');
         $bodyHtml = $notificacion['cuerpo_html'] ?? null;
         $bodyText = $notificacion['cuerpo_texto'] ?? null;
-        $fromAddress = $this->resolveFromAddress();
 
         if ($bodyHtml === null && $bodyText === null) {
             return ChannelResult::fail('Notificación sin cuerpo', 'EMPTY_BODY');
         }
 
-        if ($fromAddress === null) {
-            return ChannelResult::fail('Remitente email vacio o invalido', 'INVALID_FROM');
-        }
-        if ($this->driver !== 'mail' && trim($this->host) === '') {
-            return ChannelResult::fail('MAIL_HOST vacio para envio SMTP', 'MAIL_HOST_EMPTY');
-        }
-
         $start = (int) (microtime(true) * 1000);
 
-        // driver='mail' fuerza la funcion nativa mail() de PHP (igual que otros
-        // proyectos del servidor que usan el MTA del hosting via php.ini), sin
-        // requerir credenciales SMTP. Si no, se usa SMTP/PHPMailer cuando esta
-        // disponible; como ultimo recurso, mail() nativo.
-        $usarNativo = $this->driver === 'mail' || !class_exists('\\PHPMailer\\PHPMailer\\PHPMailer');
+        // Usa la funcion nativa mail() de PHP (MTA del hosting via php.ini, igual
+        // que otros proyectos del servidor) cuando: el driver es 'mail', NO hay
+        // host SMTP configurado, o PHPMailer no esta disponible. Solo usa SMTP
+        // autenticado si hay host configurado y driver != 'mail'.
+        $usarNativo = $this->driver === 'mail'
+            || $this->host === ''
+            || !class_exists('\\PHPMailer\\PHPMailer\\PHPMailer');
 
         if ($usarNativo) {
-            $result = $this->sendWithMailFunction($to, $subject, $bodyHtml, $bodyText, $fromAddress);
+            $result = $this->sendWithMailFunction($to, $subject, $bodyHtml, $bodyText);
         } else {
-            $result = $this->sendWithPhpMailer($to, (string) ($notificacion['destinatario_nombre'] ?? ''), $subject, $bodyHtml, $bodyText, $fromAddress);
+            $result = $this->sendWithPhpMailer($to, (string) ($notificacion['destinatario_nombre'] ?? ''), $subject, $bodyHtml, $bodyText);
         }
 
         $elapsed = (int) (microtime(true) * 1000) - $start;
@@ -78,7 +72,7 @@ final class EmailChannel implements NotificationChannel
     /**
      * @return array{ok:bool, code?:string, msg?:string}
      */
-    private function sendWithPhpMailer(string $to, string $toName, string $subject, ?string $bodyHtml, ?string $bodyText, string $fromAddress): array
+    private function sendWithPhpMailer(string $to, string $toName, string $subject, ?string $bodyHtml, ?string $bodyText): array
     {
         try {
             /** @psalm-suppress UndefinedClass */
@@ -96,8 +90,7 @@ final class EmailChannel implements NotificationChannel
             }
             $mail->CharSet = 'UTF-8';
 
-            $mail->setFrom($fromAddress, $this->fromName);
-            $mail->Sender = $fromAddress;
+            $mail->setFrom($this->fromAddress, $this->fromName);
             $mail->addAddress($to, $toName);
             $mail->Subject = $subject;
 
@@ -120,21 +113,24 @@ final class EmailChannel implements NotificationChannel
     /**
      * @return array{ok:bool, code?:string, msg?:string}
      */
-    private function sendWithMailFunction(string $to, string $subject, ?string $bodyHtml, ?string $bodyText, string $fromAddress): array
+    private function sendWithMailFunction(string $to, string $subject, ?string $bodyHtml, ?string $bodyText): array
     {
         $isHtml = $bodyHtml !== null;
         $body = $isHtml ? $bodyHtml : (string) $bodyText;
 
         $boundary = bin2hex(random_bytes(16));
-        $fromHeader = $this->fromName !== ''
-            ? sprintf('%s <%s>', $this->encodeHeader($this->fromName), $fromAddress)
-            : $fromAddress;
 
         $headers = [
             'MIME-Version: 1.0',
-            "From: {$fromHeader}",
             'X-Mailer: DigiSecure-Notify',
         ];
+        // Solo añadimos From si hay dirección configurada; si no, dejamos que
+        // PHP use sendmail_from del php.ini (evita un "From: Nombre <>" inválido).
+        if ($this->fromAddress !== '') {
+            $headers[] = 'From: ' . ($this->fromName !== ''
+                ? sprintf('%s <%s>', $this->encodeHeader($this->fromName), $this->fromAddress)
+                : $this->fromAddress);
+        }
 
         if ($isHtml && $bodyText !== null) {
             $headers[] = "Content-Type: multipart/alternative; boundary=\"{$boundary}\"";
@@ -147,10 +143,7 @@ final class EmailChannel implements NotificationChannel
 
         $subjectEncoded = $this->encodeHeader($subject);
 
-        $extraParams = PHP_OS_FAMILY !== 'Windows' ? "-f{$fromAddress}" : '';
-        $ok = $extraParams !== ''
-            ? @mail($to, $subjectEncoded, $body, implode("\r\n", $headers), $extraParams)
-            : @mail($to, $subjectEncoded, $body, implode("\r\n", $headers));
+        $ok = @mail($to, $subjectEncoded, $body, implode("\r\n", $headers));
         if (!$ok) {
             $err = error_get_last();
             return [
@@ -160,21 +153,6 @@ final class EmailChannel implements NotificationChannel
             ];
         }
         return ['ok' => true, 'code' => 'MAIL_FN_OK', 'msg' => 'Sent via mail()'];
-    }
-
-    private function resolveFromAddress(): ?string
-    {
-        $from = trim($this->fromAddress);
-        if ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL) !== false) {
-            return $from;
-        }
-
-        $username = trim($this->username);
-        if ($username !== '' && filter_var($username, FILTER_VALIDATE_EMAIL) !== false) {
-            return $username;
-        }
-
-        return null;
     }
 
     private function buildMultipartBody(string $textPart, string $htmlPart, string $boundary): string

@@ -15,14 +15,14 @@ use DigiSecure\Notification\Infrastructure\Channel\EmailChannel;
  * de aspirante eso provocaba que el correo no se enviara nunca. Este mailer lo
  * envía en el momento vía EmailChannel.
  *
- * Si el SMTP no está configurado (MAIL_HOST vacío) -> modo desarrollo: el correo
- * (con su enlace) se escribe en var/logs/mail.log para poder probar el flujo.
+ * Siempre intenta enviar vía EmailChannel (que por defecto usa mail() nativo si
+ * no hay SMTP configurado). Si el envío falla (p. ej. sin MTA en localhost),
+ * registra el cuerpo (con su enlace) en var/logs/mail.log para continuar el flujo.
  */
 final class Mailer
 {
     public function __construct(
         private readonly EmailChannel $email,
-        private readonly bool $configurado,
         private readonly string $devLogPath,
     ) {
     }
@@ -34,11 +34,6 @@ final class Mailer
         string $cuerpoTexto,
         string $cuerpoHtml,
     ): bool {
-        if (!$this->configurado) {
-            $this->logDev("MAIL no configurado.\n  Para: {$correo}\n  Asunto: {$asunto}\n  --- Cuerpo (texto) ---\n{$cuerpoTexto}");
-            return false;
-        }
-
         $resultado = $this->email->send([
             'destinatario_email'  => $correo,
             'destinatario_nombre' => $nombre,
@@ -65,10 +60,6 @@ final class Mailer
 
     private function logDev(string $mensaje): void
     {
-        $dir = dirname($this->devLogPath);
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0775, true);
-        }
         @file_put_contents($this->devLogPath, '[' . date('Y-m-d H:i:s') . "] {$mensaje}\n", FILE_APPEND);
         error_log('[DIGISECURE][MAIL] ' . str_replace("\n", ' | ', $mensaje));
     }

@@ -706,8 +706,6 @@ final class Bootstrap
             \DigiSecure\Notification\Application\Mailer::class,
             fn(Container $c) => new \DigiSecure\Notification\Application\Mailer(
                 $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
-                $c->get(Config::class)->string('mail.driver', 'smtp') === 'mail'
-                    || $c->get(Config::class)->string('mail.host', '') !== '',
                 "{$this->rootPath}/var/logs/mail.log",
             ),
         );
@@ -715,8 +713,6 @@ final class Bootstrap
             \DigiSecure\Aspirante\Infrastructure\VerificationMailer::class,
             fn(Container $c) => new \DigiSecure\Aspirante\Infrastructure\VerificationMailer(
                 $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
-                $c->get(Config::class)->string('mail.driver', 'smtp') === 'mail'
-                    || $c->get(Config::class)->string('mail.host', '') !== '',
                 "{$this->rootPath}/var/logs/verificacion.log",
             ),
         );

@@ -16,15 +16,14 @@ use DigiSecure\Notification\Infrastructure\Channel\EmailChannel;
  *   el flujo web. Para un correo transaccional de verificacion lo correcto es
  *   enviarlo en el momento.
  *
- * Si el SMTP no esta configurado (MAIL_HOST vacio) -> modo desarrollo: el enlace
- * se escribe en var/logs/verificacion.log (y en el error_log) para poder probar
- * el flujo sin servidor de correo.
+ * Siempre intenta enviar vía EmailChannel (que por defecto usa mail() nativo si
+ * no hay SMTP configurado). Si el envío falla (p. ej. sin MTA en localhost),
+ * registra el enlace en var/logs/verificacion.log para poder continuar el flujo.
  */
 final class VerificationMailer
 {
     public function __construct(
         private readonly EmailChannel $email,
-        private readonly bool $mailConfigurado,
         private readonly string $devLogPath,
     ) {
     }
@@ -37,11 +36,6 @@ final class VerificationMailer
         string $cuerpoHtml,
         string $enlace,
     ): void {
-        if (!$this->mailConfigurado) {
-            $this->logDev("MAIL no configurado. Enlace de verificación para {$correo}: {$enlace}");
-            return;
-        }
-
         $resultado = $this->email->send([
             'destinatario_email'  => $correo,
             'destinatario_nombre' => $nombre,
