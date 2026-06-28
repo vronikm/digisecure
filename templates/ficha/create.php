@@ -180,10 +180,20 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
         text-align: left;
         transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
     }
+    /* Paso activo (sección en la que se está ingresando información): amarillo */
     .ds-step-link.active {
-        border-color: rgba(47, 128, 237, .28);
-        box-shadow: 0 12px 24px rgba(18, 45, 77, .08);
+        border-color: #eab308;
+        background: #fefce8;
+        box-shadow: 0 12px 24px rgba(234, 179, 8, .20);
         transform: translateY(-1px);
+    }
+    .ds-step-link.active .ds-step-index {
+        background: #eab308;
+        color: #fff;
+    }
+    .ds-step-link.active .ds-step-status {
+        background-color: #eab308 !important;
+        color: #fff !important;
     }
     .ds-step-index {
         width: 30px;
@@ -224,6 +234,41 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
         font-weight: 700;
         flex: 0 0 auto;
     }
+    /* Marco para la foto del empleado */
+    .ff-foto-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .5rem;
+        margin-bottom: 1rem;
+    }
+    .ff-foto-frame {
+        width: 150px;
+        height: 180px;
+        border: 2px dashed #c4cdd9;
+        border-radius: 14px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+        transition: border-color .15s ease;
+    }
+    .ff-foto-frame:hover { border-color: #2f80ed; }
+    .ff-foto-frame img { width: 100%; height: 100%; object-fit: cover; }
+    .ff-foto-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .35rem;
+        color: #94a3b8;
+        text-align: center;
+        padding: .5rem;
+    }
+    .ff-foto-placeholder i { font-size: 2.6rem; line-height: 1; }
+    .ff-foto-placeholder span { font-size: .72rem; }
+    .ff-foto-actions { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: center; }
     .ds-step-panel {
         display: none;
     }
@@ -617,7 +662,7 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
 
 <div class="row g-4">
     <div class="col-xl-8">
-<form method="post" action="<?= $view->url($formAction) ?>" id="fichaForm" class="ds-form-main" novalidate>
+<form method="post" action="<?= $view->url($formAction) ?>" id="fichaForm" class="ds-form-main" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="card ds-step-nav-card shadow-sm mb-4">
@@ -665,6 +710,58 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
     <div class="card shadow-sm mb-3">
         <div class="card-header"><i class="bi bi-person me-2"></i>Datos Personales</div>
         <div class="card-body">
+            <div class="ds-subheader"><i class="bi bi-image"></i>Foto del empleado</div>
+            <div class="ff-foto-wrap">
+                <div class="ff-foto-frame">
+                    <img id="fotoPreview" alt="Foto del empleado" style="display:none;">
+                    <div class="ff-foto-placeholder" id="fotoPlaceholder">
+                        <i class="bi bi-person-bounding-box"></i>
+                        <span>Sin foto</span>
+                    </div>
+                </div>
+                <input type="file" id="fotoInput" name="foto" accept="image/png,image/jpeg" hidden>
+                <div class="ff-foto-actions">
+                    <label class="ds-btn ds-btn-outline ds-btn-sm" for="fotoInput" style="cursor: pointer;">
+                        <i class="bi bi-camera"></i>Subir foto
+                    </label>
+                    <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="fotoClear" style="display: none;">
+                        <i class="bi bi-x-lg"></i>Quitar
+                    </button>
+                </div>
+                <span class="ds-form-help" style="text-align: center;">JPG o PNG &middot; máx 2 MB</span>
+            </div>
+            <script>
+            (function () {
+                var input = document.getElementById('fotoInput');
+                var preview = document.getElementById('fotoPreview');
+                var ph = document.getElementById('fotoPlaceholder');
+                var clear = document.getElementById('fotoClear');
+                if (!input) { return; }
+                var MAX = 2 * 1024 * 1024;
+                input.addEventListener('change', function () {
+                    var f = input.files && input.files[0];
+                    if (!f) { return; }
+                    if (!/^image\/(png|jpe?g)$/.test(f.type)) { alert('La foto debe ser JPG o PNG.'); input.value = ''; return; }
+                    if (f.size > MAX) { alert('La foto no debe superar 2 MB.'); input.value = ''; return; }
+                    var rd = new FileReader();
+                    rd.onload = function (e) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                        ph.style.display = 'none';
+                        clear.style.display = 'inline-flex';
+                    };
+                    rd.readAsDataURL(f);
+                });
+                clear.addEventListener('click', function () {
+                    input.value = '';
+                    preview.src = '';
+                    preview.style.display = 'none';
+                    ph.style.display = 'flex';
+                    clear.style.display = 'none';
+                });
+            })();
+            </script>
+
             <div class="ds-subheader"><i class="bi bi-tag"></i>Identificación</div>
             <div class="ff-row">
                 <div>

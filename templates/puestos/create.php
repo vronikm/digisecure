@@ -132,17 +132,17 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
         <div class="ds-card-header tone-purple">
             <span class="ds-card-mark"><i class="bi bi-geo-alt"></i></span>
             <div>
-                <div class="ds-card-title">Ubicacion</div>
-                <div class="ds-card-subtitle">Direccion fisica y coordenadas opcionales</div>
+                <div class="ds-card-title">Ubicación</div>
+                <div class="ds-card-subtitle">Dirección física y coordenadas opcionales</div>
             </div>
         </div>
         <div class="ds-card-body">
             <div class="row g-3">
-                <div class="col-md-12">
+                <div class="col-md-4">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Direccion</label>
-                        <input type="text" name="direccion" class="form-control" maxlength="255"
-                               value="<?= $e($old('direccion')) ?>">
+                        <label class="ds-form-label">Pais</label>
+                        <input type="text" name="pais" class="form-control" maxlength="2"
+                               value="<?= $e($old('pais', 'EC')) ?>">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -158,34 +158,14 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
                         <input type="text" name="provincia" class="form-control" maxlength="100"
                                value="<?= $e($old('provincia')) ?>">
                     </div>
-                </div>
-                <div class="col-md-4">
+                </div>   
+                <div class="col-md-12">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Pais</label>
-                        <input type="text" name="pais" class="form-control" maxlength="2"
-                               value="<?= $e($old('pais', 'EC')) ?>">
+                        <label class="ds-form-label">Dirección</label>
+                        <input type="text" name="direccion" class="form-control" maxlength="255"
+                               value="<?= $e($old('direccion')) ?>">
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Latitud</label>
-                        <input type="number" step="0.0000001" min="-90" max="90"
-                               name="latitud" class="form-control"
-                               placeholder="Ej: -0.180653"
-                               value="<?= $e($old('latitud')) ?>">
-                        <span class="ds-form-help">Decimal entre -90 y 90.</span>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Longitud</label>
-                        <input type="number" step="0.0000001" min="-180" max="180"
-                               name="longitud" class="form-control"
-                               placeholder="Ej: -78.467834"
-                               value="<?= $e($old('longitud')) ?>">
-                        <span class="ds-form-help">Decimal entre -180 y 180.</span>
-                    </div>
-                </div>
+                </div>                             
             </div>
         </div>
     </div>
@@ -194,7 +174,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
         <div class="ds-card-header tone-success">
             <span class="ds-card-mark"><i class="bi bi-clock-history"></i></span>
             <div>
-                <div class="ds-card-title">Operacion</div>
+                <div class="ds-card-title">Operación</div>
                 <div class="ds-card-subtitle">Horario, contacto del sitio y observaciones</div>
             </div>
         </div>
@@ -217,7 +197,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
                 </div>
                 <div class="col-md-6">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Telefono del sitio</label>
+                        <label class="ds-form-label">Teléfono del sitio</label>
                         <input type="text" name="telefono_sitio" class="form-control" maxlength="30"
                                value="<?= $e($old('telefono_sitio')) ?>">
                     </div>

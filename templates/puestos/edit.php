@@ -127,15 +127,15 @@ $valor = static fn(string $k, string $d = ''): string => (string) ($input[$k] ??
         <div class="ds-card-header tone-purple">
             <span class="ds-card-mark"><i class="bi bi-geo-alt"></i></span>
             <div>
-                <div class="ds-card-title">Ubicacion</div>
-                <div class="ds-card-subtitle">Direccion y coordenadas</div>
+                <div class="ds-card-title">Ubicación</div>
+                <div class="ds-card-subtitle">Dirección y coordenadas</div>
             </div>
         </div>
         <div class="ds-card-body">
             <div class="row g-3">
                 <div class="col-md-12">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Direccion</label>
+                        <label class="ds-form-label">Dirección</label>
                         <input type="text" name="direccion" class="form-control" maxlength="255"
                                value="<?= $e($valor('direccion')) ?>">
                     </div>
@@ -185,7 +185,7 @@ $valor = static fn(string $k, string $d = ''): string => (string) ($input[$k] ??
         <div class="ds-card-header tone-success">
             <span class="ds-card-mark"><i class="bi bi-clock-history"></i></span>
             <div>
-                <div class="ds-card-title">Operacion</div>
+                <div class="ds-card-title">Operación</div>
                 <div class="ds-card-subtitle">Horario, contacto y observaciones</div>
             </div>
         </div>
