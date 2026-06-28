@@ -195,7 +195,7 @@ $tenantActualNombre = (string) ($tenantActualNombre ?? '');
                         <label class="ds-form-label">Nueva contraseña temporal</label>
                         <input type="text" name="new_password" class="form-control"
                                placeholder="Minimo 8 caracteres" required minlength="8">
-                        <span class="ds-form-help">Anota la contraseña para entregarla al usuario por un canal seguro.</span>
+                        <span class="ds-form-help">Se enviara por email al usuario y se solicitara cambio al iniciar sesion.</span>
                     </div>
                 </div>
                 <div class="ds-col-12 ds-col-md-6 ds-col-lg-4" style="align-self: end;">
@@ -244,7 +244,7 @@ $tenantActualNombre = (string) ($tenantActualNombre ?? '');
 
         window.Swal.fire({
             title: 'Confirmar reseteo',
-            text: 'La contraseña actual sera reemplazada por una temporal.',
+            text: 'La contraseña actual sera reemplazada por una temporal y se enviara por email al usuario.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Si, resetear',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\User\Application;
 
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
+use DigiSecure\Notification\Infrastructure\Channel\EmailChannel;
 use DigiSecure\Security\Audit\AuditLogger;
 use DigiSecure\Security\Crypto\Hasher;
 use DigiSecure\Shared\Domain\DomainException;
@@ -30,6 +31,7 @@ final class AdministrarUsuariosService
         private readonly Hasher $hasher,
         private readonly AuditLogger $audit,
         private readonly TenantContext $tenantContext,
+        private readonly EmailChannel $emailChannel,
     ) {
     }
 
@@ -286,7 +288,7 @@ final class AdministrarUsuariosService
         string $actorId,
         string $ip,
         bool $actorIsSuperAdmin = false,
-    ): void
+    ): bool
     {
         if (strlen($passwordPlano) < 8) {
             throw new DomainException('La contraseña debe tener al menos 8 caracteres.');
@@ -312,14 +314,87 @@ final class AdministrarUsuariosService
             $this->repo->update($id, $updateData);
         }
 
+        $emailEnviado = $this->enviarPasswordTemporal($usuario, $passwordPlano);
+
         $this->audit->log(
             'usuario.password_reseteado',
             $actorId,
             'usuario',
             $id,
+            detalles: ['email_notificado' => $emailEnviado],
             nivel: 'warning',
             ip: $ip,
         );
+
+        return $emailEnviado;
+    }
+
+    /**
+     * Envia la clave temporal sin pasar por el Mailer transaccional, porque ese
+     * fallback registra el cuerpo del correo en logs cuando falla el envio.
+     *
+     * @param array<string, mixed> $usuario
+     */
+    private function enviarPasswordTemporal(array $usuario, string $passwordPlano): bool
+    {
+        $email = trim((string) ($usuario['email'] ?? ''));
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return false;
+        }
+
+        $nombres = trim((string) ($usuario['nombres'] ?? ''));
+        $apellidos = trim((string) ($usuario['apellidos'] ?? ''));
+        $nombre = trim($nombres . ' ' . $apellidos);
+        if ($nombre === '') {
+            $nombre = $email;
+        }
+
+        $asunto = 'DigiSecure - contrasena temporal actualizada';
+        $cuerpoTexto = implode("\n", [
+            "Hola {$nombre},",
+            '',
+            'Un administrador actualizo tu contrasena temporal de DigiSecure.',
+            "Usuario: {$email}",
+            "Contrasena temporal: {$passwordPlano}",
+            '',
+            'Al iniciar sesion deberas cambiar esta contrasena.',
+            'Si no solicitaste este cambio, contacta al administrador de tu empresa.',
+        ]);
+
+        $nombreHtml = htmlspecialchars($nombre, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $emailHtml = htmlspecialchars($email, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $passwordHtml = htmlspecialchars($passwordPlano, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $cuerpoHtml = <<<HTML
+<!doctype html>
+<html lang="es">
+<body style="margin:0;padding:24px;background:#f6f8fb;font-family:Arial,sans-serif;color:#0f172a;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
+    <h2 style="margin:0 0 12px;color:#0f3a63;">DigiSecure</h2>
+    <p>Hola {$nombreHtml},</p>
+    <p>Un administrador actualizo tu contrasena temporal de DigiSecure.</p>
+    <p style="margin-bottom:6px;"><strong>Usuario:</strong> {$emailHtml}</p>
+    <p style="margin-bottom:6px;"><strong>Contrasena temporal:</strong></p>
+    <div style="font-size:18px;font-weight:700;letter-spacing:.04em;background:#f1f5f9;border-radius:8px;padding:12px 14px;">{$passwordHtml}</div>
+    <p>Al iniciar sesion deberas cambiar esta contrasena.</p>
+    <p style="font-size:13px;color:#64748b;">Si no solicitaste este cambio, contacta al administrador de tu empresa.</p>
+  </div>
+</body>
+</html>
+HTML;
+
+        try {
+            $resultado = $this->emailChannel->send([
+                'destinatario_email' => $email,
+                'destinatario_nombre' => $nombre,
+                'asunto' => $asunto,
+                'cuerpo_texto' => $cuerpoTexto,
+                'cuerpo_html' => $cuerpoHtml,
+            ]);
+
+            return $resultado->success;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

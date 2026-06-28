@@ -380,6 +380,7 @@ final class Bootstrap
                 $c->get(Hasher::class),
                 $c->get(AuditLogger::class),
                 $c->get(TenantContext::class),
+                $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
             ),
         );
 

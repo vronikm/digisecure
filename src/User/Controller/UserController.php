@@ -246,14 +246,21 @@ final class UserController
         $newPassword = (string) $request->post('new_password', '');
 
         try {
-            $this->service->resetearPassword(
+            $emailEnviado = $this->service->resetearPassword(
                 $id,
                 $newPassword,
                 $user->id,
                 $request->clientIp(),
                 $user->esSuperAdmin(),
             );
-            $this->flash->success('Contraseña restablecida correctamente.');
+            if ($emailEnviado) {
+                $this->flash->success('Contraseña restablecida correctamente y enviada por email al usuario.');
+            } else {
+                $this->flash->error(
+                    'La contraseña fue restablecida, pero no se pudo enviar el email. Entregala por un canal seguro o revisa la configuracion SMTP.',
+                    'Email no enviado',
+                );
+            }
         } catch (DomainException $e) {
             $this->flash->error($e->getMessage(), 'No se pudo restablecer la contraseña');
             return Response::redirect($this->securePath($request, "/usuarios/{$id}/editar"));
