@@ -124,7 +124,11 @@ final class Bootstrap
         );
         $container->singleton(
             Hasher::class,
-            static fn(): Hasher => new Hasher(),
+            static fn(Container $c): Hasher => new Hasher(
+                memoryCost: $c->get(Config::class)->int('password.memory_cost', 65536),
+                timeCost: $c->get(Config::class)->int('password.time_cost', 4),
+                threads: $c->get(Config::class)->int('password.threads', 2),
+            ),
         );
         $container->singleton(
             Encryption::class,
@@ -801,6 +805,11 @@ final class Bootstrap
             ],
             'security' => [
                 'secure_url_ttl' => $envVars['SECURE_URL_TTL_SECONDS'] ?? '900',
+            ],
+            'password' => [
+                'memory_cost' => $envVars['PASSWORD_MEMORY_COST'] ?? '65536',
+                'time_cost' => $envVars['PASSWORD_TIME_COST'] ?? '4',
+                'threads' => $envVars['PASSWORD_THREADS'] ?? '2',
             ],
             'recaptcha' => [
                 'site_key' => $envVars['RECAPTCHA_SITE_KEY'] ?? '',

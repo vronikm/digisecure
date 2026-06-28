@@ -119,7 +119,7 @@ final class PasswordResetController
                 $request->userAgent(),
             );
         } catch (DomainException $e) {
-            $usuario = $this->resetService->validateToken($token);
+            $usuario = $this->safeValidateToken($token);
 
             return $this->view->response('auth/reset-password', [
                 'csrfToken' => $csrf->token(),
@@ -129,6 +129,18 @@ final class PasswordResetController
                 'error' => $e->getMessage(),
                 'success' => false,
             ]);
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][PASSWORD_RESET] Error actualizando contrasena: ' . $e->getMessage());
+            $usuario = $this->safeValidateToken($token);
+
+            return $this->view->response('auth/reset-password', [
+                'csrfToken' => $csrf->token(),
+                'token' => $usuario !== null ? $token : '',
+                'email' => $usuario['email'] ?? '',
+                'valid' => $usuario !== null,
+                'error' => 'No se pudo actualizar la contrasena en este momento. Intenta nuevamente o solicita un nuevo enlace.',
+                'success' => false,
+            ], Response::STATUS_UNPROCESSABLE);
         }
 
         return $this->view->response('auth/reset-password', [
@@ -139,5 +151,15 @@ final class PasswordResetController
             'error' => null,
             'success' => true,
         ]);
+    }
+
+    private function safeValidateToken(string $token): ?array
+    {
+        try {
+            return $this->resetService->validateToken($token);
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][PASSWORD_RESET] Error revalidando enlace de recuperacion: ' . $e->getMessage());
+            return null;
+        }
     }
 }
