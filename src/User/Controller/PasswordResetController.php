@@ -75,7 +75,12 @@ final class PasswordResetController
 
     public function showResetForm(Request $request, CsrfGuard $csrf, string $token): Response
     {
-        $usuario = $this->resetService->validateToken($token);
+        try {
+            $usuario = $this->resetService->validateToken($token);
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][PASSWORD_RESET] Error validando enlace de recuperacion: ' . $e->getMessage());
+            $usuario = null;
+        }
 
         if ($usuario === null) {
             return $this->view->response('auth/reset-password', [

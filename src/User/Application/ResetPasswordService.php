@@ -65,7 +65,12 @@ final class ResetPasswordService
         if ($usuario['token_recuperacion_expira_at'] === null) {
             return null;
         }
-        if (new \DateTimeImmutable($usuario['token_recuperacion_expira_at']) < Clock::now()) {
+        try {
+            $expiraAt = new \DateTimeImmutable((string) $usuario['token_recuperacion_expira_at']);
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($expiraAt < Clock::now()) {
             return null;
         }
 
