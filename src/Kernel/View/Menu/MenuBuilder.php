@@ -35,24 +35,24 @@ final class MenuBuilder
             [
                 'type' => 'item',
                 'item' => new MenuItem(
-                    label: 'Empresas cliente',
+                    label: 'Clientes',
                     icon: 'bi-briefcase',
                     permisos: ['clientes.ver'],
                     description: 'Empresas a las que prestas servicios',
                     children: [
                         new MenuItem(
-                            label: 'Listado de empresas cliente',
+                            label: 'Listado de clientes',
                             icon: 'bi-list-ul',
                             url: '/clientes',
                             permisos: ['clientes.ver'],
                             description: 'Filtros, estados y contactos',
                         ),
                         new MenuItem(
-                            label: 'Nueva empresa cliente',
+                            label: 'Nuevo cliente',
                             icon: 'bi-plus-circle',
                             url: '/clientes/crear',
                             permisos: ['clientes.crear'],
-                            description: 'Registrar nueva empresa',
+                            description: 'Registrar nuevo cliente',
                         ),
                     ],
                 ),

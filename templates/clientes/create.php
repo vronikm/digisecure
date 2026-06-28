@@ -6,7 +6,9 @@
  * Opcionales: $error
  */
 
+use DigiSecure\Cliente\Domain\CatalogoCliente;
 use DigiSecure\Kernel\View\ViewRenderer;
+use DigiSecure\Shared\Domain\EcuadorGeo;
 
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
@@ -27,7 +29,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
         <span class="ds-page-mark"><i class="bi bi-briefcase"></i></span>
         <div>
             <h1>Registrar nuevo cliente</h1>
-            <small>Empresa o persona a la que prestaras servicios de seguridad</small>
+            <small>Empresa o persona a la que se prestará servicios de seguridad</small>
         </div>
     </div>
     <a href="<?= $view->url('/clientes') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
@@ -60,20 +62,6 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
         </div>
         <div class="ds-card-body">
             <div class="row g-3">
-                <div class="col-md-8">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Razon social <span class="ds-required">*</span></label>
-                        <input type="text" name="razon_social" class="form-control" required maxlength="255"
-                               value="<?= $e($old('razon_social')) ?>">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Nombre comercial</label>
-                        <input type="text" name="nombre_comercial" class="form-control" maxlength="255"
-                               value="<?= $e($old('nombre_comercial')) ?>">
-                    </div>
-                </div>
                 <div class="col-md-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Tipo documento <span class="ds-required">*</span></label>
@@ -95,11 +83,32 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
                 <div class="col-md-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Sector</label>
-                        <input type="text" name="sector" class="form-control" maxlength="80"
-                               placeholder="Banca, Industria, Retail..."
-                               value="<?= $e($old('sector')) ?>">
+                        <?php $sectorActual = $old('sector'); ?>
+                        <select name="sector" id="cli-sector" class="form-select">
+                            <option value="">— Selecciona —</option>
+                            <?php foreach (CatalogoCliente::SECTORES as $s): ?>
+                            <option value="<?= $e($s) ?>" <?= $sectorActual === $s ? 'selected' : '' ?>><?= $e($s) ?></option>
+                            <?php endforeach ?>
+                            <?php if ($sectorActual !== '' && !in_array($sectorActual, CatalogoCliente::SECTORES, true)): ?>
+                            <option value="<?= $e($sectorActual) ?>" selected><?= $e($sectorActual) ?> (actual)</option>
+                            <?php endif ?>
+                        </select>
                     </div>
                 </div>
+                <div class="col-md-8">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Razon social <span class="ds-required">*</span></label>
+                        <input type="text" name="razon_social" class="form-control" required maxlength="255"
+                               value="<?= $e($old('razon_social')) ?>">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Nombre comercial</label>
+                        <input type="text" name="nombre_comercial" class="form-control" maxlength="255"
+                               value="<?= $e($old('nombre_comercial')) ?>">
+                    </div>
+                </div>                
             </div>
         </div>
     </div>
@@ -150,38 +159,47 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
         <div class="ds-card-header tone-purple">
             <span class="ds-card-mark"><i class="bi bi-geo-alt"></i></span>
             <div>
-                <div class="ds-card-title">Domicilio</div>
-                <div class="ds-card-subtitle">Direccion donde se localiza el cliente</div>
+                <div class="ds-card-title">Ubicación</div>
+                <div class="ds-card-subtitle">Direccin donde se localiza el cliente</div>
             </div>
         </div>
         <div class="ds-card-body">
             <div class="row g-3">
-                <div class="col-md-12">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Direccion</label>
-                        <input type="text" name="direccion" class="form-control" maxlength="255"
-                               value="<?= $e($old('direccion')) ?>">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Ciudad</label>
-                        <input type="text" name="ciudad" class="form-control" maxlength="100"
-                               value="<?= $e($old('ciudad')) ?>">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Provincia</label>
-                        <input type="text" name="provincia" class="form-control" maxlength="100"
-                               value="<?= $e($old('provincia')) ?>">
-                    </div>
-                </div>
                 <div class="col-md-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Pais</label>
                         <input type="text" name="pais" class="form-control" maxlength="2"
                                value="<?= $e($old('pais', 'EC')) ?>">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Provincia</label>
+                        <?php $provActual = $old('provincia'); ?>
+                        <select name="provincia" id="cli-provincia" class="form-select">
+                            <option value="">— Selecciona —</option>
+                            <?php foreach (EcuadorGeo::provincias() as $p): ?>
+                            <option value="<?= $e($p) ?>" <?= $provActual === $p ? 'selected' : '' ?>><?= $e($p) ?></option>
+                            <?php endforeach ?>
+                            <?php if ($provActual !== '' && !in_array($provActual, EcuadorGeo::provincias(), true)): ?>
+                            <option value="<?= $e($provActual) ?>" selected><?= $e($provActual) ?> (actual)</option>
+                            <?php endif ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Ciudad</label>
+                        <select name="ciudad" id="cli-ciudad" class="form-select" data-selected="<?= $e($old('ciudad')) ?>">
+                            <option value="">— Selecciona provincia primero —</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="ds-form-field">
+                        <label class="ds-form-label">Direccion</label>
+                        <input type="text" name="direccion" class="form-control" maxlength="255"
+                               value="<?= $e($old('direccion')) ?>">
                     </div>
                 </div>
                 <div class="col-md-12">
@@ -202,4 +220,5 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
         </button>
     </div>
 </form>
+<?= $view->include('clientes/_geo-script') ?>
 <?php $view->endSection() ?>

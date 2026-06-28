@@ -6,7 +6,9 @@
  * Opcionales: $error
  */
 
+use DigiSecure\Cliente\Domain\CatalogoCliente;
 use DigiSecure\Kernel\View\ViewRenderer;
+use DigiSecure\Shared\Domain\EcuadorGeo;
 
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
@@ -95,8 +97,16 @@ $valor = static fn(string $k, string $d = ''): string => (string) ($input[$k] ??
                 <div class="col-md-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Sector</label>
-                        <input type="text" name="sector" class="form-control" maxlength="80"
-                               value="<?= $e($valor('sector')) ?>">
+                        <?php $sectorActual = $valor('sector'); ?>
+                        <select name="sector" id="cli-sector" class="form-select">
+                            <option value="">— Selecciona —</option>
+                            <?php foreach (CatalogoCliente::SECTORES as $s): ?>
+                            <option value="<?= $e($s) ?>" <?= $sectorActual === $s ? 'selected' : '' ?>><?= $e($s) ?></option>
+                            <?php endforeach ?>
+                            <?php if ($sectorActual !== '' && !in_array($sectorActual, CatalogoCliente::SECTORES, true)): ?>
+                            <option value="<?= $e($sectorActual) ?>" selected><?= $e($sectorActual) ?> (actual)</option>
+                            <?php endif ?>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -164,16 +174,25 @@ $valor = static fn(string $k, string $d = ''): string => (string) ($input[$k] ??
                 </div>
                 <div class="col-md-4">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Ciudad</label>
-                        <input type="text" name="ciudad" class="form-control" maxlength="100"
-                               value="<?= $e($valor('ciudad')) ?>">
+                        <label class="ds-form-label">Provincia</label>
+                        <?php $provActual = $valor('provincia'); ?>
+                        <select name="provincia" id="cli-provincia" class="form-select">
+                            <option value="">— Selecciona —</option>
+                            <?php foreach (EcuadorGeo::provincias() as $p): ?>
+                            <option value="<?= $e($p) ?>" <?= $provActual === $p ? 'selected' : '' ?>><?= $e($p) ?></option>
+                            <?php endforeach ?>
+                            <?php if ($provActual !== '' && !in_array($provActual, EcuadorGeo::provincias(), true)): ?>
+                            <option value="<?= $e($provActual) ?>" selected><?= $e($provActual) ?> (actual)</option>
+                            <?php endif ?>
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Provincia</label>
-                        <input type="text" name="provincia" class="form-control" maxlength="100"
-                               value="<?= $e($valor('provincia')) ?>">
+                        <label class="ds-form-label">Ciudad</label>
+                        <select name="ciudad" id="cli-ciudad" class="form-select" data-selected="<?= $e($valor('ciudad')) ?>">
+                            <option value="">— Selecciona provincia primero —</option>
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -200,4 +219,5 @@ $valor = static fn(string $k, string $d = ''): string => (string) ($input[$k] ??
         </button>
     </div>
 </form>
+<?= $view->include('clientes/_geo-script') ?>
 <?php $view->endSection() ?>
