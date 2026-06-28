@@ -99,15 +99,19 @@ final class ResetPasswordService
 
         $usuario = $this->validateToken($tokenPlano);
         if ($usuario === null) {
-            $this->audit->log(
-                'password_reset.token_invalido',
-                null,
-                null,
-                null,
-                nivel: 'warning',
-                ip: $ip,
-                userAgent: $userAgent,
-            );
+            try {
+                $this->audit->log(
+                    'password_reset.token_invalido',
+                    null,
+                    null,
+                    null,
+                    nivel: 'warning',
+                    ip: $ip,
+                    userAgent: $userAgent,
+                );
+            } catch (\Throwable $e) {
+                error_log('[DIGISECURE][PASSWORD_RESET] Invalid token audit failed: ' . $e->getMessage());
+            }
             throw new DomainException('El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo.');
         }
 
@@ -122,34 +126,41 @@ final class ResetPasswordService
         }
 
         $this->tenantContext->set($usuario['tenant_id'], $usuario['tenant_nombre'], 'activo');
+        $now = Clock::nowString();
+        $passwordHash = $this->hasher->hash($passwordNuevo);
 
         $this->db->execute(
             'UPDATE usuarios SET
                 password_hash = :hash,
-                password_changed_at = :now,
+                password_changed_at = :password_changed_at,
                 debe_cambiar_password = 0,
                 token_recuperacion_hash = NULL,
                 token_recuperacion_expira_at = NULL,
                 intentos_fallidos = 0,
                 bloqueado_hasta = NULL,
-                updated_at = :now
+                updated_at = :updated_at
              WHERE id = :id',
             [
-                'hash' => $this->hasher->hash($passwordNuevo),
-                'now' => Clock::nowString(),
+                'hash' => $passwordHash,
+                'password_changed_at' => $now,
+                'updated_at' => $now,
                 'id' => $usuario['id'],
             ],
         );
 
-        $this->audit->log(
-            'password_reset.completado',
-            $usuario['id'],
-            'usuario',
-            $usuario['id'],
-            detalles: ['email' => $usuario['email']],
-            nivel: 'warning',
-            ip: $ip,
-            userAgent: $userAgent,
-        );
+        try {
+            $this->audit->log(
+                'password_reset.completado',
+                $usuario['id'],
+                'usuario',
+                $usuario['id'],
+                detalles: ['email' => $usuario['email']],
+                nivel: 'warning',
+                ip: $ip,
+                userAgent: $userAgent,
+            );
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][PASSWORD_RESET] Password updated but audit failed: ' . $e->getMessage());
+        }
     }
 }
