@@ -269,6 +269,42 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
     .ff-foto-placeholder i { font-size: 2.6rem; line-height: 1; }
     .ff-foto-placeholder span { font-size: .72rem; }
     .ff-foto-actions { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: center; }
+    /* Encabezado: Tipo de Ficha (izquierda, automático) + Foto (derecha) */
+    .ff-ident-header {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .ff-tipo-box {
+        flex: 1 1 240px;
+        min-width: 220px;
+        display: flex;
+        flex-direction: column;
+        gap: .4rem;
+    }
+    .ff-foto-col { flex: 0 0 auto; }
+    .ff-foto-col .ff-foto-wrap { margin-bottom: 0; }
+    .ff-tipo-display {
+        display: inline-flex;
+        align-items: center;
+        gap: .55rem;
+        padding: .7rem .9rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        font-weight: 700;
+        font-size: 1.05rem;
+        line-height: 1.1;
+        width: fit-content;
+        cursor: default;
+        user-select: none;
+        transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .ff-tipo-display i { font-size: 1.15rem; }
+    .ff-tipo-display.tipo-ingreso { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .ff-tipo-display.tipo-reingreso { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+    .ff-tipo-display.tipo-actualizacion { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
     .ds-step-panel {
         display: none;
     }
@@ -710,25 +746,46 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
     <div class="card shadow-sm mb-3">
         <div class="card-header"><i class="bi bi-person me-2"></i>Datos Personales</div>
         <div class="card-body">
-            <div class="ds-subheader"><i class="bi bi-image"></i>Foto del empleado</div>
-            <div class="ff-foto-wrap">
-                <div class="ff-foto-frame">
-                    <img id="fotoPreview" alt="Foto del empleado" style="display:none;">
-                    <div class="ff-foto-placeholder" id="fotoPlaceholder">
-                        <i class="bi bi-person-bounding-box"></i>
-                        <span>Sin foto</span>
+<?php
+            $tipoFichaMeta = [
+                'INGRESO'       => ['cls' => 'tipo-ingreso',       'icon' => 'bi-box-arrow-in-right'],
+                'REINGRESO'     => ['cls' => 'tipo-reingreso',     'icon' => 'bi-arrow-repeat'],
+                'ACTUALIZACION' => ['cls' => 'tipo-actualizacion', 'icon' => 'bi-pencil-square'],
+            ];
+            $tipoInicial = TipoFicha::tryFrom($defaultTipoFicha) ?? TipoFicha::INGRESO;
+            $tipoMetaInicial = $tipoFichaMeta[$tipoInicial->value];
+            ?>
+            <div class="ff-ident-header">
+                <div class="ff-tipo-box">
+                    <label class="form-label mb-0">Tipo de Ficha</label>
+                    <div class="ff-tipo-display <?= $tipoMetaInicial['cls'] ?>" id="tipoFichaDisplay">
+                        <i class="bi <?= $tipoMetaInicial['icon'] ?>" id="tipoFichaIcon"></i>
+                        <span id="tipoFichaText"><?= $e($tipoInicial->label()) ?></span>
+                    </div>
+                    <input type="hidden" name="tipo_ficha" id="tipoFichaInput" value="<?= $e($tipoInicial->value) ?>">                   
+                </div>
+                <div class="ff-foto-col">
+                    <div class="ds-subheader"><i class="bi bi-image"></i>Foto del empleado</div>
+                    <div class="ff-foto-wrap">
+                        <div class="ff-foto-frame">
+                            <img id="fotoPreview" alt="Foto del empleado" style="display:none;">
+                            <div class="ff-foto-placeholder" id="fotoPlaceholder">
+                                <i class="bi bi-person-bounding-box"></i>
+                                <span>Sin foto</span>
+                            </div>
+                        </div>
+                        <input type="file" id="fotoInput" name="foto" accept="image/png,image/jpeg" hidden>
+                        <div class="ff-foto-actions">
+                            <label class="ds-btn ds-btn-outline ds-btn-sm" for="fotoInput" style="cursor: pointer;">
+                                <i class="bi bi-camera"></i>Subir foto
+                            </label>
+                            <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="fotoClear" style="display: none;">
+                                <i class="bi bi-x-lg"></i>Quitar
+                            </button>
+                        </div>
+                        <span class="ds-form-help" style="text-align: center;">JPG o PNG &middot; máx 2 MB</span>
                     </div>
                 </div>
-                <input type="file" id="fotoInput" name="foto" accept="image/png,image/jpeg" hidden>
-                <div class="ff-foto-actions">
-                    <label class="ds-btn ds-btn-outline ds-btn-sm" for="fotoInput" style="cursor: pointer;">
-                        <i class="bi bi-camera"></i>Subir foto
-                    </label>
-                    <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="fotoClear" style="display: none;">
-                        <i class="bi bi-x-lg"></i>Quitar
-                    </button>
-                </div>
-                <span class="ds-form-help" style="text-align: center;">JPG o PNG &middot; máx 2 MB</span>
             </div>
             <script>
             (function () {
@@ -764,16 +821,6 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
 
             <div class="ds-subheader"><i class="bi bi-tag"></i>Identificación</div>
             <div class="ff-row">
-                <div>
-                    <label class="form-label">Tipo de Ficha <span class="text-danger">*</span></label>
-                    <select name="tipo_ficha" class="form-select" required>
-                        <?php foreach (TipoFicha::cases() as $tipo): ?>
-                        <option value="<?= $tipo->value ?>" <?= $defaultTipoFicha === $tipo->value ? 'selected' : '' ?>>
-                            <?= $e($tipo->label()) ?>
-                        </option>
-                        <?php endforeach ?>
-                    </select>
-                </div>
                 <div>
                     <label class="form-label">Cédula <span class="text-danger">*</span></label>
                     <div class="ff-input-with-icon" id="cedula-wrap">
@@ -1591,6 +1638,26 @@ if (fichaForm) {
         return window.confirm(msg);
     };
 
+    const TIPO_FICHA_META = {
+        INGRESO:       { label: 'Ingreso',       cls: 'tipo-ingreso',       icon: 'bi-box-arrow-in-right' },
+        REINGRESO:     { label: 'Reingreso',     cls: 'tipo-reingreso',     icon: 'bi-arrow-repeat' },
+        ACTUALIZACION: { label: 'Actualización', cls: 'tipo-actualizacion', icon: 'bi-pencil-square' }
+    };
+    const tipoFichaInput = document.getElementById('tipoFichaInput');
+    const tipoFichaDisplay = document.getElementById('tipoFichaDisplay');
+    const tipoFichaText = document.getElementById('tipoFichaText');
+    const tipoFichaIcon = document.getElementById('tipoFichaIcon');
+    const setTipoFicha = (value) => {
+        const meta = TIPO_FICHA_META[value] || TIPO_FICHA_META.INGRESO;
+        const key = TIPO_FICHA_META[value] ? value : 'INGRESO';
+        if (tipoFichaInput) { tipoFichaInput.value = key; }
+        if (tipoFichaText) { tipoFichaText.textContent = meta.label; }
+        if (tipoFichaIcon) { tipoFichaIcon.className = 'bi ' + meta.icon; }
+        if (tipoFichaDisplay) {
+            tipoFichaDisplay.className = 'ff-tipo-display ' + meta.cls;
+        }
+    };
+
     const prefillDesdeCedula = async (cedulaDigits) => {
         if (!CEDULA_PREFILL_ENABLED || !CEDULA_PREFILL_URL) {
             return;
@@ -1619,12 +1686,22 @@ if (fichaForm) {
             }
 
             const payload = await response.json();
+
+            // El Tipo de Ficha se determina automáticamente con el resultado del
+            // servidor (Ingreso / Reingreso / Actualización), independientemente de
+            // si el usuario acepta o no sobrescribir los datos del formulario.
+            setTipoFicha(payload && payload.tipo_ficha ? payload.tipo_ficha : 'INGRESO');
+
             if (!payload || payload.found !== true || typeof payload.input !== 'object') {
+                if (payload && payload.found === true) {
+                    lastCedulaPrefilled = cedulaDigits;
+                }
                 return;
             }
 
             const shouldApply = await confirmarSobrescrituraPrefill();
             if (!shouldApply) {
+                lastCedulaPrefilled = cedulaDigits;
                 return;
             }
 
@@ -1643,6 +1720,8 @@ if (fichaForm) {
             cedulaInput.setCustomValidity('');
             if (cedulaInput.value.length !== 10) {
                 lastCedulaPrefilled = '';
+                // Sin cédula completa no hay empleado que consultar: vuelve a Ingreso.
+                setTipoFicha('INGRESO');
             }
             // Validación en vivo solo cuando completa los 10 dígitos
             if (cedulaInput.value.length === 10) {

@@ -95,7 +95,7 @@ final class FichaRepository extends BaseRepository
     public function findLatestByCedulaHash(string $cedulaHash): ?array
     {
         return $this->tenantQueryOne(
-            'SELECT id, correlativo, nombres, apellidos, email, celular
+            'SELECT id, correlativo, nombres, apellidos, email, celular, fecha_baja, motivo_baja
              FROM fichas
              WHERE cedula_hash = :hash
              ORDER BY created_at DESC

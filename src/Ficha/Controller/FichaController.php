@@ -229,23 +229,37 @@ final class FichaController
             ], Response::STATUS_BAD_REQUEST);
         }
 
-        $latestFicha = $this->fichaRepo->findLatestByCedulaHash(hash('sha256', $cedulaRaw));
+        $cedulaHash = hash('sha256', $cedulaRaw);
+        $latestFicha = $this->fichaRepo->findLatestByCedulaHash($cedulaHash);
         if ($latestFicha === null) {
-            return Response::json(['found' => false]);
+            // La cédula no existe => Ingreso.
+            return Response::json([
+                'found' => false,
+                'tipo_ficha' => TipoFicha::INGRESO->value,
+            ]);
         }
+
+        // La cédula ya existe. Se decide según la baja registrada en la última ficha:
+        //   - tiene fecha de baja Y motivo de baja => Reingreso (empleado dado de baja).
+        //   - sin fecha ni motivo de baja          => Actualización (empleado vigente).
+        $tieneFechaBaja = trim((string) ($latestFicha['fecha_baja'] ?? '')) !== '';
+        $tieneMotivoBaja = trim((string) ($latestFicha['motivo_baja'] ?? '')) !== '';
+        $dadoDeBaja = $tieneFechaBaja && $tieneMotivoBaja;
+        $tipoFicha = ($dadoDeBaja ? TipoFicha::REINGRESO : TipoFicha::ACTUALIZACION)->value;
 
         $baseFichaId = (string) ($latestFicha['id'] ?? '');
-        if ($baseFichaId === '') {
-            return Response::json(['found' => false]);
-        }
-
-        $input = $this->buildCreatePrefillFromFicha($baseFichaId);
+        $input = $baseFichaId !== '' ? $this->buildCreatePrefillFromFicha($baseFichaId) : [];
         if ($input === []) {
-            return Response::json(['found' => false]);
+            // No hay datos para prefijar, pero igual informamos el Tipo de Ficha.
+            return Response::json([
+                'found' => false,
+                'tipo_ficha' => $tipoFicha,
+            ]);
         }
 
         return Response::json([
             'found' => true,
+            'tipo_ficha' => $tipoFicha,
             'input' => $input,
             'source' => [
                 'id' => $baseFichaId,

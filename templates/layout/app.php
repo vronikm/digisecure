@@ -135,7 +135,7 @@ $normalizeMenuSearch = static function (array $parts): string {
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=20.3">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=20.8">
     <style>
         @keyframes dsMenuActivePulse {
             0% {
@@ -208,9 +208,10 @@ $normalizeMenuSearch = static function (array $parts): string {
     </button>
 
     <a href="<?= $view->url('/dashboard') ?>" class="brand">
-        <span class="ds-brand-mark"><i class="bi bi-shield-lock-fill"></i></span>
+        <img class="ds-brand-logo" src="<?= $view->url('/assets/img/logoGemeseg.png') ?>?v=1"
+             alt="<?= $e($user->tenantNombre) ?>" title="<?= $e($user->tenantNombre) ?>">
         <span class="ds-brand-copy">
-            DigiSecure
+            GEMESEG
             <small>Seguridad privada</small>
         </span>
     </a>
@@ -319,6 +320,9 @@ $normalizeMenuSearch = static function (array $parts): string {
 
 <aside class="ds-sidebar">
     <div class="ds-sidebar-inner">
+        <a href="<?= $view->url('/dashboard') ?>" class="ds-sidebar-brand" title="<?= $e($user->tenantNombre) ?>">
+            <img src="<?= $view->url('/assets/img/logoGemeseg.png') ?>?v=1" alt="<?= $e($user->tenantNombre) ?>">
+        </a>
         <div class="ds-sidebar-profile">
             <label class="ds-search-wrap" for="ds-menu-search">
                 <i class="bi bi-search"></i>
@@ -495,7 +499,21 @@ $normalizeMenuSearch = static function (array $parts): string {
 
     const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
 
+    // Marca en <body> si el menú principal está oculto. Sirve para mostrar el
+    // logo en el banner solo cuando el sidebar (que ya lleva su propio logo) no
+    // está visible, evitando duplicar el logo.
+    const reflectMenuVisibility = () => {
+        if (!sidebar) {
+            return;
+        }
+        const menuVisible = isDesktop()
+            ? !sidebar.classList.contains('is-collapsed')
+            : sidebar.classList.contains('show');
+        document.body.classList.toggle('ds-menu-hidden', !menuVisible);
+    };
+
     const syncOverlay = () => {
+        reflectMenuVisibility();
         if (!sidebar || !overlay) {
             return;
         }
@@ -644,6 +662,7 @@ $normalizeMenuSearch = static function (array $parts): string {
     if (sidebar && main && isDesktop()) {
         applyDesktopCollapse(loadDesktopCollapse());
     }
+    reflectMenuVisibility();
 
     window.addEventListener('resize', () => {
         if (!sidebar || !main) {

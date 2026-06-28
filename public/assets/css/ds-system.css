@@ -27,6 +27,7 @@
     --ds-control-h: 42px;
     --ds-control-h-sm: 38px;
     --ds-shadow: 0 18px 48px rgba(9, 29, 53, 0.12);
+    --ds-cat-yellow: #ffcd11; /* Amarillo Caterpillar (PMS 109) */
 }
 
 * { box-sizing: border-box; }
@@ -94,6 +95,39 @@ body {
     background: linear-gradient(135deg, #2f80ed, #0ea5a4);
     font-size: 1.1rem;
     box-shadow: 0 4px 12px rgba(47,128,237,.35);
+}
+
+/* Logo de la empresa en el banner superior, sin fondo (transparente).
+   Oculto por defecto: solo se muestra cuando el menú principal está oculto/
+   colapsado (body.ds-menu-hidden), para no duplicar el logo del sidebar. */
+.ds-brand-logo {
+    height: 52px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    display: none;
+}
+body.ds-menu-hidden .ds-brand-logo {
+    display: block;
+}
+
+/* Logo de la empresa (tenant) en la parte superior del menú lateral. Fondo
+   claro para que el logo sea legible sobre el sidebar oscuro, sin importar
+   sus colores. */
+.ds-sidebar-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.1rem;
+    text-decoration: none;
+}
+.ds-sidebar-brand img {
+    width: 150px;
+    height: 150px;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 14px;
+    padding: 5px;
 }
 
 .ds-brand-copy { line-height: 1.2; }
@@ -710,8 +744,8 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    background: var(--ds-section-soft);
-    color: var(--ds-section-accent);
+    background: rgba(0, 0, 0, 0.28);
+    color: var(--ds-cat-yellow); /* Íconos del menú en amarillo Caterpillar */
     font-size: 0.85rem;
 }
 
