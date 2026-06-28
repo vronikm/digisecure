@@ -48,15 +48,15 @@ final class UserController
         $user = $request->attribute('auth_user');
         $esSuperAdmin = $user->esSuperAdmin();
 
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
-        $offset = ($page - 1) * $limit;
+        $page = 1;
+        $offset = 0;
         $estado = $request->query('estado');
         $estadoFiltro = is_string($estado) && $estado !== '' ? $estado : null;
 
         if ($esSuperAdmin) {
-            $usuarios = $this->repo->listGlobalOrderedByTenant($limit, $offset, $estadoFiltro);
             $total = $this->repo->countGlobal($estadoFiltro);
+            $limit = max(1, $total);
+            $usuarios = $this->repo->listGlobalOrderedByTenant($limit, $offset, $estadoFiltro);
 
             $tenantIds = array_values(array_unique(array_filter(
                 array_map(
@@ -72,11 +72,12 @@ final class UserController
             }
             unset($u);
         } else {
-            $usuarios = $this->repo->listByTenant($limit, $offset, $estadoFiltro);
             $total = $this->repo->countByTenant($estadoFiltro);
+            $limit = max(1, $total);
+            $usuarios = $this->repo->listByTenant($limit, $offset, $estadoFiltro);
         }
 
-        $totalPages = max(1, (int) ceil($total / $limit));
+        $totalPages = 1;
 
         // Cargar roles por usuario para mostrar en la tabla
         $userIds = array_column($usuarios, 'id');

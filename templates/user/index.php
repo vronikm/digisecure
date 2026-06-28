@@ -107,7 +107,7 @@ $hasFilters = !empty($filters['estado'] ?? null);
         <span class="ds-card-mark"><i class="bi bi-people"></i></span>
         <div>
             <div class="ds-card-title">Listado de usuarios</div>
-            <div class="ds-card-subtitle">Usuarios activos por empresa, roles y ultimo acceso</div>
+            <div class="ds-card-subtitle">Todos los usuarios creados, roles y ultimo acceso</div>
         </div>
     </div>
 
