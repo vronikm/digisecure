@@ -37,24 +37,9 @@ final class MenuBuilder
                 'item' => new MenuItem(
                     label: 'Clientes',
                     icon: 'bi-briefcase',
+                    url: '/clientes',
                     permisos: ['clientes.ver'],
-                    description: 'Empresas a las que prestas servicios',
-                    children: [
-                        new MenuItem(
-                            label: 'Listado de clientes',
-                            icon: 'bi-list-ul',
-                            url: '/clientes',
-                            permisos: ['clientes.ver'],
-                            description: 'Filtros, estados y contactos',
-                        ),
-                        new MenuItem(
-                            label: 'Nuevo cliente',
-                            icon: 'bi-plus-circle',
-                            url: '/clientes/crear',
-                            permisos: ['clientes.crear'],
-                            description: 'Registrar nuevo cliente',
-                        ),
-                    ],
+                    description: 'Clientes a las que se presta servicios',                    
                 ),
             ],
             [
@@ -62,24 +47,9 @@ final class MenuBuilder
                 'item' => new MenuItem(
                     label: 'Puestos / Sitios',
                     icon: 'bi-geo-alt',
+                    url: '/puestos',
                     permisos: ['puestos.ver'],
                     description: 'Ubicaciones donde se presta servicio',
-                    children: [
-                        new MenuItem(
-                            label: 'Listado de puestos',
-                            icon: 'bi-list-ul',
-                            url: '/puestos',
-                            permisos: ['puestos.ver'],
-                            description: 'Sitios con plazas y modalidad',
-                        ),
-                        new MenuItem(
-                            label: 'Nuevo puesto',
-                            icon: 'bi-plus-circle',
-                            url: '/puestos/crear',
-                            permisos: ['puestos.crear'],
-                            description: 'Registrar sitio asociado a un cliente',
-                        ),
-                    ],
                 ),
             ],
             [
@@ -87,24 +57,9 @@ final class MenuBuilder
                 'item' => new MenuItem(
                     label: 'Guardias',
                     icon: 'bi-person-badge',
+                    url: '/guardias',
                     permisos: ['guardias.ver'],
-                    description: 'Altas, fichas y seguimiento del personal',
-                    children: [
-                        new MenuItem(
-                            label: 'Listado de guardias',
-                            icon: 'bi-list-ul',
-                            url: '/guardias',
-                            permisos: ['guardias.ver'],
-                            description: 'Datos personales y acceso al historial de fichas',
-                        ),
-                        new MenuItem(
-                            label: 'Nueva ficha',
-                            icon: 'bi-person-plus',
-                            url: '/guardias/crear',
-                            permisos: ['guardias.crear'],
-                            description: 'Registrar un nuevo guardia',
-                        ),
-                    ],
+                    description: 'Altas, fichas y seguimiento del personal',                    
                 ),
             ],
             [
@@ -123,24 +78,9 @@ final class MenuBuilder
                 'item' => new MenuItem(
                     label: 'Asignaciones',
                     icon: 'bi-link-45deg',
+                    url: '/asignaciones',
                     permisos: ['asignaciones.ver'],
-                    description: 'Guardias asignados a puestos',
-                    children: [
-                        new MenuItem(
-                            label: 'Listado',
-                            icon: 'bi-list-ul',
-                            url: '/asignaciones',
-                            permisos: ['asignaciones.ver'],
-                            description: 'Cobertura, periodos y estado',
-                        ),
-                        new MenuItem(
-                            label: 'Nueva asignacion',
-                            icon: 'bi-plus-circle',
-                            url: '/asignaciones/crear',
-                            permisos: ['asignaciones.crear'],
-                            description: 'Vincular guardia a puesto',
-                        ),
-                    ],
+                    description: 'Guardias asignados a puestos',                    
                 ),
             ],
             [
@@ -240,24 +180,9 @@ final class MenuBuilder
                 'item' => new MenuItem(
                     label: 'Usuarios',
                     icon: 'bi-people',
+                    url: '/usuarios',
                     permisos: ['usuarios.ver'],
-                    description: 'Cuentas, estados y accesos internos',
-                    children: [
-                        new MenuItem(
-                            label: 'Listado',
-                            icon: 'bi-person-lines-fill',
-                            url: '/usuarios',
-                            permisos: ['usuarios.ver'],
-                            description: 'Administrar cuentas activas',
-                        ),
-                        new MenuItem(
-                            label: 'Crear usuario',
-                            icon: 'bi-person-plus-fill',
-                            url: '/usuarios/crear',
-                            permisos: ['usuarios.crear'],
-                            description: 'Dar alta a un nuevo usuario',
-                        ),
-                    ],
+                    description: 'Cuentas, estados y accesos internos',                   
                 ),
             ],
             [
@@ -265,24 +190,9 @@ final class MenuBuilder
                 'item' => new MenuItem(
                     label: 'Roles y Permisos',
                     icon: 'bi-shield-lock',
+                    url: '/roles',
                     permisos: ['roles.ver'],
                     description: 'Perfiles, permisos y alcance por rol',
-                    children: [
-                        new MenuItem(
-                            label: 'Listado de roles',
-                            icon: 'bi-list-ul',
-                            url: '/roles',
-                            permisos: ['roles.ver'],
-                            description: 'Revisar perfiles disponibles',
-                        ),
-                        new MenuItem(
-                            label: 'Crear rol',
-                            icon: 'bi-plus-circle',
-                            url: '/roles/crear',
-                            permisos: ['roles.crear'],
-                            description: 'Definir un nuevo perfil',
-                        ),
-                    ],
                 ),
             ],
             [
