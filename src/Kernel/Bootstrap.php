@@ -1021,6 +1021,7 @@ final class Bootstrap
         $router->get('/admin/tenants/{id}/editar', [SuperadminController::class, 'tenantEditarForm'], name: 'admin.tenants.edit', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/editar', [SuperadminController::class, 'tenantActualizar'], name: 'admin.tenants.update', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/estado', [SuperadminController::class, 'cambiarEstado'], name: 'admin.tenants.estado', permission: 'superadmin.tenants.gestionar');
+        $router->post('/admin/tenants/{id}/eliminar', [SuperadminController::class, 'eliminarTenant'], name: 'admin.tenants.destroy', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/plan', [SuperadminController::class, 'cambiarPlan'], name: 'admin.tenants.plan', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/usuarios/asociar', [SuperadminController::class, 'asociarUsuarioTenant'], name: 'admin.tenants.usuarios.asociar', permission: 'superadmin.tenants.gestionar');
         $router->get('/admin/registros', [SuperadminController::class, 'registros'], name: 'admin.registros', permission: 'superadmin.registros.ver');

@@ -7,10 +7,14 @@
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
+use DigiSecure\Security\Auth\AuthenticatedUser;
 
 /** @var ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+$csrfToken = (string) ($csrfToken ?? $view->shared('csrfToken', ''));
+$puedeGestionarTenants = ($user ?? null) instanceof AuthenticatedUser
+    && $user->tienePermiso('superadmin.tenants.gestionar');
 
 $totalPaginas = (int) ceil($total / $porPagina);
 
@@ -163,6 +167,7 @@ $baseParams = array_filter([
             </thead>
             <tbody>
                 <?php foreach ($tenants as $t):
+                    $tenantId = (string) $t['id'];
                     $venc = $t['plan_vencimiento'] ?? null;
                     $diasRest = $venc ? (int) ((strtotime($venc) - time()) / 86400) : null;
                     $vencCls = '';
@@ -174,7 +179,7 @@ $baseParams = array_filter([
                 ?>
                 <tr>
                     <td>
-                        <a href="<?= $view->url('/admin/tenants/' . $e((string) $t['id'])) ?>"
+                        <a href="<?= $view->url('/admin/tenants/' . $tenantId) ?>"
                            class="ds-cell-name" style="text-decoration: none;">
                             <?= $e((string) $t['razon_social']) ?>
                         </a>
@@ -203,10 +208,24 @@ $baseParams = array_filter([
                     <td><span class="ds-cell-mono"><?= $e(substr((string) ($t['created_at'] ?? ''), 0, 10)) ?></span></td>
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
-                            <a href="<?= $view->url('/admin/tenants/' . $e((string) $t['id'])) ?>"
+                            <a href="<?= $view->url('/admin/tenants/' . $tenantId) ?>"
                                class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
                                 Ver
                             </a>
+                            <?php if ($puedeGestionarTenants && (string) $t['estado'] !== 'cancelado'): ?>
+                            <form method="POST"
+                                  action="<?= $view->url('/admin/tenants/' . $tenantId . '/eliminar') ?>"
+                                  onsubmit="return confirm('Eliminar esta empresa del listado activo? Se marcara como cancelada y se conservara el historial.');"
+                                  style="display: inline;">
+                                <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                                <button type="submit"
+                                        class="ds-btn ds-btn-outline ds-btn-sm"
+                                        style="color: #dc2626; border-color: rgba(220,38,38,.3);"
+                                        title="Marcar como cancelada">
+                                    Eliminar
+                                </button>
+                            </form>
+                            <?php endif ?>
                         </div>
                     </td>
                 </tr>

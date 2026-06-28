@@ -15,6 +15,7 @@ $asignados = [];
 foreach ($permisos as $p) {
     $asignados[$p['codigo']] = true;
 }
+$rolId = (string) $rol['id'];
 ?>
 
 <?php $view->section('title') ?>Rol <?= $e($rol['nombre']) ?> - DigiSecure<?php $view->endSection() ?>
@@ -43,7 +44,7 @@ foreach ($permisos as $p) {
     </div>
     <div style="display: flex; gap: .5rem;">
         <?php if ((int) $rol['es_sistema'] === 0 && $user->tienePermiso('roles.editar')): ?>
-        <a href="<?= $view->url('/roles/' . $e((string) $rol['id']) . '/editar') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
+        <a href="<?= $view->url('/roles/' . $rolId . '/editar') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
             <i class="bi bi-pencil"></i>Editar
         </a>
         <?php endif ?>

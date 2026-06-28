@@ -16,6 +16,13 @@ use DigiSecure\Shared\Infrastructure\IdGenerator;
 final class SecureRouteCatalog
 {
     /**
+     * @var array<string, string>
+     */
+    private const LEGACY_RESOURCE_ID_PATTERNS = [
+        'roles.id' => '/^[A-Z0-9]{26}$/',
+    ];
+
+    /**
      * @var array<string, array<string, string>>
      */
     private const ROUTE_PARAM_SCOPES = [
@@ -86,6 +93,7 @@ final class SecureRouteCatalog
         'admin.tenants.edit' => ['id' => 'tenants.id'],
         'admin.tenants.update' => ['id' => 'tenants.id'],
         'admin.tenants.estado' => ['id' => 'tenants.id'],
+        'admin.tenants.destroy' => ['id' => 'tenants.id'],
         'admin.tenants.plan' => ['id' => 'tenants.id'],
         'admin.tenants.usuarios.asociar' => ['id' => 'tenants.id'],
     ];
@@ -158,6 +166,7 @@ final class SecureRouteCatalog
         ['segments' => ['admin', 'tenants', '{id}'], 'scopes' => ['id' => 'tenants.id']],
         ['segments' => ['admin', 'tenants', '{id}', 'editar'], 'scopes' => ['id' => 'tenants.id']],
         ['segments' => ['admin', 'tenants', '{id}', 'estado'], 'scopes' => ['id' => 'tenants.id']],
+        ['segments' => ['admin', 'tenants', '{id}', 'eliminar'], 'scopes' => ['id' => 'tenants.id']],
         ['segments' => ['admin', 'tenants', '{id}', 'plan'], 'scopes' => ['id' => 'tenants.id']],
         ['segments' => ['admin', 'tenants', '{id}', 'usuarios', 'asociar'], 'scopes' => ['id' => 'tenants.id']],
     ];
@@ -218,6 +227,16 @@ final class SecureRouteCatalog
         }
 
         return self::ROUTE_QUERY_SCOPES[$routeName] ?? [];
+    }
+
+    public static function isValidResourceId(string $scope, string $value): bool
+    {
+        if (IdGenerator::isValid($value)) {
+            return true;
+        }
+
+        $legacyPattern = self::LEGACY_RESOURCE_ID_PATTERNS[$scope] ?? null;
+        return $legacyPattern !== null && \preg_match($legacyPattern, $value) === 1;
     }
 
     /**
@@ -297,8 +316,8 @@ final class SecureRouteCatalog
             }
 
             $value = $captured[$paramName];
-            if (!IdGenerator::isValid($value)) {
-                // Si el placeholder sensible no trae ULID, la regla no aplica.
+            if (!self::isValidResourceId($scope, $value)) {
+                // Si el placeholder sensible no trae un ID valido para su scope, la regla no aplica.
                 return null;
             }
 
@@ -350,7 +369,7 @@ final class SecureRouteCatalog
             }
 
             $value = $queryData[$paramName];
-            if (!IdGenerator::isValid($value)) {
+            if (!self::isValidResourceId($scope, $value)) {
                 continue;
             }
 

@@ -15,7 +15,6 @@ use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Session\SessionManager;
 use DigiSecure\Security\Url\SecureRouteCatalog;
 use DigiSecure\Security\Url\SecureUrlTokenService;
-use DigiSecure\Shared\Infrastructure\IdGenerator;
 
 /**
  * Capa de protección de IDs en URL:
@@ -121,8 +120,8 @@ final class SecureUrlMiddleware implements MiddlewareInterface
                 return $this->invalidTokenResponse();
             }
 
-            // Rollout gradual: ULID plano se acepta temporalmente.
-            if (IdGenerator::isValid($value)) {
+            // Rollout gradual: IDs planos validos para su scope se aceptan temporalmente.
+            if (SecureRouteCatalog::isValidResourceId($scope, $value)) {
                 continue;
             }
 
@@ -142,7 +141,7 @@ final class SecureUrlMiddleware implements MiddlewareInterface
                 return $this->invalidTokenResponse();
             }
 
-            if (!IdGenerator::isValid($decodedId)) {
+            if (!SecureRouteCatalog::isValidResourceId($scope, $decodedId)) {
                 return $this->invalidTokenResponse();
             }
 
@@ -195,7 +194,7 @@ final class SecureUrlMiddleware implements MiddlewareInterface
                 continue;
             }
 
-            if (IdGenerator::isValid($rawValue)) {
+            if (SecureRouteCatalog::isValidResourceId($scope, $rawValue)) {
                 $request = $request->withAttribute("query.{$paramName}", $rawValue);
                 continue;
             }
@@ -221,7 +220,7 @@ final class SecureUrlMiddleware implements MiddlewareInterface
 
             $request = $request->withAttribute(
                 "query.{$paramName}",
-                IdGenerator::isValid($decodedId) ? $decodedId : null,
+                SecureRouteCatalog::isValidResourceId($scope, $decodedId) ? $decodedId : null,
             );
         }
 

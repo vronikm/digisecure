@@ -6,7 +6,6 @@ namespace DigiSecure\Security\Url;
 
 use DigiSecure\Security\Auth\AuthenticatedUser;
 use DigiSecure\Security\Crypto\Encryption;
-use DigiSecure\Shared\Infrastructure\IdGenerator;
 
 /**
  * Emite y valida tokens de URL cifrados con AES-256-GCM.
@@ -56,7 +55,7 @@ final class SecureUrlTokenService
         AuthenticatedUser $user,
         string $sessionId,
     ): string {
-        if (!IdGenerator::isValid($resourceId)) {
+        if (!SecureRouteCatalog::isValidResourceId($scope, $resourceId)) {
             throw new SecureUrlTokenException("ID invalido para token seguro ({$paramName}).");
         }
         if ($sessionId === '') {
@@ -137,14 +136,14 @@ final class SecureUrlTokenService
         if ($version !== self::TOKEN_VERSION) {
             throw new SecureUrlTokenException('Version de token no soportada.');
         }
-        if (!IdGenerator::isValid($rid)) {
-            throw new SecureUrlTokenException('Resource ID invalido en token.');
-        }
         if ($scope === '' || !\hash_equals($expectedScope, $scope)) {
             throw new SecureUrlTokenException('Scope de token no coincide.');
         }
         if ($paramName === '' || !\hash_equals($expectedParamName, $paramName)) {
             throw new SecureUrlTokenException('Parametro de token no coincide.');
+        }
+        if (!SecureRouteCatalog::isValidResourceId($expectedScope, $rid)) {
+            throw new SecureUrlTokenException('Resource ID invalido en token.');
         }
         if (!\hash_equals($user->id, $uid) || !\hash_equals($user->tenantId, $tid)) {
             throw new SecureUrlTokenException('Token emitido para otro usuario o tenant.');

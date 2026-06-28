@@ -12,13 +12,14 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
 $esSistema = (int) ($rol['es_sistema'] ?? 0) === 1;
+$rolId = (string) $rol['id'];
 ?>
 
 <?php $view->section('title') ?>Editar rol - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/roles') ?>">Roles</a></li>
-<li class="breadcrumb-item"><a href="<?= $view->url('/roles/' . $e((string) $rol['id'])) ?>"><?= $e($rol['nombre']) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/roles/' . $rolId) ?>"><?= $e($rol['nombre']) ?></a></li>
 <li class="breadcrumb-item active">Editar</li>
 <?php $view->endSection() ?>
 
@@ -31,7 +32,7 @@ $esSistema = (int) ($rol['es_sistema'] ?? 0) === 1;
             <small><span class="ds-cell-mono"><?= $e($rol['codigo']) ?></span></small>
         </div>
     </div>
-    <a href="<?= $view->url('/roles/' . $e((string) $rol['id'])) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+    <a href="<?= $view->url('/roles/' . $rolId) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
         <i class="bi bi-arrow-left"></i>Volver al detalle
     </a>
 </div>
@@ -60,7 +61,7 @@ $esSistema = (int) ($rol['es_sistema'] ?? 0) === 1;
 </div>
 <?php endif ?>
 
-<form class="ds-form-main" method="post" action="<?= $view->url('/roles/' . $e((string) $rol['id']) . '/editar') ?>">
+<form class="ds-form-main" method="post" action="<?= $view->url('/roles/' . $rolId . '/editar') ?>">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">
@@ -164,7 +165,7 @@ $esSistema = (int) ($rol['es_sistema'] ?? 0) === 1;
 
     <?php if (!$esSistema): ?>
     <div class="ds-form-actions is-split">
-        <form class="ds-form-main" method="post" action="<?= $view->url('/roles/' . $e((string) $rol['id']) . '/eliminar') ?>"
+        <form class="ds-form-main" method="post" action="<?= $view->url('/roles/' . $rolId . '/eliminar') ?>"
               onsubmit="return confirm('Estas seguro de eliminar el rol «<?= $e($rol['nombre']) ?>»? Esta accion no se puede deshacer.');"
               style="display: inline;">
             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
@@ -173,7 +174,7 @@ $esSistema = (int) ($rol['es_sistema'] ?? 0) === 1;
             </button>
         </form>
         <div style="display: flex; gap: .55rem;">
-            <a href="<?= $view->url('/roles/' . $e((string) $rol['id'])) ?>" class="ds-btn ds-btn-outline">Cancelar</a>
+            <a href="<?= $view->url('/roles/' . $rolId) ?>" class="ds-btn ds-btn-outline">Cancelar</a>
             <button type="submit" class="ds-btn ds-btn-primary">
                 <i class="bi bi-check-lg"></i>Guardar cambios
             </button>

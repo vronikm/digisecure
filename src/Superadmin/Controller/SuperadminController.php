@@ -56,17 +56,20 @@ final class SuperadminController
 
     // ============================ Listado tenants ============================
 
-    public function tenants(Request $request): Response
+    public function tenants(Request $request, CsrfGuard $csrf): Response
     {
         $busqueda = trim((string) $request->query('q', '')) ?: null;
         $estado = trim((string) $request->query('estado', '')) ?: null;
         $plan = trim((string) $request->query('plan', '')) ?: null;
         $pagina = max(1, (int) $request->query('pagina', '1'));
+        $user = $request->attribute('auth_user');
 
         $resultado = $this->repo->listarTenants($busqueda, $estado, $plan, $pagina, 20);
         $planes = $this->planRepo->listarActivos(false);
 
         return $this->view->response('superadmin/tenants', [
+            'user' => $user,
+            'csrfToken' => $csrf->token(),
             'tenants' => $resultado['rows'],
             'total' => $resultado['total'],
             'pagina' => $pagina,
@@ -268,8 +271,11 @@ final class SuperadminController
             ]);
         }
 
+        $ruc = preg_replace('/\D+/', '', (string) ($input['ruc'] ?? (string) $tenant['ruc'])) ?? '';
+
         $update = [
             'razon_social' => trim((string) ($input['razon_social'] ?? (string) $tenant['razon_social'])),
+            'ruc' => $ruc,
             'nombre_comercial' => trim((string) ($input['nombre_comercial'] ?? (string) ($tenant['nombre_comercial'] ?? ''))) ?: null,
             'email_contacto' => mb_strtolower(trim((string) ($input['email_contacto'] ?? (string) $tenant['email_contacto'])), 'UTF-8'),
             'telefono' => trim((string) ($input['telefono'] ?? (string) ($tenant['telefono'] ?? ''))) ?: null,
@@ -291,6 +297,16 @@ final class SuperadminController
 
         if ($update['razon_social'] === '' || mb_strlen((string) $update['razon_social']) < 3) {
             $this->flash->error('La razon social es obligatoria (minimo 3 caracteres).');
+            return $this->view->response('superadmin/tenant-edit', [
+                'csrfToken' => $csrf->token(),
+                'currentPath' => "/admin/tenants/{$id}/editar",
+                'tenant' => array_merge($tenant, $input),
+                'planes' => $this->planRepo->listarActivos(false),
+                'input' => $input,
+            ]);
+        }
+        if (!preg_match('/^\d{13}$/', (string) $update['ruc'])) {
+            $this->flash->error('El RUC debe tener 13 digitos.');
             return $this->view->response('superadmin/tenant-edit', [
                 'csrfToken' => $csrf->token(),
                 'currentPath' => "/admin/tenants/{$id}/editar",
@@ -322,6 +338,7 @@ final class SuperadminController
                 entidadId: $id,
                 detalles: [
                     'razon_social' => $update['razon_social'],
+                    'ruc_cambiado' => (string) $tenant['ruc'] !== (string) $update['ruc'],
                     'plan_codigo' => $update['plan_codigo'],
                 ],
                 nivel: 'warning',
@@ -453,6 +470,40 @@ final class SuperadminController
         );
 
         return Response::redirect($this->securePath($request, "/admin/tenants/{$id}"));
+    }
+
+    public function eliminarTenant(Request $request, string $id): Response
+    {
+        $tenant = $this->repo->findTenant($id);
+        if ($tenant === null) {
+            $this->flash->error('La empresa indicada no existe.');
+            return Response::redirect('/admin/tenants');
+        }
+
+        if ((string) $tenant['estado'] === 'cancelado') {
+            $this->flash->success('La empresa ya estaba eliminada del listado activo.');
+            return Response::redirect('/admin/tenants');
+        }
+
+        $this->repo->cambiarEstadoTenant($id, 'cancelado');
+        $this->flash->success('Empresa eliminada del listado activo. El historial queda conservado.');
+
+        $user = $request->attribute('auth_user');
+        $this->audit->log(
+            evento: 'superadmin.tenant.eliminado',
+            usuarioId: $user?->id,
+            entidadTipo: 'tenant',
+            entidadId: $id,
+            detalles: [
+                'estado_anterior' => $tenant['estado'],
+                'estado_nuevo' => 'cancelado',
+                'razon_social' => $tenant['razon_social'],
+            ],
+            nivel: 'warning',
+            ip: $request->clientIp(),
+        );
+
+        return Response::redirect('/admin/tenants');
     }
 
     // ============================ Cambiar plan ============================

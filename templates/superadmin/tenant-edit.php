@@ -58,9 +58,10 @@ $v = static fn(string $key, string $default = ''): string => (string) ($in[$key]
                 </div>
                 <div class="col-md-3">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">RUC</label>
-                        <input type="text" class="form-control" value="<?= $e($v('ruc')) ?>" disabled>
-                        <span class="ds-form-help">Por seguridad no se edita desde esta pantalla.</span>
+                        <label class="ds-form-label">RUC <span class="ds-required">*</span></label>
+                        <input type="text" name="ruc" class="form-control" required maxlength="13" minlength="13"
+                               inputmode="numeric" pattern="\d{13}" value="<?= $e($v('ruc')) ?>">
+                        <span class="ds-form-help">Debe contener 13 digitos numericos.</span>
                     </div>
                 </div>
                 <div class="col-md-3">
