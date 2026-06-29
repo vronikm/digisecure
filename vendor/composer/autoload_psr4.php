@@ -21,6 +21,7 @@ return array(
     'DigiSecure\\Ficha\\' => array($baseDir . '/src/Ficha'),
     'DigiSecure\\Expediente\\' => array($baseDir . '/src/Expediente'),
     'DigiSecure\\Cliente\\' => array($baseDir . '/src/Cliente'),
+    'DigiSecure\\Catalogo\\' => array($baseDir . '/src/Catalogo'),
     'DigiSecure\\Aspirante\\' => array($baseDir . '/src/Aspirante'),
     'DigiSecure\\Asignacion\\' => array($baseDir . '/src/Asignacion'),
 );

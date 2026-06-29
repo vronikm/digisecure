@@ -212,6 +212,7 @@ final class FichaController
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
             'cursos' => $cursos,
+            'instituciones' => $this->loadInstitucionesFinancieras(),
             'input' => $input,
             'prefillFromLast' => $prefillFromLast,
             'prefillByCedulaUrl' => '/guardias/prefill/cedula',
@@ -288,6 +289,7 @@ final class FichaController
                 'csrfToken' => $csrf->token(),
                 'currentPath' => '/guardias/crear',
                 'cursos' => $cursos,
+                'instituciones' => $this->loadInstitucionesFinancieras(),
                 'input' => $input,
                 'error' => $e->getMessage(),
                 'prefillByCedulaUrl' => '/guardias/prefill/cedula',
@@ -537,6 +539,21 @@ final class FichaController
     {
         return $this->db->fetchAll(
             'SELECT id, codigo, nombre FROM catalogo_cursos WHERE activo = 1 ORDER BY orden',
+        );
+    }
+
+    /**
+     * Instituciones financieras activas para el campo Banco (bancos primero,
+     * luego cooperativas). Catálogo global compartido por todos los tenants.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function loadInstitucionesFinancieras(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT nombre, tipo FROM instituciones_financieras
+             WHERE activo = 1
+             ORDER BY FIELD(tipo, 'BANCO', 'COOPERATIVA'), orden, nombre",
         );
     }
 

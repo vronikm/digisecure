@@ -48,6 +48,7 @@ use DigiSecure\Security\Lopdp\Controller\LopdpController;
 use DigiSecure\Tenant\Controller\TenantController;
 use DigiSecure\Notification\Controller\NotificacionController;
 use DigiSecure\Expediente\Controller\DocumentoTipoController;
+use DigiSecure\Catalogo\Controller\InstitucionFinancieraController;
 use DigiSecure\User\Controller\PasswordResetController;
 use DigiSecure\Subscription\Controller\SuscripcionController;
 use DigiSecure\Tenant\Controller\RegistroController;
@@ -380,7 +381,7 @@ final class Bootstrap
                 $c->get(Hasher::class),
                 $c->get(AuditLogger::class),
                 $c->get(TenantContext::class),
-                $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
+				$c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
             ),
         );
 
@@ -501,6 +502,14 @@ final class Bootstrap
             static fn(Container $c) => new \DigiSecure\Expediente\Application\ConfigurarDocumentoTipoService(
                 $c->get(\DigiSecure\Expediente\Infrastructure\DocumentoTipoRepository::class),
                 $c->get(AuditLogger::class),
+            ),
+        );
+
+        // 22b. Catálogo global de instituciones financieras (bancos / cooperativas)
+        $container->singleton(
+            \DigiSecure\Catalogo\Infrastructure\InstitucionFinancieraRepository::class,
+            static fn(Container $c) => new \DigiSecure\Catalogo\Infrastructure\InstitucionFinancieraRepository(
+                $c->get(PdoConnection::class),
             ),
         );
 
@@ -967,6 +976,14 @@ final class Bootstrap
         $router->post('/configuracion/documentos/{codigo}', [DocumentoTipoController::class, 'update'], name: 'doctipo.update', permission: 'configuracion.documentos');
         $router->post('/configuracion/documentos/{codigo}/toggle', [DocumentoTipoController::class, 'toggle'], name: 'doctipo.toggle', permission: 'configuracion.documentos');
 
+        // Configuración — Catálogo de instituciones financieras (bancos / cooperativas)
+        $router->get('/configuracion/instituciones-financieras', [InstitucionFinancieraController::class, 'index'], name: 'instfin.index', permission: 'configuracion.instituciones');
+        $router->get('/configuracion/instituciones-financieras/nueva', [InstitucionFinancieraController::class, 'create'], name: 'instfin.create', permission: 'configuracion.instituciones');
+        $router->post('/configuracion/instituciones-financieras', [InstitucionFinancieraController::class, 'store'], name: 'instfin.store', permission: 'configuracion.instituciones');
+        $router->get('/configuracion/instituciones-financieras/{id}/editar', [InstitucionFinancieraController::class, 'edit'], name: 'instfin.edit', permission: 'configuracion.instituciones');
+        $router->post('/configuracion/instituciones-financieras/{id}', [InstitucionFinancieraController::class, 'update'], name: 'instfin.update', permission: 'configuracion.instituciones');
+        $router->post('/configuracion/instituciones-financieras/{id}/eliminar', [InstitucionFinancieraController::class, 'delete'], name: 'instfin.delete', permission: 'configuracion.instituciones');
+
         // LOPDP — Protección de datos personales (Fase 6)
         $router->get('/lopdp', [LopdpController::class, 'dashboard'], name: 'lopdp.index', permission: 'lopdp.gestionar');
         $router->get('/lopdp/solicitudes', [LopdpController::class, 'listarSolicitudes'], name: 'lopdp.solicitudes.index', permission: 'lopdp.gestionar');
@@ -1022,7 +1039,7 @@ final class Bootstrap
         $router->get('/admin/tenants/{id}/editar', [SuperadminController::class, 'tenantEditarForm'], name: 'admin.tenants.edit', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/editar', [SuperadminController::class, 'tenantActualizar'], name: 'admin.tenants.update', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/estado', [SuperadminController::class, 'cambiarEstado'], name: 'admin.tenants.estado', permission: 'superadmin.tenants.gestionar');
-        $router->post('/admin/tenants/{id}/eliminar', [SuperadminController::class, 'eliminarTenant'], name: 'admin.tenants.destroy', permission: 'superadmin.tenants.gestionar');
+		$router->post('/admin/tenants/{id}/eliminar', [SuperadminController::class, 'eliminarTenant'], name: 'admin.tenants.destroy', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/plan', [SuperadminController::class, 'cambiarPlan'], name: 'admin.tenants.plan', permission: 'superadmin.tenants.gestionar');
         $router->post('/admin/tenants/{id}/usuarios/asociar', [SuperadminController::class, 'asociarUsuarioTenant'], name: 'admin.tenants.usuarios.asociar', permission: 'superadmin.tenants.gestionar');
         $router->get('/admin/registros', [SuperadminController::class, 'registros'], name: 'admin.registros', permission: 'superadmin.registros.ver');

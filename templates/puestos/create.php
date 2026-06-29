@@ -7,6 +7,7 @@
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
+use DigiSecure\Shared\Domain\EcuadorGeo;
 
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
@@ -133,7 +134,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
             <span class="ds-card-mark"><i class="bi bi-geo-alt"></i></span>
             <div>
                 <div class="ds-card-title">Ubicación</div>
-                <div class="ds-card-subtitle">Dirección física y coordenadas opcionales</div>
+                <div class="ds-card-subtitle">Dirección física</div>
             </div>
         </div>
         <div class="ds-card-body">
@@ -147,18 +148,27 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
                 </div>
                 <div class="col-md-4">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Ciudad</label>
-                        <input type="text" name="ciudad" class="form-control" maxlength="100"
-                               value="<?= $e($old('ciudad')) ?>">
+                        <label class="ds-form-label">Provincia</label>
+                        <?php $provActual = $old('provincia'); ?>
+                        <select name="provincia" id="puesto-provincia" class="form-select">
+                            <option value="">— Selecciona —</option>
+                            <?php foreach (EcuadorGeo::provincias() as $p): ?>
+                            <option value="<?= $e($p) ?>" <?= $provActual === $p ? 'selected' : '' ?>><?= $e($p) ?></option>
+                            <?php endforeach ?>
+                            <?php if ($provActual !== '' && !in_array($provActual, EcuadorGeo::provincias(), true)): ?>
+                            <option value="<?= $e($provActual) ?>" selected><?= $e($provActual) ?> (actual)</option>
+                            <?php endif ?>
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Provincia</label>
-                        <input type="text" name="provincia" class="form-control" maxlength="100"
-                               value="<?= $e($old('provincia')) ?>">
+                        <label class="ds-form-label">Ciudad</label>
+                        <select name="ciudad" id="puesto-ciudad" class="form-select" data-selected="<?= $e($old('ciudad')) ?>">
+                            <option value="">— Selecciona provincia primero —</option>
+                        </select>
                     </div>
-                </div>   
+                </div>
                 <div class="col-md-12">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Dirección</label>
@@ -220,4 +230,5 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
         </button>
     </div>
 </form>
+<?= $view->include('clientes/_geo-script', ['provinciaId' => 'puesto-provincia', 'ciudadId' => 'puesto-ciudad']) ?>
 <?php $view->endSection() ?>

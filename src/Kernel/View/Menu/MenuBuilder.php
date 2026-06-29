@@ -240,6 +240,17 @@ final class MenuBuilder
                     description: 'Catalogo documental y vigencias',
                 ),
             ],
+            [
+                'type' => 'item',
+                'item' => new MenuItem(
+                    label: 'Instituciones financieras',
+                    icon: 'bi-bank2',
+                    url: '/configuracion/instituciones-financieras',
+                    permisos: ['configuracion.instituciones'],
+                    description: 'Catalogo de bancos y cooperativas',
+                    activeWhenPrefixes: ['/configuracion/instituciones-financieras'],
+                ),
+            ],
 
             ['type' => 'header', 'label' => 'Privacidad'],
             [

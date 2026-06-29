@@ -219,28 +219,51 @@ final class FichaRepository extends BaseRepository
             $conditions[] = 'cedula_hash = :cedula_hash';
         }
 
-        $sql = 'SELECT
-                    MAX(id) AS ficha_id,
-                    cedula_hash,
-                    MAX(cedula_cifrada) AS cedula_cifrada,
-                    MAX(apellidos) AS apellidos,
-                    MAX(nombres) AS nombres,
-                    MAX(fecha_nacimiento) AS fecha_nacimiento,
-                    MAX(celular) AS celular,
-                    MAX(email) AS email,
-                    MAX(created_at) AS ultima_ficha_at,
-                    COUNT(*) AS total_fichas
-                FROM fichas';
+        $tenantId = $this->tenantContext->requireTenantId();
+        $bindings['__tenant_id'] = $tenantId;
 
+        $where = 'WHERE tenant_id = :__tenant_id';
         if ($conditions !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+            $where .= ' AND ' . implode(' AND ', $conditions);
         }
 
-        $sql .= ' GROUP BY cedula_hash
-                  ORDER BY MAX(created_at) DESC
-                  LIMIT :lim OFFSET :off';
+        // cedula_cifrada se toma de la ÚLTIMA ficha (id = MAX(id)), NO con
+        // MAX(cedula_cifrada): cada cifrado usa un IV aleatorio, por lo que
+        // MAX() podía devolver el ciphertext de una ficha antigua/corrupta que
+        // no descifra y el listado mostraba "[cifrado]". La última ficha es la
+        // vigente (misma que abre el detalle) y descifra correctamente.
+        $sql = "SELECT
+                    g.ficha_id,
+                    g.cedula_hash,
+                    lf.cedula_cifrada AS cedula_cifrada,
+                    g.apellidos,
+                    g.nombres,
+                    g.fecha_nacimiento,
+                    g.celular,
+                    g.email,
+                    g.ultima_ficha_at,
+                    g.total_fichas
+                FROM (
+                    SELECT
+                        MAX(id) AS ficha_id,
+                        cedula_hash,
+                        MAX(apellidos) AS apellidos,
+                        MAX(nombres) AS nombres,
+                        MAX(fecha_nacimiento) AS fecha_nacimiento,
+                        MAX(celular) AS celular,
+                        MAX(email) AS email,
+                        MAX(created_at) AS ultima_ficha_at,
+                        COUNT(*) AS total_fichas
+                    FROM fichas
+                    {$where}
+                    GROUP BY cedula_hash
+                    ORDER BY MAX(created_at) DESC
+                    LIMIT :lim OFFSET :off
+                ) g
+                JOIN fichas lf ON lf.id = g.ficha_id
+                ORDER BY g.ultima_ficha_at DESC";
 
-        return $this->tenantQuery($sql, $bindings);
+        return $this->db->fetchAll($sql, $bindings);
     }
 
     /**

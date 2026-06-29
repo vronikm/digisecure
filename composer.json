@@ -46,7 +46,8 @@
             "DigiSecure\\Cliente\\": "src/Cliente/",
             "DigiSecure\\Puesto\\": "src/Puesto/",
             "DigiSecure\\Asignacion\\": "src/Asignacion/",
-            "DigiSecure\\Aspirante\\": "src/Aspirante/"
+            "DigiSecure\\Aspirante\\": "src/Aspirante/",
+            "DigiSecure\\Catalogo\\": "src/Catalogo/"
         }
     },
     "autoload-dev": {

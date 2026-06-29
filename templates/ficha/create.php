@@ -11,6 +11,7 @@ use DigiSecure\Ficha\Domain\Enum\Genero;
 use DigiSecure\Ficha\Domain\Enum\TipoFicha;
 use DigiSecure\Ficha\Domain\Enum\TipoSangre;
 use DigiSecure\Kernel\View\ViewRenderer;
+use DigiSecure\Shared\Domain\EcuadorGeo;
 
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
@@ -885,13 +886,24 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
                     <input type="number" name="estatura" class="form-control" step="0.01" min="1.00" max="2.50"
                            placeholder="1.70" value="<?= $old('estatura') ?>">
                 </div>
-                <div>
-                    <label class="form-label">Ciudad de Nacimiento</label>
-                    <input type="text" name="lugar_nacimiento_ciudad" class="form-control" maxlength="100" value="<?= $old('lugar_nacimiento_ciudad') ?>">
-                </div>
                 <div class="ff-span-2">
                     <label class="form-label">Provincia de Nacimiento</label>
-                    <input type="text" name="lugar_nacimiento_provincia" class="form-control" maxlength="100" value="<?= $old('lugar_nacimiento_provincia') ?>">
+                    <?php $nacProvActual = $old('lugar_nacimiento_provincia'); ?>
+                    <select name="lugar_nacimiento_provincia" id="ficha-nac-provincia" class="form-select">
+                        <option value="">— Selecciona —</option>
+                        <?php foreach (EcuadorGeo::provincias() as $p): ?>
+                        <option value="<?= $e($p) ?>" <?= $nacProvActual === $p ? 'selected' : '' ?>><?= $e($p) ?></option>
+                        <?php endforeach ?>
+                        <?php if ($nacProvActual !== '' && !in_array($nacProvActual, EcuadorGeo::provincias(), true)): ?>
+                        <option value="<?= $e($nacProvActual) ?>" selected><?= $e($nacProvActual) ?> (actual)</option>
+                        <?php endif ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Ciudad de Nacimiento</label>
+                    <select name="lugar_nacimiento_ciudad" id="ficha-nac-ciudad" class="form-select" data-selected="<?= $e($old('lugar_nacimiento_ciudad')) ?>">
+                        <option value="">— Selecciona provincia primero —</option>
+                    </select>
                 </div>
             </div>
 
@@ -980,7 +992,29 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
             <div class="ff-row">
                 <div class="ff-span-2">
                     <label class="form-label">Banco</label>
-                    <input type="text" name="banco" class="form-control" maxlength="120" value="<?= $old('banco') ?>">
+                    <?php
+                    $institucionesList = $instituciones ?? [];
+                    $bancoActual = $old('banco');
+                    $institucionNombres = array_map(static fn(array $i): string => (string) $i['nombre'], $institucionesList);
+                    $institucionesPorTipo = [];
+                    foreach ($institucionesList as $inst) {
+                        $institucionesPorTipo[(string) $inst['tipo']][] = (string) $inst['nombre'];
+                    }
+                    $tipoLabels = ['BANCO' => 'Bancos', 'COOPERATIVA' => 'Cooperativas'];
+                    ?>
+                    <select name="banco" class="form-select">
+                        <option value="">Seleccione...</option>
+                        <?php foreach ($institucionesPorTipo as $tipoKey => $nombres): ?>
+                        <optgroup label="<?= $e($tipoLabels[$tipoKey] ?? $tipoKey) ?>">
+                            <?php foreach ($nombres as $nombre): ?>
+                            <option value="<?= $e($nombre) ?>" <?= $bancoActual === $nombre ? 'selected' : '' ?>><?= $e($nombre) ?></option>
+                            <?php endforeach ?>
+                        </optgroup>
+                        <?php endforeach ?>
+                        <?php if ($bancoActual !== '' && !in_array($bancoActual, $institucionNombres, true)): ?>
+                        <option value="<?= $e($bancoActual) ?>" selected><?= $e($bancoActual) ?> (actual)</option>
+                        <?php endif ?>
+                    </select>
                 </div>
                 <div>
                     <label class="form-label">Tipo de Cuenta</label>
@@ -1032,7 +1066,7 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
             </div>
             <div id="trabajos-container">
                 <p class="text-muted small mb-0" id="trabajos-empty">
-                    <i class="bi bi-info-circle me-1"></i>Requisito básico: al menos 1 trabajo anterior.
+                    <i class="bi bi-info-circle me-1"></i>Opcional: agregue los trabajos anteriores del aspirante si los tiene.
                 </p>
             </div>
 
@@ -1047,10 +1081,14 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
             </div>
 
             <div class="ds-subheader d-flex justify-content-between align-items-center mt-3">
-                <span><i class="bi bi-person-lines-fill"></i>Referencias personales</span>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addReferencia()">
+                <span><i class="bi bi-person-lines-fill"></i>Referencias personales <span class="text-danger">*</span></span>
+                <button type="button" id="referencias-add" class="btn btn-sm btn-outline-primary" onclick="addReferencia()">
                     <i class="bi bi-plus-lg me-1"></i>Agregar
                 </button>
+            </div>
+            <div class="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-2" id="referencias-warning" role="status">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>Debe ingresar <strong>dos referencias personales</strong>. No podrá avanzar a la siguiente fase si no ingresa dos referencias personales.</span>
             </div>
             <div id="referencias-container">
                 <p class="text-muted small mb-0" id="referencias-empty">Sin referencias registradas.</p>
@@ -1226,9 +1264,13 @@ function showStep(index) {
         document.querySelector(`[data-step-target="${step}"]`)?.classList.toggle('active', active);
         document.querySelector(`[data-summary-step="${step}"]`)?.classList.toggle('active', active);
     });
-    document.querySelector('[data-step-prev]')?.toggleAttribute('disabled', currentStepIndex === 0);
-    document.querySelector('[data-step-next]')?.classList.toggle('d-none', currentStepIndex === STEP_ORDER.length - 1);
-    document.querySelector('[data-step-submit]')?.classList.toggle('d-none', currentStepIndex !== STEP_ORDER.length - 1);
+    const isLastStep = currentStepIndex === STEP_ORDER.length - 1;
+    document.querySelectorAll('[data-step-prev]').forEach(el => el.toggleAttribute('disabled', currentStepIndex === 0));
+    // En la última etapa (4/4) NO se muestra "Siguiente": solo queda "Crear Ficha".
+    document.querySelectorAll('[data-step-next]').forEach(el => el.classList.toggle('d-none', isLastStep));
+    document.querySelectorAll('[data-step-submit]').forEach(el => el.classList.toggle('d-none', !isLastStep));
+    // Al cambiar de paso (Siguiente/Anterior/atajo), reubicar al inicio de la pantalla.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function validateStep(step) {
@@ -1238,10 +1280,40 @@ function validateStep(step) {
         updateFieldState(field, true);
         if (!field.checkValidity() && firstInvalid === null) firstInvalid = field;
     });
-    if (!firstInvalid) return true;
-    firstInvalid.reportValidity();
-    firstInvalid.focus({ preventScroll: false });
-    return false;
+    if (firstInvalid) {
+        firstInvalid.reportValidity();
+        firstInvalid.focus({ preventScroll: false });
+        return false;
+    }
+    // El paso 'historial' exige al menos 2 referencias personales.
+    if (step === 'historial' && !validateReferencias()) {
+        return false;
+    }
+    return true;
+}
+
+// ---- Regla: mínimo 2 referencias personales ----
+function referenciasCount() {
+    return document.querySelectorAll('#referencias-container .ref-row').length;
+}
+
+function updateReferenciasState() {
+    const warn = document.getElementById('referencias-warning');
+    if (!warn) return;
+    const ok = referenciasCount() >= 2;
+    // Mensaje en ROJO mientras falten referencias; verde cuando ya hay dos.
+    warn.classList.remove('alert-info', 'alert-danger', 'alert-success');
+    warn.classList.add(ok ? 'alert-success' : 'alert-danger');
+}
+
+function validateReferencias() {
+    const ok = referenciasCount() >= 2;
+    updateReferenciasState(!ok);
+    if (!ok) {
+        const warn = document.getElementById('referencias-warning');
+        if (warn) warn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return ok;
 }
 
 // ---- Trabajos Anteriores ----
@@ -1255,7 +1327,7 @@ function addTrabajo(data = {}) {
     div.innerHTML = `
         <div class="ff-span-2">
             <label class="form-label small">Nombre de la Empresa</label>
-            <input type="text" name="trabajos_anteriores[${i}][empresa]" class="form-control form-control-sm" required value="${esc(data.empresa)}">
+            <input type="text" name="trabajos_anteriores[${i}][empresa]" class="form-control form-control-sm" value="${esc(data.empresa)}">
         </div>
         <div class="ff-span-2">
             <label class="form-label small">Cargo Desempeñado</label>
@@ -1366,6 +1438,7 @@ function addReferencia(data = {}) {
     div.querySelector(`[name="referencias[${i}][nombre]"]`).value = data.nombre || '';
     div.querySelector(`[name="referencias[${i}][direccion]"]`).value = data.direccion || '';
     div.querySelector(`[name="referencias[${i}][telefono]"]`).value = data.telefono || '';
+    updateReferenciasState(false);
     refreshSummary();
 }
 
@@ -1379,6 +1452,7 @@ function checkEmpty(section) {
     };
     if (!container || !empty) return;
     empty.style.display = container.querySelector(selectors[section]) ? 'none' : '';
+    if (section === 'referencias') updateReferenciasState(false);
 }
 
 function clearRepeater(section) {
@@ -1447,8 +1521,8 @@ function applyFichaPrefill(prefill = {}) {
         'apellidos',
         'genero',
         'fecha_nacimiento',
-        'lugar_nacimiento_ciudad',
         'lugar_nacimiento_provincia',
+        'lugar_nacimiento_ciudad',
         'tipo_sangre',
         'estatura',
         'estado_civil',
@@ -1786,7 +1860,15 @@ if (fichaForm) {
     document.querySelectorAll('[data-step-target]').forEach(button => {
         button.addEventListener('click', () => {
             const index = STEP_ORDER.indexOf(button.dataset.stepTarget);
-            if (index >= 0) showStep(index);
+            if (index < 0) return;
+            // No permitir saltar más allá de 'historial' sin 2 referencias personales.
+            const histIdx = STEP_ORDER.indexOf('historial');
+            if (index > histIdx && referenciasCount() < 2) {
+                showStep(histIdx);
+                validateReferencias();
+                return;
+            }
+            showStep(index);
         });
     });
 
@@ -1844,6 +1926,15 @@ if (fichaForm) {
             return;
         }
 
+        // Regla de negocio: no se puede enviar sin dos referencias personales.
+        if (referenciasCount() < 2) {
+            event.preventDefault();
+            const histIdx = STEP_ORDER.indexOf('historial');
+            if (histIdx >= 0) showStep(histIdx);
+            validateReferencias();
+            return;
+        }
+
         if (!REQUIRE_SUBMIT_CONFIRM || submitConfirmed) {
             return;
         }
@@ -1881,6 +1972,8 @@ if (fichaForm) {
 
     showStep(0);
     refreshSummary();
+    updateReferenciasState(false);
 }
 </script>
+<?= $view->include('clientes/_geo-script', ['provinciaId' => 'ficha-nac-provincia', 'ciudadId' => 'ficha-nac-ciudad']) ?>
 <?php $view->endSection() ?>

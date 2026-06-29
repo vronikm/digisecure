@@ -27,6 +27,7 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
             'DigiSecure\\Ficha\\' => 17,
             'DigiSecure\\Expediente\\' => 22,
             'DigiSecure\\Cliente\\' => 19,
+            'DigiSecure\\Catalogo\\' => 20,
             'DigiSecure\\Aspirante\\' => 21,
             'DigiSecure\\Asignacion\\' => 22,
         ),
@@ -93,6 +94,10 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
         array (
             0 => __DIR__ . '/../..' . '/src/Cliente',
         ),
+        'DigiSecure\\Catalogo\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/Catalogo',
+        ),
         'DigiSecure\\Aspirante\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src/Aspirante',
@@ -120,6 +125,9 @@ class ComposerStaticInitab1930ff380bc4704278f28b61496b66
         'DigiSecure\\Aspirante\\Infrastructure\\AspiranteEventLogger' => __DIR__ . '/../..' . '/src/Aspirante/Infrastructure/AspiranteEventLogger.php',
         'DigiSecure\\Aspirante\\Infrastructure\\AspiranteRepository' => __DIR__ . '/../..' . '/src/Aspirante/Infrastructure/AspiranteRepository.php',
         'DigiSecure\\Aspirante\\Infrastructure\\VerificationMailer' => __DIR__ . '/../..' . '/src/Aspirante/Infrastructure/VerificationMailer.php',
+        'DigiSecure\\Catalogo\\Controller\\InstitucionFinancieraController' => __DIR__ . '/../..' . '/src/Catalogo/Controller/InstitucionFinancieraController.php',
+        'DigiSecure\\Catalogo\\Domain\\TipoInstitucion' => __DIR__ . '/../..' . '/src/Catalogo/Domain/TipoInstitucion.php',
+        'DigiSecure\\Catalogo\\Infrastructure\\InstitucionFinancieraRepository' => __DIR__ . '/../..' . '/src/Catalogo/Infrastructure/InstitucionFinancieraRepository.php',
         'DigiSecure\\Cliente\\Application\\GestionarClientesService' => __DIR__ . '/../..' . '/src/Cliente/Application/GestionarClientesService.php',
         'DigiSecure\\Cliente\\Controller\\ClienteController' => __DIR__ . '/../..' . '/src/Cliente/Controller/ClienteController.php',
         'DigiSecure\\Cliente\\Domain\\CatalogoCliente' => __DIR__ . '/../..' . '/src/Cliente/Domain/CatalogoCliente.php',
