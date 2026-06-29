@@ -826,6 +826,9 @@ final class Bootstrap
                 'secret' => $envVars['RECAPTCHA_SECRET_KEY'] ?? '',
                 'timeout_seconds' => $envVars['RECAPTCHA_TIMEOUT_SECONDS'] ?? '5',
             ],
+            'maps' => [
+                'google_key' => $envVars['GOOGLE_MAPS_API_KEY'] ?? '',
+            ],
             'registro' => [
                 'email_blacklist' => $envVars['REGISTRO_EMAIL_BLACKLIST'] ?? '',
                 'aprobacion_rol_codigo' => $envVars['REGISTRO_APROBACION_ROL'] ?? '',

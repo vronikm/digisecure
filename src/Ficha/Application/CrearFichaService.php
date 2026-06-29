@@ -103,6 +103,8 @@ final class CrearFichaService
                 'domicilio_barrio' => $input['domicilio_barrio'] ?? null,
                 'domicilio_referencia' => $input['domicilio_referencia'] ?? null,
                 'domicilio_telefono' => $input['domicilio_telefono'] ?? null,
+                'croquis_latitud' => (isset($input['croquis_latitud']) && is_numeric($input['croquis_latitud'])) ? (float) $input['croquis_latitud'] : null,
+                'croquis_longitud' => (isset($input['croquis_longitud']) && is_numeric($input['croquis_longitud'])) ? (float) $input['croquis_longitud'] : null,
                 'contacto_emergencia_nombre' => $input['contacto_emergencia_nombre'] ?? null,
                 'contacto_emergencia_telefono' => $input['contacto_emergencia_telefono'] ?? null,
                 'instruccion_primaria' => $input['instruccion_primaria'] ?? null,

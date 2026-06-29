@@ -43,7 +43,7 @@ $formBreadcrumbCurrent = isset($formBreadcrumbCurrent) && is_string($formBreadcr
     : 'Nueva Ficha';
 $formKickerLabel = isset($formKickerLabel) && is_string($formKickerLabel) && $formKickerLabel !== ''
     ? $formKickerLabel
-    : 'Nueva Ficha de Guardia';
+    : 'Nueva Ficha';
 $formBackUrl = isset($formBackUrl) && is_string($formBackUrl) && $formBackUrl !== ''
     ? $formBackUrl
     : '/guardias';
@@ -669,6 +669,13 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
     .ds-summary-card .progress-bar {
         background: linear-gradient(90deg, #2f80ed, #1e63c5);
     }
+
+    /* Mensajes informativos del formulario en ROJO: notas de ayuda y estados
+       vacíos (no afecta otras vistas; solo dentro de #fichaForm). */
+    #fichaForm .ds-form-help,
+    #fichaForm .text-muted {
+        color: #dc2626 !important;
+    }
 </style>
 <?php $view->endSection() ?>
 
@@ -708,32 +715,40 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
                 <button type="button" class="ds-step-link active" data-step-target="base">
                     <span class="ds-step-index">1</span>
                     <span class="ds-step-copy">
-                        <strong>Base</strong>
-                        <span>Tipo y datos personales</span>
+                        <strong>Datos personales</strong>
+                        <span>Información personal</span>
                     </span>
                     <span class="badge text-bg-light ds-step-status" data-step-status="base">0/6</span>
                 </button>
                 <button type="button" class="ds-step-link" data-step-target="contacto">
                     <span class="ds-step-index">2</span>
                     <span class="ds-step-copy">
-                        <strong>Contacto</strong>
-                        <span>Domicilio y contacto</span>
+                        <strong>Domicilio</strong>
+                        <span>Dirección y contacto emergencia</span>
                     </span>
                     <span class="badge text-bg-light ds-step-status" data-step-status="contacto">0/0</span>
                 </button>
-                <button type="button" class="ds-step-link" data-step-target="historial">
+                <button type="button" class="ds-step-link" data-step-target="familiares">
                     <span class="ds-step-index">3</span>
                     <span class="ds-step-copy">
-                        <strong>Historial</strong>
-                        <span>Finanzas, instruccion y referencias</span>
+                        <strong>Datos familiares</strong>
+                        <span>Familiares, cónyuge e hijos</span>
+                    </span>
+                    <span class="badge text-bg-light ds-step-status" data-step-status="familiares">0/0</span>
+                </button>
+                <button type="button" class="ds-step-link" data-step-target="historial">
+                    <span class="ds-step-index">4</span>
+                    <span class="ds-step-copy">
+                        <strong>Historial laboral</strong>
+                        <span>Historial laboral y referencias</span>
                     </span>
                     <span class="badge text-bg-light ds-step-status" data-step-status="historial">0/0</span>
                 </button>
                 <button type="button" class="ds-step-link" data-step-target="cursos">
-                    <span class="ds-step-index">4</span>
+                    <span class="ds-step-index">5</span>
                     <span class="ds-step-copy">
-                        <strong>Cursos</strong>
-                        <span>Seleccion y confirmacion</span>
+                        <strong>Educación y Cursos</strong>
+                        <span>Instrucción y cursos de seguridad</span>
                     </span>
                     <span class="badge text-bg-light ds-step-status" data-step-status="cursos">0/0</span>
                 </button>
@@ -921,72 +936,9 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
         </div>
     </div>
 
-    </div>
-
-    <div class="ds-step-panel" data-step-panel="contacto">
-    <!-- Contacto -->
+    <!-- Finanzas (movida al final de Datos Personales) -->
     <div class="card shadow-sm mb-3">
-        <div class="card-header"><i class="bi bi-house me-2"></i>Domicilio y contacto</div>
-        <div class="card-body">
-            <div class="ds-subheader"><i class="bi bi-geo-alt"></i>Dirección</div>
-            <div class="ff-row">
-                <div>
-                    <label class="form-label">Ciudad</label>
-                    <input type="text" name="domicilio_ciudad" class="form-control" maxlength="100" value="<?= $old('domicilio_ciudad') ?>">
-                </div>
-                <div class="ff-span-2">
-                    <label class="form-label">Calle</label>
-                    <input type="text" name="domicilio_calle" class="form-control" maxlength="255" value="<?= $old('domicilio_calle') ?>">
-                </div>
-                <div class="ff-narrow">
-                    <label class="form-label">Número</label>
-                    <input type="text" name="domicilio_numero" class="form-control" maxlength="30" value="<?= $old('domicilio_numero') ?>">
-                </div>
-                <div>
-                    <label class="form-label">Barrio</label>
-                    <input type="text" name="domicilio_barrio" class="form-control" maxlength="150" value="<?= $old('domicilio_barrio') ?>">
-                </div>
-                <div>
-                    <label class="form-label">Tipo de Vivienda</label>
-                    <select name="domicilio_tipo_vivienda" class="form-select">
-                        <option value="">Seleccione...</option>
-                        <?php foreach (['PROPIA' => 'Propia', 'ARRENDADA' => 'Arrendada', 'FAMILIAR' => 'Familiar'] as $v => $l): ?>
-                        <option value="<?= $v ?>" <?= ($input['domicilio_tipo_vivienda'] ?? '') === $v ? 'selected' : '' ?>>
-                            <?= $l ?>
-                        </option>
-                        <?php endforeach ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label">Teléfono Domicilio</label>
-                    <input type="tel" name="domicilio_telefono" class="form-control" maxlength="30" value="<?= $old('domicilio_telefono') ?>">
-                </div>
-                <div class="ff-span-full">
-                    <label class="form-label">Referencia (cómo llegar)</label>
-                    <input type="text" name="domicilio_referencia" class="form-control" maxlength="255" value="<?= $old('domicilio_referencia') ?>">
-                </div>
-            </div>
-
-            <div class="ds-subheader mt-3"><i class="bi bi-telephone-plus"></i>Contacto de emergencia</div>
-            <div class="ff-row">
-                <div class="ff-span-2">
-                    <label class="form-label">Nombre del Contacto</label>
-                    <input type="text" name="contacto_emergencia_nombre" class="form-control" maxlength="200" value="<?= $old('contacto_emergencia_nombre') ?>">
-                </div>
-                <div>
-                    <label class="form-label">Teléfono del Contacto</label>
-                    <input type="tel" name="contacto_emergencia_telefono" class="form-control" maxlength="30" value="<?= $old('contacto_emergencia_telefono') ?>">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    </div>
-
-    <div class="ds-step-panel" data-step-panel="historial">
-    <!-- Finanzas e instrucción -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-header"><i class="bi bi-bank me-2"></i>Finanzas e instrucción</div>
+        <div class="card-header"><i class="bi bi-bank me-2"></i>Finanzas</div>
         <div class="card-body">
             <div class="ds-subheader"><i class="bi bi-cash-coin"></i>Datos financieros</div>
             <div class="ff-row">
@@ -1029,8 +981,216 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
                     <input type="text" name="cuenta_bancaria" class="form-control" maxlength="30" value="<?= $old('cuenta_bancaria') ?>">
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="ds-subheader mt-3"><i class="bi bi-mortarboard"></i>Nivel de instrucción</div>
+    </div>
+
+    <div class="ds-step-panel" data-step-panel="contacto">
+    <!-- Contacto -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-house me-2"></i>Domicilio y contacto</div>
+        <div class="card-body">
+            <div class="ds-subheader"><i class="bi bi-geo-alt"></i>Dirección</div>
+            <div class="ff-row">
+                <div>
+                    <label class="form-label">Ciudad</label>
+                    <input type="text" name="domicilio_ciudad" class="form-control" maxlength="100" value="<?= $old('domicilio_ciudad') ?>">
+                </div>
+                <div class="ff-span-2">
+                    <label class="form-label">Calle</label>
+                    <input type="text" name="domicilio_calle" class="form-control" maxlength="255" value="<?= $old('domicilio_calle') ?>">
+                </div>
+                <div class="ff-narrow">
+                    <label class="form-label">Número</label>
+                    <input type="text" name="domicilio_numero" class="form-control" maxlength="30" value="<?= $old('domicilio_numero') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Barrio</label>
+                    <input type="text" name="domicilio_barrio" class="form-control" maxlength="150" value="<?= $old('domicilio_barrio') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Tipo de Vivienda</label>
+                    <select name="domicilio_tipo_vivienda" class="form-select">
+                        <option value="">Seleccione...</option>
+                        <?php foreach (['PROPIA' => 'Propia', 'ARRENDADA' => 'Arrendada', 'FAMILIAR' => 'Familiar'] as $v => $l): ?>
+                        <option value="<?= $v ?>" <?= ($input['domicilio_tipo_vivienda'] ?? '') === $v ? 'selected' : '' ?>>
+                            <?= $l ?>
+                        </option>
+                        <?php endforeach ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Teléfono Domicilio</label>
+                    <input type="tel" name="domicilio_telefono" class="form-control" maxlength="30" value="<?= $old('domicilio_telefono') ?>">
+                </div>
+                <div class="ff-span-3">
+                    <label class="form-label">Referencia (cómo llegar)</label>
+                    <input type="text" name="domicilio_referencia" class="form-control" maxlength="255" value="<?= $old('domicilio_referencia') ?>">
+                </div>
+            </div>
+
+            <div class="ds-subheader mt-3"><i class="bi bi-telephone-plus"></i>Contacto de emergencia</div>
+            <div class="ff-row">
+                <div class="ff-span-2">
+                    <label class="form-label">Nombre del Contacto</label>
+                    <input type="text" name="contacto_emergencia_nombre" class="form-control" maxlength="200" value="<?= $old('contacto_emergencia_nombre') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Teléfono del Contacto</label>
+                    <input type="tel" name="contacto_emergencia_telefono" class="form-control" maxlength="30" value="<?= $old('contacto_emergencia_telefono') ?>">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Croquis del domicilio (mapa de Google) -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-geo-alt-fill me-2"></i>Croquis del domicilio</div>
+        <div class="card-body">
+            <p class="ds-form-help">Ubique el domicilio en el mapa: haga clic o arrastre el marcador. Se guardarán las coordenadas para mostrarlas al consultar la ficha.</p>
+            <input type="hidden" name="croquis_latitud" id="croquis_latitud" value="<?= $e((string) $old('croquis_latitud')) ?>">
+            <input type="hidden" name="croquis_longitud" id="croquis_longitud" value="<?= $e((string) $old('croquis_longitud')) ?>">
+            <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
+                <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" id="croquis-geoloc"><i class="bi bi-crosshair me-1"></i>Usar mi ubicación</button>
+                <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="croquis-clear"><i class="bi bi-x-lg me-1"></i>Quitar ubicación</button>
+                <span class="ds-form-help mb-0" id="croquis-coords"></span>
+            </div>
+            <?php if (($googleMapsKey ?? '') !== ''): ?>
+            <div id="croquis-map" style="width:100%;height:340px;border-radius:12px;border:1px solid #e2e8f0;background:#eef2f7;"></div>
+            <?php else: ?>
+            <div class="alert alert-warning small mb-0"><i class="bi bi-exclamation-triangle me-1"></i>El mapa no está disponible: configure <code>GOOGLE_MAPS_API_KEY</code> en el entorno. Puede continuar sin ubicación.</div>
+            <?php endif ?>
+        </div>
+    </div>
+
+    </div>
+
+    <!-- FASE: Datos familiares -->
+    <div class="ds-step-panel" data-step-panel="familiares">
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-people-fill me-2"></i>Datos familiares</div>
+        <div class="card-body">
+            <div class="ds-subheader"><i class="bi bi-diagram-3"></i>Datos Familiares</div>
+
+            <div class="ff-row">
+                <div>
+                    <label class="form-label">Padre</label>
+                    <input type="text" name="familiar_padre_nombre" class="form-control" maxlength="200" placeholder="Nombres y apellidos" value="<?= $old('familiar_padre_nombre') ?>">
+                </div>
+                <div class="ff-span-2">
+                    <label class="form-label">Dirección del Padre</label>
+                    <input type="text" name="familiar_padre_direccion" class="form-control" maxlength="255" value="<?= $old('familiar_padre_direccion') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Teléfono del Padre</label>
+                    <input type="text" name="familiar_padre_telefono" class="form-control" maxlength="30" value="<?= $old('familiar_padre_telefono') ?>">
+                </div>
+            </div>
+
+            <div class="ff-row mt-2">
+                <div>
+                    <label class="form-label">Madre</label>
+                    <input type="text" name="familiar_madre_nombre" class="form-control" maxlength="200" placeholder="Nombres y apellidos" value="<?= $old('familiar_madre_nombre') ?>">
+                </div>
+                <div class="ff-span-2">
+                    <label class="form-label">Dirección de la Madre</label>
+                    <input type="text" name="familiar_madre_direccion" class="form-control" maxlength="255" value="<?= $old('familiar_madre_direccion') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Teléfono de la Madre</label>
+                    <input type="text" name="familiar_madre_telefono" class="form-control" maxlength="30" value="<?= $old('familiar_madre_telefono') ?>">
+                </div>
+            </div>
+
+            <div class="ff-row mt-2">
+                <div>
+                    <label class="form-label">Hermano/a</label>
+                    <input type="text" name="familiar_hermano_nombre" class="form-control" maxlength="200" placeholder="Nombres y apellidos" value="<?= $old('familiar_hermano_nombre') ?>">
+                </div>
+                <div class="ff-span-2">
+                    <label class="form-label">Dirección del Hermano/a</label>
+                    <input type="text" name="familiar_hermano_direccion" class="form-control" maxlength="255" value="<?= $old('familiar_hermano_direccion') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Teléfono del Hermano/a</label>
+                    <input type="text" name="familiar_hermano_telefono" class="form-control" maxlength="30" value="<?= $old('familiar_hermano_telefono') ?>">
+                </div>
+            </div>
+
+            <div class="ds-subheader mt-3"><i class="bi bi-heart"></i>Cónyuge</div>
+            <div class="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-2" id="conyuge-warning" role="status" style="display:none;">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>El cónyuge es de ingreso obligatorio cuando el Estado Civil es <strong>Casado/a</strong> o <strong>Unión libre</strong>.</span>
+            </div>
+            <div class="ff-row">
+                <div class="ff-span-2">
+                    <label class="form-label">Nombre del Cónyuge <span class="text-danger conyuge-req" style="display:none;">*</span></label>
+                    <input type="text" name="conyuge_nombre" id="conyuge_nombre" class="form-control" maxlength="200" value="<?= $old('conyuge_nombre') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Cédula del Cónyuge <span class="text-danger conyuge-req" style="display:none;">*</span></label>
+                    <input type="text" name="conyuge_cedula" id="conyuge_cedula" class="form-control" maxlength="10" pattern="\d{10}" inputmode="numeric" autocomplete="off" value="<?= $old('conyuge_cedula') ?>">
+                </div>
+                <div>
+                    <label class="form-label">Edad del Cónyuge <span class="text-danger conyuge-req" style="display:none;">*</span></label>
+                    <input type="number" name="conyuge_edad" id="conyuge_edad" class="form-control" min="18" max="120" value="<?= $old('conyuge_edad') ?>">
+                </div>
+            </div>
+
+            <div class="ds-subheader d-flex justify-content-between align-items-center mt-3">
+                <span><i class="bi bi-people"></i>Hijos menores de 18 años</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addHijo()">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div id="hijos-container">
+                <p class="text-muted small mb-0" id="hijos-empty">Sin hijos menores registrados.</p>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <div class="ds-step-panel" data-step-panel="historial">
+    <!-- Repeaters: Trabajos, Hijos, Referencias -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-collection me-2"></i>Historial laboral y referencias</div>
+        <div class="card-body">
+            <div class="ds-subheader d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-briefcase"></i>Trabajos anteriores</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTrabajo()">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div id="trabajos-container">
+                <p class="text-muted small mb-0" id="trabajos-empty">
+                    <i class="bi bi-info-circle me-1"></i>Opcional: agregue los trabajos anteriores del aspirante si los tiene.
+                </p>
+            </div>
+
+            <div class="ds-subheader d-flex justify-content-between align-items-center mt-3">
+                <span><i class="bi bi-person-lines-fill"></i>Referencias personales <span class="text-danger">*</span></span>
+                <button type="button" id="referencias-add" class="btn btn-sm btn-outline-primary" onclick="addReferencia()">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div class="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-2" id="referencias-warning" role="status">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>Debe ingresar <strong>dos referencias personales</strong>. No podrá avanzar a la siguiente fase si no ingresa dos referencias personales.</span>
+            </div>
+            <div id="referencias-container">
+                <p class="text-muted small mb-0" id="referencias-empty">Sin referencias registradas.</p>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <div class="ds-step-panel" data-step-panel="cursos">
+    <!-- Nivel de instrucción (movido a la fase Cursos, antes de Cursos de Seguridad) -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="bi bi-mortarboard me-2"></i>Nivel de instrucción</div>
+        <div class="card-body">
             <div class="ff-row">
                 <div>
                     <label class="form-label">Instrucción Primaria</label>
@@ -1053,52 +1213,6 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
             </div>
         </div>
     </div>
-
-    <!-- Repeaters: Trabajos, Hijos, Referencias -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-header"><i class="bi bi-collection me-2"></i>Historial laboral y referencias</div>
-        <div class="card-body">
-            <div class="ds-subheader d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-briefcase"></i>Trabajos anteriores</span>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTrabajo()">
-                    <i class="bi bi-plus-lg me-1"></i>Agregar
-                </button>
-            </div>
-            <div id="trabajos-container">
-                <p class="text-muted small mb-0" id="trabajos-empty">
-                    <i class="bi bi-info-circle me-1"></i>Opcional: agregue los trabajos anteriores del aspirante si los tiene.
-                </p>
-            </div>
-
-            <div class="ds-subheader d-flex justify-content-between align-items-center mt-3">
-                <span><i class="bi bi-people"></i>Hijos menores</span>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addHijo()">
-                    <i class="bi bi-plus-lg me-1"></i>Agregar
-                </button>
-            </div>
-            <div id="hijos-container">
-                <p class="text-muted small mb-0" id="hijos-empty">Sin hijos menores registrados.</p>
-            </div>
-
-            <div class="ds-subheader d-flex justify-content-between align-items-center mt-3">
-                <span><i class="bi bi-person-lines-fill"></i>Referencias personales <span class="text-danger">*</span></span>
-                <button type="button" id="referencias-add" class="btn btn-sm btn-outline-primary" onclick="addReferencia()">
-                    <i class="bi bi-plus-lg me-1"></i>Agregar
-                </button>
-            </div>
-            <div class="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-2" id="referencias-warning" role="status">
-                <i class="bi bi-info-circle-fill"></i>
-                <span>Debe ingresar <strong>dos referencias personales</strong>. No podrá avanzar a la siguiente fase si no ingresa dos referencias personales.</span>
-            </div>
-            <div id="referencias-container">
-                <p class="text-muted small mb-0" id="referencias-empty">Sin referencias registradas.</p>
-            </div>
-        </div>
-    </div>
-
-    </div>
-
-    <div class="ds-step-panel" data-step-panel="cursos">
     <!-- 9. Cursos de Seguridad -->
     <div class="card shadow-sm mb-4">
         <div class="card-header"><i class="bi bi-award me-2"></i>Cursos de Seguridad</div>
@@ -1188,7 +1302,7 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <?php endif ?>
 <script>
-const STEP_ORDER = ['base', 'contacto', 'historial', 'cursos'];
+const STEP_ORDER = ['base', 'contacto', 'familiares', 'historial', 'cursos'];
 const prefillTrabajos = <?= json_encode($prefillTrabajos, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 const prefillHijos = <?= json_encode($prefillHijos, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 const prefillReferencias = <?= json_encode($prefillReferencias, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
@@ -1290,6 +1404,21 @@ function validateStep(step) {
         return false;
     }
     return true;
+}
+
+// ---- Cónyuge obligatorio según Estado Civil (Casado/a o Unión libre) ----
+function syncConyugeRequerido() {
+    const estado = document.querySelector('[name="estado_civil"]');
+    const obligatorio = !!estado && (estado.value === 'CASADO' || estado.value === 'UNION_LIBRE');
+    ['conyuge_nombre', 'conyuge_cedula', 'conyuge_edad'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.required = obligatorio;
+        if (!obligatorio) el.setCustomValidity('');
+    });
+    document.querySelectorAll('.conyuge-req').forEach(s => { s.style.display = obligatorio ? '' : 'none'; });
+    const warn = document.getElementById('conyuge-warning');
+    if (warn) warn.style.display = obligatorio ? '' : 'none';
 }
 
 // ---- Regla: mínimo 2 referencias personales ----
@@ -1970,10 +2099,64 @@ if (fichaForm) {
         });
     });
 
+    document.querySelector('[name="estado_civil"]')?.addEventListener('change', syncConyugeRequerido);
+
     showStep(0);
     refreshSummary();
     updateReferenciasState(false);
+    syncConyugeRequerido();
 }
 </script>
+<?php if (($googleMapsKey ?? '') !== ''): ?>
+<script>
+window.initCroquisMap = function () {
+    var mapEl = document.getElementById('croquis-map');
+    if (!mapEl || !window.google || !google.maps) return;
+    var latInput = document.getElementById('croquis_latitud');
+    var lngInput = document.getElementById('croquis_longitud');
+    var coordsEl = document.getElementById('croquis-coords');
+    var DEFAULT = { lat: -3.99313, lng: -79.20422 }; // Loja, Ecuador
+    var lat0 = parseFloat(latInput.value), lng0 = parseFloat(lngInput.value);
+    var has = isFinite(lat0) && isFinite(lng0);
+    var map = new google.maps.Map(mapEl, {
+        center: has ? { lat: lat0, lng: lng0 } : DEFAULT,
+        zoom: has ? 16 : 13,
+        mapTypeControl: false, streetViewControl: false
+    });
+    var marker = null;
+    function show(latLng) {
+        var la = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
+        var ln = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
+        latInput.value = la.toFixed(7);
+        lngInput.value = ln.toFixed(7);
+        if (coordsEl) coordsEl.textContent = 'Lat: ' + la.toFixed(6) + '   Lng: ' + ln.toFixed(6);
+    }
+    function place(pos) {
+        if (!marker) {
+            marker = new google.maps.Marker({ map: map, position: pos, draggable: true });
+            marker.addListener('dragend', function (e) { show(e.latLng); });
+        } else { marker.setPosition(pos); }
+        show(pos);
+    }
+    if (has) place({ lat: lat0, lng: lng0 });
+    map.addListener('click', function (e) { place(e.latLng); });
+    var geo = document.getElementById('croquis-geoloc');
+    if (geo) geo.addEventListener('click', function () {
+        if (!navigator.geolocation) { alert('Geolocalización no disponible en este navegador.'); return; }
+        navigator.geolocation.getCurrentPosition(function (p) {
+            var pos = { lat: p.coords.latitude, lng: p.coords.longitude };
+            map.setCenter(pos); map.setZoom(16); place(pos);
+        }, function () { alert('No se pudo obtener la ubicación.'); });
+    });
+    var clr = document.getElementById('croquis-clear');
+    if (clr) clr.addEventListener('click', function () {
+        if (marker) { marker.setMap(null); marker = null; }
+        latInput.value = ''; lngInput.value = '';
+        if (coordsEl) coordsEl.textContent = '';
+    });
+};
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($googleMapsKey ?? '') ?>&callback=initCroquisMap&loading=async"></script>
+<?php endif ?>
 <?= $view->include('clientes/_geo-script', ['provinciaId' => 'ficha-nac-provincia', 'ciudadId' => 'ficha-nac-ciudad']) ?>
 <?php $view->endSection() ?>

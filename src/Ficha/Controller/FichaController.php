@@ -217,6 +217,7 @@ final class FichaController
             'prefillFromLast' => $prefillFromLast,
             'prefillByCedulaUrl' => '/guardias/prefill/cedula',
             'formEnableCedulaPrefill' => true,
+            'googleMapsKey' => $this->googleMapsKey(),
         ]);
     }
 
@@ -294,6 +295,7 @@ final class FichaController
                 'error' => $e->getMessage(),
                 'prefillByCedulaUrl' => '/guardias/prefill/cedula',
                 'formEnableCedulaPrefill' => true,
+                'googleMapsKey' => $this->googleMapsKey(),
             ]);
         }
     }
@@ -329,6 +331,7 @@ final class FichaController
             'hijos' => $hijos,
             'referencias' => $referencias,
             'cursos' => $cursos,
+            'googleMapsKey' => $this->googleMapsKey(),
         ]);
     }
 
@@ -557,6 +560,18 @@ final class FichaController
         );
     }
 
+    /**
+     * API key de Google Maps (config maps.google_key / env GOOGLE_MAPS_API_KEY).
+     * Vacía si no está configurada; las vistas degradan a un aviso.
+     */
+    private function googleMapsKey(): string
+    {
+        $config = $this->container->get(\DigiSecure\Kernel\Config\Config::class);
+        return $config instanceof \DigiSecure\Kernel\Config\Config
+            ? $config->string('maps.google_key', '')
+            : '';
+    }
+
     private function securePath(Request $request, string $path): string
     {
         $formatter = $request->attribute('secure_url');
@@ -627,6 +642,8 @@ final class FichaController
             'instruccion_secundaria',
             'instruccion_superior',
             'fecha_ultimo_reentrenamiento',
+            'croquis_latitud',
+            'croquis_longitud',
         ];
 
         foreach ($scalarKeys as $key) {
