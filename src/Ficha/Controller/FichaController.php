@@ -14,6 +14,7 @@ use DigiSecure\Ficha\Application\EnviarRevisionFichaService;
 use DigiSecure\Ficha\Application\GenerarDeclaracionLealtadService;
 use DigiSecure\Ficha\Application\GenerarFormatoHuellasService;
 use DigiSecure\Ficha\Application\RecuperarFichaService;
+use DigiSecure\Ficha\Infrastructure\CroquisStorage;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Container\Container;
@@ -333,6 +334,51 @@ final class FichaController
             'cursos' => $cursos,
             'googleMapsKey' => $this->googleMapsKey(),
         ]);
+    }
+
+    public function croquisImagen(Request $request, string $id): Response
+    {
+        $ficha = $this->fichaRepo->findFichaById($id);
+        if ($ficha === null || empty($ficha['croquis_archivo_id'])) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $file = $this->croquisStorage()->find((string) $ficha['croquis_archivo_id']);
+        if ($file === null) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $ifNoneMatch = $request->header('if-none-match');
+        if ($ifNoneMatch !== null && trim($ifNoneMatch) === $file['etag']) {
+            return new Response(
+                status: Response::STATUS_NOT_MODIFIED,
+                headers: ['ETag' => $file['etag']],
+            );
+        }
+
+        $content = @file_get_contents($file['path']);
+        if ($content === false) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $extension = match ($file['mime']) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+
+        return new Response(
+            status: Response::STATUS_OK,
+            body: $content,
+            headers: [
+                'Content-Type' => $file['mime'],
+                'Content-Length' => (string) $file['size'],
+                'Content-Disposition' => 'inline; filename="croquis-' . addslashes((string) ($ficha['correlativo'] ?? $id)) . '.' . $extension . '"',
+                'Cache-Control' => 'private, max-age=300',
+                'ETag' => $file['etag'],
+                'X-Content-Type-Options' => 'nosniff',
+            ],
+        );
     }
 
     // ======================== EDITAR ========================
@@ -872,6 +918,15 @@ final class FichaController
             throw new \RuntimeException('No se pudo resolver ActualizarFichaService.');
         }
         return $service;
+    }
+
+    private function croquisStorage(): CroquisStorage
+    {
+        $storage = $this->container->get(CroquisStorage::class);
+        if (!$storage instanceof CroquisStorage) {
+            throw new \RuntimeException('No se pudo resolver CroquisStorage.');
+        }
+        return $storage;
     }
 
     private function enviarRevisionService(): EnviarRevisionFichaService

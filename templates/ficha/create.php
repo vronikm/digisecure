@@ -89,6 +89,11 @@ $formEnableCedulaPrefill = isset($formEnableCedulaPrefill) ? (bool)$formEnableCe
 $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha']) && $input['tipo_ficha'] !== ''
     ? $input['tipo_ficha']
     : 'INGRESO';
+$currentFichaId = isset($fichaId) && is_string($fichaId) ? $fichaId : (string)($input['id'] ?? '');
+$croquisArchivoId = (string)($input['croquis_archivo_id'] ?? '');
+$croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
+    ? $view->url('/guardias/' . $currentFichaId . '/croquis')
+    : '';
 ?>
 
 <?php $view->section('title') ?><?= $e($formPageTitle) ?> - DigiSecure<?php $view->endSection() ?>
@@ -311,6 +316,192 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
     }
     .ds-step-panel.active {
         display: block;
+    }
+
+    .ds-croquis-preview {
+        display: grid;
+        gap: .75rem;
+    }
+
+    .ds-croquis-preview-frame {
+        position: relative;
+        min-height: 230px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        background: #f8fafc;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+    }
+
+    .ds-croquis-preview-frame img {
+        width: 100%;
+        max-height: 360px;
+        object-fit: contain;
+        background: #fff;
+    }
+
+    .ds-croquis-placeholder {
+        color: #64748b;
+        text-align: center;
+        padding: 1.5rem;
+        font-size: .9rem;
+    }
+
+    .ds-croquis-placeholder i {
+        display: block;
+        font-size: 2rem;
+        margin-bottom: .5rem;
+        color: #94a3b8;
+    }
+
+    .ds-croquis-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 1080;
+    }
+
+    .ds-croquis-modal[hidden] {
+        display: none;
+    }
+
+    .ds-croquis-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, .62);
+    }
+
+    .ds-croquis-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(860px, calc(100vw - 2rem));
+        max-height: min(82vh, 680px);
+        margin: 0;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 22px 70px rgba(15, 23, 42, .35);
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ds-croquis-modal-head,
+    .ds-croquis-modal-actions {
+        padding: .72rem .85rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .ds-croquis-modal-actions {
+        border-bottom: 0;
+        border-top: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+    }
+
+    .ds-croquis-search {
+        display: grid;
+        grid-template-columns: minmax(200px, 1fr) auto auto;
+        gap: .5rem;
+        width: 100%;
+    }
+
+    .ds-croquis-map-wrap {
+        height: min(46vh, 380px);
+        min-height: 260px;
+        background: #e2e8f0;
+    }
+
+    .ds-croquis-tile-map {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #e2e8f0;
+        overflow: hidden;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
+    }
+
+    .ds-croquis-tile-map.is-dragging {
+        cursor: grabbing;
+    }
+
+    .ds-croquis-tile {
+        position: absolute;
+        width: 256px;
+        height: 256px;
+        max-width: none;
+        border: 0;
+        display: block;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+
+    .ds-croquis-marker {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -100%);
+        z-index: 4;
+        color: #dc2626;
+        font-size: 2.35rem;
+        line-height: 1;
+        text-shadow: 0 2px 6px rgba(15, 23, 42, .45), 0 0 0 #fff;
+        pointer-events: none;
+    }
+
+    .ds-croquis-map-status {
+        position: absolute;
+        left: .75rem;
+        bottom: .65rem;
+        z-index: 5;
+        max-width: calc(100% - 1.5rem);
+        padding: .35rem .55rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .92);
+        color: #334155;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, .12);
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .ds-croquis-map-status:empty {
+        display: none;
+    }
+
+    .ds-croquis-zoom {
+        position: absolute;
+        top: .7rem;
+        right: .7rem;
+        z-index: 6;
+        display: grid;
+        gap: .3rem;
+    }
+
+    .ds-croquis-zoom button {
+        width: 2.15rem;
+        height: 2.15rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .96);
+        color: #0f172a;
+        font-weight: 800;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, .14);
+    }
+
+    @media (max-width: 720px) {
+        .ds-croquis-search {
+            grid-template-columns: 1fr;
+        }
+
+        .ds-croquis-map-wrap {
+            min-height: 260px;
+        }
     }
     .ds-form-actions {
         display: flex;
@@ -1044,23 +1235,78 @@ $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha'
         </div>
     </div>
 
-    <!-- Croquis del domicilio (mapa de Google) -->
+    <!-- Croquis del domicilio -->
     <div class="card shadow-sm mb-3">
         <div class="card-header"><i class="bi bi-geo-alt-fill me-2"></i>Croquis del domicilio</div>
         <div class="card-body">
-            <p class="ds-form-help">Ubique el domicilio en el mapa: haga clic o arrastre el marcador. Se guardarán las coordenadas para mostrarlas al consultar la ficha.</p>
+            <p class="ds-form-help">Abra el mapa, ubique el domicilio y capture la vista. La imagen se guardara en el croquis.</p>
             <input type="hidden" name="croquis_latitud" id="croquis_latitud" value="<?= $e((string) $old('croquis_latitud')) ?>">
             <input type="hidden" name="croquis_longitud" id="croquis_longitud" value="<?= $e((string) $old('croquis_longitud')) ?>">
-            <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
-                <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" id="croquis-geoloc"><i class="bi bi-crosshair me-1"></i>Usar mi ubicación</button>
-                <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="croquis-clear"><i class="bi bi-x-lg me-1"></i>Quitar ubicación</button>
-                <span class="ds-form-help mb-0" id="croquis-coords"></span>
+            <input type="hidden" name="croquis_imagen_data" id="croquis_imagen_data" value="">
+            <input type="hidden" name="croquis_eliminar_imagen" id="croquis_eliminar_imagen" value="0">
+            <input type="hidden" name="croquis_mapa_estatico" id="croquis_mapa_estatico" value="0">
+            <input type="hidden" name="croquis_zoom" id="croquis_zoom" value="16">
+
+            <div class="ds-croquis-preview">
+                <div class="ds-croquis-preview-frame">
+                    <img id="croquis-preview-img"
+                         src="<?= $e($croquisImagenUrl) ?>"
+                         alt="Croquis del domicilio"
+                         style="<?= $croquisImagenUrl !== '' ? '' : 'display:none;' ?>">
+                    <div id="croquis-preview-empty" class="ds-croquis-placeholder" style="<?= $croquisImagenUrl !== '' ? 'display:none;' : '' ?>">
+                        <i class="bi bi-map"></i>
+                        Aun no hay imagen del croquis. Abra el mapa y capture la ubicacion.
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" id="croquis-open-map"><i class="bi bi-map me-1"></i>Abrir mapa</button>
+                    <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" id="croquis-upload-trigger"><i class="bi bi-image me-1"></i>Cargar imagen</button>
+                    <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="croquis-delete-image"><i class="bi bi-trash me-1"></i>Borrar imagen</button>
+                    <input type="file" id="croquis-file-input" accept="image/png,image/jpeg,image/webp" hidden>
+                    <span class="ds-form-help mb-0" id="croquis-coords"></span>
+                </div>
             </div>
-            <?php if (($googleMapsKey ?? '') !== ''): ?>
-            <div id="croquis-map" style="width:100%;height:340px;border-radius:12px;border:1px solid #e2e8f0;background:#eef2f7;"></div>
-            <?php else: ?>
-            <div class="alert alert-warning small mb-0"><i class="bi bi-exclamation-triangle me-1"></i>El mapa no está disponible: configure <code>GOOGLE_MAPS_API_KEY</code> en el entorno. Puede continuar sin ubicación.</div>
-            <?php endif ?>
+
+            <div class="ds-croquis-modal" id="croquis-modal" hidden aria-hidden="true">
+                <div class="ds-croquis-backdrop" data-croquis-close></div>
+                <div class="ds-croquis-dialog" role="dialog" aria-modal="true" aria-labelledby="croquis-modal-title">
+                    <div class="ds-croquis-modal-head">
+                        <div>
+                            <div class="ds-card-title" id="croquis-modal-title">Ubicar domicilio en el mapa</div>
+                            <div class="ds-form-help">Busque la direccion, use la ubicacion del dispositivo o haga clic sobre el mapa para ajustar el punto.</div>
+                        </div>
+                        <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" data-croquis-close><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="ds-croquis-modal-head">
+                        <div class="ds-croquis-search">
+                            <input type="text" class="form-control" id="croquis-search-query" placeholder="Direccion o referencia">
+                            <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" id="croquis-load-address"><i class="bi bi-house-door me-1"></i>Usar datos del formulario</button>
+                            <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" id="croquis-search"><i class="bi bi-search me-1"></i>Buscar</button>
+                        </div>
+                    </div>
+                    <div class="ds-croquis-map-wrap" id="croquis-map-capture-area">
+                        <div id="croquis-map" class="ds-croquis-tile-map" role="application" aria-label="Mapa para croquis">
+                            <div id="croquis-map-tiles"></div>
+                            <div class="ds-croquis-marker" aria-hidden="true"><i class="bi bi-geo-alt-fill"></i></div>
+                            <div class="ds-croquis-zoom" aria-label="Zoom del mapa">
+                                <button type="button" id="croquis-zoom-in" aria-label="Acercar mapa">+</button>
+                                <button type="button" id="croquis-zoom-out" aria-label="Alejar mapa">-</button>
+                            </div>
+                            <div class="ds-croquis-map-status" id="croquis-map-status">Cargando mapa...</div>
+                        </div>
+                    </div>
+                    <div class="ds-croquis-modal-actions">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" id="croquis-geoloc"><i class="bi bi-crosshair me-1"></i>Usar mi ubicacion</button>
+                            <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="croquis-clear"><i class="bi bi-x-lg me-1"></i>Quitar ubicacion</button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" id="croquis-capture"><i class="bi bi-camera me-1"></i>Capturar mapa</button>
+                            <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" data-croquis-close>Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2107,56 +2353,645 @@ if (fichaForm) {
     syncConyugeRequerido();
 }
 </script>
-<?php if (($googleMapsKey ?? '') !== ''): ?>
 <script>
-window.initCroquisMap = function () {
-    var mapEl = document.getElementById('croquis-map');
-    if (!mapEl || !window.google || !google.maps) return;
-    var latInput = document.getElementById('croquis_latitud');
-    var lngInput = document.getElementById('croquis_longitud');
-    var coordsEl = document.getElementById('croquis-coords');
-    var DEFAULT = { lat: -3.99313, lng: -79.20422 }; // Loja, Ecuador
-    var lat0 = parseFloat(latInput.value), lng0 = parseFloat(lngInput.value);
-    var has = isFinite(lat0) && isFinite(lng0);
-    var map = new google.maps.Map(mapEl, {
-        center: has ? { lat: lat0, lng: lng0 } : DEFAULT,
-        zoom: has ? 16 : 13,
-        mapTypeControl: false, streetViewControl: false
-    });
-    var marker = null;
-    function show(latLng) {
-        var la = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
-        var ln = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
-        latInput.value = la.toFixed(7);
-        lngInput.value = ln.toFixed(7);
-        if (coordsEl) coordsEl.textContent = 'Lat: ' + la.toFixed(6) + '   Lng: ' + ln.toFixed(6);
+(function () {
+    const modal = document.getElementById('croquis-modal');
+    const openBtn = document.getElementById('croquis-open-map');
+    const mapEl = document.getElementById('croquis-map');
+    const tilePane = document.getElementById('croquis-map-tiles');
+    const mapStatus = document.getElementById('croquis-map-status');
+    const searchInput = document.getElementById('croquis-search-query');
+    const searchBtn = document.getElementById('croquis-search');
+    const loadAddressBtn = document.getElementById('croquis-load-address');
+    const captureBtn = document.getElementById('croquis-capture');
+    const geoBtn = document.getElementById('croquis-geoloc');
+    const clearBtn = document.getElementById('croquis-clear');
+    const zoomInBtn = document.getElementById('croquis-zoom-in');
+    const zoomOutBtn = document.getElementById('croquis-zoom-out');
+    const deleteBtn = document.getElementById('croquis-delete-image');
+    const uploadTrigger = document.getElementById('croquis-upload-trigger');
+    const fileInput = document.getElementById('croquis-file-input');
+    const previewImg = document.getElementById('croquis-preview-img');
+    const previewEmpty = document.getElementById('croquis-preview-empty');
+    const imageDataInput = document.getElementById('croquis_imagen_data');
+    const deleteInput = document.getElementById('croquis_eliminar_imagen');
+    const staticMapInput = document.getElementById('croquis_mapa_estatico');
+    const latInput = document.getElementById('croquis_latitud');
+    const lngInput = document.getElementById('croquis_longitud');
+    const zoomInput = document.getElementById('croquis_zoom');
+    const coordsEl = document.getElementById('croquis-coords');
+
+    if (!modal || !openBtn || !mapEl || !tilePane) {
+        return;
     }
-    function place(pos) {
-        if (!marker) {
-            marker = new google.maps.Marker({ map: map, position: pos, draggable: true });
-            marker.addListener('dragend', function (e) { show(e.latLng); });
-        } else { marker.setPosition(pos); }
-        show(pos);
-    }
-    if (has) place({ lat: lat0, lng: lng0 });
-    map.addListener('click', function (e) { place(e.latLng); });
-    var geo = document.getElementById('croquis-geoloc');
-    if (geo) geo.addEventListener('click', function () {
-        if (!navigator.geolocation) { alert('Geolocalización no disponible en este navegador.'); return; }
-        navigator.geolocation.getCurrentPosition(function (p) {
-            var pos = { lat: p.coords.latitude, lng: p.coords.longitude };
-            map.setCenter(pos); map.setZoom(16); place(pos);
-        }, function () { alert('No se pudo obtener la ubicación.'); });
+
+    const originalParent = modal.parentNode;
+    const originalNextSibling = modal.nextSibling;
+    const DEFAULT_LAT = -3.99313;
+    const DEFAULT_LNG = -79.20422;
+    const TILE_SIZE = 256;
+    const MIN_ZOOM = 5;
+    const MAX_ZOOM = 18;
+    const SNAPSHOT_WIDTH = 860;
+    const SNAPSHOT_HEIGHT = 380;
+    const OSM_ATTRIBUTION = 'OpenStreetMap contributors';
+    let zoom = Number.parseInt(zoomInput?.value || '16', 10);
+    let center = {
+        lat: Number.parseFloat(latInput?.value || '') || DEFAULT_LAT,
+        lng: Number.parseFloat(lngInput?.value || '') || DEFAULT_LNG,
+    };
+    let dragState = null;
+    let suppressNextClick = false;
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const clampLat = (lat) => clamp(lat, -85.05112878, 85.05112878);
+    const normalizeLng = (lng) => {
+        const normalized = ((lng + 180) % 360 + 360) % 360 - 180;
+        return normalized === -180 ? 180 : normalized;
+    };
+    const clampZoom = (value) => clamp(Number.parseInt(value, 10) || 16, MIN_ZOOM, MAX_ZOOM);
+
+    const currentCoordsQuery = () => {
+        const lat = Number.parseFloat(latInput?.value || '');
+        const lng = Number.parseFloat(lngInput?.value || '');
+        return Number.isFinite(lat) && Number.isFinite(lng) ? `${lat.toFixed(7)},${lng.toFixed(7)}` : '';
+    };
+
+    const formAddress = () => {
+        const names = ['domicilio_calle', 'domicilio_numero', 'domicilio_barrio', 'domicilio_ciudad', 'domicilio_referencia'];
+        const parts = names
+            .map(name => document.querySelector(`[name="${name}"]`)?.value?.trim() || '')
+            .filter(Boolean);
+        parts.push('Ecuador');
+        return parts.join(', ');
+    };
+
+    const updateCoordsLabel = () => {
+        if (!coordsEl) return;
+        const q = currentCoordsQuery();
+        coordsEl.textContent = q ? `Lat/Lng: ${q}` : '';
+    };
+
+    const setStatus = (message) => {
+        if (mapStatus) {
+            mapStatus.textContent = message || '';
+        }
+    };
+
+    const latLngToPixel = (lat, lng, z) => {
+        const sinLat = clamp(Math.sin(clampLat(lat) * Math.PI / 180), -0.9999, 0.9999);
+        const scale = TILE_SIZE * Math.pow(2, z);
+        return {
+            x: (normalizeLng(lng) + 180) / 360 * scale,
+            y: (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale,
+        };
+    };
+
+    const pixelToLatLng = (x, y, z) => {
+        const scale = TILE_SIZE * Math.pow(2, z);
+        const lng = x / scale * 360 - 180;
+        const n = Math.PI - 2 * Math.PI * y / scale;
+        const lat = 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+        return { lat: clampLat(lat), lng: normalizeLng(lng) };
+    };
+
+    const tileUrl = (x, y, z) => {
+        const tileCount = Math.pow(2, z);
+        const wrappedX = ((x % tileCount) + tileCount) % tileCount;
+        return `https://tile.openstreetmap.org/${z}/${wrappedX}/${y}.png`;
+    };
+
+    const renderMap = () => {
+        const rect = mapEl.getBoundingClientRect();
+        const width = Math.max(Math.round(rect.width || SNAPSHOT_WIDTH), 320);
+        const height = Math.max(Math.round(rect.height || SNAPSHOT_HEIGHT), 240);
+        const centerPixel = latLngToPixel(center.lat, center.lng, zoom);
+        const startX = centerPixel.x - width / 2;
+        const startY = centerPixel.y - height / 2;
+        const minTileX = Math.floor(startX / TILE_SIZE);
+        const maxTileX = Math.floor((startX + width) / TILE_SIZE);
+        const minTileY = Math.floor(startY / TILE_SIZE);
+        const maxTileY = Math.floor((startY + height) / TILE_SIZE);
+        const tileCount = Math.pow(2, zoom);
+        let total = 0;
+        let loaded = 0;
+        let failed = 0;
+
+        tilePane.innerHTML = '';
+        tilePane.style.position = 'absolute';
+        tilePane.style.inset = '0';
+        tilePane.style.transform = '';
+        setStatus('Cargando mapa...');
+
+        for (let y = minTileY; y <= maxTileY; y += 1) {
+            if (y < 0 || y >= tileCount) {
+                continue;
+            }
+
+            for (let x = minTileX; x <= maxTileX; x += 1) {
+                total += 1;
+                const img = document.createElement('img');
+                img.className = 'ds-croquis-tile';
+                img.alt = '';
+                img.decoding = 'async';
+                img.loading = 'eager';
+                img.crossOrigin = 'anonymous';
+                img.referrerPolicy = 'no-referrer';
+                img.draggable = false;
+                img.style.left = `${Math.round(x * TILE_SIZE - startX)}px`;
+                img.style.top = `${Math.round(y * TILE_SIZE - startY)}px`;
+                img.src = tileUrl(x, y, zoom);
+                img.addEventListener('load', () => {
+                    loaded += 1;
+                    if (loaded === 1) {
+                        setStatus('');
+                    }
+                }, { once: true });
+                img.addEventListener('error', () => {
+                    failed += 1;
+                    if (failed >= total && loaded === 0) {
+                        setStatus('No se pudieron cargar los mosaicos. Revise la conexion.');
+                    }
+                }, { once: true });
+                tilePane.appendChild(img);
+            }
+        }
+
+        if (total === 0) {
+            setStatus('No se pudo preparar el mapa para esas coordenadas.');
+        }
+    };
+
+    const setMapPosition = (lat, lng, label = '') => {
+        const la = Number(lat);
+        const ln = Number(lng);
+        if (!Number.isFinite(la) || !Number.isFinite(ln)) {
+            return false;
+        }
+        center = { lat: clampLat(la), lng: normalizeLng(ln) };
+        zoom = clampZoom(zoom);
+        if (latInput) latInput.value = center.lat.toFixed(7);
+        if (lngInput) lngInput.value = center.lng.toFixed(7);
+        if (zoomInput) zoomInput.value = String(zoom);
+        updateCoordsLabel();
+        if (searchInput && label !== '') {
+            searchInput.value = label;
+        }
+        renderMap();
+        return true;
+    };
+
+    const parseCoords = (query) => {
+        const match = String(query || '').trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+        return match ? { lat: Number.parseFloat(match[1]), lng: Number.parseFloat(match[2]) } : null;
+    };
+
+    const geocodeQuery = async (query) => {
+        const q = (query || '').trim();
+        if (q === '') {
+            return false;
+        }
+        const coords = parseCoords(q);
+        if (coords) {
+            return setMapPosition(coords.lat, coords.lng, q);
+        }
+
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=es&q=${encodeURIComponent(q)}`;
+        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) {
+            throw new Error('geocode_failed');
+        }
+        const data = await response.json();
+        if (!Array.isArray(data) || !data[0]) {
+            return false;
+        }
+        return setMapPosition(Number.parseFloat(data[0].lat), Number.parseFloat(data[0].lon), q);
+    };
+
+    const notifyLocationIssue = (message) => {
+        if (window.Swal) {
+            window.Swal.fire({
+                icon: 'warning',
+                title: 'Ubicacion no disponible',
+                text: message,
+                confirmButtonText: 'Entendido',
+            });
+            return;
+        }
+        alert(message);
+    };
+
+    const setMapQuery = async (query) => {
+        const q = (query || '').trim() || currentCoordsQuery() || formAddress() || 'Loja Ecuador';
+        if (searchInput) {
+            searchInput.value = q;
+        }
+        renderMap();
+        try {
+            const found = await geocodeQuery(q);
+            if (!found) {
+                notifyLocationIssue('No se encontro la direccion. Ajuste el texto o haga clic sobre el mapa.');
+            }
+        } catch (error) {
+            notifyLocationIssue('No se pudo consultar la direccion. El mapa sigue disponible para marcar manualmente.');
+        }
+    };
+
+    const openModal = () => {
+        if (modal.parentNode !== document.body) {
+            document.body.appendChild(modal);
+        }
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        window.requestAnimationFrame(() => {
+            renderMap();
+            setMapQuery(searchInput?.value || currentCoordsQuery() || formAddress());
+        });
+    };
+
+    const closeModal = () => {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        if (originalParent && modal.parentNode === document.body) {
+            originalParent.insertBefore(modal, originalNextSibling);
+        }
+    };
+
+    const setPreview = (dataUrl) => {
+        if (!previewImg || !previewEmpty || !imageDataInput || !deleteInput) return;
+        previewImg.src = dataUrl;
+        previewImg.style.display = '';
+        previewEmpty.style.display = 'none';
+        imageDataInput.value = dataUrl;
+        deleteInput.value = '0';
+        if (staticMapInput) {
+            staticMapInput.value = '0';
+        }
+    };
+
+    const setStaticMapPreview = (dataUrl) => {
+        if (!previewImg || !previewEmpty || !staticMapInput || !deleteInput || !imageDataInput) return;
+        previewImg.src = dataUrl;
+        previewImg.style.display = '';
+        previewEmpty.style.display = 'none';
+        imageDataInput.value = '';
+        staticMapInput.value = '1';
+        deleteInput.value = '0';
+    };
+
+    const clearPreview = () => {
+        if (previewImg) {
+            previewImg.removeAttribute('src');
+            previewImg.style.display = 'none';
+        }
+        if (previewEmpty) {
+            previewEmpty.style.display = '';
+        }
+        if (imageDataInput) {
+            imageDataInput.value = '';
+        }
+        if (deleteInput) {
+            deleteInput.value = '1';
+        }
+        if (staticMapInput) {
+            staticMapInput.value = '0';
+        }
+    };
+
+    const loadTileForCanvas = (url) => new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.referrerPolicy = 'no-referrer';
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
     });
-    var clr = document.getElementById('croquis-clear');
-    if (clr) clr.addEventListener('click', function () {
-        if (marker) { marker.setMap(null); marker = null; }
-        latInput.value = ''; lngInput.value = '';
-        if (coordsEl) coordsEl.textContent = '';
+
+    const drawCanvasMarker = (ctx, x, y) => {
+        ctx.save();
+        ctx.fillStyle = '#dc2626';
+        ctx.strokeStyle = 'rgba(255,255,255,.95)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(x, y - 18, 15, 0, Math.PI * 2);
+        ctx.moveTo(x, y + 12);
+        ctx.lineTo(x - 11, y - 6);
+        ctx.lineTo(x + 11, y - 6);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(x, y - 18, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    };
+
+    const drawAttribution = (ctx, width, height) => {
+        ctx.save();
+        ctx.font = '12px Arial, sans-serif';
+        const text = OSM_ATTRIBUTION;
+        const textWidth = ctx.measureText(text).width;
+        const x = width - textWidth - 12;
+        const y = height - 18;
+        ctx.fillStyle = 'rgba(255,255,255,.88)';
+        ctx.fillRect(x - 6, y - 13, textWidth + 10, 18);
+        ctx.fillStyle = '#334155';
+        ctx.fillText(text, x, y);
+        ctx.restore();
+    };
+
+    const renderSnapshotDataUrl = async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = SNAPSHOT_WIDTH;
+        canvas.height = SNAPSHOT_HEIGHT;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('canvas_unavailable');
+        }
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(0, 0, SNAPSHOT_WIDTH, SNAPSHOT_HEIGHT);
+
+        const centerPixel = latLngToPixel(center.lat, center.lng, zoom);
+        const startX = centerPixel.x - SNAPSHOT_WIDTH / 2;
+        const startY = centerPixel.y - SNAPSHOT_HEIGHT / 2;
+        const minTileX = Math.floor(startX / TILE_SIZE);
+        const maxTileX = Math.floor((startX + SNAPSHOT_WIDTH) / TILE_SIZE);
+        const minTileY = Math.floor(startY / TILE_SIZE);
+        const maxTileY = Math.floor((startY + SNAPSHOT_HEIGHT) / TILE_SIZE);
+        const tileCount = Math.pow(2, zoom);
+        const tiles = [];
+
+        for (let y = minTileY; y <= maxTileY; y += 1) {
+            if (y < 0 || y >= tileCount) {
+                continue;
+            }
+            for (let x = minTileX; x <= maxTileX; x += 1) {
+                tiles.push({
+                    url: tileUrl(x, y, zoom),
+                    left: Math.round(x * TILE_SIZE - startX),
+                    top: Math.round(y * TILE_SIZE - startY),
+                });
+            }
+        }
+
+        const loadedTiles = await Promise.allSettled(tiles.map(tile => (
+            loadTileForCanvas(tile.url).then(img => ({ ...tile, img }))
+        )));
+        let drawn = 0;
+        loadedTiles.forEach(result => {
+            if (result.status !== 'fulfilled') return;
+            drawn += 1;
+            ctx.drawImage(result.value.img, result.value.left, result.value.top, TILE_SIZE, TILE_SIZE);
+        });
+        if (drawn === 0) {
+            throw new Error('tiles_unavailable');
+        }
+
+        drawCanvasMarker(ctx, SNAPSHOT_WIDTH / 2, SNAPSHOT_HEIGHT / 2);
+        drawAttribution(ctx, SNAPSHOT_WIDTH, SNAPSHOT_HEIGHT);
+        return canvas.toDataURL('image/png');
+    };
+
+    const fallbackPreviewDataUrl = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = SNAPSHOT_WIDTH;
+        canvas.height = SNAPSHOT_HEIGHT;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            return '';
+        }
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(0, 0, SNAPSHOT_WIDTH, SNAPSHOT_HEIGHT);
+        ctx.strokeStyle = '#cbd5e1';
+        for (let x = 0; x < SNAPSHOT_WIDTH; x += 44) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, SNAPSHOT_HEIGHT);
+            ctx.stroke();
+        }
+        for (let y = 0; y < SNAPSHOT_HEIGHT; y += 44) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(SNAPSHOT_WIDTH, y);
+            ctx.stroke();
+        }
+        drawCanvasMarker(ctx, SNAPSHOT_WIDTH / 2, SNAPSHOT_HEIGHT / 2);
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '700 22px Arial, sans-serif';
+        ctx.fillText('Mapa seleccionado para guardar', 28, 46);
+        ctx.font = '16px Arial, sans-serif';
+        ctx.fillText(`Lat/Lng: ${currentCoordsQuery()}`, 28, 78);
+        return canvas.toDataURL('image/png');
+    };
+
+    const captureVisibleMap = async () => {
+        if (!currentCoordsQuery()) {
+            notifyLocationIssue('Primero busque una direccion, use la ubicacion o haga clic sobre el mapa.');
+            return;
+        }
+        if (!previewImg || !previewEmpty || !staticMapInput || !deleteInput || !imageDataInput) {
+            return;
+        }
+
+        const originalHtml = captureBtn?.innerHTML || '';
+        if (captureBtn) {
+            captureBtn.disabled = true;
+            captureBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Capturando...';
+        }
+
+        try {
+            const dataUrl = await renderSnapshotDataUrl();
+            setPreview(dataUrl);
+        } catch (error) {
+            const fallback = fallbackPreviewDataUrl();
+            if (fallback !== '') {
+                setStaticMapPreview(fallback);
+            } else {
+                staticMapInput.value = '1';
+                imageDataInput.value = '';
+                deleteInput.value = '0';
+            }
+        } finally {
+            if (captureBtn) {
+                captureBtn.disabled = false;
+                captureBtn.innerHTML = originalHtml;
+            }
+            closeModal();
+        }
+    };
+
+    const readImageFile = (file) => {
+        if (!file) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            alert('Formato no permitido. Use JPG, PNG o WEBP.');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            alert('La imagen excede 5 MB.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+                setPreview(reader.result);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const geolocationMessage = (error) => {
+        if (!error || typeof error.code === 'undefined') {
+            return 'No se pudo obtener la ubicacion. Puede buscar la direccion manualmente.';
+        }
+        if (error.code === 1) {
+            return 'El navegador bloqueo el permiso de ubicacion. Activalo desde el candado de la barra de direcciones y vuelve a intentar.';
+        }
+        if (error.code === 2) {
+            return 'El dispositivo no pudo calcular la ubicacion actual. Se cargo la direccion del formulario si estaba disponible.';
+        }
+        if (error.code === 3) {
+            return 'La consulta de ubicacion tardo demasiado. Se cargo la direccion del formulario si estaba disponible.';
+        }
+        return 'No se pudo obtener la ubicacion. Puede buscar la direccion manualmente.';
+    };
+
+    openBtn.addEventListener('click', openModal);
+    modal.querySelectorAll('[data-croquis-close]').forEach(el => el.addEventListener('click', closeModal));
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !modal.hidden) {
+            closeModal();
+        }
     });
-};
+    searchBtn?.addEventListener('click', () => setMapQuery(searchInput?.value || ''));
+    searchInput?.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            setMapQuery(searchInput.value);
+        }
+    });
+    loadAddressBtn?.addEventListener('click', () => setMapQuery(formAddress()));
+    captureBtn?.addEventListener('click', captureVisibleMap);
+    zoomInBtn?.addEventListener('click', event => {
+        event.stopPropagation();
+        zoom = clampZoom(zoom + 1);
+        if (zoomInput) zoomInput.value = String(zoom);
+        renderMap();
+    });
+    zoomOutBtn?.addEventListener('click', event => {
+        event.stopPropagation();
+        zoom = clampZoom(zoom - 1);
+        if (zoomInput) zoomInput.value = String(zoom);
+        renderMap();
+    });
+    mapEl.addEventListener('pointerdown', event => {
+        if (event.button !== 0) return;
+        dragState = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            centerPixel: latLngToPixel(center.lat, center.lng, zoom),
+            moved: false,
+        };
+        mapEl.classList.add('is-dragging');
+        mapEl.setPointerCapture?.(event.pointerId);
+    });
+    mapEl.addEventListener('pointermove', event => {
+        if (!dragState || dragState.pointerId !== event.pointerId) return;
+        const dx = event.clientX - dragState.startX;
+        const dy = event.clientY - dragState.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            dragState.moved = true;
+            tilePane.style.transform = `translate(${dx}px, ${dy}px)`;
+        }
+    });
+    mapEl.addEventListener('pointerup', event => {
+        if (!dragState || dragState.pointerId !== event.pointerId) return;
+        const dx = event.clientX - dragState.startX;
+        const dy = event.clientY - dragState.startY;
+        const moved = dragState.moved;
+        const nextCenter = pixelToLatLng(
+            dragState.centerPixel.x - dx,
+            dragState.centerPixel.y - dy,
+            zoom
+        );
+        dragState = null;
+        mapEl.classList.remove('is-dragging');
+        mapEl.releasePointerCapture?.(event.pointerId);
+        tilePane.style.transform = '';
+        if (moved) {
+            suppressNextClick = true;
+            setMapPosition(nextCenter.lat, nextCenter.lng, 'Ubicacion seleccionada en el mapa');
+        }
+    });
+    mapEl.addEventListener('pointercancel', event => {
+        if (dragState?.pointerId === event.pointerId) {
+            dragState = null;
+            mapEl.classList.remove('is-dragging');
+            tilePane.style.transform = '';
+        }
+    });
+    mapEl.addEventListener('click', event => {
+        if (suppressNextClick) {
+            suppressNextClick = false;
+            return;
+        }
+        const rect = mapEl.getBoundingClientRect();
+        const centerPixel = latLngToPixel(center.lat, center.lng, zoom);
+        const point = pixelToLatLng(
+            centerPixel.x + (event.clientX - rect.left - rect.width / 2),
+            centerPixel.y + (event.clientY - rect.top - rect.height / 2),
+            zoom
+        );
+        setMapPosition(point.lat, point.lng, 'Ubicacion seleccionada en el mapa');
+    });
+    geoBtn?.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            notifyLocationIssue('Geolocalizacion no disponible en este navegador. Busque la direccion manualmente.');
+            return;
+        }
+        if (!window.isSecureContext) {
+            notifyLocationIssue('La ubicacion del navegador requiere HTTPS o localhost. Busque la direccion manualmente.');
+            return;
+        }
+        const originalHtml = geoBtn.innerHTML;
+        geoBtn.disabled = true;
+        geoBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Obteniendo...';
+        navigator.geolocation.getCurrentPosition(position => {
+            setMapPosition(position.coords.latitude, position.coords.longitude, 'Ubicacion actual');
+            geoBtn.disabled = false;
+            geoBtn.innerHTML = originalHtml;
+        }, error => {
+            const fallback = formAddress();
+            if (fallback !== 'Ecuador') {
+                setMapQuery(fallback);
+            }
+            notifyLocationIssue(geolocationMessage(error));
+            geoBtn.disabled = false;
+            geoBtn.innerHTML = originalHtml;
+        }, {
+            enableHighAccuracy: true,
+            timeout: 20000,
+            maximumAge: 60000,
+        });
+    });
+    clearBtn?.addEventListener('click', () => {
+        if (latInput) latInput.value = '';
+        if (lngInput) lngInput.value = '';
+        updateCoordsLabel();
+        setMapQuery(formAddress());
+    });
+    deleteBtn?.addEventListener('click', clearPreview);
+    uploadTrigger?.addEventListener('click', () => fileInput?.click());
+    fileInput?.addEventListener('change', () => readImageFile(fileInput.files?.[0] || null));
+
+    zoom = clampZoom(zoom);
+    if (zoomInput) zoomInput.value = String(zoom);
+    updateCoordsLabel();
+})();
 </script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($googleMapsKey ?? '') ?>&callback=initCroquisMap&loading=async"></script>
-<?php endif ?>
 <?= $view->include('clientes/_geo-script', ['provinciaId' => 'ficha-nac-provincia', 'ciudadId' => 'ficha-nac-ciudad']) ?>
 <?php $view->endSection() ?>

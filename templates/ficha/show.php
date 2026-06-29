@@ -309,13 +309,18 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
                         <div class="ds-personal-label">Tel. emergencia</div>
                         <div class="ds-cell-mono"><?= $e($ficha['contacto_emergencia_telefono'] ?? '-') ?></div>
                     </div>
-                    <?php if (!empty($ficha['croquis_latitud']) && !empty($ficha['croquis_longitud'])): ?>
+                    <?php if (!empty($ficha['croquis_archivo_id']) || (!empty($ficha['croquis_latitud']) && !empty($ficha['croquis_longitud']))): ?>
                     <div class="ds-personal-item span-12">
                         <div class="ds-personal-label">Croquis / ubicación del domicilio</div>
+                        <?php if (!empty($ficha['croquis_archivo_id'])): ?>
+                        <div style="margin:.5rem 0 .75rem;">
+                            <img src="<?= $view->url('/guardias/' . $fichaId . '/croquis') ?>"
+                                 alt="Croquis del domicilio"
+                                 style="width:100%;max-height:420px;object-fit:contain;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;">
+                        </div>
+                        <?php endif ?>
+                        <?php if (!empty($ficha['croquis_latitud']) && !empty($ficha['croquis_longitud'])): ?>
                         <div class="ds-cell-mono" style="margin-bottom:.5rem;">Lat: <?= $e((string) $ficha['croquis_latitud']) ?> &middot; Lng: <?= $e((string) $ficha['croquis_longitud']) ?></div>
-                        <?php if (($googleMapsKey ?? '') !== ''): ?>
-                        <div id="croquis-show-map" data-lat="<?= $e((string) $ficha['croquis_latitud']) ?>" data-lng="<?= $e((string) $ficha['croquis_longitud']) ?>" style="width:100%;height:320px;border-radius:12px;border:1px solid #e2e8f0;background:#eef2f7;"></div>
-                        <?php else: ?>
                         <a class="ds-btn ds-btn-outline ds-btn-sm" target="_blank" rel="noopener" href="https://www.google.com/maps?q=<?= $e((string) $ficha['croquis_latitud']) ?>,<?= $e((string) $ficha['croquis_longitud']) ?>"><i class="bi bi-geo-alt me-1"></i>Ver ubicación en Google Maps</a>
                         <?php endif ?>
                     </div>
@@ -569,19 +574,3 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
     <?php endif ?>
 </div>
 <?php $view->endSection() ?>
-
-<?php if (($googleMapsKey ?? '') !== '' && !empty($ficha['croquis_latitud']) && !empty($ficha['croquis_longitud'])): ?>
-<?php $view->section('scripts') ?>
-<script>
-window.initCroquisShowMap = function () {
-    var el = document.getElementById('croquis-show-map');
-    if (!el || !window.google || !google.maps) return;
-    var pos = { lat: parseFloat(el.dataset.lat), lng: parseFloat(el.dataset.lng) };
-    if (!isFinite(pos.lat) || !isFinite(pos.lng)) return;
-    var map = new google.maps.Map(el, { center: pos, zoom: 16, mapTypeControl: false, streetViewControl: false });
-    new google.maps.Marker({ map: map, position: pos });
-};
-</script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($googleMapsKey ?? '') ?>&callback=initCroquisShowMap&loading=async"></script>
-<?php $view->endSection() ?>
-<?php endif ?>

@@ -7,6 +7,7 @@ namespace DigiSecure\Ficha\Application;
 use DigiSecure\Ficha\Domain\Enum\EstadoFicha;
 use DigiSecure\Ficha\Domain\Enum\Genero;
 use DigiSecure\Ficha\Domain\ValueObject\Cedula;
+use DigiSecure\Ficha\Infrastructure\CroquisStorage;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Security\Audit\AuditLogger;
@@ -26,6 +27,7 @@ final class ActualizarFichaService
         private readonly PdoConnection $db,
         private readonly Encryption $encryption,
         private readonly AuditLogger $audit,
+        private readonly CroquisStorage $croquisStorage,
     ) {
     }
 
@@ -85,6 +87,41 @@ final class ActualizarFichaService
             }
         }
 
+        foreach (['croquis_latitud', 'croquis_longitud'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $value = $input[$field];
+                $data[$field] = ($value !== '' && $value !== null && is_numeric($value)) ? (float) $value : null;
+            }
+        }
+
+        $croquisActualId = (string) ($ficha['croquis_archivo_id'] ?? '');
+        $croquisImagenData = trim((string) ($input['croquis_imagen_data'] ?? ''));
+        $capturarMapaEstatico = ((string) ($input['croquis_mapa_estatico'] ?? '')) === '1';
+        $eliminarCroquis = ((string) ($input['croquis_eliminar_imagen'] ?? '')) === '1';
+        $nuevoCroquisId = null;
+        $borrarCroquisActual = false;
+
+        if ($croquisImagenData !== '') {
+            $nuevoCroquisId = $this->croquisStorage->storeDataUrl($croquisImagenData);
+            $data['croquis_archivo_id'] = $nuevoCroquisId;
+            $borrarCroquisActual = $croquisActualId !== '';
+        } elseif ($capturarMapaEstatico
+            && isset($input['croquis_latitud'], $input['croquis_longitud'])
+            && is_numeric($input['croquis_latitud'])
+            && is_numeric($input['croquis_longitud'])
+        ) {
+            $nuevoCroquisId = $this->croquisStorage->storeStaticMap(
+                (float) $input['croquis_latitud'],
+                (float) $input['croquis_longitud'],
+                isset($input['croquis_zoom']) && is_numeric($input['croquis_zoom']) ? (int) $input['croquis_zoom'] : 16,
+            );
+            $data['croquis_archivo_id'] = $nuevoCroquisId;
+            $borrarCroquisActual = $croquisActualId !== '';
+        } elseif ($eliminarCroquis && $croquisActualId !== '') {
+            $data['croquis_archivo_id'] = null;
+            $borrarCroquisActual = true;
+        }
+
         // Trim strings
         foreach (['nombres', 'apellidos', 'email'] as $f) {
             if (isset($data[$f]) && is_string($data[$f])) {
@@ -94,25 +131,36 @@ final class ActualizarFichaService
 
         $data['updated_by'] = $usuarioId;
 
-        $this->db->transactional(function () use ($fichaId, $data, $input): void {
-            if ($data !== []) {
-                $this->fichaRepo->update($fichaId, $data);
-            }
+        try {
+            $this->db->transactional(function () use ($fichaId, $data, $input): void {
+                if ($data !== []) {
+                    $this->fichaRepo->update($fichaId, $data);
+                }
 
-            // Relaciones 1:N
-            if (isset($input['trabajos_anteriores']) && is_array($input['trabajos_anteriores'])) {
-                $this->fichaRepo->saveTrabajosAnteriores($fichaId, $input['trabajos_anteriores']);
+                // Relaciones 1:N
+                if (isset($input['trabajos_anteriores']) && is_array($input['trabajos_anteriores'])) {
+                    $this->fichaRepo->saveTrabajosAnteriores($fichaId, $input['trabajos_anteriores']);
+                }
+                if (isset($input['hijos_menores']) && is_array($input['hijos_menores'])) {
+                    $this->fichaRepo->saveHijosMenores($fichaId, $input['hijos_menores']);
+                }
+                if (isset($input['referencias']) && is_array($input['referencias'])) {
+                    $this->fichaRepo->saveReferencias($fichaId, $input['referencias']);
+                }
+                if (isset($input['cursos']) && is_array($input['cursos'])) {
+                    $this->fichaRepo->saveCursos($fichaId, $input['cursos']);
+                }
+            });
+        } catch (\Throwable $e) {
+            if ($nuevoCroquisId !== null) {
+                $this->croquisStorage->delete($nuevoCroquisId);
             }
-            if (isset($input['hijos_menores']) && is_array($input['hijos_menores'])) {
-                $this->fichaRepo->saveHijosMenores($fichaId, $input['hijos_menores']);
-            }
-            if (isset($input['referencias']) && is_array($input['referencias'])) {
-                $this->fichaRepo->saveReferencias($fichaId, $input['referencias']);
-            }
-            if (isset($input['cursos']) && is_array($input['cursos'])) {
-                $this->fichaRepo->saveCursos($fichaId, $input['cursos']);
-            }
-        });
+            throw $e;
+        }
+
+        if ($borrarCroquisActual) {
+            $this->croquisStorage->delete($croquisActualId);
+        }
 
         $this->audit->log(
             'ficha.actualizar',

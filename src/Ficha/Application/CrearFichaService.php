@@ -8,6 +8,7 @@ use DigiSecure\Ficha\Domain\Enum\EstadoFicha;
 use DigiSecure\Ficha\Domain\Enum\Genero;
 use DigiSecure\Ficha\Domain\Enum\TipoFicha;
 use DigiSecure\Ficha\Domain\ValueObject\Cedula;
+use DigiSecure\Ficha\Infrastructure\CroquisStorage;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Security\Audit\AuditLogger;
@@ -33,6 +34,7 @@ final class CrearFichaService
         private readonly PdoConnection $db,
         private readonly Encryption $encryption,
         private readonly AuditLogger $audit,
+        private readonly CroquisStorage $croquisStorage,
     ) {
     }
 
@@ -71,12 +73,37 @@ final class CrearFichaService
         $correlativo = $this->fichaRepo->nextCorrelativo();
 
         // 7. Persistir en transacción
-        $fichaId = $this->db->transactional(function () use (
-            $input, $cedula, $cedulaCifrada, $cuentaCifrada, $correlativo, $tipo, $fichasPrevias, $usuarioId
-        ): string {
-            $genero = Genero::from((string)($input['genero'] ?? 'MASCULINO'));
+        $croquisArchivoId = null;
+        $croquisImagenData = trim((string) ($input['croquis_imagen_data'] ?? ''));
+        if ($croquisImagenData !== '') {
+            $croquisArchivoId = $this->croquisStorage->storeDataUrl($croquisImagenData);
+        } elseif (((string) ($input['croquis_mapa_estatico'] ?? '')) === '1'
+            && isset($input['croquis_latitud'], $input['croquis_longitud'])
+            && is_numeric($input['croquis_latitud'])
+            && is_numeric($input['croquis_longitud'])
+        ) {
+            $croquisArchivoId = $this->croquisStorage->storeStaticMap(
+                (float) $input['croquis_latitud'],
+                (float) $input['croquis_longitud'],
+                isset($input['croquis_zoom']) && is_numeric($input['croquis_zoom']) ? (int) $input['croquis_zoom'] : 16,
+            );
+        }
 
-            $data = [
+        try {
+            $fichaId = $this->db->transactional(function () use (
+                $input,
+                $cedula,
+                $cedulaCifrada,
+                $cuentaCifrada,
+                $correlativo,
+                $tipo,
+                $fichasPrevias,
+                $usuarioId,
+                $croquisArchivoId,
+            ): string {
+                $genero = Genero::from((string)($input['genero'] ?? 'MASCULINO'));
+
+                $data = [
                 'correlativo' => $correlativo,
                 'tipo_ficha' => $tipo->value,
                 'estado' => EstadoFicha::BORRADOR->value,
@@ -105,6 +132,7 @@ final class CrearFichaService
                 'domicilio_telefono' => $input['domicilio_telefono'] ?? null,
                 'croquis_latitud' => (isset($input['croquis_latitud']) && is_numeric($input['croquis_latitud'])) ? (float) $input['croquis_latitud'] : null,
                 'croquis_longitud' => (isset($input['croquis_longitud']) && is_numeric($input['croquis_longitud'])) ? (float) $input['croquis_longitud'] : null,
+                'croquis_archivo_id' => $croquisArchivoId,
                 'contacto_emergencia_nombre' => $input['contacto_emergencia_nombre'] ?? null,
                 'contacto_emergencia_telefono' => $input['contacto_emergencia_telefono'] ?? null,
                 'instruccion_primaria' => $input['instruccion_primaria'] ?? null,
@@ -117,27 +145,33 @@ final class CrearFichaService
                 'updated_by' => $usuarioId,
             ];
 
-            $fichaId = $this->fichaRepo->create($data);
+                $fichaId = $this->fichaRepo->create($data);
 
-            // Guardar relaciones 1:N si vienen en el input
-            if (!empty($input['trabajos_anteriores']) && is_array($input['trabajos_anteriores'])) {
-                $this->fichaRepo->saveTrabajosAnteriores($fichaId, $input['trabajos_anteriores']);
+                // Guardar relaciones 1:N si vienen en el input
+                if (!empty($input['trabajos_anteriores']) && is_array($input['trabajos_anteriores'])) {
+                    $this->fichaRepo->saveTrabajosAnteriores($fichaId, $input['trabajos_anteriores']);
+                }
+
+                if (!empty($input['hijos_menores']) && is_array($input['hijos_menores'])) {
+                    $this->fichaRepo->saveHijosMenores($fichaId, $input['hijos_menores']);
+                }
+
+                if (!empty($input['referencias']) && is_array($input['referencias'])) {
+                    $this->fichaRepo->saveReferencias($fichaId, $input['referencias']);
+                }
+
+                if (!empty($input['cursos']) && is_array($input['cursos'])) {
+                    $this->fichaRepo->saveCursos($fichaId, $input['cursos']);
+                }
+
+                return $fichaId;
+            });
+        } catch (\Throwable $e) {
+            if ($croquisArchivoId !== null) {
+                $this->croquisStorage->delete($croquisArchivoId);
             }
-
-            if (!empty($input['hijos_menores']) && is_array($input['hijos_menores'])) {
-                $this->fichaRepo->saveHijosMenores($fichaId, $input['hijos_menores']);
-            }
-
-            if (!empty($input['referencias']) && is_array($input['referencias'])) {
-                $this->fichaRepo->saveReferencias($fichaId, $input['referencias']);
-            }
-
-            if (!empty($input['cursos']) && is_array($input['cursos'])) {
-                $this->fichaRepo->saveCursos($fichaId, $input['cursos']);
-            }
-
-            return $fichaId;
-        });
+            throw $e;
+        }
 
         // 8. Auditoría
         $this->audit->log(

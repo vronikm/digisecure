@@ -204,12 +204,19 @@ final class Bootstrap
             ),
         );
         $container->singleton(
+            \DigiSecure\Ficha\Infrastructure\CroquisStorage::class,
+            fn(): \DigiSecure\Ficha\Infrastructure\CroquisStorage => new \DigiSecure\Ficha\Infrastructure\CroquisStorage(
+                "{$this->rootPath}/var/storage/croquis",
+            ),
+        );
+        $container->singleton(
             \DigiSecure\Ficha\Application\CrearFichaService::class,
             static fn(Container $c) => new \DigiSecure\Ficha\Application\CrearFichaService(
                 $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
                 $c->get(PdoConnection::class),
                 $c->get(Encryption::class),
                 $c->get(AuditLogger::class),
+                $c->get(\DigiSecure\Ficha\Infrastructure\CroquisStorage::class),
             ),
         );
         $container->singleton(
@@ -219,6 +226,7 @@ final class Bootstrap
                 $c->get(PdoConnection::class),
                 $c->get(Encryption::class),
                 $c->get(AuditLogger::class),
+                $c->get(\DigiSecure\Ficha\Infrastructure\CroquisStorage::class),
             ),
         );
         $container->singleton(
@@ -900,6 +908,7 @@ final class Bootstrap
         $router->get('/guardias/prefill/cedula', [FichaController::class, 'prefillByCedula'], name: 'fichas.prefill.cedula', permission: 'guardias.crear');
         $router->post('/guardias/crear', [FichaController::class, 'store'], name: 'fichas.store', permission: 'guardias.crear');
         $router->get('/guardias/{id}', [FichaController::class, 'show'], name: 'fichas.show', permission: 'guardias.ver');
+        $router->get('/guardias/{id}/croquis', [FichaController::class, 'croquisImagen'], name: 'fichas.croquis', permission: 'guardias.ver');
         $router->get('/guardias/{id}/editar', [FichaController::class, 'edit'], name: 'fichas.edit', permission: 'guardias.editar');
         $router->post('/guardias/{id}/editar', [FichaController::class, 'update'], name: 'fichas.update', permission: 'guardias.editar');
         $router->post('/guardias/{id}/revision', [FichaController::class, 'enviarRevision'], name: 'fichas.revision', permission: 'guardias.editar');

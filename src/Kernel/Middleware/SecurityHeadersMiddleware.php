@@ -23,7 +23,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
             ->withHeader('X-Content-Type-Options', 'nosniff')
             ->withHeader('X-Frame-Options', 'SAMEORIGIN')
             ->withHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
-            ->withHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+            ->withHeader('Permissions-Policy', 'geolocation=(self), microphone=(), camera=()')
             ->withHeader('Cross-Origin-Opener-Policy', 'same-origin')
             ->withHeader('Cross-Origin-Resource-Policy', 'same-origin')
             ->withHeader('X-Permitted-Cross-Domain-Policies', 'none')
