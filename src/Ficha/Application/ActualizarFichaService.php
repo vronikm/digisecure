@@ -122,6 +122,21 @@ final class ActualizarFichaService
             $borrarCroquisActual = true;
         }
 
+        // Foto del empleado: reemplazo (nueva imagen) o eliminación.
+        $fotoActualId = (string) ($ficha['foto_archivo_id'] ?? '');
+        $fotoImagenData = trim((string) ($input['foto_imagen_data'] ?? ''));
+        $eliminarFoto = ((string) ($input['foto_eliminar'] ?? '')) === '1';
+        $nuevoFotoId = null;
+        $borrarFotoActual = false;
+        if ($fotoImagenData !== '') {
+            $nuevoFotoId = $this->croquisStorage->storeDataUrl($fotoImagenData);
+            $data['foto_archivo_id'] = $nuevoFotoId;
+            $borrarFotoActual = $fotoActualId !== '';
+        } elseif ($eliminarFoto && $fotoActualId !== '') {
+            $data['foto_archivo_id'] = null;
+            $borrarFotoActual = true;
+        }
+
         // Trim strings
         foreach (['nombres', 'apellidos', 'email'] as $f) {
             if (isset($data[$f]) && is_string($data[$f])) {
@@ -155,11 +170,17 @@ final class ActualizarFichaService
             if ($nuevoCroquisId !== null) {
                 $this->croquisStorage->delete($nuevoCroquisId);
             }
+            if ($nuevoFotoId !== null) {
+                $this->croquisStorage->delete($nuevoFotoId);
+            }
             throw $e;
         }
 
         if ($borrarCroquisActual) {
             $this->croquisStorage->delete($croquisActualId);
+        }
+        if ($borrarFotoActual) {
+            $this->croquisStorage->delete($fotoActualId);
         }
 
         $this->audit->log(

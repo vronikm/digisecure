@@ -909,6 +909,7 @@ final class Bootstrap
         $router->post('/guardias/crear', [FichaController::class, 'store'], name: 'fichas.store', permission: 'guardias.crear');
         $router->get('/guardias/{id}', [FichaController::class, 'show'], name: 'fichas.show', permission: 'guardias.ver');
         $router->get('/guardias/{id}/croquis', [FichaController::class, 'croquisImagen'], name: 'fichas.croquis', permission: 'guardias.ver');
+        $router->get('/guardias/{id}/foto', [FichaController::class, 'fotoImagen'], name: 'fichas.foto', permission: 'guardias.ver');
         $router->get('/guardias/{id}/editar', [FichaController::class, 'edit'], name: 'fichas.edit', permission: 'guardias.editar');
         $router->post('/guardias/{id}/editar', [FichaController::class, 'update'], name: 'fichas.update', permission: 'guardias.editar');
         $router->post('/guardias/{id}/revision', [FichaController::class, 'enviarRevision'], name: 'fichas.revision', permission: 'guardias.editar');

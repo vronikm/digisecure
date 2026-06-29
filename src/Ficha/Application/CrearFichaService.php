@@ -89,6 +89,13 @@ final class CrearFichaService
             );
         }
 
+        // Foto del empleado (data URL); se almacena con el mismo storage cifrado.
+        $fotoArchivoId = null;
+        $fotoImagenData = trim((string) ($input['foto_imagen_data'] ?? ''));
+        if ($fotoImagenData !== '') {
+            $fotoArchivoId = $this->croquisStorage->storeDataUrl($fotoImagenData);
+        }
+
         try {
             $fichaId = $this->db->transactional(function () use (
                 $input,
@@ -100,6 +107,7 @@ final class CrearFichaService
                 $fichasPrevias,
                 $usuarioId,
                 $croquisArchivoId,
+                $fotoArchivoId,
             ): string {
                 $genero = Genero::from((string)($input['genero'] ?? 'MASCULINO'));
 
@@ -133,6 +141,7 @@ final class CrearFichaService
                 'croquis_latitud' => (isset($input['croquis_latitud']) && is_numeric($input['croquis_latitud'])) ? (float) $input['croquis_latitud'] : null,
                 'croquis_longitud' => (isset($input['croquis_longitud']) && is_numeric($input['croquis_longitud'])) ? (float) $input['croquis_longitud'] : null,
                 'croquis_archivo_id' => $croquisArchivoId,
+                'foto_archivo_id' => $fotoArchivoId,
                 'contacto_emergencia_nombre' => $input['contacto_emergencia_nombre'] ?? null,
                 'contacto_emergencia_telefono' => $input['contacto_emergencia_telefono'] ?? null,
                 'instruccion_primaria' => $input['instruccion_primaria'] ?? null,
@@ -169,6 +178,9 @@ final class CrearFichaService
         } catch (\Throwable $e) {
             if ($croquisArchivoId !== null) {
                 $this->croquisStorage->delete($croquisArchivoId);
+            }
+            if ($fotoArchivoId !== null) {
+                $this->croquisStorage->delete($fotoArchivoId);
             }
             throw $e;
         }

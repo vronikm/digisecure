@@ -973,20 +973,28 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                 </div>
                 <div class="ff-foto-col">
                     <div class="ds-subheader"><i class="bi bi-image"></i>Foto del empleado</div>
+                    <?php
+                    $fotoDataOld = (string) $old('foto_imagen_data');
+                    $fotoActualUrlVal = (string) ($fotoActualUrl ?? '');
+                    $fotoPreviewSrc = $fotoDataOld !== '' ? $fotoDataOld : $fotoActualUrlVal;
+                    $tieneFoto = $fotoPreviewSrc !== '';
+                    ?>
                     <div class="ff-foto-wrap">
                         <div class="ff-foto-frame">
-                            <img id="fotoPreview" alt="Foto del empleado" style="display:none;">
-                            <div class="ff-foto-placeholder" id="fotoPlaceholder">
+                            <img id="fotoPreview" alt="Foto del empleado" src="<?= $e($fotoPreviewSrc) ?>" style="<?= $tieneFoto ? 'display:block;' : 'display:none;' ?>">
+                            <div class="ff-foto-placeholder" id="fotoPlaceholder" style="<?= $tieneFoto ? 'display:none;' : '' ?>">
                                 <i class="bi bi-person-bounding-box"></i>
                                 <span>Sin foto</span>
                             </div>
                         </div>
-                        <input type="file" id="fotoInput" name="foto" accept="image/png,image/jpeg" hidden>
+                        <input type="file" id="fotoInput" accept="image/png,image/jpeg" hidden>
+                        <input type="hidden" name="foto_imagen_data" id="foto_imagen_data" value="<?= $e($fotoDataOld) ?>">
+                        <input type="hidden" name="foto_eliminar" id="foto_eliminar" value="0">
                         <div class="ff-foto-actions">
                             <label class="ds-btn ds-btn-outline ds-btn-sm" for="fotoInput" style="cursor: pointer;">
                                 <i class="bi bi-camera"></i>Subir foto
                             </label>
-                            <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="fotoClear" style="display: none;">
+                            <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" id="fotoClear" style="<?= $tieneFoto ? 'display:inline-flex;' : 'display:none;' ?>">
                                 <i class="bi bi-x-lg"></i>Quitar
                             </button>
                         </div>
@@ -1000,6 +1008,8 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                 var preview = document.getElementById('fotoPreview');
                 var ph = document.getElementById('fotoPlaceholder');
                 var clear = document.getElementById('fotoClear');
+                var dataInput = document.getElementById('foto_imagen_data');
+                var delInput = document.getElementById('foto_eliminar');
                 if (!input) { return; }
                 var MAX = 2 * 1024 * 1024;
                 input.addEventListener('change', function () {
@@ -1013,6 +1023,8 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                         preview.style.display = 'block';
                         ph.style.display = 'none';
                         clear.style.display = 'inline-flex';
+                        if (dataInput) dataInput.value = e.target.result;
+                        if (delInput) delInput.value = '0';
                     };
                     rd.readAsDataURL(f);
                 });
@@ -1022,6 +1034,8 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                     preview.style.display = 'none';
                     ph.style.display = 'flex';
                     clear.style.display = 'none';
+                    if (dataInput) dataInput.value = '';
+                    if (delInput) delInput.value = '1';
                 });
             })();
             </script>
@@ -1248,16 +1262,6 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
             <input type="hidden" name="croquis_zoom" id="croquis_zoom" value="16">
 
             <div class="ds-croquis-preview">
-                <div class="ds-croquis-preview-frame">
-                    <img id="croquis-preview-img"
-                         src="<?= $e($croquisImagenUrl) ?>"
-                         alt="Croquis del domicilio"
-                         style="<?= $croquisImagenUrl !== '' ? '' : 'display:none;' ?>">
-                    <div id="croquis-preview-empty" class="ds-croquis-placeholder" style="<?= $croquisImagenUrl !== '' ? 'display:none;' : '' ?>">
-                        <i class="bi bi-map"></i>
-                        Aun no hay imagen del croquis. Abra el mapa y capture la ubicacion.
-                    </div>
-                </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                     <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" id="croquis-open-map"><i class="bi bi-map me-1"></i>Abrir mapa</button>
                     <button type="button" class="ds-btn ds-btn-outline ds-btn-sm" id="croquis-upload-trigger"><i class="bi bi-image me-1"></i>Cargar imagen</button>
@@ -1265,6 +1269,16 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                     <input type="file" id="croquis-file-input" accept="image/png,image/jpeg,image/webp" hidden>
                     <span class="ds-form-help mb-0" id="croquis-coords"></span>
                 </div>
+                <div class="ds-croquis-preview-frame">
+                    <img id="croquis-preview-img"
+                         src="<?= $e($croquisImagenUrl) ?>"
+                         alt="Croquis del domicilio"
+                         style="<?= $croquisImagenUrl !== '' ? '' : 'display:none;' ?>">
+                    <div id="croquis-preview-empty" class="ds-croquis-placeholder" style="<?= $croquisImagenUrl !== '' ? 'display:none;' : '' ?>">
+                        <i class="bi bi-map"></i>
+                        Aún no hay imagen del croquis. Abra el mapa y capture la ubicacion.
+                    </div>
+                </div>                
             </div>
 
             <div class="ds-croquis-modal" id="croquis-modal" hidden aria-hidden="true">
@@ -1367,7 +1381,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
             <div class="ds-subheader mt-3"><i class="bi bi-heart"></i>Cónyuge</div>
             <div class="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-2" id="conyuge-warning" role="status" style="display:none;">
                 <i class="bi bi-info-circle-fill"></i>
-                <span>El cónyuge es de ingreso obligatorio cuando el Estado Civil es <strong>Casado/a</strong> o <strong>Unión libre</strong>.</span>
+                <span style="color:#dc2626;">El cónyuge es de ingreso obligatorio cuando el Estado Civil es <strong>Casado/a</strong> o <strong>Unión libre</strong>.</span>
             </div>
             <div class="ff-row">
                 <div class="ff-span-2">
@@ -1422,7 +1436,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
             </div>
             <div class="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-2" id="referencias-warning" role="status">
                 <i class="bi bi-info-circle-fill"></i>
-                <span>Debe ingresar <strong>dos referencias personales</strong>. No podrá avanzar a la siguiente fase si no ingresa dos referencias personales.</span>
+                <span style="color:#dc2626;">Debe ingresar <strong>dos referencias personales</strong>. No podrá avanzar a la siguiente fase si no ingresa dos referencias personales.</span>
             </div>
             <div id="referencias-container">
                 <p class="text-muted small mb-0" id="referencias-empty">Sin referencias registradas.</p>
@@ -1452,16 +1466,12 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                     <label class="form-label">Instrucción Superior</label>
                     <input type="text" name="instruccion_superior" class="form-control" maxlength="200" value="<?= $old('instruccion_superior') ?>">
                 </div>
-                <div>
-                    <label class="form-label">Fecha Último Reentrenamiento</label>
-                    <input type="date" name="fecha_ultimo_reentrenamiento" class="form-control" value="<?= $old('fecha_ultimo_reentrenamiento') ?>">
-                </div>
             </div>
         </div>
     </div>
     <!-- 9. Cursos de Seguridad -->
     <div class="card shadow-sm mb-4">
-        <div class="card-header"><i class="bi bi-award me-2"></i>Cursos de Seguridad</div>
+        <div class="card-header"><i class="bi bi-award me-2"></i>Cursos de Seguridad <span style="color:#dc2626;">(Aplica para los aspirantes a guardias)</span></div>
         <div class="card-body">
             <?php if ($cursos === []): ?>
             <p class="text-muted small">No hay cursos en el catálogo.</p>

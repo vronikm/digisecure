@@ -381,6 +381,51 @@ final class FichaController
         );
     }
 
+    public function fotoImagen(Request $request, string $id): Response
+    {
+        $ficha = $this->fichaRepo->findFichaById($id);
+        if ($ficha === null || empty($ficha['foto_archivo_id'])) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $file = $this->croquisStorage()->find((string) $ficha['foto_archivo_id']);
+        if ($file === null) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $ifNoneMatch = $request->header('if-none-match');
+        if ($ifNoneMatch !== null && trim($ifNoneMatch) === $file['etag']) {
+            return new Response(
+                status: Response::STATUS_NOT_MODIFIED,
+                headers: ['ETag' => $file['etag']],
+            );
+        }
+
+        $content = @file_get_contents($file['path']);
+        if ($content === false) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $extension = match ($file['mime']) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+
+        return new Response(
+            status: Response::STATUS_OK,
+            body: $content,
+            headers: [
+                'Content-Type' => $file['mime'],
+                'Content-Length' => (string) $file['size'],
+                'Content-Disposition' => 'inline; filename="foto-' . addslashes((string) ($ficha['correlativo'] ?? $id)) . '.' . $extension . '"',
+                'Cache-Control' => 'private, max-age=300',
+                'ETag' => $file['etag'],
+                'X-Content-Type-Options' => 'nosniff',
+            ],
+        );
+    }
+
     // ======================== EDITAR ========================
 
     public function edit(Request $request, CsrfGuard $csrf, string $id): Response

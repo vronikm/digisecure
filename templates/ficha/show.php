@@ -132,9 +132,14 @@ $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr(
 <!-- Header con avatar -->
 <div class="ds-card" style="margin-bottom: 1.25rem;">
     <div class="ds-card-body" style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+        <?php if (!empty($ficha['foto_archivo_id'])): ?>
+        <img src="<?= $view->url('/guardias/' . $fichaId . '/foto') ?>" alt="Foto del empleado"
+             style="width: 80px; height: 80px; border-radius: 20px; object-fit: cover; box-shadow: 0 8px 24px rgba(47,128,237,.32); flex-shrink: 0;">
+        <?php else: ?>
         <div style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(135deg, #2f80ed, #0ea5a4); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; box-shadow: 0 8px 24px rgba(47,128,237,.32); flex-shrink: 0;">
             <?= $e($initials) ?>
         </div>
+        <?php endif ?>
         <div style="flex: 1; min-width: 240px;">
             <div style="font-size: 1.4rem; font-weight: 700; color: var(--ds-text);">
                 <?= $e($ficha['apellidos']) ?> <?= $e($ficha['nombres']) ?>

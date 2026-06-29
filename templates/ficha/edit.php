@@ -98,9 +98,10 @@ $formSubmitIcon = 'bi bi-check2-circle';
 $formShowCancel = false;
 $formRequireConfirm = true;
 $formConfirmTitle = 'Guardar cambios en la ficha?';
-$formConfirmText = 'Se actualizaran los datos del guardia con la informacion actual del formulario.';
+$formConfirmText = 'Se actualizarán los datos del empleado con la información actual del formulario.';
 $formConfirmButton = 'Si, guardar cambios';
 $formConfirmCancel = 'No, revisar';
 $formEnableCedulaPrefill = false;
+$fotoActualUrl = !empty($ficha['foto_archivo_id']) ? "/guardias/{$fichaId}/foto" : '';
 
 require __DIR__ . '/create.php';
