@@ -736,7 +736,7 @@ final class Bootstrap
             fn(Container $c) => new \DigiSecure\Aspirante\Infrastructure\VerificationMailer(
                 $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
                 "{$this->rootPath}/var/logs/verificacion.log",
-                $c->get(Config::class)->string('app.url', ''),
+                "{$this->rootPath}/public/assets/img/logoGemeseg.png",
             ),
         );
 

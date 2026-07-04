@@ -75,6 +75,10 @@ final class GestionarAspirantesService
                 if ($roleId !== null) {
                     $this->repo->asignarRol($usuarioExistente, $roleId, $adminId, $now);
                 }
+                // El usuario y la ficha que completó (creados en el tenant de
+                // plataforma) se trasladan al tenant de la empresa, para que el
+                // empleado aparezca en Empleados/Guardias de esa empresa.
+                $this->repo->moverUsuarioYFichasATenant($usuarioExistente, $tenantId);
                 $this->repo->marcarAprobado($aspiranteId, $usuarioExistente, $tenantId, $adminId, $now);
             });
 
@@ -83,7 +87,7 @@ final class GestionarAspirantesService
                 $adminId,
                 'aspirante',
                 $aspiranteId,
-                detalles: ['usuario_id' => $usuarioExistente, 'accion' => 'promovido', 'rol' => $this->rolAprobacionCodigo ?: null],
+                detalles: ['usuario_id' => $usuarioExistente, 'accion' => 'promovido', 'tenant_destino' => $tenantId, 'rol' => $this->rolAprobacionCodigo ?: null],
                 ip: $ip,
             );
 

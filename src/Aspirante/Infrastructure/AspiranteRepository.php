@@ -100,6 +100,98 @@ class AspiranteRepository
         );
     }
 
+    // ======================= Revisión de la ficha del aspirante =======================
+    // El aspirante completa su ficha con su usuario restringido, que vive en el
+    // tenant de plataforma. El reclutador (en otro tenant) necesita revisarla, por
+    // eso estas lecturas son CROSS-TENANT (sin filtro de tenant) — algo legítimo
+    // aquí porque el aspirante es tenant-less hasta que se le aprueba.
+
+    /**
+     * Última ficha creada por el usuario del aspirante (sin filtro de tenant).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findFichaDeUsuario(string $usuarioId): ?array
+    {
+        return $this->db->fetchOne(
+            'SELECT * FROM fichas WHERE created_by = :uid ORDER BY created_at DESC LIMIT 1',
+            ['uid' => $usuarioId],
+        );
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function fichaTrabajos(string $fichaId): array
+    {
+        return $this->db->fetchAll('SELECT * FROM fichas_trabajos_anteriores WHERE ficha_id = :f ORDER BY orden', ['f' => $fichaId]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function fichaHijos(string $fichaId): array
+    {
+        return $this->db->fetchAll('SELECT * FROM fichas_hijos_menores WHERE ficha_id = :f ORDER BY orden', ['f' => $fichaId]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function fichaReferencias(string $fichaId): array
+    {
+        return $this->db->fetchAll('SELECT * FROM fichas_referencias WHERE ficha_id = :f ORDER BY orden', ['f' => $fichaId]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function fichaCursos(string $fichaId): array
+    {
+        return $this->db->fetchAll(
+            'SELECT fc.*, cc.codigo, cc.nombre AS curso_nombre
+               FROM fichas_cursos fc
+               INNER JOIN catalogo_cursos cc ON cc.id = fc.curso_id
+              WHERE fc.ficha_id = :f
+              ORDER BY cc.orden',
+            ['f' => $fichaId],
+        );
+    }
+
+    /**
+     * Mueve al usuario y TODAS sus fichas (con sus filas dependientes) al tenant
+     * destino. Se usa al aprobar: el empleado y su ficha pasan del tenant de
+     * plataforma al tenant de la empresa del reclutador.
+     */
+    public function moverUsuarioYFichasATenant(string $usuarioId, string $tenantDestino): void
+    {
+        $now = Clock::nowString();
+
+        $this->db->execute(
+            'UPDATE usuarios SET tenant_id = :t, updated_at = :now WHERE id = :uid',
+            ['t' => $tenantDestino, 'now' => $now, 'uid' => $usuarioId],
+        );
+
+        $filas = $this->db->fetchAll('SELECT id FROM fichas WHERE created_by = :uid', ['uid' => $usuarioId]);
+        if ($filas === []) {
+            return;
+        }
+
+        $bind = ['t' => $tenantDestino];
+        $placeholders = [];
+        foreach ($filas as $i => $fila) {
+            $key = "f{$i}";
+            $placeholders[] = ":{$key}";
+            $bind[$key] = (string) $fila['id'];
+        }
+        $in = implode(', ', $placeholders);
+
+        // Filas dependientes por ficha_id (todas son tenant-aware) y la propia ficha.
+        foreach ([
+            'fichas_trabajos_anteriores',
+            'fichas_hijos_menores',
+            'fichas_referencias',
+            'fichas_cursos',
+            'expedientes',
+            'asignaciones',
+        ] as $tabla) {
+            $this->db->execute("UPDATE {$tabla} SET tenant_id = :t WHERE ficha_id IN ({$in})", $bind);
+        }
+        $this->db->execute("UPDATE fichas SET tenant_id = :t WHERE id IN ({$in})", $bind);
+    }
+
     public function existeDocumento(string $documento): bool
     {
         return (int) $this->db->fetchScalar(

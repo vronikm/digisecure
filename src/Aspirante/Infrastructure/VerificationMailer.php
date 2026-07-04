@@ -22,10 +22,13 @@ use DigiSecure\Notification\Infrastructure\Channel\EmailChannel;
  */
 final class VerificationMailer
 {
+    /** Content-ID del logo embebido en el encabezado del correo. */
+    private const LOGO_CID = 'logoGemeseg';
+
     public function __construct(
         private readonly EmailChannel $email,
         private readonly string $devLogPath,
-        private readonly string $baseUrl = '',
+        private readonly string $logoPath = '',
     ) {
     }
 
@@ -37,13 +40,23 @@ final class VerificationMailer
         string $cuerpoHtml,
         string $enlace,
     ): void {
-        $resultado = $this->email->send([
+        $notificacion = [
             'destinatario_email'  => $correo,
             'destinatario_nombre' => $nombre,
             'asunto'              => $asunto,
             'cuerpo_texto'        => $cuerpoTexto,
             'cuerpo_html'         => $cuerpoHtml,
-        ]);
+        ];
+
+        // El logo viaja embebido (cid:) para que se vea sin depender de una URL
+        // pública alcanzable por el cliente (localhost, proxy de Gmail, etc.).
+        if ($this->tieneLogo()) {
+            $notificacion['imagenes_embebidas'] = [
+                ['cid' => self::LOGO_CID, 'ruta' => $this->logoPath],
+            ];
+        }
+
+        $resultado = $this->email->send($notificacion);
 
         if (!$resultado->success) {
             $this->logDev(sprintf(
@@ -61,6 +74,11 @@ final class VerificationMailer
         $linea = '[' . date('Y-m-d H:i:s') . "] {$mensaje}\n";
         @file_put_contents($this->devLogPath, $linea, FILE_APPEND);
         error_log("[DIGISECURE][VERIFICACION] {$mensaje}");
+    }
+
+    private function tieneLogo(): bool
+    {
+        return $this->logoPath !== '' && is_file($this->logoPath);
     }
 
     /**
@@ -105,12 +123,13 @@ TEXT;
         $anio = date('Y');
 
         // El encabezado usa el mismo azul marino del login (ds-auth.css) y muestra
-        // el logo corporativo. El logo requiere URL absoluta para verse en el
-        // correo; si APP_URL no está configurado, se cae al wordmark de texto.
-        $base = rtrim($this->baseUrl, '/');
-        if ($base !== '') {
-            $logoUrl = htmlspecialchars($base . '/assets/img/logoGemeseg.png', ENT_QUOTES, 'UTF-8');
-            $marca = "<img src=\"{$logoUrl}\" alt=\"GEMESEG Seguridad\" width=\"210\" style=\"display:inline-block;width:210px;max-width:80%;height:auto;border:0;outline:none;text-decoration:none\">";
+        // el logo corporativo embebido (cid:). Se fija color:#fff en el <img> para
+        // que, si el logo no cargara, el texto alternativo "GEMESEG Seguridad"
+        // aparezca en blanco (legible sobre el azul del encabezado).
+        if ($this->tieneLogo()) {
+            $marca = '<img src="cid:' . self::LOGO_CID . '" alt="GEMESEG Seguridad" width="210" '
+                . 'style="display:inline-block;width:210px;max-width:80%;height:auto;border:0;outline:none;'
+                . 'text-decoration:none;color:#ffffff;font-size:20px;font-weight:bold">';
         } else {
             $marca = '<h2 style="margin:0;font-size:22px;letter-spacing:1px;color:#fff">GEMESEG</h2>';
         }

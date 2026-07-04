@@ -6,11 +6,13 @@ namespace DigiSecure\Aspirante\Controller;
 
 use DigiSecure\Aspirante\Application\GestionarAspirantesService;
 use DigiSecure\Aspirante\Infrastructure\AspiranteRepository;
+use DigiSecure\Ficha\Infrastructure\CroquisStorage;
 use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\AuthenticatedUser;
+use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Shared\Domain\DomainException;
 
@@ -30,6 +32,8 @@ final class AspiranteAdminController
         private readonly AspiranteRepository $repo,
         private readonly GestionarAspirantesService $service,
         private readonly FlashBag $flash,
+        private readonly Encryption $encryption,
+        private readonly CroquisStorage $croquisStorage,
     ) {
     }
 
@@ -83,7 +87,73 @@ final class AspiranteAdminController
             'csrfToken'   => $csrf->token(),
             'currentPath' => $request->path,
             'aspirante'   => $aspirante,
+            'ficha'       => $this->buildFichaRevision($aspirante),
         ]);
+    }
+
+    /**
+     * Arma (solo lectura) la ficha que el aspirante completó, para revisarla en
+     * el detalle de reclutamiento. Devuelve null si aún no la ha creado.
+     *
+     * @param array<string, mixed> $aspirante
+     * @return array<string, mixed>|null
+     */
+    private function buildFichaRevision(array $aspirante): ?array
+    {
+        $usuarioId = (string) ($aspirante['usuario_id'] ?? '');
+        if ($usuarioId === '') {
+            return null;
+        }
+
+        $ficha = $this->repo->findFichaDeUsuario($usuarioId);
+        if ($ficha === null) {
+            return null;
+        }
+        $fichaId = (string) $ficha['id'];
+
+        $ficha['cedula_display']          = $this->decryptSafe($ficha['cedula_cifrada'] ?? null);
+        $ficha['cuenta_bancaria_display'] = $this->decryptSafe($ficha['cuenta_bancaria_cifrada'] ?? null);
+        $ficha['foto_data_uri']           = $this->imagenDataUri($ficha['foto_archivo_id'] ?? null);
+        $ficha['croquis_data_uri']        = $this->imagenDataUri($ficha['croquis_archivo_id'] ?? null);
+        $ficha['trabajos']                = $this->repo->fichaTrabajos($fichaId);
+        $ficha['hijos']                   = $this->repo->fichaHijos($fichaId);
+        $ficha['referencias']             = $this->repo->fichaReferencias($fichaId);
+        $ficha['cursos']                  = $this->repo->fichaCursos($fichaId);
+
+        return $ficha;
+    }
+
+    private function decryptSafe(mixed $ciphertext): string
+    {
+        if (empty($ciphertext) || !is_string($ciphertext)) {
+            return '';
+        }
+        try {
+            return $this->encryption->decrypt($ciphertext);
+        } catch (\Throwable) {
+            return '[cifrado]';
+        }
+    }
+
+    /**
+     * Lee la imagen del storage por su archivo_id y la devuelve como data URI
+     * (embebida). Evita depender de los endpoints tenant-scoped de imágenes,
+     * inaccesibles para el reclutador (la ficha vive en otro tenant).
+     */
+    private function imagenDataUri(mixed $archivoId): string
+    {
+        if (empty($archivoId) || !is_string($archivoId)) {
+            return '';
+        }
+        $file = $this->croquisStorage->find($archivoId);
+        if ($file === null) {
+            return '';
+        }
+        $binario = @file_get_contents($file['path']);
+        if ($binario === false || $binario === '') {
+            return '';
+        }
+        return 'data:' . $file['mime'] . ';base64,' . base64_encode($binario);
     }
 
     public function aprobar(Request $request, CsrfGuard $csrf, string $id): Response

@@ -1064,11 +1064,11 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                     </div>
                     <div class="ff-error-text" id="cedula-error"></div>
                 </div>
-                <div class="ff-span-2">
+                <div>
                     <label class="form-label">Apellidos <span class="text-danger">*</span></label>
                     <input type="text" name="apellidos" class="form-control" required maxlength="120" value="<?= $old('apellidos') ?>"<?= $lockAttr('apellidos') ?>>
                 </div>
-                <div class="ff-span-2">
+                <div>
                     <label class="form-label">Nombres <span class="text-danger">*</span></label>
                     <input type="text" name="nombres" class="form-control" required maxlength="120" value="<?= $old('nombres') ?>"<?= $lockAttr('nombres') ?>>
                 </div>
@@ -1118,7 +1118,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                     <input type="number" name="estatura" class="form-control" step="0.01" min="1.00" max="2.50"
                            placeholder="1.70" value="<?= $old('estatura') ?>"<?= $lockAttr('estatura') ?>>
                 </div>
-                <div class="ff-span-2">
+                <div>
                     <label class="form-label">Provincia de Nacimiento</label>
                     <?php $nacProvActual = $old('lugar_nacimiento_provincia'); ?>
                     <select name="lugar_nacimiento_provincia" id="ficha-nac-provincia" class="form-select">
@@ -1131,7 +1131,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                         <?php endif ?>
                     </select>
                 </div>
-                <div>
+                <div  class="ff-span-2">
                     <label class="form-label">Ciudad de Nacimiento</label>
                     <select name="lugar_nacimiento_ciudad" id="ficha-nac-ciudad" class="form-select" data-selected="<?= $e($old('lugar_nacimiento_ciudad')) ?>">
                         <option value="">— Selecciona provincia primero —</option>
@@ -1159,7 +1159,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
         <div class="card-body">
             <div class="ds-subheader"><i class="bi bi-cash-coin"></i>Datos financieros</div>
             <div class="ff-row">
-                <div class="ff-span-2">
+                <div>
                     <label class="form-label">Banco</label>
                     <?php
                     $institucionesList = $instituciones ?? [];

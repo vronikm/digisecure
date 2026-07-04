@@ -33,8 +33,12 @@ $puedeAprobar = $verificado && in_array($estado, ['nuevo', 'en_revision', 'conta
 $puedeRechazar = !in_array($estado, ['aprobado', 'descartado'], true);
 
 $item = static function (string $label, string $value, string $span = '6') use ($e): void {
-    echo '<div class="rc-item rc-span-' . $span . '"><div class="rc-label">' . $e($label) . '</div><div class="rc-value">' . $e($value) . '</div></div>';
+    $value = trim($value);
+    echo '<div class="rc-item rc-span-' . $span . '"><div class="rc-label">' . $e($label) . '</div><div class="rc-value">' . ($value !== '' ? $e($value) : '<span style="color:var(--ds-text-soft);font-weight:500">—</span>') . '</div></div>';
 };
+
+$ficha = isset($ficha) && is_array($ficha) ? $ficha : null;
+$fv = static fn(string $k): string => $ficha !== null ? trim((string) ($ficha[$k] ?? '')) : '';
 ?>
 
 <?php $view->section('title') ?><?= $e($nombre) ?> - Reclutamiento<?php $view->endSection() ?>
@@ -49,6 +53,18 @@ $item = static function (string $label, string $value, string $span = '6') use (
     .rc-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
     .rc-reject { flex: 1 1 280px; }
     .rc-reject textarea { width: 100%; border: 1px solid #d8dfe7; border-radius: 10px; padding: .55rem .7rem; font: inherit; font-size: .88rem; margin-bottom: .5rem; }
+    .rc-subhead { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ds-text-soft); margin: 1.1rem 0 .55rem; padding-bottom: .3rem; border-bottom: 1px solid rgba(21,48,79,.09); display: flex; align-items: center; gap: .4rem; }
+    .rc-subhead:first-child { margin-top: 0; }
+    .rc-media { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: .3rem; }
+    .rc-media figure { margin: 0; }
+    .rc-media img { display: block; border: 1px solid rgba(21,48,79,.12); border-radius: 12px; background: #fff; }
+    .rc-foto img { width: 130px; height: 160px; object-fit: cover; }
+    .rc-croquis img { max-width: 100%; width: 420px; height: auto; }
+    .rc-media figcaption { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ds-text-soft); margin-top: .3rem; }
+    .rc-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .rc-table th, .rc-table td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid rgba(21,48,79,.08); }
+    .rc-table th { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ds-text-soft); }
+    .rc-table-wrap { overflow-x: auto; }
     @media (max-width: 991.98px) { .rc-item { grid-column: span 12; } }
 </style>
 <?php $view->endSection() ?>
@@ -112,6 +128,168 @@ $item = static function (string $label, string $value, string $span = '6') use (
             $item('Verificación de correo', $verificado ? 'Verificado' . (!empty($a['email_verificado_at']) ? ' · ' . $a['email_verificado_at'] : '') : 'Pendiente', '4');
             ?>
         </div>
+    </div>
+</div>
+
+<div class="ds-card">
+    <div class="ds-card-header tone-info">
+        <span class="ds-card-mark"><i class="bi bi-clipboard2-data"></i></span>
+        <div>
+            <div class="ds-card-title">Ficha del aspirante</div>
+            <div class="ds-card-subtitle">Datos que el aspirante completó en su ingreso</div>
+        </div>
+    </div>
+    <div class="ds-card-body">
+        <?php if ($ficha === null): ?>
+            <div class="login-info" role="status" style="border-radius:12px; margin:0;">
+                <i class="bi bi-info-circle"></i>
+                <div><strong>Ficha pendiente</strong> El aspirante aún no ha completado su ficha de ingreso.</div>
+            </div>
+        <?php else:
+            $generoLabel = ['MASCULINO' => 'Masculino', 'FEMENINO' => 'Femenino', 'OTRO' => 'Otro'][$fv('genero')] ?? $fv('genero');
+            $estadoFichaLabel = ['BORRADOR' => 'Borrador', 'EN_REVISION' => 'En revisión', 'COMPLETA' => 'Completa', 'ELIMINADA' => 'Eliminada'][$fv('estado')] ?? $fv('estado');
+            $tipoFichaLabel = ['INGRESO' => 'Ingreso', 'REINGRESO' => 'Reingreso', 'ACTUALIZACION' => 'Actualización'][$fv('tipo_ficha')] ?? $fv('tipo_ficha');
+            $estaturaFicha = $fv('estatura');
+            $estaturaFichaTxt = $estaturaFicha !== '' ? number_format((float) $estaturaFicha, 2) . ' m' : '';
+        ?>
+            <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; margin-bottom:.9rem;">
+                <span class="ds-badge tone-info"><i class="bi bi-hash"></i> <?= $e($fv('correlativo')) ?></span>
+                <span class="ds-badge tone-muted"><?= $e($tipoFichaLabel) ?></span>
+                <span class="ds-badge tone-muted"><?= $e($estadoFichaLabel) ?></span>
+            </div>
+
+            <?php if ($ficha['foto_data_uri'] !== '' || $ficha['croquis_data_uri'] !== ''): ?>
+            <div class="rc-media">
+                <?php if ($ficha['foto_data_uri'] !== ''): ?>
+                <figure class="rc-foto"><img src="<?= $e($ficha['foto_data_uri']) ?>" alt="Foto del aspirante"><figcaption>Foto</figcaption></figure>
+                <?php endif ?>
+                <?php if ($ficha['croquis_data_uri'] !== ''): ?>
+                <figure class="rc-croquis"><img src="<?= $e($ficha['croquis_data_uri']) ?>" alt="Croquis del domicilio"><figcaption>Croquis del domicilio</figcaption></figure>
+                <?php endif ?>
+            </div>
+            <?php endif ?>
+
+            <div class="rc-subhead"><i class="bi bi-person-vcard"></i>Datos personales</div>
+            <div class="rc-grid">
+                <?php
+                $item('Cédula', $ficha['cedula_display'], '3');
+                $item('Apellidos', $fv('apellidos'), '3');
+                $item('Nombres', $fv('nombres'), '3');
+                $item('Género', $generoLabel, '3');
+                $item('Fecha de nacimiento', $fv('fecha_nacimiento'), '3');
+                $item('Estado civil', $fv('estado_civil'), '3');
+                $item('Tipo de sangre', $fv('tipo_sangre'), '3');
+                $item('Estatura', $estaturaFichaTxt, '3');
+                $item('Provincia de nacimiento', $fv('lugar_nacimiento_provincia'), '3');
+                $item('Ciudad de nacimiento', $fv('lugar_nacimiento_ciudad'), '3');
+                ?>
+            </div>
+
+            <div class="rc-subhead"><i class="bi bi-telephone"></i>Contacto</div>
+            <div class="rc-grid">
+                <?php
+                $item('Celular', $fv('celular'), '4');
+                $item('Email', $fv('email'), '4');
+                $item('Contacto de emergencia', trim($fv('contacto_emergencia_nombre') . ' ' . $fv('contacto_emergencia_telefono')), '4');
+                ?>
+            </div>
+
+            <div class="rc-subhead"><i class="bi bi-house"></i>Domicilio</div>
+            <div class="rc-grid">
+                <?php
+                $item('Ciudad', $fv('domicilio_ciudad'), '4');
+                $item('Barrio', $fv('domicilio_barrio'), '4');
+                $item('Teléfono', $fv('domicilio_telefono'), '4');
+                $item('Dirección', trim($fv('domicilio_calle') . ' ' . $fv('domicilio_numero')), '6');
+                $item('Referencia', $fv('domicilio_referencia'), '6');
+                ?>
+            </div>
+
+            <div class="rc-subhead"><i class="bi bi-mortarboard"></i>Instrucción y datos bancarios</div>
+            <div class="rc-grid">
+                <?php
+                $item('Primaria', $fv('instruccion_primaria'), '4');
+                $item('Secundaria', $fv('instruccion_secundaria'), '4');
+                $item('Superior', $fv('instruccion_superior'), '4');
+                $item('Banco', $fv('banco'), '4');
+                $item('Tipo de cuenta', $fv('tipo_cuenta'), '4');
+                $item('N.º de cuenta', $ficha['cuenta_bancaria_display'], '4');
+                ?>
+            </div>
+
+            <?php if (!empty($ficha['trabajos'])): ?>
+            <div class="rc-subhead"><i class="bi bi-briefcase"></i>Experiencia laboral</div>
+            <div class="rc-table-wrap">
+                <table class="rc-table">
+                    <thead><tr><th>Empresa</th><th>Cargo</th><th>Tiempo</th><th>Teléfonos</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($ficha['trabajos'] as $t): ?>
+                        <tr>
+                            <td><?= $e((string) ($t['empresa'] ?? '')) ?></td>
+                            <td><?= $e((string) ($t['cargo'] ?? '')) ?></td>
+                            <td><?= $e((string) ($t['tiempo'] ?? '')) ?></td>
+                            <td><?= $e((string) ($t['telefonos'] ?? '')) ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif ?>
+
+            <?php if (!empty($ficha['referencias'])): ?>
+            <div class="rc-subhead"><i class="bi bi-people"></i>Referencias</div>
+            <div class="rc-table-wrap">
+                <table class="rc-table">
+                    <thead><tr><th>Parentesco</th><th>Nombre</th><th>Dirección</th><th>Teléfono</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($ficha['referencias'] as $r): ?>
+                        <tr>
+                            <td><?= $e((string) ($r['parentesco'] ?? '')) ?></td>
+                            <td><?= $e((string) ($r['nombre'] ?? '')) ?></td>
+                            <td><?= $e((string) ($r['direccion'] ?? '')) ?></td>
+                            <td><?= $e((string) ($r['telefono'] ?? '')) ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif ?>
+
+            <?php if (!empty($ficha['hijos'])): ?>
+            <div class="rc-subhead"><i class="bi bi-people-fill"></i>Hijos menores</div>
+            <div class="rc-table-wrap">
+                <table class="rc-table">
+                    <thead><tr><th>Nombre</th><th>Edad</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($ficha['hijos'] as $h): ?>
+                        <tr>
+                            <td><?= $e((string) ($h['nombre'] ?? '')) ?></td>
+                            <td><?= $e((string) ($h['edad'] ?? '')) ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif ?>
+
+            <?php if (!empty($ficha['cursos'])): ?>
+            <div class="rc-subhead"><i class="bi bi-award"></i>Cursos</div>
+            <div class="rc-table-wrap">
+                <table class="rc-table">
+                    <thead><tr><th>Curso</th><th>Fecha</th><th>Observación</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($ficha['cursos'] as $c): ?>
+                        <tr>
+                            <td><?= $e((string) ($c['curso_nombre'] ?? $c['codigo'] ?? '')) ?></td>
+                            <td><?= $e((string) ($c['fecha_obtencion'] ?? '')) ?></td>
+                            <td><?= $e((string) ($c['observacion'] ?? '')) ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif ?>
+        <?php endif ?>
     </div>
 </div>
 

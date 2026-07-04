@@ -44,6 +44,12 @@ final class EmailChannel implements NotificationChannel
             return ChannelResult::fail('Notificación sin cuerpo', 'EMPTY_BODY');
         }
 
+        // Imágenes embebidas (logo, etc.) que viajan DENTRO del correo (cid:), para
+        // que se vean sin depender de una URL pública alcanzable por el cliente.
+        $imagenes = $this->prepararImagenesEmbebidas(
+            is_array($notificacion['imagenes_embebidas'] ?? null) ? $notificacion['imagenes_embebidas'] : [],
+        );
+
         $start = (int) (microtime(true) * 1000);
 
         // Usa la funcion nativa mail() de PHP (MTA del hosting via php.ini, igual
@@ -55,9 +61,9 @@ final class EmailChannel implements NotificationChannel
             || !class_exists('\\PHPMailer\\PHPMailer\\PHPMailer');
 
         if ($usarNativo) {
-            $result = $this->sendWithMailFunction($to, $subject, $bodyHtml, $bodyText);
+            $result = $this->sendWithMailFunction($to, $subject, $bodyHtml, $bodyText, $imagenes);
         } else {
-            $result = $this->sendWithPhpMailer($to, (string) ($notificacion['destinatario_nombre'] ?? ''), $subject, $bodyHtml, $bodyText);
+            $result = $this->sendWithPhpMailer($to, (string) ($notificacion['destinatario_nombre'] ?? ''), $subject, $bodyHtml, $bodyText, $imagenes);
         }
 
         $elapsed = (int) (microtime(true) * 1000) - $start;
@@ -70,9 +76,10 @@ final class EmailChannel implements NotificationChannel
     }
 
     /**
+     * @param list<array{cid:string, mime:string, nombre:string, data:string}> $imagenes
      * @return array{ok:bool, code?:string, msg?:string}
      */
-    private function sendWithPhpMailer(string $to, string $toName, string $subject, ?string $bodyHtml, ?string $bodyText): array
+    private function sendWithPhpMailer(string $to, string $toName, string $subject, ?string $bodyHtml, ?string $bodyText, array $imagenes = []): array
     {
         try {
             /** @psalm-suppress UndefinedClass */
@@ -94,6 +101,10 @@ final class EmailChannel implements NotificationChannel
             $mail->addAddress($to, $toName);
             $mail->Subject = $subject;
 
+            foreach ($imagenes as $img) {
+                $mail->addStringEmbeddedImage($img['data'], $img['cid'], $img['nombre'], 'base64', $img['mime']);
+            }
+
             if ($bodyHtml !== null) {
                 $mail->isHTML(true);
                 $mail->Body = $bodyHtml;
@@ -111,9 +122,10 @@ final class EmailChannel implements NotificationChannel
     }
 
     /**
+     * @param list<array{cid:string, mime:string, nombre:string, data:string}> $imagenes
      * @return array{ok:bool, code?:string, msg?:string}
      */
-    private function sendWithMailFunction(string $to, string $subject, ?string $bodyHtml, ?string $bodyText): array
+    private function sendWithMailFunction(string $to, string $subject, ?string $bodyHtml, ?string $bodyText, array $imagenes = []): array
     {
         $isHtml = $bodyHtml !== null;
         $body = $isHtml ? $bodyHtml : (string) $bodyText;
@@ -132,7 +144,12 @@ final class EmailChannel implements NotificationChannel
                 : $this->fromAddress);
         }
 
-        if ($isHtml && $bodyText !== null) {
+        if ($isHtml && $imagenes !== []) {
+            // multipart/related: HTML (+texto alterno) junto con las imágenes cid:.
+            $relBoundary = bin2hex(random_bytes(16));
+            $headers[] = "Content-Type: multipart/related; boundary=\"{$relBoundary}\"";
+            $body = $this->buildRelatedBody($bodyText, (string) $bodyHtml, $imagenes, $relBoundary, $boundary);
+        } elseif ($isHtml && $bodyText !== null) {
             $headers[] = "Content-Type: multipart/alternative; boundary=\"{$boundary}\"";
             $body = $this->buildMultipartBody($bodyText, (string) $bodyHtml, $boundary);
         } elseif ($isHtml) {
@@ -153,6 +170,101 @@ final class EmailChannel implements NotificationChannel
             ];
         }
         return ['ok' => true, 'code' => 'MAIL_FN_OK', 'msg' => 'Sent via mail()'];
+    }
+
+    /**
+     * Lee y normaliza las imágenes a embeber. Cada entrada de entrada es
+     * ['cid' => string, 'ruta' => string]. Devuelve solo las legibles.
+     *
+     * @param array<int, mixed> $imagenes
+     * @return list<array{cid:string, mime:string, nombre:string, data:string}>
+     */
+    private function prepararImagenesEmbebidas(array $imagenes): array
+    {
+        $out = [];
+        foreach ($imagenes as $img) {
+            if (!is_array($img)) {
+                continue;
+            }
+            $cid = (string) ($img['cid'] ?? '');
+            $ruta = (string) ($img['ruta'] ?? '');
+            if ($cid === '' || $ruta === '' || !is_file($ruta)) {
+                continue;
+            }
+
+            $data = @file_get_contents($ruta);
+            if ($data === false || $data === '') {
+                continue;
+            }
+
+            $mime = 'application/octet-stream';
+            if (class_exists('\\finfo')) {
+                $detected = (new \finfo(FILEINFO_MIME_TYPE))->buffer($data);
+                if (is_string($detected) && $detected !== '') {
+                    $mime = $detected;
+                }
+            }
+
+            $out[] = [
+                'cid' => $cid,
+                'mime' => $mime,
+                'nombre' => basename($ruta),
+                'data' => $data,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Cuerpo multipart/related: una parte multipart/alternative (texto + HTML)
+     * seguida de las imágenes embebidas referenciadas por cid:.
+     *
+     * @param list<array{cid:string, mime:string, nombre:string, data:string}> $imagenes
+     */
+    private function buildRelatedBody(?string $textPart, string $htmlPart, array $imagenes, string $relBoundary, string $altBoundary): string
+    {
+        $lines = ["--{$relBoundary}"];
+
+        if ($textPart !== null) {
+            $lines[] = "Content-Type: multipart/alternative; boundary=\"{$altBoundary}\"";
+            $lines[] = '';
+            $lines[] = "--{$altBoundary}";
+            $lines[] = 'Content-Type: text/plain; charset=UTF-8';
+            $lines[] = 'Content-Transfer-Encoding: 8bit';
+            $lines[] = '';
+            $lines[] = $textPart;
+            $lines[] = '';
+            $lines[] = "--{$altBoundary}";
+            $lines[] = 'Content-Type: text/html; charset=UTF-8';
+            $lines[] = 'Content-Transfer-Encoding: 8bit';
+            $lines[] = '';
+            $lines[] = $htmlPart;
+            $lines[] = '';
+            $lines[] = "--{$altBoundary}--";
+        } else {
+            $lines[] = 'Content-Type: text/html; charset=UTF-8';
+            $lines[] = 'Content-Transfer-Encoding: 8bit';
+            $lines[] = '';
+            $lines[] = $htmlPart;
+        }
+        $lines[] = '';
+
+        foreach ($imagenes as $img) {
+            $lines[] = "--{$relBoundary}";
+            $lines[] = "Content-Type: {$img['mime']}; name=\"{$img['nombre']}\"";
+            $lines[] = 'Content-Transfer-Encoding: base64';
+            $lines[] = "Content-ID: <{$img['cid']}>";
+            $lines[] = "Content-Disposition: inline; filename=\"{$img['nombre']}\"";
+            $lines[] = '';
+            $lines[] = rtrim(chunk_split(base64_encode($img['data'])));
+            $lines[] = '';
+        }
+
+        $lines[] = "--{$relBoundary}--";
+        $lines[] = '';
+
+        return implode("\r\n", $lines);
     }
 
     private function buildMultipartBody(string $textPart, string $htmlPart, string $boundary): string

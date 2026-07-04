@@ -32,12 +32,11 @@ final class CroquisStorage
             throw new DomainException('No se recibio la imagen del croquis.');
         }
 
-        if (!preg_match('#^data:(image/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=\s]+)$#', $dataUrl, $match)) {
+        if (!preg_match('#^data:image/[a-z0-9.+-]+;base64,([A-Za-z0-9+/=\s]+)$#i', $dataUrl, $match)) {
             throw new DomainException('La imagen del croquis no tiene un formato valido.');
         }
 
-        $mime = $match[1];
-        $rawBase64 = preg_replace('/\s+/', '', $match[2]) ?? '';
+        $rawBase64 = preg_replace('/\s+/', '', $match[1]) ?? '';
         if (strlen($rawBase64) > 8 * 1024 * 1024) {
             throw new DomainException('La imagen del croquis es demasiado grande.');
         }
@@ -50,10 +49,14 @@ final class CroquisStorage
             throw new DomainException('La imagen del croquis excede 5 MB.');
         }
 
+        // El tipo declarado en el data URL lo pone el navegador (File.type) y a
+        // veces etiqueta mal el archivo (p. ej. un PNG guardado con extension .jpg,
+        // o un HEIC/screenshot recodificado). finfo es la autoridad: se valida y se
+        // almacena segun el CONTENIDO real, no segun lo declarado por el cliente.
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $realMime = $finfo->buffer($binary) ?: '';
-        if ($realMime !== $mime || !isset(self::MIME_EXT[$realMime])) {
-            throw new DomainException('El contenido de la imagen del croquis no coincide con el formato declarado.');
+        if (!isset(self::MIME_EXT[$realMime])) {
+            throw new DomainException('La imagen no es un archivo valido. Usa una imagen JPG, PNG o WEBP.');
         }
 
         $id = $this->storeBinary($binary, $realMime);
