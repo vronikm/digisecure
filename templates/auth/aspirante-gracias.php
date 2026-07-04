@@ -39,7 +39,7 @@ $correo = $correo ?? '';
             <i class="bi bi-check-circle-fill"></i>
             <div>
                 <strong><?= $nombre !== '' ? $e($nombre) . ',' : 'Hola,' ?></strong>
-                Recibimos tu postulación. Te enviamos un enlace de verificación
+                Recibimos tu solicitud. Te enviamos un enlace de verificación
                 <?= $correo !== '' ? 'a:' : 'a tu correo.' ?>
                 <?php if ($correo !== ''): ?>
                     <div style="margin-top: .35rem;">

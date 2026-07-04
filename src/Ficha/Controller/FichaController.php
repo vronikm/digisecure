@@ -201,11 +201,20 @@ final class FichaController
         $cursos = $this->loadCatalogoCursos();
         $input = [];
         $prefillFromLast = false;
+        $lockedFields = [];
 
         $baseFichaId = trim((string) $request->query('base_ficha', ''));
         if ($baseFichaId !== '') {
             $input = $this->buildCreatePrefillFromFicha($baseFichaId);
             $prefillFromLast = $input !== [];
+        }
+
+        // Aspirante en su primer ingreso: los datos de su registro se cargan y se
+        // bloquean para que no pueda modificarlos al crear su ficha.
+        $registroLock = $this->aspiranteRegistroLock($user);
+        if ($registroLock !== null) {
+            $input = array_merge($input, $registroLock['input']);
+            $lockedFields = $registroLock['locked'];
         }
 
         return $this->view->response('ficha/create', [
@@ -216,8 +225,9 @@ final class FichaController
             'instituciones' => $this->loadInstitucionesFinancieras(),
             'input' => $input,
             'prefillFromLast' => $prefillFromLast,
+            'lockedFields' => $lockedFields,
             'prefillByCedulaUrl' => '/guardias/prefill/cedula',
-            'formEnableCedulaPrefill' => true,
+            'formEnableCedulaPrefill' => $lockedFields === [],
             'googleMapsKey' => $this->googleMapsKey(),
         ]);
     }
@@ -279,6 +289,16 @@ final class FichaController
         $user = $request->attribute('auth_user');
         $input = $request->post;
 
+        // Aspirante: los campos de su registro son de solo lectura en el formulario.
+        // Se reimponen aquí en servidor para no confiar en el `readonly` del cliente.
+        $registroLock = $this->aspiranteRegistroLock($user);
+        $lockedFields = $registroLock !== null ? $registroLock['locked'] : [];
+        if ($registroLock !== null) {
+            foreach ($lockedFields as $campo) {
+                $input[$campo] = $registroLock['input'][$campo];
+            }
+        }
+
         try {
             $this->verificarLimite->verificarCrearGuardia();
             $result = $this->crearFichaService()->execute($input, $user->id, $request->clientIp());
@@ -294,8 +314,9 @@ final class FichaController
                 'instituciones' => $this->loadInstitucionesFinancieras(),
                 'input' => $input,
                 'error' => $e->getMessage(),
+                'lockedFields' => $lockedFields,
                 'prefillByCedulaUrl' => '/guardias/prefill/cedula',
-                'formEnableCedulaPrefill' => true,
+                'formEnableCedulaPrefill' => $lockedFields === [],
                 'googleMapsKey' => $this->googleMapsKey(),
             ]);
         }
@@ -708,6 +729,55 @@ final class FichaController
         }
 
         return \is_string($secure) && $secure !== '' ? $secure : $path;
+    }
+
+    /**
+     * Si el usuario autenticado es un aspirante (guardia auto-registrado, en su
+     * primer ingreso al sistema), devuelve los datos de su registro para prefijar
+     * y BLOQUEAR los campos correspondientes de la ficha. Devuelve null para
+     * cualquier otro usuario o si no se encuentra el registro.
+     *
+     * @return array{input: array<string, string>, locked: list<string>}|null
+     */
+    private function aspiranteRegistroLock(AuthenticatedUser $user): ?array
+    {
+        if (!$user->tieneRol('aspirante')) {
+            return null;
+        }
+
+        $repo = $this->container->get(\DigiSecure\Aspirante\Infrastructure\AspiranteRepository::class);
+        if (!$repo instanceof \DigiSecure\Aspirante\Infrastructure\AspiranteRepository) {
+            return null;
+        }
+
+        $registro = $repo->findRegistroByUsuarioId($user->id);
+        if ($registro === null) {
+            return null;
+        }
+
+        // La estatura se guarda en cm (entero); la ficha la maneja en metros.
+        $estatura = $registro['estatura_cm'] > 0
+            ? number_format($registro['estatura_cm'] / 100, 2, '.', '')
+            : '';
+
+        $input = [
+            'cedula'           => $registro['documento'],
+            'apellidos'        => $registro['apellidos'],
+            'nombres'          => $registro['nombres'],
+            'fecha_nacimiento' => $registro['fecha_nacimiento'],
+            'estatura'         => $estatura,
+            'celular'          => $registro['celular'],
+            'email'            => $registro['correo'],
+        ];
+
+        // Solo se bloquean los campos que realmente traen dato del registro, para
+        // no dejar inservible un campo que quedara vacío.
+        $locked = array_values(array_keys(array_filter(
+            $input,
+            static fn(string $v): bool => $v !== '',
+        )));
+
+        return ['input' => $input, 'locked' => $locked];
     }
 
     /**

@@ -39,7 +39,7 @@ $yaVerificado = $yaVerificado ?? false;
             <div>
                 <strong><?= $nombre !== '' ? $e($nombre) . ',' : '¡Listo!' ?></strong>
                 Confirmamos tu correo electrónico. Tu cuenta quedó habilitada para
-                <strong>completar tu ficha de guardia</strong>.
+                <strong>completar tu solicitud de empleo.</strong>
             </div>
         </div>
 
@@ -48,8 +48,7 @@ $yaVerificado = $yaVerificado ?? false;
             <div>
                 <strong>¿Qué sigue?</strong>
                 Inicia sesión con tu correo y la contraseña que registraste. Por
-                ahora solo tendrás acceso al formulario para completar tu ficha de
-                guardia.
+                ahora solo tendrás acceso al formulario para completar tu solicitud de empleo.
             </div>
         </div>
 

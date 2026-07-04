@@ -25,6 +25,7 @@ final class VerificationMailer
     public function __construct(
         private readonly EmailChannel $email,
         private readonly string $devLogPath,
+        private readonly string $baseUrl = '',
     ) {
     }
 
@@ -101,33 +102,45 @@ TEXT;
         $nombreEsc = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
         $enlaceEsc = htmlspecialchars($enlace, ENT_QUOTES, 'UTF-8');
         $saludo = $nombreEsc !== '' ? "Hola <strong>{$nombreEsc}</strong>," : 'Hola,';
+        $anio = date('Y');
+
+        // El encabezado usa el mismo azul marino del login (ds-auth.css) y muestra
+        // el logo corporativo. El logo requiere URL absoluta para verse en el
+        // correo; si APP_URL no está configurado, se cae al wordmark de texto.
+        $base = rtrim($this->baseUrl, '/');
+        if ($base !== '') {
+            $logoUrl = htmlspecialchars($base . '/assets/img/logoGemeseg.png', ENT_QUOTES, 'UTF-8');
+            $marca = "<img src=\"{$logoUrl}\" alt=\"GEMESEG Seguridad\" width=\"210\" style=\"display:inline-block;width:210px;max-width:80%;height:auto;border:0;outline:none;text-decoration:none\">";
+        } else {
+            $marca = '<h2 style="margin:0;font-size:22px;letter-spacing:1px;color:#fff">GEMESEG</h2>';
+        }
 
         return <<<HTML
 <!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><title>Confirma tu correo · GEMESEG</title></head>
-<body style="font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:24px;color:#16324f">
-<div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden">
-  <div style="background:#1a1a1a;color:#fff;padding:28px 24px;text-align:center">
-    <h2 style="margin:0;font-size:22px;letter-spacing:1px">GEMESEG</h2>
-    <div style="opacity:.85;font-size:13px;margin-top:4px">Plataforma DigiSecure</div>
+<body style="font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#0b1133;margin:0;padding:24px;color:#0f172a">
+<div style="max-width:600px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 30px 80px rgba(5,16,30,.35);overflow:hidden">
+  <div style="background:#0d1f4f;padding:30px 24px;text-align:center">
+    {$marca}
+    <div style="color:rgba(255,255,255,.7);font-size:12px;margin-top:10px;letter-spacing:.08em;text-transform:uppercase">Plataforma DigiSecure</div>
   </div>
-  <div style="padding:28px 24px">
-    <p>{$saludo}</p>
-    <p>Bienvenido. Para continuar con el proceso de habilitación, confirma que este es tu correo electrónico.</p>
+  <div style="padding:28px 24px;color:#0f172a">
+    <p style="margin:0 0 12px">{$saludo}</p>
+    <p style="margin:0 0 12px">Bienvenido. Para continuar con el proceso de habilitación, confirma que este es tu correo electrónico.</p>
     <p style="margin:28px 0;text-align:center">
-      <a href="{$enlaceEsc}" style="display:inline-block;background:#b91c1c;color:#fff;text-decoration:none;padding:14px 32px;border-radius:6px;font-weight:bold;font-size:15px">
+      <a href="{$enlaceEsc}" style="display:inline-block;background:#e3b51b;color:#111;text-decoration:none;padding:14px 34px;border-radius:10px;font-weight:bold;font-size:15px;box-shadow:0 6px 18px rgba(133,94,0,.35)">
         ✔ Confirmar mi correo
       </a>
     </p>
-    <p style="color:#6c757d;font-size:13px">Este enlace expira en <strong>48 horas</strong>.</p>
-    <p style="color:#6c757d;font-size:12px">Si el botón no funciona, copia y pega esta URL en tu navegador:</p>
-    <p style="word-break:break-all;font-size:12px;background:#f8f9fa;padding:8px 12px;border-radius:4px;color:#495057">{$enlaceEsc}</p>
+    <p style="color:#5f7288;font-size:13px;margin:0 0 12px">Este enlace expira en <strong>48 horas</strong>.</p>
+    <p style="color:#5f7288;font-size:12px;margin:0 0 6px">Si el botón no funciona, copia y pega esta URL en tu navegador:</p>
+    <p style="word-break:break-all;font-size:12px;background:#f1f5fb;padding:8px 12px;border-radius:6px;color:#1d4ed8;margin:0">{$enlaceEsc}</p>
     <hr style="border:none;border-top:1px solid #e9ecef;margin:24px 0">
-    <p style="color:#6c757d;font-size:12px">Si tú no solicitaste este registro, ignora este mensaje.</p>
+    <p style="color:#5f7288;font-size:12px;margin:0">Si tú no solicitaste este registro, ignora este mensaje.</p>
   </div>
-  <div style="background:#f8f9fa;padding:12px 24px;font-size:11px;color:#6c757d;text-align:center">
-    — GEMESEG Seguridad · Plataforma DigiSecure
+  <div style="background:#f6f8fb;padding:14px 24px;font-size:11px;color:#5f7288;text-align:center">
+    &copy; {$anio} GEMESEG Seguridad · Plataforma DigiSecure
   </div>
 </div>
 </body>

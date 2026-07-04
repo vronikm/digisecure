@@ -17,6 +17,12 @@ use DigiSecure\Shared\Domain\EcuadorGeo;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 $old = static fn(string $key, string $default = '') => $e((string)($input[$key] ?? $default));
+
+// Campos que llegan bloqueados (solo lectura) desde el registro del aspirante.
+$lockedFields = isset($lockedFields) && is_array($lockedFields) ? $lockedFields : [];
+$lockAttr = static fn(string $name): string => in_array($name, $lockedFields, true)
+    ? ' readonly title="Dato tomado de tu registro; no se puede modificar"'
+    : '';
 $prefillTrabajos = array_values(is_array($input['trabajos_anteriores'] ?? null) ? $input['trabajos_anteriores'] : []);
 $prefillHijos = array_values(is_array($input['hijos_menores'] ?? null) ? $input['hijos_menores'] : []);
 $prefillReferencias = array_values(is_array($input['referencias'] ?? null) ? $input['referencias'] : []);
@@ -1041,24 +1047,30 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
             </script>
 
             <div class="ds-subheader"><i class="bi bi-tag"></i>Identificación</div>
+            <?php if ($lockedFields !== []): ?>
+            <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 mb-3" role="note" style="font-size:.85rem;">
+                <i class="bi bi-lock-fill"></i>
+                <span>Los datos de tu registro se cargaron automáticamente y no pueden modificarse.</span>
+            </div>
+            <?php endif; ?>
             <div class="ff-row">
                 <div>
                     <label class="form-label">Cédula <span class="text-danger">*</span></label>
                     <div class="ff-input-with-icon" id="cedula-wrap">
                         <input type="text" name="cedula" class="form-control" required maxlength="10" minlength="10"
                                pattern="\d{10}" inputmode="numeric" autocomplete="off"
-                               placeholder="Ej: 1712345678" value="<?= $old('cedula') ?>">
+                               placeholder="Ej: 1712345678" value="<?= $old('cedula') ?>"<?= $lockAttr('cedula') ?>>
                         <i class="bi ff-input-icon" id="cedula-icon" aria-hidden="true"></i>
                     </div>
                     <div class="ff-error-text" id="cedula-error"></div>
                 </div>
                 <div class="ff-span-2">
                     <label class="form-label">Apellidos <span class="text-danger">*</span></label>
-                    <input type="text" name="apellidos" class="form-control" required maxlength="120" value="<?= $old('apellidos') ?>">
+                    <input type="text" name="apellidos" class="form-control" required maxlength="120" value="<?= $old('apellidos') ?>"<?= $lockAttr('apellidos') ?>>
                 </div>
                 <div class="ff-span-2">
                     <label class="form-label">Nombres <span class="text-danger">*</span></label>
-                    <input type="text" name="nombres" class="form-control" required maxlength="120" value="<?= $old('nombres') ?>">
+                    <input type="text" name="nombres" class="form-control" required maxlength="120" value="<?= $old('nombres') ?>"<?= $lockAttr('nombres') ?>>
                 </div>
             </div>
 
@@ -1077,7 +1089,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                 </div>
                 <div>
                     <label class="form-label">Fecha de Nacimiento <span class="text-danger">*</span></label>
-                    <input type="date" name="fecha_nacimiento" class="form-control" required value="<?= $old('fecha_nacimiento') ?>">
+                    <input type="date" name="fecha_nacimiento" class="form-control" required value="<?= $old('fecha_nacimiento') ?>"<?= $lockAttr('fecha_nacimiento') ?>>
                 </div>
                 <div>
                     <label class="form-label">Estado Civil</label>
@@ -1104,7 +1116,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                 <div>
                     <label class="form-label">Estatura (m)</label>
                     <input type="number" name="estatura" class="form-control" step="0.01" min="1.00" max="2.50"
-                           placeholder="1.70" value="<?= $old('estatura') ?>">
+                           placeholder="1.70" value="<?= $old('estatura') ?>"<?= $lockAttr('estatura') ?>>
                 </div>
                 <div class="ff-span-2">
                     <label class="form-label">Provincia de Nacimiento</label>
@@ -1131,11 +1143,11 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
             <div class="ff-row">
                 <div>
                     <label class="form-label">Celular</label>
-                    <input type="tel" name="celular" class="form-control" maxlength="30" value="<?= $old('celular') ?>">
+                    <input type="tel" name="celular" class="form-control" maxlength="30" value="<?= $old('celular') ?>"<?= $lockAttr('celular') ?>>
                 </div>
                 <div class="ff-span-3">
                     <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" maxlength="190" value="<?= $old('email') ?>">
+                    <input type="email" name="email" class="form-control" maxlength="190" value="<?= $old('email') ?>"<?= $lockAttr('email') ?>>
                 </div>
             </div>
         </div>

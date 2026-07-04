@@ -253,6 +253,42 @@ class AspiranteRepository
     }
 
     /**
+     * Datos del registro del aspirante asociado a un usuario ya creado. Se usan
+     * para prefijar (y bloquear) los campos correspondientes cuando el aspirante
+     * completa su ficha en /guardias/crear en su primer ingreso.
+     *
+     * @return array{tipo_documento: string, documento: string, apellidos: string,
+     *     nombres: string, celular: string, correo: string, estatura_cm: int,
+     *     fecha_nacimiento: string}|null
+     */
+    public function findRegistroByUsuarioId(string $usuarioId): ?array
+    {
+        $row = $this->db->fetchOne(
+            'SELECT tipo_documento, documento, apellidos, nombres, celular,
+                    correo, estatura_cm, fecha_nacimiento
+               FROM aspirantes
+              WHERE usuario_id = :uid
+              LIMIT 1',
+            ['uid' => $usuarioId],
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'tipo_documento'   => (string) ($row['tipo_documento'] ?? ''),
+            'documento'        => (string) ($row['documento'] ?? ''),
+            'apellidos'        => (string) ($row['apellidos'] ?? ''),
+            'nombres'          => (string) ($row['nombres'] ?? ''),
+            'celular'          => (string) ($row['celular'] ?? ''),
+            'correo'           => (string) ($row['correo'] ?? ''),
+            'estatura_cm'      => (int) ($row['estatura_cm'] ?? 0),
+            'fecha_nacimiento' => (string) ($row['fecha_nacimiento'] ?? ''),
+        ];
+    }
+
+    /**
      * Busca el rol por codigo, prefiriendo el rol propio del tenant sobre el de sistema.
      */
     public function buscarRolId(string $codigo, string $tenantId): ?string
