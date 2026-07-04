@@ -457,7 +457,38 @@ final class FichaController
             'referencias' => $referencias,
             'fichasCursos' => $fichasCursos,
             'cursos' => $catalogoCursos,
+            'instituciones' => $this->loadInstitucionesFinancieras(),
+            'googleMapsKey' => $this->googleMapsKey(),
+            'expedienteResumen' => $this->buildExpedienteResumen($id),
+            'expedienteUrl' => '/guardias/' . $id . '/expediente',
         ]);
+    }
+
+    /**
+     * Resumen del expediente documental (Bloque A/B) para integrarlo en la
+     * fase "Educación y Cursos" del formulario de edición.
+     *
+     * @return array{bloqueA: array{total:int,aceptados:int}, bloqueB: array{total:int,aceptados:int}}|null
+     */
+    private function buildExpedienteResumen(string $fichaId): ?array
+    {
+        $expRepo = $this->container->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class);
+        if (!$expRepo instanceof \DigiSecure\Expediente\Infrastructure\ExpedienteRepository) {
+            return null;
+        }
+
+        $expediente = $expRepo->findExpedienteByFichaId($fichaId);
+
+        return [
+            'bloqueA' => [
+                'total' => count($expRepo->getDocumentoTipos('A')),
+                'aceptados' => $expediente !== null ? $expRepo->countAceptadosByBloque((string) $expediente['id'], 'A') : 0,
+            ],
+            'bloqueB' => [
+                'total' => count($expRepo->getDocumentoTipos('B')),
+                'aceptados' => $expediente !== null ? $expRepo->countAceptadosByBloque((string) $expediente['id'], 'B') : 0,
+            ],
+        ];
     }
 
     public function update(Request $request, CsrfGuard $csrf, string $id): Response

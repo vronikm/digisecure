@@ -1511,6 +1511,35 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
         </div>
     </div>
 
+    <?php
+    $expResumen = $expedienteResumen ?? null;
+    $expUrl = (string) ($expedienteUrl ?? '');
+    ?>
+    <!-- Expediente documental (resumen + acceso integrado) -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header"><i class="bi bi-folder2-open me-2"></i>Expediente documental</div>
+        <div class="card-body">
+            <?php if ($expUrl === ''): ?>
+            <p class="mb-0" style="color:#64748b; font-size:.85rem;"><i class="bi bi-info-circle me-1"></i>El expediente documental (Bloque A y B) estará disponible para cargar y revisar documentos una vez que guarde la ficha.</p>
+            <?php else: ?>
+            <div class="d-flex flex-wrap gap-4 align-items-center justify-content-between">
+                <div class="d-flex flex-wrap gap-4">
+                    <div>
+                        <div style="font-size:.72rem; font-weight:700; letter-spacing:.05em; color:#64748b; text-transform:uppercase; margin-bottom:.25rem;">Bloque A &middot; Admisibilidad</div>
+                        <span class="ds-badge tone-success"><?= (int) ($expResumen['bloqueA']['aceptados'] ?? 0) ?> / <?= (int) ($expResumen['bloqueA']['total'] ?? 0) ?> aceptados</span>
+                    </div>
+                    <div>
+                        <div style="font-size:.72rem; font-weight:700; letter-spacing:.05em; color:#64748b; text-transform:uppercase; margin-bottom:.25rem;">Bloque B &middot; Vinculación laboral</div>
+                        <span class="ds-badge tone-warning"><?= (int) ($expResumen['bloqueB']['aceptados'] ?? 0) ?> / <?= (int) ($expResumen['bloqueB']['total'] ?? 0) ?> aceptados</span>
+                    </div>
+                </div>
+                <a href="<?= $view->url($expUrl) ?>" class="ds-btn ds-btn-primary ds-btn-sm"><i class="bi bi-folder2-open me-1"></i>Gestionar documentos</a>
+            </div>
+            <p class="mb-0 mt-2" style="color:#64748b; font-size:.8rem;">El Bloque B se desbloquea cuando el Bloque A esté 100% aceptado.</p>
+            <?php endif ?>
+        </div>
+    </div>
+
     </div>
 
     <!-- Botones -->

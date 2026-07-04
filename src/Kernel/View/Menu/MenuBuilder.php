@@ -83,31 +83,6 @@ final class MenuBuilder
                     description: 'Guardias asignados a puestos',                    
                 ),
             ],
-            [
-                'type' => 'item',
-                'item' => new MenuItem(
-                    label: 'Expedientes',
-                    icon: 'bi-folder2-open',
-                    permisos: ['expedientes.ver'],
-                    description: 'Control documental y validaciones',
-                    children: [
-                        new MenuItem(
-                            label: 'Todos los expedientes',
-                            icon: 'bi-folder',
-                            url: '/expedientes',
-                            permisos: ['expedientes.ver'],
-                            description: 'Estado general de cada expediente',
-                        ),
-                        new MenuItem(
-                            label: 'Pendientes de validacion',
-                            icon: 'bi-clipboard-check',
-                            url: '/expedientes/pendientes',
-                            permisos: ['expedientes.validar'],
-                            description: 'Documentos listos para revisar',
-                        ),
-                    ],
-                ),
-            ],
 
             ['type' => 'header', 'label' => 'Control'],
             [
