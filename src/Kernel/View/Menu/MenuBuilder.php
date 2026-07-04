@@ -55,7 +55,7 @@ final class MenuBuilder
             [
                 'type' => 'item',
                 'item' => new MenuItem(
-                    label: 'Guardias',
+                    label: 'Empleados',
                     icon: 'bi-person-badge',
                     url: '/guardias',
                     permisos: ['guardias.ver'],

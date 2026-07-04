@@ -22,12 +22,18 @@ final class PuestoRepository extends BaseRepository
      */
     public function findById(string $id): ?array
     {
-        return $this->tenantQueryOne(
+        // No usamos tenantQueryOne(): su filtro auto-inyectado (`tenant_id = ...`)
+        // queda sin calificar y resulta ambiguo por el JOIN con `clientes`.
+        // Calificamos explícitamente con p.tenant_id, igual que listar()/contar().
+        return $this->db->fetchOne(
             'SELECT p.*, c.razon_social AS cliente_razon_social, c.nombre_comercial AS cliente_nombre_comercial
              FROM puestos p
              INNER JOIN clientes c ON c.id = p.cliente_id AND c.tenant_id = p.tenant_id
-             WHERE p.id = :id',
-            ['id' => $id],
+             WHERE p.tenant_id = :__tenant_id AND p.id = :id',
+            [
+                '__tenant_id' => $this->tenantContext->requireTenantId(),
+                'id' => $id,
+            ],
         );
     }
 
