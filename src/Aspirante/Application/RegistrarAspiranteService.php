@@ -91,6 +91,11 @@ final class RegistrarAspiranteService
             throw new DomainException('Este correo ya está registrado. Si ya tienes una cuenta, inicia sesión.');
         }
 
+        $tenantId = $this->repo->tenantGemeseg();
+        if ($tenantId === null) {
+            throw new DomainException('No se pudo completar tu registro. El tenant GEMESEG no esta configurado.');
+        }
+
         // 5. Token de verificación de email (single-use, solo el hash se persiste).
         $id         = IdGenerator::ulid();
         $now        = Clock::now();
@@ -103,7 +108,7 @@ final class RegistrarAspiranteService
         // 6. Persistir en estado pendiente (email_verificado = 0 por defecto).
         $this->repo->crear([
             'id'                 => $id,
-            'tenant_id'          => null,
+            'tenant_id'          => $tenantId,
             'tipo_documento'     => $tipoDoc->value,
             'documento'          => $documento,
             'apellidos'          => $apellidos,

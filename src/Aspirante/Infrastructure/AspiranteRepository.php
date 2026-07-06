@@ -6,14 +6,15 @@ namespace DigiSecure\Aspirante\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Shared\Infrastructure\Clock;
+use DigiSecure\Shared\Infrastructure\IdGenerator;
 
 /**
  * Repositorio de aspirantes (postulantes a guardia).
  *
- * Al igual que RegistroEmpresaRepository, NO es tenant-aware: el aspirante
- * se registra desde la pantalla publica de login y aun no pertenece a ningun
- * tenant (tenant_id se asigna recien cuando reclutamiento lo asocia a una
- * empresa). Por eso depende solo de la conexion, sin TenantContext.
+ * Al igual que RegistroEmpresaRepository, NO es tenant-aware: el registro nace
+ * desde la pantalla publica de login, pero el flujo GEMESEG asigna tenant_id
+ * explicitamente en la capa de aplicacion. Por eso depende solo de la conexion,
+ * sin TenantContext.
  *
  * No es `final` a proposito: permite un doble en memoria en los tests del
  * servicio sin necesidad de una base de datos real.
@@ -387,7 +388,7 @@ class AspiranteRepository
     {
         $id = $this->db->fetchScalar(
             'SELECT id FROM roles
-              WHERE codigo = :codigo AND (tenant_id = :tid OR tenant_id IS NULL)
+              WHERE codigo = :codigo AND (BINARY tenant_id = BINARY :tid OR tenant_id IS NULL)
               ORDER BY (tenant_id IS NULL) ASC
               LIMIT 1',
             ['codigo' => $codigo, 'tid' => $tenantId],
@@ -483,6 +484,74 @@ class AspiranteRepository
         );
 
         return $id !== null ? (string) $id : null;
+    }
+
+    /**
+     * Resuelve el tenant operativo GEMESEG para el registro publico.
+     */
+    public function tenantGemeseg(): ?string
+    {
+        $id = $this->db->fetchScalar(
+            "SELECT id FROM tenants
+              WHERE UPPER(razon_social) LIKE '%GEMESEG%'
+                 OR UPPER(COALESCE(nombre_comercial, '')) LIKE '%GEMESEG%'
+              ORDER BY (estado = 'activo') DESC, created_at ASC
+              LIMIT 1",
+        );
+
+        return $id !== null ? (string) $id : null;
+    }
+
+    /**
+     * Garantiza el rol restringido del aspirante dentro del tenant destino.
+     */
+    public function asegurarRolAspirante(string $tenantId, string $cuando): ?string
+    {
+        $roleId = $this->buscarRolId('aspirante', $tenantId);
+        if ($roleId === null) {
+            $roleId = IdGenerator::ulid();
+            $this->db->execute(
+                "INSERT INTO roles (id, tenant_id, codigo, nombre, descripcion, es_sistema, created_at, updated_at)
+                 SELECT :id, :tid, 'aspirante', 'Aspirante (registro de guardia)',
+                        'Acceso restringido: solo puede completar su propia ficha de guardia',
+                        0, :ca, :ua
+                   WHERE NOT EXISTS (
+                       SELECT 1 FROM roles WHERE BINARY tenant_id = BINARY :tid_lookup AND codigo = 'aspirante'
+                   )",
+                [
+                    'id' => $roleId,
+                    'tid' => $tenantId,
+                    'ca' => $cuando,
+                    'ua' => $cuando,
+                    'tid_lookup' => $tenantId,
+                ],
+            );
+
+            $roleId = $this->buscarRolId('aspirante', $tenantId);
+        }
+
+        if ($roleId === null) {
+            return null;
+        }
+
+        $this->db->execute(
+            "INSERT INTO roles_permisos (role_id, permiso_id, granted_at)
+             SELECT :rid, p.id, :granted
+               FROM permisos p
+              WHERE p.codigo = 'guardias.crear'
+                AND NOT EXISTS (
+                    SELECT 1
+                      FROM roles_permisos rp
+                     WHERE rp.role_id = :rid_lookup AND rp.permiso_id = p.id
+                )",
+            [
+                'rid' => $roleId,
+                'granted' => $cuando,
+                'rid_lookup' => $roleId,
+            ],
+        );
+
+        return $roleId;
     }
 
     /**

@@ -56,10 +56,17 @@ final class GestionarAspirantesService
         if ($tenantId === '') {
             throw new DomainException('No se pudo determinar la empresa destino del usuario.');
         }
+        $tenantDestino = (string) ($this->repo->tenantGemeseg() ?? '');
+        if ($tenantDestino === '') {
+            $tenantDestino = trim((string) ($a['tenant_id'] ?? ''));
+        }
+        if ($tenantDestino === '') {
+            $tenantDestino = $tenantId;
+        }
 
         $now = Clock::nowString();
         $roleId = $this->rolAprobacionCodigo !== ''
-            ? $this->repo->buscarRolId($this->rolAprobacionCodigo, $tenantId)
+            ? $this->repo->buscarRolId($this->rolAprobacionCodigo, $tenantDestino)
             : null;
         $usuarioExistente = ($a['usuario_id'] ?? null) !== null ? (string) $a['usuario_id'] : null;
 
@@ -67,8 +74,8 @@ final class GestionarAspirantesService
             // PROMOVER: el aspirante ya validó su correo y tiene una cuenta
             // restringida. Aprobar levanta el confinamiento (quita el rol
             // 'aspirante') y le asigna el rol de aprobación si está configurado.
-            $this->db->transactional(function () use ($usuarioExistente, $tenantId, $roleId, $adminId, $now, $aspiranteId): void {
-                $rolAspirante = $this->repo->buscarRolId('aspirante', $tenantId);
+            $this->db->transactional(function () use ($usuarioExistente, $tenantDestino, $roleId, $adminId, $now, $aspiranteId): void {
+                $rolAspirante = $this->repo->buscarRolId('aspirante', $tenantDestino);
                 if ($rolAspirante !== null) {
                     $this->repo->quitarRol($usuarioExistente, $rolAspirante);
                 }
@@ -78,8 +85,8 @@ final class GestionarAspirantesService
                 // El usuario y la ficha que completó (creados en el tenant de
                 // plataforma) se trasladan al tenant de la empresa, para que el
                 // empleado aparezca en Empleados/Guardias de esa empresa.
-                $this->repo->moverUsuarioYFichasATenant($usuarioExistente, $tenantId);
-                $this->repo->marcarAprobado($aspiranteId, $usuarioExistente, $tenantId, $adminId, $now);
+                $this->repo->moverUsuarioYFichasATenant($usuarioExistente, $tenantDestino);
+                $this->repo->marcarAprobado($aspiranteId, $usuarioExistente, $tenantDestino, $adminId, $now);
             });
 
             $this->audit->log(
@@ -87,7 +94,7 @@ final class GestionarAspirantesService
                 $adminId,
                 'aspirante',
                 $aspiranteId,
-                detalles: ['usuario_id' => $usuarioExistente, 'accion' => 'promovido', 'tenant_destino' => $tenantId, 'rol' => $this->rolAprobacionCodigo ?: null],
+                detalles: ['usuario_id' => $usuarioExistente, 'accion' => 'promovido', 'tenant_destino' => $tenantDestino, 'rol' => $this->rolAprobacionCodigo ?: null],
                 ip: $ip,
             );
 
@@ -100,10 +107,10 @@ final class GestionarAspirantesService
         }
 
         $usuarioId = IdGenerator::ulid();
-        $this->db->transactional(function () use ($a, $usuarioId, $tenantId, $adminId, $roleId, $now, $aspiranteId): void {
+        $this->db->transactional(function () use ($a, $usuarioId, $tenantDestino, $adminId, $roleId, $now, $aspiranteId): void {
             $this->repo->crearUsuario([
                 'id'                => $usuarioId,
-                'tenant_id'         => $tenantId,
+                'tenant_id'         => $tenantDestino,
                 'email'             => (string) $a['correo'],
                 'email_normalizado' => (string) $a['correo_normalizado'],
                 'password_hash'     => (string) $a['password_hash'],
@@ -119,7 +126,7 @@ final class GestionarAspirantesService
                 $this->repo->asignarRol($usuarioId, $roleId, $adminId, $now);
             }
 
-            $this->repo->marcarAprobado($aspiranteId, $usuarioId, $tenantId, $adminId, $now);
+            $this->repo->marcarAprobado($aspiranteId, $usuarioId, $tenantDestino, $adminId, $now);
         });
 
         $this->audit->log(

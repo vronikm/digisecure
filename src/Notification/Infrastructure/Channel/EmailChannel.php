@@ -51,12 +51,31 @@ final class EmailChannel implements NotificationChannel
         );
 
         $start = (int) (microtime(true) * 1000);
+        $driver = strtolower(trim($this->driver));
+
+        if ($driver === 'log') {
+            $result = $this->sendToLog(
+                $to,
+                (string) ($notificacion['destinatario_nombre'] ?? ''),
+                $subject,
+                $bodyHtml,
+                $bodyText,
+                $imagenes,
+            );
+            $elapsed = (int) (microtime(true) * 1000) - $start;
+            return new ChannelResult(
+                success: $result['ok'],
+                codigo: $result['code'] ?? null,
+                mensaje: $result['msg'] ?? null,
+                duracionMs: $elapsed,
+            );
+        }
 
         // Usa la funcion nativa mail() de PHP (MTA del hosting via php.ini, igual
         // que otros proyectos del servidor) cuando: el driver es 'mail', NO hay
         // host SMTP configurado, o PHPMailer no esta disponible. Solo usa SMTP
         // autenticado si hay host configurado y driver != 'mail'.
-        $usarNativo = $this->driver === 'mail'
+        $usarNativo = $driver === 'mail'
             || $this->host === ''
             || !class_exists('\\PHPMailer\\PHPMailer\\PHPMailer');
 
@@ -170,6 +189,46 @@ final class EmailChannel implements NotificationChannel
             ];
         }
         return ['ok' => true, 'code' => 'MAIL_FN_OK', 'msg' => 'Sent via mail()'];
+    }
+
+    /**
+     * @param list<array{cid:string, mime:string, nombre:string, data:string}> $imagenes
+     * @return array{ok:bool, code?:string, msg?:string}
+     */
+    private function sendToLog(string $to, string $toName, string $subject, ?string $bodyHtml, ?string $bodyText, array $imagenes = []): array
+    {
+        $root = defined('DIGISECURE_ROOT') ? (string) constant('DIGISECURE_ROOT') : dirname(__DIR__, 4);
+        $path = $root . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'mail.log';
+        $dir = dirname($path);
+
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $embedded = [];
+        foreach ($imagenes as $img) {
+            $embedded[] = sprintf('%s (%s)', $img['nombre'], $img['cid']);
+        }
+
+        $entry = implode("\n", [
+            '[' . date('Y-m-d H:i:s') . '] MAIL_DRIVER=log',
+            'Para: ' . ($toName !== '' ? "{$toName} <{$to}>" : $to),
+            'Asunto: ' . $subject,
+            'Imagenes embebidas: ' . ($embedded !== [] ? implode(', ', $embedded) : 'ninguna'),
+            '--- Texto ---',
+            (string) $bodyText,
+            '--- HTML ---',
+            (string) $bodyHtml,
+            str_repeat('-', 72),
+            '',
+        ]);
+
+        $ok = @file_put_contents($path, $entry, FILE_APPEND | LOCK_EX);
+        if ($ok === false) {
+            return ['ok' => false, 'code' => 'LOG_WRITE_ERROR', 'msg' => "No se pudo escribir {$path}"];
+        }
+
+        return ['ok' => true, 'code' => 'MAIL_LOG_OK', 'msg' => "Correo registrado en {$path}"];
     }
 
     /**

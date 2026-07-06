@@ -18,7 +18,7 @@ use DigiSecure\Shared\Infrastructure\IdGenerator;
  *
  *   - email_verificado = 1, estado 'nuevo' -> 'aspirante'.
  *   - Crea un usuario ACTIVO (reutilizando email + password_hash del aspirante)
- *     en el tenant de plataforma, con el rol 'aspirante' (acceso restringido a
+ *     en el tenant GEMESEG, con el rol 'aspirante' (acceso restringido a
  *     /guardias/crear; el confinamiento lo aplica AspiranteGateMiddleware).
  *   - Consume el token (single-use).
  *
@@ -79,8 +79,11 @@ final class VerificarEmailService
             }
         }
 
-        $tenantId = $this->repo->tenantPlataforma();
-        if ($tenantId === null) {
+        $tenantId = (string) ($this->repo->tenantGemeseg() ?? '');
+        if ($tenantId === '') {
+            $tenantId = trim((string) ($a['tenant_id'] ?? ''));
+        }
+        if ($tenantId === '') {
             throw new DomainException('No se pudo completar el registro. Contacta a soporte.');
         }
         if ($this->repo->existeCorreoEnUsuarios((string) $a['correo_normalizado'])) {
@@ -105,10 +108,11 @@ final class VerificarEmailService
                 'cuando'            => $now,
             ]);
 
-            $roleId = $this->repo->buscarRolId(self::ROL_ASPIRANTE, $tenantId);
-            if ($roleId !== null) {
-                $this->repo->asignarRol($usuarioId, $roleId, null, $now);
+            $roleId = $this->repo->asegurarRolAspirante($tenantId, $now);
+            if ($roleId === null) {
+                throw new DomainException('No se pudo asignar el rol de aspirante. Contacta a soporte.');
             }
+            $this->repo->asignarRol($usuarioId, $roleId, null, $now);
 
             $this->repo->marcarAspirante((string) $a['id'], $usuarioId, $tenantId, $now);
         });
