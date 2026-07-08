@@ -42,9 +42,9 @@ final class RequestPasswordResetService
      * Ejecuta la solicitud. La UI publica solo muestra este detalle si esta
      * activado el diagnostico temporal.
      *
-     * @return array{status: string, sent: bool, message: string, mail_code?: ?string, mail_message?: ?string}
+     * @return array{status: string, sent: bool, message: string, rate_limit_bypassed?: bool, mail_code?: ?string, mail_message?: ?string}
      */
-    public function execute(string $email, string $ip, string $userAgent): array
+    public function execute(string $email, string $ip, string $userAgent, bool $bypassRateLimit = false): array
     {
         $emailNorm = $this->normalizeEmail($email);
 
@@ -64,11 +64,12 @@ final class RequestPasswordResetService
                 'status' => 'invalid_email',
                 'sent' => false,
                 'message' => 'El correo ingresado no tiene un formato valido.',
+                'rate_limit_bypassed' => $bypassRateLimit,
             ];
         }
 
         // Rate limit por IP (ventana de 1 hora)
-        if ($this->rateLimited($ip)) {
+        if (!$bypassRateLimit && $this->rateLimited($ip)) {
             $this->audit->log(
                 'password_reset.rate_limited',
                 null,
@@ -112,6 +113,7 @@ final class RequestPasswordResetService
                 'status' => 'email_not_registered',
                 'sent' => false,
                 'message' => 'No existe una cuenta activa con este correo.',
+                'rate_limit_bypassed' => $bypassRateLimit,
             ];
         }
 
@@ -130,6 +132,7 @@ final class RequestPasswordResetService
                 'status' => 'inactive_account',
                 'sent' => false,
                 'message' => 'La cuenta o la empresa asociada no esta activa.',
+                'rate_limit_bypassed' => $bypassRateLimit,
             ];
         }
 
@@ -195,6 +198,7 @@ final class RequestPasswordResetService
                 'status' => 'send_failed',
                 'sent' => false,
                 'message' => 'El canal de correo rechazo el envio. Revisa SMTP y logs.',
+                'rate_limit_bypassed' => $bypassRateLimit,
                 'mail_code' => $resultadoMail['code'] ?? null,
                 'mail_message' => $resultadoMail['message'] ?? null,
             ];
@@ -215,6 +219,7 @@ final class RequestPasswordResetService
             'status' => 'sent',
             'sent' => true,
             'message' => 'El canal de correo acepto el enlace de recuperacion.',
+            'rate_limit_bypassed' => $bypassRateLimit,
             'mail_code' => $resultadoMail['code'] ?? null,
             'mail_message' => $resultadoMail['message'] ?? null,
         ];

@@ -62,6 +62,9 @@ $debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? 
                             <ul>
                                 <li>Estado: <?= $e((string) ($debugPasswordResetResultado['status'] ?? '')) ?></li>
                                 <li>Correo aceptado por el canal: <?= !empty($debugPasswordResetResultado['sent']) ? 'si' : 'no' ?></li>
+                                <?php if (array_key_exists('rate_limit_bypassed', $debugPasswordResetResultado)): ?>
+                                    <li>Limite temporal omitido: <?= !empty($debugPasswordResetResultado['rate_limit_bypassed']) ? 'si' : 'no' ?></li>
+                                <?php endif; ?>
                                 <li>Detalle: <?= $e((string) ($debugPasswordResetResultado['message'] ?? '')) ?></li>
                                 <?php if (!empty($debugPasswordResetResultado['mail_code'])): ?>
                                     <li>Codigo mail: <?= $e((string) $debugPasswordResetResultado['mail_code']) ?></li>

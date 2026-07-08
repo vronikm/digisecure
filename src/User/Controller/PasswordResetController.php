@@ -74,7 +74,7 @@ final class PasswordResetController
             ]);
         }
 
-        $resultado = $this->requestService->execute($email, $request->clientIp(), $request->userAgent());
+        $resultado = $this->requestService->execute($email, $request->clientIp(), $request->userAgent(), $debugByToken);
 
         // Siempre mostramos el mismo mensaje (no revelar si el email existe)
         return $this->view->response('auth/forgot-password', [
