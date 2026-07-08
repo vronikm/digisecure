@@ -13,8 +13,6 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $e = ViewRenderer::e(...);
 $sent = $sent ?? false;
 $email = $email ?? '';
-$debugReenvio = !empty($debugReenvio);
-$debugReenvioResultado = is_array($debugReenvioResultado ?? null) ? $debugReenvioResultado : null;
 ?>
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
@@ -24,7 +22,7 @@ $debugReenvioResultado = is_array($debugReenvioResultado ?? null) ? $debugReenvi
     <meta name="robots" content="noindex, nofollow">
     <title>Reenviar enlace de verificación - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-reenvio-debug">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-prod">
 </head>
 <body class="gemeseg-login">
 <div class="login-shell is-single">
@@ -55,25 +53,6 @@ $debugReenvioResultado = is_array($debugReenvioResultado ?? null) ? $debugReenvi
                     contrasena o solicita a reclutamiento que revise el correo registrado.
                 </div>
             </div>
-            <?php if ($debugReenvio && $debugReenvioResultado !== null): ?>
-                <div class="login-info reenvio-debug" role="status">
-                    <i class="bi bi-bug"></i>
-                    <div>
-                        <strong>Diagnostico temporal de reenvio</strong>
-                        <ul>
-                            <li>Estado: <?= $e((string) ($debugReenvioResultado['status'] ?? '')) ?></li>
-                            <li>Correo aceptado por el canal: <?= !empty($debugReenvioResultado['sent']) ? 'si' : 'no' ?></li>
-                            <li>Detalle: <?= $e((string) ($debugReenvioResultado['message'] ?? '')) ?></li>
-                            <?php if (!empty($debugReenvioResultado['mail_code'])): ?>
-                                <li>Codigo mail: <?= $e((string) $debugReenvioResultado['mail_code']) ?></li>
-                            <?php endif; ?>
-                            <?php if (!empty($debugReenvioResultado['mail_message'])): ?>
-                                <li>Respuesta mail: <?= $e((string) $debugReenvioResultado['mail_message']) ?></li>
-                            <?php endif; ?>
-                        </ul>
-                    </div>
-                </div>
-            <?php endif; ?>
             <a href="<?= $view->url('/password/forgot') ?>" class="login-secondary-btn" style="margin-bottom:.75rem;">
                 <i class="bi bi-key"></i>Recuperar contrasena
             </a>

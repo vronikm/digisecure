@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DigiSecure\User\Controller;
 
-use DigiSecure\Kernel\Config\Config;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -31,7 +30,6 @@ final class PasswordResetController
         private readonly ViewRenderer $view,
         private readonly RequestPasswordResetService $requestService,
         private readonly ResetPasswordService $resetService,
-        private readonly Config $config,
     ) {
     }
 
@@ -39,17 +37,11 @@ final class PasswordResetController
 
     public function showForgotForm(Request $request, CsrfGuard $csrf): Response
     {
-        $debugToken = trim((string) $request->query('debug', ''));
-        $debugByToken = $this->debugByToken($debugToken);
-
         return $this->view->response('auth/forgot-password', [
             'csrfToken' => $csrf->token(),
             'sent' => false,
             'email' => '',
             'error' => null,
-            'debugPasswordReset' => $this->config->bool('password_reset.debug', false) || $debugByToken,
-            'debugPasswordResetToken' => $debugByToken ? $debugToken : '',
-            'debugPasswordResetResultado' => null,
         ]);
     }
 
@@ -58,23 +50,17 @@ final class PasswordResetController
     public function processForgot(Request $request, CsrfGuard $csrf): Response
     {
         $email = trim((string) $request->post('email', ''));
-        $debugToken = trim((string) $request->post('_debug', ''));
-        $debugByToken = $this->debugByToken($debugToken);
-        $debug = $this->config->bool('password_reset.debug', false) || $debugByToken;
 
         if ($email === '') {
             return $this->view->response('auth/forgot-password', [
                 'csrfToken' => $csrf->token(),
                 'sent' => false,
                 'email' => '',
-                'debugPasswordReset' => $debug,
-                'debugPasswordResetToken' => $debugByToken ? $debugToken : '',
-                'debugPasswordResetResultado' => null,
                 'error' => 'Por favor ingresa tu correo electrónico.',
             ]);
         }
 
-        $resultado = $this->requestService->execute($email, $request->clientIp(), $request->userAgent(), $debugByToken);
+        $this->requestService->execute($email, $request->clientIp(), $request->userAgent());
 
         // Siempre mostramos el mismo mensaje (no revelar si el email existe)
         return $this->view->response('auth/forgot-password', [
@@ -82,9 +68,6 @@ final class PasswordResetController
             'sent' => true,
             'email' => $email,
             'error' => null,
-            'debugPasswordReset' => $debug,
-            'debugPasswordResetToken' => $debugByToken ? $debugToken : '',
-            'debugPasswordResetResultado' => $debug ? $resultado : null,
         ]);
     }
 
@@ -178,11 +161,5 @@ final class PasswordResetController
             error_log('[DIGISECURE][PASSWORD_RESET] Error revalidando enlace de recuperacion: ' . $e->getMessage());
             return null;
         }
-    }
-
-    private function debugByToken(string $token): bool
-    {
-        $expected = trim($this->config->string('password_reset.debug_token', ''));
-        return $expected !== '' && $token !== '' && hash_equals($expected, $token);
     }
 }

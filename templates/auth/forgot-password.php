@@ -11,9 +11,6 @@ $e = ViewRenderer::e(...);
 $error = $error ?? null;
 $email = $email ?? '';
 $sent = $sent ?? false;
-$debugPasswordReset = !empty($debugPasswordReset);
-$debugPasswordResetToken = (string) ($debugPasswordResetToken ?? '');
-$debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? $debugPasswordResetResultado : null;
 ?>
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
@@ -23,7 +20,7 @@ $debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? 
     <meta name="robots" content="noindex, nofollow">
     <title>Recuperar contraseña - DigiSecure</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-password-debug-token">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-prod">
 </head>
 <body>
     <div class="login-shell is-single">
@@ -54,29 +51,6 @@ $debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? 
                     </div>
                 </div>
 
-                <?php if ($debugPasswordReset && $debugPasswordResetResultado !== null): ?>
-                    <div class="login-info reenvio-debug" role="status">
-                        <i class="bi bi-bug"></i>
-                        <div>
-                            <strong>Diagnostico temporal de recuperacion</strong>
-                            <ul>
-                                <li>Estado: <?= $e((string) ($debugPasswordResetResultado['status'] ?? '')) ?></li>
-                                <li>Correo aceptado por el canal: <?= !empty($debugPasswordResetResultado['sent']) ? 'si' : 'no' ?></li>
-                                <?php if (array_key_exists('rate_limit_bypassed', $debugPasswordResetResultado)): ?>
-                                    <li>Limite temporal omitido: <?= !empty($debugPasswordResetResultado['rate_limit_bypassed']) ? 'si' : 'no' ?></li>
-                                <?php endif; ?>
-                                <li>Detalle: <?= $e((string) ($debugPasswordResetResultado['message'] ?? '')) ?></li>
-                                <?php if (!empty($debugPasswordResetResultado['mail_code'])): ?>
-                                    <li>Codigo mail: <?= $e((string) $debugPasswordResetResultado['mail_code']) ?></li>
-                                <?php endif; ?>
-                                <?php if (!empty($debugPasswordResetResultado['mail_message'])): ?>
-                                    <li>Respuesta mail: <?= $e((string) $debugPasswordResetResultado['mail_message']) ?></li>
-                                <?php endif; ?>
-                            </ul>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
                 <a href="<?= $view->url('/login') ?>" class="login-submit" style="text-decoration: none;">
                     <i class="bi bi-box-arrow-in-right"></i>Volver al inicio de sesion
                 </a>
@@ -98,21 +72,8 @@ $debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? 
                     Te enviaremos un enlace seguro para crear una nueva contraseña.
                 </p>
 
-                <?php if ($debugPasswordReset): ?>
-                    <div class="login-info reenvio-debug" role="status">
-                        <i class="bi bi-bug"></i>
-                        <div>
-                            <strong>Diagnostico temporal activo</strong>
-                            Envia el formulario para ver el resultado real del canal de correo.
-                        </div>
-                    </div>
-                <?php endif; ?>
-
                 <form class="ds-form-main" method="POST" action="<?= $view->url('/password/forgot') ?>" autocomplete="on" novalidate>
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-                    <?php if ($debugPasswordResetToken !== ''): ?>
-                        <input type="hidden" name="_debug" value="<?= $e($debugPasswordResetToken) ?>">
-                    <?php endif; ?>
 
                     <div class="login-field">
                         <label for="email">Correo electronico</label>

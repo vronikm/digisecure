@@ -830,10 +830,6 @@ final class Bootstrap
                 'time_cost' => $envVars['PASSWORD_TIME_COST'] ?? '4',
                 'threads' => $envVars['PASSWORD_THREADS'] ?? '2',
             ],
-            'password_reset' => [
-                'debug' => $envVars['PASSWORD_RESET_DEBUG'] ?? 'false',
-                'debug_token' => $envVars['PASSWORD_RESET_DEBUG_TOKEN'] ?? '',
-            ],
             'recaptcha' => [
                 'site_key' => $envVars['RECAPTCHA_SITE_KEY'] ?? '',
                 'secret' => $envVars['RECAPTCHA_SECRET_KEY'] ?? '',
@@ -845,7 +841,6 @@ final class Bootstrap
             'registro' => [
                 'email_blacklist' => $envVars['REGISTRO_EMAIL_BLACKLIST'] ?? '',
                 'aprobacion_rol_codigo' => $envVars['REGISTRO_APROBACION_ROL'] ?? '',
-                'reenvio_debug' => $envVars['ASPIRANTE_REENVIO_DEBUG'] ?? 'false',
             ],
             'mail' => [
                 'driver' => $envVars['MAIL_DRIVER'] ?? 'smtp',
