@@ -1,16 +1,15 @@
 <?php
 /**
- * Resultado fallido de la verificacion de email del aspirante
- * (token invalido, ya usado o expirado).
+ * Resultado fallido de la verificacion de email del aspirante.
  *
  * Variables:
- *   $mensaje:string  Motivo legible del fallo
+ *   $mensaje:string
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
 
 $e = ViewRenderer::e(...);
-$mensaje = $mensaje ?? 'El enlace de verificación no es válido.';
+$mensaje = $mensaje ?? 'El enlace de verificacion no es valido.';
 ?>
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
@@ -20,7 +19,7 @@ $mensaje = $mensaje ?? 'El enlace de verificación no es válido.';
     <meta name="robots" content="noindex, nofollow">
     <title>No se pudo verificar - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260626-registro2">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-verificacion-post">
 </head>
 <body class="gemeseg-login">
 <div class="login-shell is-single">
@@ -29,14 +28,14 @@ $mensaje = $mensaje ?? 'El enlace de verificación no es válido.';
             <span class="mark tone-danger"><i class="bi bi-exclamation-octagon-fill"></i></span>
             <div>
                 <h1>No pudimos verificar tu correo</h1>
-                <div class="subtitle">El enlace no es válido o ya expiró</div>
+                <div class="subtitle">El enlace no es valido o ya expiro</div>
             </div>
         </div>
 
         <div class="login-error" role="alert">
             <i class="bi bi-exclamation-octagon-fill"></i>
             <div>
-                <strong>Verificación no completada</strong>
+                <strong>Verificacion no completada</strong>
                 <?= $e($mensaje) ?>
             </div>
         </div>
@@ -44,10 +43,10 @@ $mensaje = $mensaje ?? 'El enlace de verificación no es válido.';
         <div class="login-info" role="status">
             <i class="bi bi-info-circle"></i>
             <div>
-                <strong>¿Qué puedo hacer?</strong>
-                Si el enlace expiró, vuelve a registrarte desde la pantalla de
-                inicio para recibir uno nuevo. Si ya confirmaste tu correo antes,
-                no necesitas hacer nada más.
+                <strong>Que puedo hacer?</strong>
+                Si el enlace expiro, solicita uno nuevo desde esta pantalla. Si
+                ya confirmaste tu correo antes, intenta iniciar sesion con tu
+                correo y la contrasena registrada.
             </div>
         </div>
 
@@ -56,7 +55,7 @@ $mensaje = $mensaje ?? 'El enlace de verificación no es válido.';
         </a>
 
         <a href="<?= $view->url('/login') ?>" class="login-secondary-btn">
-            <i class="bi bi-box-arrow-in-right"></i>Volver al inicio de sesión
+            <i class="bi bi-box-arrow-in-right"></i>Volver al inicio de sesion
         </a>
 
         <div class="login-foot-mini">

@@ -16,7 +16,8 @@ use DigiSecure\Shared\Domain\DomainException;
  * Verificación de identidad del aspirante (enlace mágico de email) y reenvío.
  *
  * Rutas públicas:
- *   GET  /verificar?token=XXXX     valida el correo y completa el registro
+ *   GET  /verificar?token=XXXX     muestra pantalla segura de confirmacion
+ *   POST /verificar                confirma el correo y completa el registro
  *   GET  /verificar/reenviar       formulario para solicitar un nuevo enlace
  *   POST /verificar/reenviar       procesa el reenvío (anti-enumeración + rate-limit)
  */
@@ -32,6 +33,27 @@ final class VerificacionController
     public function verificar(Request $request, CsrfGuard $csrf): Response
     {
         $token = (string) $request->query('token', '');
+
+        try {
+            $resultado = $this->verificar->preview($token, $request->clientIp(), $request->userAgent());
+        } catch (DomainException $e) {
+            return $this->view->response('auth/aspirante-verificacion-fallida', [
+                'mensaje'   => $e->getMessage(),
+                'csrfToken' => $csrf->token(),
+            ], Response::STATUS_BAD_REQUEST);
+        }
+
+        return $this->view->response('auth/aspirante-confirmar-verificacion', [
+            'csrfToken' => $csrf->token(),
+            'token' => $resultado['token'],
+            'nombre' => $resultado['nombre'],
+            'correo' => $resultado['correo'],
+        ]);
+    }
+
+    public function confirmar(Request $request, CsrfGuard $csrf): Response
+    {
+        $token = (string) $request->post('token', '');
 
         try {
             $resultado = $this->verificar->execute($token, $request->clientIp(), $request->userAgent());

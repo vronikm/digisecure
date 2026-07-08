@@ -55,7 +55,7 @@ $correo = $correo ?? '';
             <i class="bi bi-info-circle"></i>
             <div>
                 <strong>¿Qué sigue?</strong>
-                Abre el enlace del correo para <strong>confirmar tu cuenta</strong>.
+                Abre el enlace del correo y presiona <strong>Confirmar mi correo</strong>.
                 El enlace expira en <strong>48 horas</strong>. Si no lo ves,
                 revisa tu carpeta de spam o promociones.
             </div>

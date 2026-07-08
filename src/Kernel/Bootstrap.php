@@ -1067,6 +1067,7 @@ final class Bootstrap
         $router->post('/aspirantes', [AspiranteController::class, 'registrar'], name: 'aspirantes.store');
         // Verificación de email (enlace mágico) — pública
         $router->get('/verificar', [VerificacionController::class, 'verificar'], name: 'aspirantes.verificar');
+        $router->post('/verificar', [VerificacionController::class, 'confirmar'], name: 'aspirantes.verificar.confirmar');
         $router->get('/verificar/reenviar', [VerificacionController::class, 'reenviarForm'], name: 'aspirantes.reenviar.form');
         $router->post('/verificar/reenviar', [VerificacionController::class, 'reenviar'], name: 'aspirantes.reenviar');
 

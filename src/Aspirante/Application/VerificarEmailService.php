@@ -37,6 +37,47 @@ final class VerificarEmailService
     }
 
     /**
+     * @return array{token: string, nombre: string, correo: string}
+     */
+    public function preview(string $token, string $ip = '', string $userAgent = ''): array
+    {
+        $token = trim($token);
+        if ($token === '' || ctype_xdigit($token) === false) {
+            $this->eventos->registrar(AspiranteEventLogger::LINK_ABIERTO, null, null, $ip, $userAgent, ['resultado' => 'token_invalido']);
+            throw new DomainException('El enlace de verificacion no es valido.');
+        }
+
+        $ref = $this->repo->findByTokenVerificacion(hash('sha256', $token));
+        if ($ref === null) {
+            $this->eventos->registrar(AspiranteEventLogger::LINK_ABIERTO, null, null, $ip, $userAgent, ['resultado' => 'token_no_encontrado']);
+            throw new DomainException('El enlace de verificacion no es valido o ya fue utilizado.');
+        }
+
+        $a = $this->repo->findDetalle($ref['id']);
+        if ($a === null) {
+            throw new DomainException('El enlace de verificacion no es valido o ya fue utilizado.');
+        }
+
+        $email = (string) $a['correo'];
+        $nombre = trim(($a['nombres'] ?? '') . ' ' . ($a['apellidos'] ?? ''));
+        $this->eventos->registrar(AspiranteEventLogger::LINK_ABIERTO, $email, $ref['id'], $ip, $userAgent, ['resultado' => 'confirmacion_pendiente']);
+
+        if ($a['verificacion_token_expira_at'] !== null) {
+            $expira = new DateTimeImmutable((string) $a['verificacion_token_expira_at']);
+            if (Clock::now() > $expira) {
+                $this->eventos->registrar(AspiranteEventLogger::TOKEN_EXPIRADO, $email, $ref['id'], $ip, $userAgent);
+                throw new DomainException('El enlace de verificacion expiro. Solicita un nuevo enlace para continuar.');
+            }
+        }
+
+        return [
+            'token' => $token,
+            'nombre' => $nombre,
+            'correo' => $email,
+        ];
+    }
+
+    /**
      * @return array{status: 'verificado'|'ya_verificado', nombre: string}
      */
     public function execute(string $token, string $ip = '', string $userAgent = ''): array
