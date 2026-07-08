@@ -6,6 +6,7 @@ namespace DigiSecure\Aspirante\Controller;
 
 use DigiSecure\Aspirante\Application\ReenviarVerificacionService;
 use DigiSecure\Aspirante\Application\VerificarEmailService;
+use DigiSecure\Kernel\Config\Config;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -26,6 +27,7 @@ final class VerificacionController
         private readonly ViewRenderer $view,
         private readonly VerificarEmailService $verificar,
         private readonly ReenviarVerificacionService $reenviar,
+        private readonly Config $config,
     ) {
     }
 
@@ -62,12 +64,15 @@ final class VerificacionController
         $email = (string) $request->post('email', '');
 
         // Respuesta SIEMPRE neutra (no revela si el correo existe).
-        $this->reenviar->execute($email, $request->clientIp(), $request->userAgent());
+        $resultado = $this->reenviar->execute($email, $request->clientIp(), $request->userAgent());
+        $debug = $this->config->bool('registro.reenvio_debug', false);
 
         return $this->view->response('auth/aspirante-reenviar', [
             'csrfToken' => $csrf->token(),
             'sent'      => true,
             'email'     => $email,
+            'debugReenvio' => $debug,
+            'debugReenvioResultado' => $debug ? $resultado : null,
         ]);
     }
 }

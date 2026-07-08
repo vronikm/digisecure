@@ -32,6 +32,9 @@ final class VerificationMailer
     ) {
     }
 
+    /**
+     * @return array{success: bool, code: ?string, message: ?string}
+     */
     public function enviar(
         string $correo,
         string $nombre,
@@ -39,7 +42,7 @@ final class VerificationMailer
         string $cuerpoTexto,
         string $cuerpoHtml,
         string $enlace,
-    ): void {
+    ): array {
         $notificacion = [
             'destinatario_email'  => $correo,
             'destinatario_nombre' => $nombre,
@@ -67,6 +70,12 @@ final class VerificationMailer
                 $enlace,
             ));
         }
+
+        return [
+            'success' => $resultado->success,
+            'code' => $resultado->codigo,
+            'message' => $resultado->mensaje,
+        ];
     }
 
     private function logDev(string $mensaje): void
@@ -85,9 +94,12 @@ final class VerificationMailer
      * Construye y envía el correo de verificación con el enlace mágico.
      * Usado tanto en el registro inicial como en el reenvío.
      */
-    public function enviarVerificacion(string $correo, string $nombre, string $enlace): void
+    /**
+     * @return array{success: bool, code: ?string, message: ?string}
+     */
+    public function enviarVerificacion(string $correo, string $nombre, string $enlace): array
     {
-        $this->enviar(
+        return $this->enviar(
             $correo,
             $nombre,
             'GEMESEG · Confirma tu correo electrónico',

@@ -36,21 +36,36 @@ final class ReenviarVerificacionService
     ) {
     }
 
-    public function execute(string $correoRaw, string $ip, string $userAgent): void
+    /**
+     * @return array{status: string, sent: bool, message: string, mail_code?: ?string, mail_message?: ?string}
+     */
+    public function execute(string $correoRaw, string $ip, string $userAgent): array
     {
         $correoNorm = mb_strtolower(trim($correoRaw), 'UTF-8');
         if ($correoNorm === '' || filter_var($correoNorm, FILTER_VALIDATE_EMAIL) === false) {
-            return; // Neutral: entrada inválida no revela nada.
+            return [
+                'status' => 'invalid_email',
+                'sent' => false,
+                'message' => 'El correo ingresado no tiene un formato valido.',
+            ];
         }
 
         // Rate-limit anti-abuso (silencioso para no dar señal).
         if ($this->eventos->contarReenviosRecientes($correoNorm, $ip, self::RATE_VENTANA_MIN) >= self::RATE_MAX) {
-            return;
+            return [
+                'status' => 'rate_limited',
+                'sent' => false,
+                'message' => 'Se alcanzo el limite temporal de reenvios para este correo o IP.',
+            ];
         }
 
         $aspirante = $this->repo->findPendientePorCorreo($correoNorm);
         if ($aspirante === null) {
-            return; // No existe o ya validó: no revelar (anti-enumeración).
+            return [
+                'status' => 'not_pending',
+                'sent' => false,
+                'message' => 'No existe una postulacion pendiente sin verificar para este correo.',
+            ];
         }
 
         $token = bin2hex(random_bytes(self::TOKEN_BYTES));
@@ -66,8 +81,18 @@ final class ReenviarVerificacionService
 
         $enlace = rtrim($this->config->string('app.url', ''), '/') . '/verificar?token=' . $token;
         $nombre = trim($aspirante['nombres'] . ' ' . $aspirante['apellidos']);
-        $this->mailer->enviarVerificacion($aspirante['correo'], $nombre, $enlace);
+        $resultadoMail = $this->mailer->enviarVerificacion($aspirante['correo'], $nombre, $enlace);
 
         $this->eventos->registrar(AspiranteEventLogger::LINK_ENVIADO, $correoNorm, $aspirante['id'], $ip, $userAgent);
+
+        return [
+            'status' => $resultadoMail['success'] ? 'sent' : 'send_failed',
+            'sent' => $resultadoMail['success'],
+            'message' => $resultadoMail['success']
+                ? 'El canal de correo acepto el enlace de verificacion.'
+                : 'El canal de correo rechazo el envio. Revisa SMTP y logs.',
+            'mail_code' => $resultadoMail['code'] ?? null,
+            'mail_message' => $resultadoMail['message'] ?? null,
+        ];
     }
 }

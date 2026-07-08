@@ -841,6 +841,7 @@ final class Bootstrap
             'registro' => [
                 'email_blacklist' => $envVars['REGISTRO_EMAIL_BLACKLIST'] ?? '',
                 'aprobacion_rol_codigo' => $envVars['REGISTRO_APROBACION_ROL'] ?? '',
+                'reenvio_debug' => $envVars['ASPIRANTE_REENVIO_DEBUG'] ?? 'false',
             ],
             'mail' => [
                 'driver' => $envVars['MAIL_DRIVER'] ?? 'smtp',
