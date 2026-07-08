@@ -39,10 +39,12 @@ final class RequestPasswordResetService
     }
 
     /**
-     * Ejecuta la solicitud. Siempre devuelve el mismo resultado,
-     * independientemente de si el email existe, para evitar user enumeration.
+     * Ejecuta la solicitud. La UI publica solo muestra este detalle si esta
+     * activado el diagnostico temporal.
+     *
+     * @return array{status: string, sent: bool, message: string, mail_code?: ?string, mail_message?: ?string}
      */
-    public function execute(string $email, string $ip, string $userAgent): void
+    public function execute(string $email, string $ip, string $userAgent): array
     {
         $emailNorm = $this->normalizeEmail($email);
 
@@ -58,7 +60,11 @@ final class RequestPasswordResetService
                 ip: $ip,
                 userAgent: $userAgent,
             );
-            return;
+            return [
+                'status' => 'invalid_email',
+                'sent' => false,
+                'message' => 'El correo ingresado no tiene un formato valido.',
+            ];
         }
 
         // Rate limit por IP (ventana de 1 hora)
@@ -73,7 +79,11 @@ final class RequestPasswordResetService
                 ip: $ip,
                 userAgent: $userAgent,
             );
-            return;
+            return [
+                'status' => 'rate_limited',
+                'sent' => false,
+                'message' => 'Se alcanzo el limite temporal de solicitudes para esta IP.',
+            ];
         }
 
         $usuario = $this->db->fetchOne(
@@ -98,7 +108,11 @@ final class RequestPasswordResetService
                 ip: $ip,
                 userAgent: $userAgent,
             );
-            return;
+            return [
+                'status' => 'email_not_registered',
+                'sent' => false,
+                'message' => 'No existe una cuenta activa con este correo.',
+            ];
         }
 
         if ($usuario['estado'] !== 'activo' || $usuario['tenant_estado'] !== 'activo') {
@@ -112,7 +126,11 @@ final class RequestPasswordResetService
                 ip: $ip,
                 userAgent: $userAgent,
             );
-            return;
+            return [
+                'status' => 'inactive_account',
+                'sent' => false,
+                'message' => 'La cuenta o la empresa asociada no esta activa.',
+            ];
         }
 
         // Generar token y guardar hash
@@ -154,7 +172,7 @@ final class RequestPasswordResetService
         $cuerpoTexto = $this->buildTextBody($nombreCompleto, $resetLink, self::DEFAULT_EXPIRATION_MIN);
 
         // Envío síncrono (la cola tenant-aware solo se despacha por cron).
-        $emailEnviado = $this->mailer->enviar(
+        $resultadoMail = $this->mailer->enviarDetallado(
             (string) $usuario['email'],
             $nombreCompleto,
             'DigiSecure · Recuperación de contraseña',
@@ -162,7 +180,7 @@ final class RequestPasswordResetService
             $cuerpoHtml,
         );
 
-        if (!$emailEnviado) {
+        if (!$resultadoMail['success']) {
             $this->audit->log(
                 'password_reset.mail_failed',
                 $usuario['id'],
@@ -173,7 +191,13 @@ final class RequestPasswordResetService
                 ip: $ip,
                 userAgent: $userAgent,
             );
-            return;
+            return [
+                'status' => 'send_failed',
+                'sent' => false,
+                'message' => 'El canal de correo rechazo el envio. Revisa SMTP y logs.',
+                'mail_code' => $resultadoMail['code'] ?? null,
+                'mail_message' => $resultadoMail['message'] ?? null,
+            ];
         }
 
         $this->audit->log(
@@ -186,6 +210,14 @@ final class RequestPasswordResetService
             ip: $ip,
             userAgent: $userAgent,
         );
+
+        return [
+            'status' => 'sent',
+            'sent' => true,
+            'message' => 'El canal de correo acepto el enlace de recuperacion.',
+            'mail_code' => $resultadoMail['code'] ?? null,
+            'mail_message' => $resultadoMail['message'] ?? null,
+        ];
     }
 
     private function rateLimited(string $ip): bool

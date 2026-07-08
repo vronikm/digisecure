@@ -11,6 +11,8 @@ $e = ViewRenderer::e(...);
 $error = $error ?? null;
 $email = $email ?? '';
 $sent = $sent ?? false;
+$debugPasswordReset = !empty($debugPasswordReset);
+$debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? $debugPasswordResetResultado : null;
 ?>
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
@@ -20,7 +22,7 @@ $sent = $sent ?? false;
     <meta name="robots" content="noindex, nofollow">
     <title>Recuperar contraseña - DigiSecure</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-password-debug">
 </head>
 <body>
     <div class="login-shell is-single">
@@ -50,6 +52,26 @@ $sent = $sent ?? false;
                         El enlace expira en 60 minutos. Revisa tambien tu carpeta de spam o promociones.
                     </div>
                 </div>
+
+                <?php if ($debugPasswordReset && $debugPasswordResetResultado !== null): ?>
+                    <div class="login-info reenvio-debug" role="status">
+                        <i class="bi bi-bug"></i>
+                        <div>
+                            <strong>Diagnostico temporal de recuperacion</strong>
+                            <ul>
+                                <li>Estado: <?= $e((string) ($debugPasswordResetResultado['status'] ?? '')) ?></li>
+                                <li>Correo aceptado por el canal: <?= !empty($debugPasswordResetResultado['sent']) ? 'si' : 'no' ?></li>
+                                <li>Detalle: <?= $e((string) ($debugPasswordResetResultado['message'] ?? '')) ?></li>
+                                <?php if (!empty($debugPasswordResetResultado['mail_code'])): ?>
+                                    <li>Codigo mail: <?= $e((string) $debugPasswordResetResultado['mail_code']) ?></li>
+                                <?php endif; ?>
+                                <?php if (!empty($debugPasswordResetResultado['mail_message'])): ?>
+                                    <li>Respuesta mail: <?= $e((string) $debugPasswordResetResultado['mail_message']) ?></li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <a href="<?= $view->url('/login') ?>" class="login-submit" style="text-decoration: none;">
                     <i class="bi bi-box-arrow-in-right"></i>Volver al inicio de sesion

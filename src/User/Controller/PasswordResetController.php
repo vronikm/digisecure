@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\User\Controller;
 
+use DigiSecure\Kernel\Config\Config;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -30,6 +31,7 @@ final class PasswordResetController
         private readonly ViewRenderer $view,
         private readonly RequestPasswordResetService $requestService,
         private readonly ResetPasswordService $resetService,
+        private readonly Config $config,
     ) {
     }
 
@@ -60,7 +62,8 @@ final class PasswordResetController
             ]);
         }
 
-        $this->requestService->execute($email, $request->clientIp(), $request->userAgent());
+        $resultado = $this->requestService->execute($email, $request->clientIp(), $request->userAgent());
+        $debug = $this->config->bool('password_reset.debug', false);
 
         // Siempre mostramos el mismo mensaje (no revelar si el email existe)
         return $this->view->response('auth/forgot-password', [
@@ -68,6 +71,8 @@ final class PasswordResetController
             'sent' => true,
             'email' => $email,
             'error' => null,
+            'debugPasswordReset' => $debug,
+            'debugPasswordResetResultado' => $debug ? $resultado : null,
         ]);
     }
 

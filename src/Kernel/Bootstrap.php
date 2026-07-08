@@ -830,6 +830,9 @@ final class Bootstrap
                 'time_cost' => $envVars['PASSWORD_TIME_COST'] ?? '4',
                 'threads' => $envVars['PASSWORD_THREADS'] ?? '2',
             ],
+            'password_reset' => [
+                'debug' => $envVars['PASSWORD_RESET_DEBUG'] ?? 'false',
+            ],
             'recaptcha' => [
                 'site_key' => $envVars['RECAPTCHA_SITE_KEY'] ?? '',
                 'secret' => $envVars['RECAPTCHA_SECRET_KEY'] ?? '',

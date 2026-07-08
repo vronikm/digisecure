@@ -34,6 +34,19 @@ final class Mailer
         string $cuerpoTexto,
         string $cuerpoHtml,
     ): bool {
+        return $this->enviarDetallado($correo, $nombre, $asunto, $cuerpoTexto, $cuerpoHtml)['success'];
+    }
+
+    /**
+     * @return array{success: bool, code: ?string, message: ?string}
+     */
+    public function enviarDetallado(
+        string $correo,
+        string $nombre,
+        string $asunto,
+        string $cuerpoTexto,
+        string $cuerpoHtml,
+    ): array {
         $resultado = $this->email->send([
             'destinatario_email'  => $correo,
             'destinatario_nombre' => $nombre,
@@ -55,7 +68,11 @@ final class Mailer
             ));
         }
 
-        return $resultado->success;
+        return [
+            'success' => $resultado->success,
+            'code' => $resultado->codigo,
+            'message' => $resultado->mensaje,
+        ];
     }
 
     private function logDev(string $mensaje): void
