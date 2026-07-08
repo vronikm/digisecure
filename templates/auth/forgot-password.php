@@ -12,6 +12,7 @@ $error = $error ?? null;
 $email = $email ?? '';
 $sent = $sent ?? false;
 $debugPasswordReset = !empty($debugPasswordReset);
+$debugPasswordResetToken = (string) ($debugPasswordResetToken ?? '');
 $debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? $debugPasswordResetResultado : null;
 ?>
 <!DOCTYPE html>
@@ -22,7 +23,7 @@ $debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? 
     <meta name="robots" content="noindex, nofollow">
     <title>Recuperar contraseña - DigiSecure</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-password-debug">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-password-debug-token">
 </head>
 <body>
     <div class="login-shell is-single">
@@ -94,8 +95,21 @@ $debugPasswordResetResultado = is_array($debugPasswordResetResultado ?? null) ? 
                     Te enviaremos un enlace seguro para crear una nueva contraseña.
                 </p>
 
+                <?php if ($debugPasswordReset): ?>
+                    <div class="login-info reenvio-debug" role="status">
+                        <i class="bi bi-bug"></i>
+                        <div>
+                            <strong>Diagnostico temporal activo</strong>
+                            Envia el formulario para ver el resultado real del canal de correo.
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <form class="ds-form-main" method="POST" action="<?= $view->url('/password/forgot') ?>" autocomplete="on" novalidate>
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                    <?php if ($debugPasswordResetToken !== ''): ?>
+                        <input type="hidden" name="_debug" value="<?= $e($debugPasswordResetToken) ?>">
+                    <?php endif; ?>
 
                     <div class="login-field">
                         <label for="email">Correo electronico</label>

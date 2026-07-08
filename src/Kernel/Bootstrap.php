@@ -832,6 +832,7 @@ final class Bootstrap
             ],
             'password_reset' => [
                 'debug' => $envVars['PASSWORD_RESET_DEBUG'] ?? 'false',
+                'debug_token' => $envVars['PASSWORD_RESET_DEBUG_TOKEN'] ?? '',
             ],
             'recaptcha' => [
                 'site_key' => $envVars['RECAPTCHA_SITE_KEY'] ?? '',
