@@ -16,6 +16,10 @@ $returnTo = $returnTo ?? null;
 $registroError = $registroError ?? null;
 $registroForm  = $registroForm ?? [];
 $registroOpen  = $registroOpen ?? false;
+$registroErrorText = $registroError !== null ? (string) $registroError : '';
+$registroDocumentoDuplicado = $registroErrorText !== ''
+    && str_contains(mb_strtolower($registroErrorText, 'UTF-8'), 'postul')
+    && str_contains(mb_strtolower($registroErrorText, 'UTF-8'), 'documento');
 $recaptchaSiteKey = $recaptchaSiteKey ?? '';
 $rv   = static fn (string $k, string $d = ''): string => (string) ($registroForm[$k] ?? $d);
 $rsel = static fn (string $cur): string => ($rv('tipo_documento') === $cur) ? 'selected' : '';
@@ -32,7 +36,7 @@ $tiposDoc = ['cedula' => 'Cédula', 'ruc' => 'RUC', 'pasaporte' => 'Pasaporte'];
     <meta name="robots" content="noindex, nofollow">
     <title>Iniciar sesion - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260626-registro2">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-registro3">
 </head>
 <body class="gemeseg-login">
     <div class="login-shell">
@@ -132,6 +136,21 @@ $tiposDoc = ['cedula' => 'Cédula', 'ruc' => 'RUC', 'pasaporte' => 'Pasaporte'];
                         <div>
                             <strong>No se pudo completar tu registro</strong>
                             <?= $e($registroError) ?>
+                            <?php if ($registroDocumentoDuplicado): ?>
+                                <div class="registro-error-help">
+                                    <p>Si ya te registraste antes, continúa según tu caso:</p>
+                                    <div class="registro-error-actions">
+                                        <a href="<?= $view->url('/password/forgot') ?>" class="registro-error-action">
+                                            <i class="bi bi-key"></i>
+                                            <span>Ya confirmé mi correo: recuperar contraseña</span>
+                                        </a>
+                                        <a href="<?= $view->url('/verificar/reenviar') ?>" class="registro-error-action">
+                                            <i class="bi bi-envelope-arrow-up"></i>
+                                            <span>Aún no confirmé mi correo: reenviar enlace</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endif; ?>

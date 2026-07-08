@@ -221,6 +221,42 @@ body {
     color: #b91c1c;
 }
 .login-error strong { color: #991b1b; }
+.registro-error-help {
+    margin-top: .65rem;
+    padding-top: .65rem;
+    border-top: 1px solid rgba(220,38,38,.16);
+}
+.registro-error-help p {
+    margin: 0 0 .55rem;
+    color: #7f1d1d;
+    font-weight: 600;
+}
+.registro-error-actions {
+    display: grid;
+    gap: .45rem;
+}
+.registro-error-action {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .58rem .7rem;
+    border-radius: 9px;
+    border: 1px solid rgba(220,38,38,.22);
+    background: rgba(255,255,255,.78);
+    color: #991b1b;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1.25;
+}
+.registro-error-action:hover {
+    background: #fff;
+    color: #7f1d1d;
+    box-shadow: 0 6px 16px rgba(127,29,29,.12);
+}
+.registro-error-action i {
+    margin: 0;
+    font-size: 1rem;
+}
 .login-success {
     background: rgba(5,150,105,.06);
     border: 1px solid rgba(5,150,105,.2);
