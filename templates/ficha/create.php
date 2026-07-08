@@ -487,6 +487,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
         z-index: 6;
         display: grid;
         gap: .3rem;
+        pointer-events: auto;
     }
 
     .ds-croquis-zoom button {
@@ -498,6 +499,8 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
         color: #0f172a;
         font-weight: 800;
         box-shadow: 0 8px 18px rgba(15, 23, 42, .14);
+        cursor: pointer;
+        touch-action: manipulation;
     }
 
     @media (max-width: 720px) {
@@ -2461,6 +2464,7 @@ if (fichaForm) {
         return normalized === -180 ? 180 : normalized;
     };
     const clampZoom = (value) => clamp(Number.parseInt(value, 10) || 16, MIN_ZOOM, MAX_ZOOM);
+    const isMapControl = (target) => target instanceof Element && target.closest('.ds-croquis-zoom');
 
     const currentCoordsQuery = () => {
         const lat = Number.parseFloat(latInput?.value || '');
@@ -2926,19 +2930,30 @@ if (fichaForm) {
     });
     loadAddressBtn?.addEventListener('click', () => setMapQuery(formAddress()));
     captureBtn?.addEventListener('click', captureVisibleMap);
+    [zoomInBtn, zoomOutBtn].forEach(btn => {
+        if (!btn) return;
+        ['pointerdown', 'pointerup', 'pointercancel', 'click', 'dblclick'].forEach(type => {
+            btn.addEventListener(type, event => {
+                event.stopPropagation();
+            });
+        });
+    });
     zoomInBtn?.addEventListener('click', event => {
+        event.preventDefault();
         event.stopPropagation();
         zoom = clampZoom(zoom + 1);
         if (zoomInput) zoomInput.value = String(zoom);
         renderMap();
     });
     zoomOutBtn?.addEventListener('click', event => {
+        event.preventDefault();
         event.stopPropagation();
         zoom = clampZoom(zoom - 1);
         if (zoomInput) zoomInput.value = String(zoom);
         renderMap();
     });
     mapEl.addEventListener('pointerdown', event => {
+        if (isMapControl(event.target)) return;
         if (event.button !== 0) return;
         dragState = {
             pointerId: event.pointerId,
@@ -2986,6 +3001,7 @@ if (fichaForm) {
         }
     });
     mapEl.addEventListener('click', event => {
+        if (isMapControl(event.target)) return;
         if (suppressNextClick) {
             suppressNextClick = false;
             return;
