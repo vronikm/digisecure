@@ -45,6 +45,17 @@ $email = $email ?? '';
                     entrada y la carpeta de spam.
                 </div>
             </div>
+            <div class="login-info" role="status">
+                <i class="bi bi-info-circle"></i>
+                <div>
+                    <strong>Si no recibes el enlace</strong>
+                    Es posible que tu correo ya este verificado. Intenta recuperar tu
+                    contrasena o solicita a reclutamiento que revise el correo registrado.
+                </div>
+            </div>
+            <a href="<?= $view->url('/password/forgot') ?>" class="login-secondary-btn" style="margin-bottom:.75rem;">
+                <i class="bi bi-key"></i>Recuperar contrasena
+            </a>
             <a href="<?= $view->url('/login') ?>" class="login-secondary-btn">
                 <i class="bi bi-box-arrow-in-right"></i>Volver al inicio de sesión
             </a>

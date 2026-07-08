@@ -138,7 +138,7 @@ $tiposDoc = ['cedula' => 'Cédula', 'ruc' => 'RUC', 'pasaporte' => 'Pasaporte'];
                             <?= $e($registroError) ?>
                             <?php if ($registroDocumentoDuplicado): ?>
                                 <div class="registro-error-help">
-                                    <p>Si ya te registraste antes, continúa según tu caso:</p>
+                                    <p>Si no sabes si tu correo ya fue confirmado, usa estas opciones:</p>
                                     <div class="registro-error-actions">
                                         <a href="<?= $view->url('/password/forgot') ?>" class="registro-error-action">
                                             <i class="bi bi-key"></i>
@@ -149,6 +149,10 @@ $tiposDoc = ['cedula' => 'Cédula', 'ruc' => 'RUC', 'pasaporte' => 'Pasaporte'];
                                             <span>Aún no confirmé mi correo: reenviar enlace</span>
                                         </a>
                                     </div>
+                                    <p class="registro-error-note">
+                                        Si el enlace de verificación no llega en unos minutos, prueba recuperar contraseña.
+                                        Si ninguna opción llega a tu correo, solicita a reclutamiento que revise tu documento y correo registrados.
+                                    </p>
                                 </div>
                             <?php endif; ?>
                         </div>

@@ -257,6 +257,13 @@ body {
     margin: 0;
     font-size: 1rem;
 }
+.registro-error-note {
+    margin-top: .55rem !important;
+    margin-bottom: 0 !important;
+    color: #7f1d1d;
+    font-size: .8rem;
+    font-weight: 500 !important;
+}
 .login-success {
     background: rgba(5,150,105,.06);
     border: 1px solid rgba(5,150,105,.2);
