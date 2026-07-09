@@ -45,6 +45,47 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 <li class="breadcrumb-item active"><i class="bi bi-person-plus-fill me-1"></i>Reclutamiento</li>
 <?php $view->endSection() ?>
 
+<?php $view->section('head') ?>
+<style>
+    .ds-reclutamiento-filter .ds-filter-row {
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) minmax(150px, 180px) minmax(150px, 180px) auto;
+        gap: .75rem;
+        align-items: end;
+    }
+
+    .ds-reclutamiento-filter .ds-filter-field {
+        min-width: 0;
+    }
+
+    .ds-reclutamiento-filter .ds-filter-actions {
+        display: flex;
+        gap: .5rem;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        padding-bottom: .05rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .ds-reclutamiento-filter .ds-filter-row {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .ds-reclutamiento-filter .ds-filter-actions {
+            justify-content: flex-start;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .ds-reclutamiento-filter .ds-filter-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+<?php $view->endSection() ?>
+
 <?php $view->section('content') ?>
 <div class="ds-page-header">
     <div class="ds-page-title">
@@ -89,7 +130,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 
 <!-- Filtros -->
-<div class="ds-card">
+<div class="ds-card ds-reclutamiento-filter">
     <div class="ds-card-header tone-success">
         <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
         <div>
