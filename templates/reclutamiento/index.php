@@ -14,6 +14,7 @@ $e = ViewRenderer::e(...);
 
 $estadoTone = [
     'nuevo'       => 'tone-warning',
+    'aspirante'   => 'tone-info',
     'en_revision' => 'tone-info',
     'contactado'  => 'tone-info',
     'aprobado'    => 'tone-success',
@@ -22,6 +23,7 @@ $estadoTone = [
 ];
 $estadoLabel = [
     'nuevo'       => 'Nuevo',
+    'aspirante'   => 'Aspirante',
     'en_revision' => 'En revisión',
     'contactado'  => 'Contactado',
     'aprobado'    => 'Aprobado',

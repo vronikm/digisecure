@@ -322,7 +322,7 @@ class AspiranteRepository
             "SELECT
                 COUNT(*) AS total,
                 SUM(email_verificado = 0 AND estado = 'nuevo') AS pendientes,
-                SUM(email_verificado = 1 AND estado = 'nuevo') AS verificados,
+                SUM(email_verificado = 1 AND estado IN ('nuevo', 'aspirante', 'en_revision', 'contactado')) AS verificados,
                 SUM(estado = 'aprobado') AS aprobados,
                 SUM(estado = 'descartado') AS descartados
              FROM aspirantes",

@@ -17,10 +17,11 @@ $estado = (string) $a['estado'];
 $verificado = (int) ($a['email_verificado'] ?? 0) === 1;
 
 $estadoTone = [
-    'nuevo' => 'tone-warning', 'en_revision' => 'tone-info', 'contactado' => 'tone-info',
+    'nuevo' => 'tone-warning', 'aspirante' => 'tone-info', 'en_revision' => 'tone-info', 'contactado' => 'tone-info',
     'aprobado' => 'tone-success', 'descartado' => 'tone-muted', 'contratado' => 'tone-success',
 ][$estado] ?? 'tone-muted';
 $estadoLabel = [
+    'aspirante' => 'Aspirante',
     'nuevo' => 'Nuevo', 'en_revision' => 'En revisión', 'contactado' => 'Contactado',
     'aprobado' => 'Aprobado', 'descartado' => 'Descartado', 'contratado' => 'Contratado',
 ][$estado] ?? $estado;
@@ -29,7 +30,7 @@ $tipoLabel = ['cedula' => 'Cédula', 'ruc' => 'RUC', 'pasaporte' => 'Pasaporte']
 $nombre = trim($a['nombres'] . ' ' . $a['apellidos']);
 $estatura = (int) ($a['estatura_cm'] ?? 0);
 $estaturaTxt = $estatura > 0 ? number_format($estatura / 100, 2) . ' m' : '-';
-$puedeAprobar = $verificado && in_array($estado, ['nuevo', 'en_revision', 'contactado'], true);
+$puedeAprobar = $verificado && in_array($estado, ['nuevo', 'aspirante', 'en_revision', 'contactado'], true);
 $puedeRechazar = !in_array($estado, ['aprobado', 'descartado'], true);
 
 $item = static function (string $label, string $value, string $span = '6') use ($e): void {
