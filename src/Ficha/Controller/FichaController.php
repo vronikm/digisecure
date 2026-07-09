@@ -287,7 +287,7 @@ final class FichaController
         $input = $request->post;
 
         try {
-            $this->verificarLimite->verificarCrearGuardia();
+            $this->verificarLimiteCrearGuardia();
             $result = $this->crearFichaService()->execute($input, $user->id, $request->clientIp());
             $this->flash->success('Ficha de guardia creada correctamente.');
             return Response::redirect($this->securePath($request, "/guardias/{$result['id']}"));
@@ -301,6 +301,24 @@ final class FichaController
                 'instituciones' => $this->loadInstitucionesFinancieras(),
                 'input' => $input,
                 'error' => $e->getMessage(),
+                'lockedFields' => [],
+                'prefillByCedulaUrl' => '/guardias/prefill/cedula',
+                'formEnableCedulaPrefill' => true,
+                'googleMapsKey' => $this->googleMapsKey(),
+            ]);
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            $requestId = $this->errorHandler->requestId();
+            $cursos = $this->safeLoadCatalogoCursos();
+            $instituciones = $this->safeLoadInstitucionesFinancieras();
+            return $this->view->response('ficha/create', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/guardias/crear',
+                'cursos' => $cursos,
+                'instituciones' => $instituciones,
+                'input' => $input,
+                'error' => 'No se pudo guardar la ficha en este momento. Revisa los datos e intenta nuevamente. Si el problema continua, reporta este Request ID al equipo tecnico: ' . $requestId,
                 'lockedFields' => [],
                 'prefillByCedulaUrl' => '/guardias/prefill/cedula',
                 'formEnableCedulaPrefill' => true,
@@ -665,6 +683,17 @@ final class FichaController
 
     // ======================== HELPERS ========================
 
+    private function verificarLimiteCrearGuardia(): void
+    {
+        try {
+            $this->verificarLimite->verificarCrearGuardia();
+        } catch (DomainException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+        }
+    }
+
     /**
      * @return list<array<string, mixed>>
      */
@@ -673,6 +702,19 @@ final class FichaController
         return $this->db->fetchAll(
             'SELECT id, codigo, nombre FROM catalogo_cursos WHERE activo = 1 ORDER BY orden',
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function safeLoadCatalogoCursos(): array
+    {
+        try {
+            return $this->loadCatalogoCursos();
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            return [];
+        }
     }
 
     /**
@@ -688,6 +730,19 @@ final class FichaController
              WHERE activo = 1
              ORDER BY FIELD(tipo, 'BANCO', 'COOPERATIVA'), orden, nombre",
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function safeLoadInstitucionesFinancieras(): array
+    {
+        try {
+            return $this->loadInstitucionesFinancieras();
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            return [];
+        }
     }
 
     /**

@@ -552,17 +552,33 @@ final class FichaRepository extends BaseRepository
         );
 
         foreach ($cursos as $c) {
+            $cursoId = $this->scalarString($c['curso_id'] ?? '');
+            if ($cursoId === '') {
+                continue;
+            }
+            $fecha = $this->scalarString($c['fecha_obtencion'] ?? '');
+            $observacion = $this->scalarString($c['observacion'] ?? '');
+
             $this->db->execute(
                 'INSERT INTO fichas_cursos (ficha_id, curso_id, tenant_id, fecha_obtencion, observacion)
                  VALUES (:fid, :cid, :tid, :fecha, :obs)',
                 [
                     'fid' => $fichaId,
-                    'cid' => $c['curso_id'],
+                    'cid' => $cursoId,
                     'tid' => $tenantId,
-                    'fecha' => $c['fecha_obtencion'] ?? null,
-                    'obs' => $c['observacion'] ?? null,
+                    'fecha' => $fecha !== '' ? $fecha : null,
+                    'obs' => $observacion !== '' ? $observacion : null,
                 ],
             );
         }
+    }
+
+    private function scalarString(mixed $value): string
+    {
+        if ($value === null || is_scalar($value)) {
+            return trim((string)$value);
+        }
+
+        return '';
     }
 }

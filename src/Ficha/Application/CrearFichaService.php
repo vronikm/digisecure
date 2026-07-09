@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace DigiSecure\Ficha\Application;
 
 use DigiSecure\Ficha\Domain\Enum\EstadoFicha;
+use DigiSecure\Ficha\Domain\Enum\EstadoCivil;
 use DigiSecure\Ficha\Domain\Enum\Genero;
 use DigiSecure\Ficha\Domain\Enum\TipoFicha;
+use DigiSecure\Ficha\Domain\Enum\TipoSangre;
 use DigiSecure\Ficha\Domain\ValueObject\Cedula;
 use DigiSecure\Ficha\Infrastructure\CroquisStorage;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
@@ -47,14 +49,39 @@ final class CrearFichaService
      */
     public function execute(array $input, string $usuarioId, string $ip): array
     {
+        $input = $this->normalizeInput($input);
+
         // 1. Validar campos obligatorios mínimos
         $this->validateRequired($input);
 
         // 2. Validar cédula
-        $cedula = Cedula::fromString((string)($input['cedula'] ?? ''));
+        $cedula = Cedula::fromString($this->scalarString($input['cedula'] ?? ''));
 
         // 3. Determinar tipo de ficha
-        $tipo = TipoFicha::from((string)($input['tipo_ficha'] ?? 'INGRESO'));
+        $tipo = $this->tipoFicha($this->scalarString($input['tipo_ficha'] ?? 'INGRESO'));
+        $genero = $this->genero($this->scalarString($input['genero'] ?? ''));
+        $fechaNacimiento = $this->dateRequired($this->scalarString($input['fecha_nacimiento'] ?? ''), 'Fecha de nacimiento');
+        $fechaReentrenamiento = $this->dateOptional(
+            $this->scalarString($input['fecha_ultimo_reentrenamiento'] ?? ''),
+            'Fecha de ultimo reentrenamiento',
+        );
+        $tipoSangre = $this->tipoSangreOptional($this->scalarString($input['tipo_sangre'] ?? ''));
+        $estadoCivil = $this->estadoCivilOptional($this->scalarString($input['estado_civil'] ?? ''));
+        $tipoCuenta = $this->allowedOptional(
+            $this->scalarString($input['tipo_cuenta'] ?? ''),
+            ['AHORROS', 'CORRIENTE'],
+            'Tipo de cuenta',
+        );
+        $tipoVivienda = $this->allowedOptional(
+            $this->scalarString($input['domicilio_tipo_vivienda'] ?? ''),
+            ['PROPIA', 'ARRENDADA', 'FAMILIAR'],
+            'Tipo de vivienda',
+        );
+        $email = $this->optionalString($input, 'email');
+        if ($email !== null && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            throw new DomainException('El email no tiene un formato valido.');
+        }
+        $estatura = $this->decimalOptional($this->scalarString($input['estatura'] ?? ''), 'Estatura', 1.0, 2.5);
 
         // 4. Verificar si hay fichas previas con la misma cédula (reingreso)
         $fichasPrevias = $this->fichaRepo->findByCedulaHash($cedula->hash());
@@ -65,8 +92,9 @@ final class CrearFichaService
         // 5. Cifrar datos sensibles
         $cedulaCifrada = $this->encryption->encrypt($cedula->valor);
         $cuentaCifrada = null;
-        if (!empty($input['cuenta_bancaria'])) {
-            $cuentaCifrada = $this->encryption->encrypt((string)$input['cuenta_bancaria']);
+        $cuentaBancaria = $this->optionalString($input, 'cuenta_bancaria');
+        if ($cuentaBancaria !== null) {
+            $cuentaCifrada = $this->encryption->encrypt($cuentaBancaria);
         }
 
         // 6. Generar correlativo
@@ -74,10 +102,10 @@ final class CrearFichaService
 
         // 7. Persistir en transacción
         $croquisArchivoId = null;
-        $croquisImagenData = trim((string) ($input['croquis_imagen_data'] ?? ''));
+        $croquisImagenData = $this->scalarString($input['croquis_imagen_data'] ?? '');
         if ($croquisImagenData !== '') {
             $croquisArchivoId = $this->croquisStorage->storeDataUrl($croquisImagenData);
-        } elseif (((string) ($input['croquis_mapa_estatico'] ?? '')) === '1'
+        } elseif ($this->scalarString($input['croquis_mapa_estatico'] ?? '') === '1'
             && isset($input['croquis_latitud'], $input['croquis_longitud'])
             && is_numeric($input['croquis_latitud'])
             && is_numeric($input['croquis_longitud'])
@@ -91,7 +119,7 @@ final class CrearFichaService
 
         // Foto del empleado (data URL); se almacena con el mismo storage cifrado.
         $fotoArchivoId = null;
-        $fotoImagenData = trim((string) ($input['foto_imagen_data'] ?? ''));
+        $fotoImagenData = $this->scalarString($input['foto_imagen_data'] ?? '');
         if ($fotoImagenData !== '') {
             $fotoArchivoId = $this->croquisStorage->storeDataUrl($fotoImagenData);
         }
@@ -104,51 +132,58 @@ final class CrearFichaService
                 $cuentaCifrada,
                 $correlativo,
                 $tipo,
+                $genero,
+                $fechaNacimiento,
+                $fechaReentrenamiento,
+                $tipoSangre,
+                $estadoCivil,
+                $tipoCuenta,
+                $tipoVivienda,
+                $email,
+                $estatura,
                 $fichasPrevias,
                 $usuarioId,
                 $croquisArchivoId,
                 $fotoArchivoId,
             ): string {
-                $genero = Genero::from((string)($input['genero'] ?? 'MASCULINO'));
-
                 $data = [
                 'correlativo' => $correlativo,
                 'tipo_ficha' => $tipo->value,
                 'estado' => EstadoFicha::BORRADOR->value,
                 'fecha_emision' => date('Y-m-d'),
-                'nombres' => trim((string)($input['nombres'] ?? '')),
-                'apellidos' => trim((string)($input['apellidos'] ?? '')),
+                'nombres' => $this->requiredString($input, 'nombres'),
+                'apellidos' => $this->requiredString($input, 'apellidos'),
                 'cedula_hash' => $cedula->hash(),
                 'cedula_cifrada' => $cedulaCifrada,
                 'genero' => $genero->value,
-                'fecha_nacimiento' => (string)($input['fecha_nacimiento'] ?? ''),
-                'lugar_nacimiento_ciudad' => $input['lugar_nacimiento_ciudad'] ?? null,
-                'lugar_nacimiento_provincia' => $input['lugar_nacimiento_provincia'] ?? null,
-                'tipo_sangre' => !empty($input['tipo_sangre']) ? $input['tipo_sangre'] : null,
-                'estatura' => !empty($input['estatura']) ? (float)$input['estatura'] : null,
-                'celular' => $input['celular'] ?? null,
-                'email' => !empty($input['email']) ? trim((string)$input['email']) : null,
-                'banco' => $input['banco'] ?? null,
-                'tipo_cuenta' => !empty($input['tipo_cuenta']) ? $input['tipo_cuenta'] : null,
+                'fecha_nacimiento' => $fechaNacimiento,
+                'lugar_nacimiento_ciudad' => $this->optionalString($input, 'lugar_nacimiento_ciudad'),
+                'lugar_nacimiento_provincia' => $this->optionalString($input, 'lugar_nacimiento_provincia'),
+                'tipo_sangre' => $tipoSangre,
+                'estatura' => $estatura,
+                'celular' => $this->optionalString($input, 'celular'),
+                'email' => $email,
+                'banco' => $this->optionalString($input, 'banco'),
+                'tipo_cuenta' => $tipoCuenta,
                 'cuenta_bancaria_cifrada' => $cuentaCifrada,
-                'domicilio_ciudad' => $input['domicilio_ciudad'] ?? null,
-                'domicilio_tipo_vivienda' => !empty($input['domicilio_tipo_vivienda']) ? $input['domicilio_tipo_vivienda'] : null,
-                'domicilio_calle' => $input['domicilio_calle'] ?? null,
-                'domicilio_numero' => $input['domicilio_numero'] ?? null,
-                'domicilio_barrio' => $input['domicilio_barrio'] ?? null,
-                'domicilio_referencia' => $input['domicilio_referencia'] ?? null,
-                'domicilio_telefono' => $input['domicilio_telefono'] ?? null,
+                'domicilio_ciudad' => $this->optionalString($input, 'domicilio_ciudad'),
+                'domicilio_tipo_vivienda' => $tipoVivienda,
+                'domicilio_calle' => $this->optionalString($input, 'domicilio_calle'),
+                'domicilio_numero' => $this->optionalString($input, 'domicilio_numero'),
+                'domicilio_barrio' => $this->optionalString($input, 'domicilio_barrio'),
+                'domicilio_referencia' => $this->optionalString($input, 'domicilio_referencia'),
+                'domicilio_telefono' => $this->optionalString($input, 'domicilio_telefono'),
                 'croquis_latitud' => (isset($input['croquis_latitud']) && is_numeric($input['croquis_latitud'])) ? (float) $input['croquis_latitud'] : null,
                 'croquis_longitud' => (isset($input['croquis_longitud']) && is_numeric($input['croquis_longitud'])) ? (float) $input['croquis_longitud'] : null,
                 'croquis_archivo_id' => $croquisArchivoId,
                 'foto_archivo_id' => $fotoArchivoId,
-                'contacto_emergencia_nombre' => $input['contacto_emergencia_nombre'] ?? null,
-                'contacto_emergencia_telefono' => $input['contacto_emergencia_telefono'] ?? null,
-                'instruccion_primaria' => $input['instruccion_primaria'] ?? null,
-                'instruccion_secundaria' => $input['instruccion_secundaria'] ?? null,
-                'instruccion_superior' => $input['instruccion_superior'] ?? null,
-                'fecha_ultimo_reentrenamiento' => !empty($input['fecha_ultimo_reentrenamiento']) ? $input['fecha_ultimo_reentrenamiento'] : null,
-                'estado_civil' => !empty($input['estado_civil']) ? $input['estado_civil'] : null,
+                'contacto_emergencia_nombre' => $this->optionalString($input, 'contacto_emergencia_nombre'),
+                'contacto_emergencia_telefono' => $this->optionalString($input, 'contacto_emergencia_telefono'),
+                'instruccion_primaria' => $this->optionalString($input, 'instruccion_primaria'),
+                'instruccion_secundaria' => $this->optionalString($input, 'instruccion_secundaria'),
+                'instruccion_superior' => $this->optionalString($input, 'instruccion_superior'),
+                'fecha_ultimo_reentrenamiento' => $fechaReentrenamiento,
+                'estado_civil' => $estadoCivil,
                 'ficha_anterior_id' => $fichasPrevias[0]['id'] ?? null,
                 'created_by' => $usuarioId,
                 'updated_by' => $usuarioId,
@@ -186,14 +221,18 @@ final class CrearFichaService
         }
 
         // 8. Auditoría
-        $this->audit->log(
-            'ficha.crear',
-            $usuarioId,
-            'ficha',
-            $fichaId,
-            detalles: ['correlativo' => $correlativo, 'tipo' => $tipo->value],
-            ip: $ip,
-        );
+        try {
+            $this->audit->log(
+                'ficha.crear',
+                $usuarioId,
+                'ficha',
+                $fichaId,
+                detalles: ['correlativo' => $correlativo, 'tipo' => $tipo->value],
+                ip: $ip,
+            );
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][FICHA] Ficha creada pero auditoria fallo: ' . $e->getMessage());
+        }
 
         return ['id' => $fichaId, 'correlativo' => $correlativo];
     }
@@ -203,12 +242,169 @@ final class CrearFichaService
         $required = ['nombres', 'apellidos', 'cedula', 'genero', 'fecha_nacimiento'];
         $missing = [];
         foreach ($required as $field) {
-            if (empty($input[$field]) || trim((string)$input[$field]) === '') {
+            if ($this->scalarString($input[$field] ?? '') === '') {
                 $missing[] = $field;
             }
         }
         if ($missing !== []) {
             throw new DomainException('Campos obligatorios faltantes: ' . implode(', ', $missing));
         }
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    private function normalizeInput(array $input): array
+    {
+        foreach ($input as $key => $value) {
+            if (is_string($value)) {
+                $input[$key] = trim($value);
+            }
+        }
+
+        return $input;
+    }
+
+    private function tipoFicha(string $value): TipoFicha
+    {
+        $value = $value !== '' ? $value : TipoFicha::INGRESO->value;
+        $tipo = TipoFicha::tryFrom($value);
+        if ($tipo === null) {
+            throw new DomainException('Tipo de ficha no es valido.');
+        }
+
+        return $tipo;
+    }
+
+    private function genero(string $value): Genero
+    {
+        $genero = Genero::tryFrom($value);
+        if ($genero === null) {
+            throw new DomainException('Genero no es valido.');
+        }
+
+        return $genero;
+    }
+
+    private function tipoSangreOptional(string $value): ?string
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        if (TipoSangre::tryFrom($value) === null) {
+            throw new DomainException('Tipo de sangre no es valido.');
+        }
+
+        return $value;
+    }
+
+    private function estadoCivilOptional(string $value): ?string
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        if (EstadoCivil::tryFrom($value) === null) {
+            throw new DomainException('Estado civil no es valido.');
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param list<string> $allowed
+     */
+    private function allowedOptional(string $value, array $allowed, string $label): ?string
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        if (!in_array($value, $allowed, true)) {
+            throw new DomainException($label . ' no es valido.');
+        }
+
+        return $value;
+    }
+
+    private function dateRequired(string $value, string $label): string
+    {
+        if ($value === '') {
+            throw new DomainException($label . ' es obligatorio.');
+        }
+
+        if (!$this->isDate($value)) {
+            throw new DomainException($label . ' no tiene un formato valido.');
+        }
+
+        return $value;
+    }
+
+    private function dateOptional(string $value, string $label): ?string
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        if (!$this->isDate($value)) {
+            throw new DomainException($label . ' no tiene un formato valido.');
+        }
+
+        return $value;
+    }
+
+    private function decimalOptional(string $value, string $label, ?float $min = null, ?float $max = null): ?float
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        if (!is_numeric($value)) {
+            throw new DomainException($label . ' debe ser numerico.');
+        }
+
+        $number = (float)$value;
+        if ($min !== null && $number < $min) {
+            throw new DomainException($label . ' esta fuera del rango permitido.');
+        }
+        if ($max !== null && $number > $max) {
+            throw new DomainException($label . ' esta fuera del rango permitido.');
+        }
+
+        return $number;
+    }
+
+    private function isDate(string $value): bool
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        return $date instanceof \DateTimeImmutable && $date->format('Y-m-d') === $value;
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     */
+    private function requiredString(array $input, string $field): string
+    {
+        return $this->scalarString($input[$field] ?? '');
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     */
+    private function optionalString(array $input, string $field): ?string
+    {
+        $value = $this->scalarString($input[$field] ?? '');
+        return $value !== '' ? $value : null;
+    }
+
+    private function scalarString(mixed $value): string
+    {
+        if ($value === null || is_scalar($value)) {
+            return trim((string)$value);
+        }
+
+        return '';
     }
 }
