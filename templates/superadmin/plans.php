@@ -228,6 +228,11 @@ $hasFilters = $busqueda !== '' || $estadoFiltro !== '' || $publicoFiltro !== '';
                                   data-plan="<?= $e((string) $p['nombre']) ?>"
                                   data-code="<?= $e((string) $p['codigo']) ?>"
                                   data-action="<?= $activo ? 'inactivar' : 'activar' ?>"
+                                  data-confirm
+                                  data-confirm-title="<?= $activo ? 'Inactivar plan' : 'Activar plan' ?>"
+                                  data-confirm-text="Se va a <?= $activo ? 'inactivar' : 'activar' ?> el plan <?= $e((string) $p['nombre']) ?> (<?= $e((string) $p['codigo']) ?>)."
+                                  data-confirm-type="<?= $activo ? 'warning' : 'success' ?>"
+                                  data-confirm-button="<?= $activo ? 'Si, inactivar' : 'Si, activar' ?>"
                                   style="display:inline;">
                                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                 <input type="hidden" name="estado" value="<?= $activo ? 'inactivo' : 'activo' ?>">
@@ -246,37 +251,3 @@ $hasFilters = $busqueda !== '' || $estadoFiltro !== '' || $publicoFiltro !== '';
 </div>
 <?php $view->endSection() ?>
 
-<?php $view->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-(() => {
-    const forms = document.querySelectorAll('.js-plan-confirm-form');
-    if (!forms.length) return;
-
-    forms.forEach((form) => {
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const action = form.dataset.action || 'actualizar';
-            const planName = form.dataset.plan || 'este plan';
-            const planCode = form.dataset.code || '';
-            const isActivate = action === 'activar';
-
-            Swal.fire({
-                icon: isActivate ? 'question' : 'warning',
-                title: `${isActivate ? 'Activar' : 'Inactivar'} plan?`,
-                text: `Se va a ${action} el plan ${planName}${planCode !== '' ? ` (${planCode})` : ''}.`,
-                showCancelButton: true,
-                confirmButtonText: isActivate ? 'Si, activar' : 'Si, inactivar',
-                cancelButtonText: 'Cancelar',
-                reverseButtons: true,
-                focusCancel: true,
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
-        });
-    });
-})();
-</script>
-<?php $view->endSection() ?>

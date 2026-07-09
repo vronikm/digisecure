@@ -273,7 +273,6 @@ $returnTo = '/lopdp/consentimientos' . ($returnQuery !== '' ? '?' . $returnQuery
 <?php $view->endSection() ?>
 
 <?php $view->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 (() => {
     const forms = document.querySelectorAll('.js-consent-revoke-form');

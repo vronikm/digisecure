@@ -1606,9 +1606,6 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
 <?php $view->endSection() ?>
 
 <?php $view->section('scripts') ?>
-<?php if ($formRequireConfirm): ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<?php endif ?>
 <script>
 const STEP_ORDER = ['base', 'contacto', 'familiares', 'historial', 'cursos'];
 const prefillTrabajos = <?= json_encode($prefillTrabajos, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
@@ -2131,22 +2128,13 @@ if (fichaForm) {
             return true;
         }
 
-        const msg = 'Ya ingresaste datos en el formulario. Se reemplazaran con la ultima ficha encontrada. Deseas continuar?';
-        if (typeof Swal !== 'undefined') {
-            const result = await Swal.fire({
-                icon: 'question',
-                title: 'Usar datos de la ultima ficha?',
-                text: msg,
-                showCancelButton: true,
-                confirmButtonText: 'Si, reemplazar',
-                cancelButtonText: 'No, mantener',
-                reverseButtons: true,
-                focusCancel: true
-            });
-            return Boolean(result.isConfirmed);
-        }
-
-        return window.confirm(msg);
+        return window.DigiSecureConfirm.confirm({
+            type: 'question',
+            title: 'Usar datos de la ultima ficha?',
+            text: 'Ya ingresaste datos en el formulario. Se reemplazaran con la ultima ficha encontrada. Deseas continuar?',
+            confirmButton: 'Si, reemplazar',
+            cancelButton: 'No, mantener',
+        });
     };
 
     const TIPO_FICHA_META = {
@@ -2386,22 +2374,14 @@ if (fichaForm) {
             this.submit();
         };
 
-        if (typeof Swal === 'undefined') {
-            submitAfterConfirm();
-            return;
-        }
-
-        Swal.fire({
-            icon: 'question',
+        window.DigiSecureConfirm.confirm({
+            type: 'question',
             title: SUBMIT_CONFIRM_CONFIG.title,
             text: SUBMIT_CONFIRM_CONFIG.text,
-            showCancelButton: true,
-            confirmButtonText: SUBMIT_CONFIRM_CONFIG.confirmButtonText,
-            cancelButtonText: SUBMIT_CONFIRM_CONFIG.cancelButtonText,
-            reverseButtons: true,
-            focusCancel: true,
+            confirmButton: SUBMIT_CONFIRM_CONFIG.confirmButtonText,
+            cancelButton: SUBMIT_CONFIRM_CONFIG.cancelButtonText,
         }).then(result => {
-            if (result.isConfirmed) {
+            if (result) {
                 submitAfterConfirm();
             }
         });

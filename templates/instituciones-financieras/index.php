@@ -142,7 +142,11 @@ $tipoTone = [
                                class="ds-btn ds-btn-outline ds-btn-sm" title="Editar">Editar</a>
                             <form method="post" class="d-inline"
                                   action="<?= $view->url('/configuracion/instituciones-financieras/' . $it['id'] . '/eliminar') ?>"
-                                  onsubmit="return confirm('¿Eliminar &quot;<?= $e((string) $it['nombre']) ?>&quot; del catálogo?');">
+                                  data-confirm
+                                  data-confirm-title="Eliminar institucion"
+                                  data-confirm-text="Eliminar <?= $e((string) $it['nombre']) ?> del catalogo?"
+                                  data-confirm-type="danger"
+                                  data-confirm-button="Si, eliminar">
                                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                 <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm" title="Eliminar">
                                     <i class="bi bi-trash"></i>

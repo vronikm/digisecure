@@ -402,7 +402,11 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
             </div>
             <div class="ds-card-body">
                 <form class="ds-form-main" method="POST" action="<?= $view->url('/admin/tenants/' . $e((string) $t['id']) . '/estado') ?>"
-                      onsubmit="return confirm('Cambiar el estado de este tenant?');">
+                      data-confirm
+                      data-confirm-title="Cambiar estado del tenant"
+                      data-confirm-text="Se aplicara el nuevo estado seleccionado al tenant."
+                      data-confirm-type="warning"
+                      data-confirm-button="Si, aplicar">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <div class="ds-form-field" style="margin-bottom: .85rem;">
                         <label class="ds-form-label">Nuevo estado</label>
@@ -430,7 +434,11 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
             </div>
             <div class="ds-card-body">
                 <form class="ds-form-main" method="POST" action="<?= $view->url('/admin/tenants/' . $e((string) $t['id']) . '/plan') ?>"
-                      onsubmit="return confirm('Asignar este plan al tenant?');">
+                      data-confirm
+                      data-confirm-title="Asignar plan"
+                      data-confirm-text="Se asignara el plan seleccionado al tenant."
+                      data-confirm-type="question"
+                      data-confirm-button="Si, asignar">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <div class="ds-form-field" style="margin-bottom: .65rem;">
                         <label class="ds-form-label">Plan</label>

@@ -278,11 +278,19 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                     </div>
                     <div style="display: flex; gap: .55rem; flex-wrap: wrap;">
                         <button type="submit" name="accion" value="aceptar" class="ds-btn ds-btn-success"
-                                onclick="return confirm('Aceptar este documento?');">
+                                data-confirm
+                                data-confirm-title="Aceptar documento"
+                                data-confirm-text="Confirmas que el documento cumple los requisitos?"
+                                data-confirm-type="success"
+                                data-confirm-button="Si, aceptar">
                             <i class="bi bi-check-circle"></i>Aceptar documento
                         </button>
                         <button type="submit" name="accion" value="rechazar" class="ds-btn ds-btn-danger"
-                                onclick="return confirm('Rechazar este documento?');">
+                                data-confirm
+                                data-confirm-title="Rechazar documento"
+                                data-confirm-text="Confirmas el rechazo de este documento?"
+                                data-confirm-type="danger"
+                                data-confirm-button="Si, rechazar">
                             <i class="bi bi-x-circle"></i>Rechazar documento
                         </button>
                     </div>

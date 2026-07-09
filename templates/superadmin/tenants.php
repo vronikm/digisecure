@@ -215,7 +215,11 @@ $baseParams = array_filter([
                             <?php if ($puedeGestionarTenants && (string) $t['estado'] !== 'cancelado'): ?>
                             <form method="POST"
                                   action="<?= $view->url('/admin/tenants/' . $tenantId . '/eliminar') ?>"
-                                  onsubmit="return confirm('Eliminar esta empresa del listado activo? Se marcara como cancelada y se conservara el historial.');"
+                                  data-confirm
+                                  data-confirm-title="Eliminar empresa"
+                                  data-confirm-text="Se marcara como cancelada y se conservara el historial."
+                                  data-confirm-type="danger"
+                                  data-confirm-button="Si, eliminar"
                                   style="display: inline;">
                                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                 <button type="submit"

@@ -374,7 +374,11 @@ $coberturaTone = $coberturaPct >= 100 ? 'tone-success' : ($coberturaPct >= 60 ? 
                     }
                 ?>
                 <form class="ds-form-main" method="post" action="<?= $view->url('/puestos/' . $puesto['id'] . '/estado') ?>"
-                      onsubmit="return confirm('<?= $e($cfg['confirm']) ?>');"
+                      data-confirm
+                      data-confirm-title="<?= $e($cfg['label']) ?> puesto"
+                      data-confirm-text="<?= $e($cfg['confirm']) ?>"
+                      data-confirm-type="<?= $e($cfg['tone']) ?>"
+                      data-confirm-button="Si, continuar"
                       style="margin:.35rem 0;">
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <input type="hidden" name="estado" value="<?= $estado ?>">

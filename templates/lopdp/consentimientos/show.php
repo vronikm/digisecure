@@ -211,7 +211,6 @@ $detailPath = '/lopdp/consentimientos/' . (string) $consentimiento['id'];
 <?php $view->endSection() ?>
 
 <?php $view->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 (() => {
     const forms = document.querySelectorAll('.js-consent-revoke-form');
@@ -238,9 +237,16 @@ $detailPath = '/lopdp/consentimientos/' . (string) $consentimiento['id'];
             const submitForm = () => form.submit();
 
             if (typeof window.Swal === 'undefined') {
-                if (window.confirm('Se revocara este consentimiento. Deseas continuar?')) {
-                    submitForm();
-                }
+                window.DigiSecureConfirm.confirm({
+                    type: 'danger',
+                    title: 'Confirmar revocacion',
+                    text: 'Se revocara este consentimiento.',
+                    confirmButton: 'Si, revocar',
+                }).then((confirmed) => {
+                    if (confirmed) {
+                        submitForm();
+                    }
+                });
                 return;
             }
 

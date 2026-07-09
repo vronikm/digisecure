@@ -276,7 +276,11 @@ $puedeCerrar = $estado === EstadoAsignacion::ACTIVA;
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="tab-finalizar">
                         <form class="ds-form-main" method="post" action="<?= $view->url('/asignaciones/' . $asignacion['id'] . '/cerrar') ?>"
-                              onsubmit="return confirm('Finalizar esta asignacion?');">
+                              data-confirm
+                              data-confirm-title="Finalizar asignacion"
+                              data-confirm-text="Confirmas el cierre normal de esta asignacion?"
+                              data-confirm-type="success"
+                              data-confirm-button="Si, finalizar">
                             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                             <input type="hidden" name="accion" value="finalizar">
                             <div class="ds-form-field" style="margin-bottom: .85rem;">
@@ -291,7 +295,11 @@ $puedeCerrar = $estado === EstadoAsignacion::ACTIVA;
                     </div>
                     <div class="tab-pane fade" id="tab-cancelar">
                         <form class="ds-form-main" method="post" action="<?= $view->url('/asignaciones/' . $asignacion['id'] . '/cerrar') ?>"
-                              onsubmit="return confirm('Cancelar esta asignacion? Esta accion queda en auditoria.');">
+                              data-confirm
+                              data-confirm-title="Cancelar asignacion"
+                              data-confirm-text="Esta accion queda registrada en auditoria."
+                              data-confirm-type="danger"
+                              data-confirm-button="Si, cancelar">
                             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                             <input type="hidden" name="accion" value="cancelar">
                             <div class="ds-form-field" style="margin-bottom: .85rem;">

@@ -161,7 +161,11 @@ $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr(
             <?php endif ?>
             <?php if ($user->tienePermiso('guardias.editar') && $estado === EstadoFicha::BORRADOR): ?>
             <form method="post" action="<?= $view->url('/guardias/' . $fichaId . '/revision') ?>" class="ds-form-inline"
-                  onsubmit="return confirm('Enviar esta ficha a revision? Luego podras completarla cuando cumpla los requisitos.');"
+                  data-confirm
+                  data-confirm-title="Enviar ficha a revision"
+                  data-confirm-text="Luego podras completarla cuando cumpla los requisitos."
+                  data-confirm-type="question"
+                  data-confirm-button="Si, enviar"
                   style="display: inline;">
                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                 <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm">
@@ -171,7 +175,11 @@ $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr(
             <?php endif ?>
             <?php if ($user->tienePermiso('guardias.editar') && $estado === EstadoFicha::EN_REVISION): ?>
             <form method="post" action="<?= $view->url('/guardias/' . $fichaId . '/completar') ?>" class="ds-form-inline"
-                  onsubmit="return confirm('Marcar esta ficha como COMPLETA? Se validaran los requisitos basicos.');"
+                  data-confirm
+                  data-confirm-title="Completar ficha"
+                  data-confirm-text="Se validaran los requisitos basicos antes de marcarla como completa."
+                  data-confirm-type="success"
+                  data-confirm-button="Si, completar"
                   style="display: inline;">
                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                 <button type="submit" class="ds-btn ds-btn-success ds-btn-sm">

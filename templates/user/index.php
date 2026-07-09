@@ -204,7 +204,11 @@ $hasFilters = !empty($filters['estado'] ?? null);
                             <?php if ($user->tienePermiso('usuarios.bloquear') && $u['id'] !== $user->id): ?>
                                 <?php if ($estado === 'activo'): ?>
                                 <form method="post" action="<?= $view->url('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline ds-form-inline"
-                                      onsubmit="return confirm('Bloquear a <?= $e($u['nombres']) ?>?');">
+                                      data-confirm
+                                      data-confirm-title="Bloquear usuario"
+                                      data-confirm-text="Bloquear a <?= $e($u['nombres']) ?>?"
+                                      data-confirm-type="warning"
+                                      data-confirm-button="Si, bloquear">
                                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                     <input type="hidden" name="estado" value="bloqueado">
                                     <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm" title="Bloquear">
@@ -213,7 +217,11 @@ $hasFilters = !empty($filters['estado'] ?? null);
                                 </form>
                                 <?php else: ?>
                                 <form method="post" action="<?= $view->url('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline ds-form-inline"
-                                      onsubmit="return confirm('Reactivar a <?= $e($u['nombres']) ?>?');">
+                                      data-confirm
+                                      data-confirm-title="Reactivar usuario"
+                                      data-confirm-text="Reactivar a <?= $e($u['nombres']) ?>?"
+                                      data-confirm-type="success"
+                                      data-confirm-button="Si, reactivar">
                                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                                     <input type="hidden" name="estado" value="activo">
                                     <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm" title="Reactivar">

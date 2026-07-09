@@ -166,7 +166,13 @@ $rolId = (string) $rol['id'];
     <?php if (!$esSistema): ?>
     <div class="ds-form-actions is-split">
         <form class="ds-form-main" method="post" action="<?= $view->url('/roles/' . $rolId . '/eliminar') ?>"
-              onsubmit="return confirm('Estas seguro de eliminar el rol «<?= $e($rol['nombre']) ?>»? Esta accion no se puede deshacer.');"
+              data-confirm
+              data-confirm-title="Eliminar rol"
+              data-confirm-text="Se eliminara el rol <?= $e($rol['nombre']) ?>. Esta accion no se puede deshacer."
+              data-confirm-type="danger"
+              data-confirm-button="Si, eliminar"
+              data-confirm-phrase="ELIMINAR"
+              data-confirm-phrase-label="Escribe ELIMINAR para confirmar"
               style="display: inline;">
             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
             <button type="submit" class="ds-btn ds-btn-outline" style="color: #dc2626; border-color: rgba(220,38,38,.3);">

@@ -314,14 +314,22 @@ $fv = static fn(string $k): string => $ficha !== null ? trim((string) ($ficha[$k
         <div class="rc-actions">
             <?php if ($puedeAprobar): ?>
             <form method="POST" action="<?= $view->url('/reclutamiento/' . $id . '/aprobar') ?>"
-                  onsubmit="return confirm('¿Aprobar a este aspirante y crear su cuenta de usuario activa?');">
+                  data-confirm
+                  data-confirm-title="Aprobar aspirante"
+                  data-confirm-text="Se creara una cuenta de usuario activa para este aspirante."
+                  data-confirm-type="success"
+                  data-confirm-button="Si, aprobar">
                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                 <button type="submit" class="ds-btn ds-btn-primary"><i class="bi bi-person-check"></i>Aprobar y crear usuario</button>
             </form>
             <?php endif ?>
             <?php if ($puedeRechazar): ?>
             <form method="POST" action="<?= $view->url('/reclutamiento/' . $id . '/rechazar') ?>" id="rejectForm"
-                  onsubmit="return confirm('¿Rechazar esta postulación?');">
+                  data-confirm
+                  data-confirm-title="Rechazar postulacion"
+                  data-confirm-text="La postulacion sera marcada como rechazada y quedara registrada en auditoria."
+                  data-confirm-type="danger"
+                  data-confirm-button="Si, rechazar">
                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                 <button type="submit" class="ds-btn ds-btn-danger"><i class="bi bi-x-circle"></i>Rechazar postulación</button>
             </form>

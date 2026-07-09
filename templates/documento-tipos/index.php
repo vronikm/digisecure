@@ -191,7 +191,13 @@ $e = ViewRenderer::e(...);
                         <?php endif ?>
                     </td>
                     <td class="ds-cell-end">
-                        <form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo']) . '/toggle') ?>" class="ds-form-inline" style="display:inline-block;">
+                        <form method="post" action="<?= $view->url('/configuracion/documentos/' . $e((string) $t['codigo']) . '/toggle') ?>" class="ds-form-inline"
+                              data-confirm
+                              data-confirm-title="<?= $esActivo ? 'Desactivar documento' : 'Activar documento' ?>"
+                              data-confirm-text="<?= $esActivo ? 'Este tipo de documento dejara de mostrarse para nuevas cargas.' : 'Este tipo de documento volvera a mostrarse para la carga de expedientes.' ?>"
+                              data-confirm-type="<?= $esActivo ? 'warning' : 'success' ?>"
+                              data-confirm-button="<?= $esActivo ? 'Si, desactivar' : 'Si, activar' ?>"
+                              style="display:inline-block;">
                             <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                             <button type="submit" class="ds-btn ds-btn-outline ds-btn-sm"
                                     title="<?= $esActivo ? 'Desactivar' : 'Activar' ?>">
