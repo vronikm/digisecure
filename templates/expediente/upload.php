@@ -21,6 +21,11 @@ $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
 $isAspirante = $user->tieneRol('aspirante');
 $fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
 $guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
+$tieneVencimiento = (int) $tipo['tiene_vencimiento'] === 1;
+$diasVigencia = (int) ($tipo['dias_vigencia'] ?? 0);
+$fechaObjetivoActual = !empty($docExistente['fecha_objetivo_actualizacion'] ?? null)
+    ? date('d/m/Y', strtotime((string) $docExistente['fecha_objetivo_actualizacion']))
+    : null;
 ?>
 
 <?php $view->section('title') ?><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento - DigiSecure<?php $view->endSection() ?>
@@ -101,10 +106,14 @@ $guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
                         <i class="bi bi-hdd" style="width: 1rem;"></i>
                         Tamano max: <strong style="color: var(--ds-text);"><?= $tipo['tamano_maximo_mb'] ?> MB</strong>
                     </li>
-                    <?php if ($tipo['tiene_vencimiento']): ?>
+                    <?php if ($tieneVencimiento): ?>
                     <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
                         <i class="bi bi-calendar-event" style="width: 1rem;"></i>
-                        Vigencia: <strong style="color: var(--ds-text);"><?= $tipo['dias_vigencia'] ?> dias</strong>
+                        Vigencia: <strong style="color: var(--ds-text);"><?= $diasVigencia ?> dias</strong>
+                    </li>
+                    <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
+                        <i class="bi bi-arrow-repeat" style="width: 1rem;"></i>
+                        Renovacion: <strong style="color: var(--ds-text);">30 dias antes del vencimiento</strong>
                     </li>
                     <?php endif ?>
                     <?php if ($tipo['requiere_validacion_externa']): ?>
@@ -145,31 +154,35 @@ $guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
                         <label class="ds-form-label">Fecha emision del documento</label>
                         <input type="date" name="fecha_emision_documento" class="form-control"
                                value="<?= $e($docExistente['fecha_emision_documento'] ?? '') ?>">
-                        <?php if ($tipo['tiene_vencimiento']): ?>
-                        <span class="ds-form-help">El vencimiento se calcula automaticamente (+<?= $tipo['dias_vigencia'] ?> dias).</span>
+                        <?php if ($tieneVencimiento): ?>
+                        <span class="ds-form-help">Si no ingresas vencimiento, se calcula automaticamente (+<?= $diasVigencia ?> dias).</span>
                         <?php endif ?>
                     </div>
                 </div>
 
-                <?php if ($tipo['tiene_vencimiento']): ?>
+                <?php if ($tieneVencimiento): ?>
                 <div class="col-md-4">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Fecha vencimiento (manual)</label>
+                        <label class="ds-form-label">Fecha vencimiento del documento</label>
                         <input type="date" name="fecha_vencimiento" class="form-control"
                                value="<?= $e($docExistente['fecha_vencimiento'] ?? '') ?>">
-                        <span class="ds-form-help">Sobreescribe el calculo automatico.</span>
+                        <span class="ds-form-help">Opcional. Usala si el documento ya trae una fecha impresa.</span>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="login-info" style="margin: 0; height: 100%; align-items: flex-start;">
+                        <i class="bi bi-calendar-check"></i>
+                        <div>
+                            <strong>Renovacion programada automaticamente</strong>
+                            El sistema calcula la fecha objetivo 30 dias antes del vencimiento. Si el documento esta muy cerca de vencer, la agenda desde hoy o desde la fecha de emision.
+                            <?php if ($fechaObjetivoActual !== null): ?>
+                                <div class="ds-cell-sub" style="margin-top: .35rem;">Fecha objetivo actual: <span class="ds-cell-mono"><?= $e($fechaObjetivoActual) ?></span></div>
+                            <?php endif ?>
+                        </div>
                     </div>
                 </div>
                 <?php endif ?>
-
-                <div class="col-md-4">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Fecha objetivo actualizacion</label>
-                        <input type="date" name="fecha_objetivo_actualizacion" class="form-control"
-                               value="<?= $e($docExistente['fecha_objetivo_actualizacion'] ?? '') ?>">
-                        <span class="ds-form-help">Recordatorio para renovar antes del vencimiento.</span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

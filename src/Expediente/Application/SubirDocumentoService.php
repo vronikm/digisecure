@@ -23,6 +23,8 @@ use DigiSecure\Shared\Domain\DomainException;
  */
 final class SubirDocumentoService
 {
+    private const DIAS_ANTES_RENOVACION = 30;
+
     public function __construct(
         private readonly ExpedienteRepository $repo,
         private readonly AuditLogger $audit,
@@ -68,8 +70,11 @@ final class SubirDocumentoService
         $storageFilename = $this->storeFile($file);
 
         // 6. Calcular vencimiento
-        $fechaEmision = !empty($input['fecha_emision_documento']) ? $input['fecha_emision_documento'] : null;
+        $fechaEmision = !empty($input['fecha_emision_documento'])
+            ? $this->normalizarFecha((string) $input['fecha_emision_documento'], 'Fecha de emision no valida.')
+            : null;
         $fechaVencimiento = $this->calcularVencimiento($tipo, $fechaEmision, $input['fecha_vencimiento'] ?? null);
+        $fechaObjetivoActualizacion = $this->calcularObjetivoActualizacion($fechaVencimiento, $fechaEmision);
 
         // 7. Crear o actualizar documento
         $existente = $this->repo->findDocumentoByTipo($expedienteId, $documentoTipoId);
@@ -84,7 +89,7 @@ final class SubirDocumentoService
             'estado' => EstadoDocumento::EN_REVISION->value,
             'fecha_emision_documento' => $fechaEmision,
             'fecha_vencimiento' => $fechaVencimiento,
-            'fecha_objetivo_actualizacion' => $input['fecha_objetivo_actualizacion'] ?? null,
+            'fecha_objetivo_actualizacion' => $fechaObjetivoActualizacion,
             'subido_por' => $usuarioId,
             'subido_at' => date('Y-m-d H:i:s.u'),
             'observacion_revisor' => null,
@@ -190,7 +195,7 @@ final class SubirDocumentoService
     {
         // Si el usuario proporcionó fecha manual, usar esa
         if (!empty($fechaVencimientoManual)) {
-            return $fechaVencimientoManual;
+            return $this->normalizarFecha($fechaVencimientoManual, 'Fecha de vencimiento no valida.');
         }
 
         // Si el tipo no tiene vencimiento, null
@@ -200,8 +205,48 @@ final class SubirDocumentoService
 
         // Calcular desde fecha de emisión del documento
         $base = !empty($fechaEmision) ? $fechaEmision : date('Y-m-d');
-        $dt = new \DateTimeImmutable($base);
+        $dt = new \DateTimeImmutable($this->normalizarFecha($base, 'Fecha de emision no valida.'));
         return $dt->modify("+{$tipo['dias_vigencia']} days")->format('Y-m-d');
+    }
+
+    private function calcularObjetivoActualizacion(?string $fechaVencimiento, ?string $fechaEmision): ?string
+    {
+        if ($fechaVencimiento === null || $fechaVencimiento === '') {
+            return null;
+        }
+
+        $vence = new \DateTimeImmutable($this->normalizarFecha($fechaVencimiento, 'Fecha de vencimiento no valida.'));
+        $objetivo = $vence->modify('-' . self::DIAS_ANTES_RENOVACION . ' days');
+
+        $minima = new \DateTimeImmutable('today');
+        if ($fechaEmision !== null && $fechaEmision !== '') {
+            $emision = new \DateTimeImmutable($this->normalizarFecha($fechaEmision, 'Fecha de emision no valida.'));
+            if ($emision > $minima) {
+                $minima = $emision;
+            }
+        }
+
+        if ($objetivo < $minima) {
+            $objetivo = $minima;
+        }
+
+        return $objetivo->format('Y-m-d');
+    }
+
+    private function normalizarFecha(string $fecha, string $mensajeError): string
+    {
+        $fecha = trim($fecha);
+        $dt = \DateTimeImmutable::createFromFormat('!Y-m-d', $fecha);
+        $errors = \DateTimeImmutable::getLastErrors();
+
+        if (
+            $dt === false
+            || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))
+        ) {
+            throw new DomainException($mensajeError);
+        }
+
+        return $dt->format('Y-m-d');
     }
 
     /**
