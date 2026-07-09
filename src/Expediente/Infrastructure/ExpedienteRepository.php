@@ -277,7 +277,12 @@ final class ExpedienteRepository extends BaseRepository
     public function getDocumentos(string $expedienteId, ?string $bloque = null): array
     {
         $tenantId = $this->tenantContext->requireTenantId();
-        $bindings = ['tid' => $tenantId, 'eid' => $expedienteId];
+        $bindings = [
+            'tid' => $tenantId,
+            'eid' => $expedienteId,
+            'tipo_tid' => $tenantId,
+            'order_tid' => $tenantId,
+        ];
 
         $bloqueFilter = '';
         if ($bloque !== null) {
@@ -293,8 +298,11 @@ final class ExpedienteRepository extends BaseRepository
              INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
              WHERE ed.tenant_id = :tid AND ed.expediente_id = :eid
                AND dt.activo = 1
+               AND (dt.tenant_id = :tipo_tid OR dt.tenant_id IS NULL)
              {$bloqueFilter}
-             ORDER BY dt.bloque, dt.orden",
+             ORDER BY dt.bloque, dt.orden,
+                      CASE WHEN dt.tenant_id = :order_tid THEN 0 ELSE 1 END,
+                      ed.updated_at DESC",
             $bindings,
         );
     }
@@ -324,10 +332,39 @@ final class ExpedienteRepository extends BaseRepository
     {
         $tenantId = $this->tenantContext->requireTenantId();
 
+        $tipo = $this->db->fetchOne(
+            'SELECT codigo
+             FROM documento_tipos
+             WHERE id = :id
+               AND (tenant_id = :tipo_tid OR tenant_id IS NULL)',
+            ['id' => $tipoId, 'tipo_tid' => $tenantId],
+        );
+
+        if ($tipo === null || empty($tipo['codigo'])) {
+            return null;
+        }
+
         return $this->db->fetchOne(
-            'SELECT * FROM expediente_documentos
-             WHERE expediente_id = :eid AND documento_tipo_id = :tid2 AND tenant_id = :tid',
-            ['eid' => $expedienteId, 'tid2' => $tipoId, 'tid' => $tenantId],
+            'SELECT ed.*
+             FROM expediente_documentos ed
+             INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
+             WHERE ed.expediente_id = :eid
+               AND ed.tenant_id = :tid
+               AND dt.codigo = :codigo
+               AND (dt.tenant_id = :doc_tipo_tid OR dt.tenant_id IS NULL)
+             ORDER BY CASE WHEN ed.documento_tipo_id = :target_tipo_id THEN 0 ELSE 1 END,
+                      CASE WHEN dt.tenant_id = :order_tid THEN 0 ELSE 1 END,
+                      ed.updated_at DESC,
+                      ed.created_at DESC
+             LIMIT 1',
+            [
+                'eid' => $expedienteId,
+                'tid' => $tenantId,
+                'codigo' => (string) $tipo['codigo'],
+                'doc_tipo_tid' => $tenantId,
+                'target_tipo_id' => $tipoId,
+                'order_tid' => $tenantId,
+            ],
         );
     }
 
@@ -417,13 +454,14 @@ final class ExpedienteRepository extends BaseRepository
         }
 
         $aceptados = [];
-        foreach ($this->getDocumentos($expedienteId, $bloque) as $doc) {
-            $codigo = (string) ($doc['tipo_codigo'] ?? '');
+        foreach ($tipos as $tipo) {
+            $codigo = (string) ($tipo['codigo'] ?? '');
             if ($codigo === '' || !isset($obligatorios[$codigo])) {
                 continue;
             }
 
-            if (($doc['estado'] ?? '') === 'ACEPTADO') {
+            $doc = $this->findDocumentoByTipo($expedienteId, (string) $tipo['id']);
+            if ($doc !== null && ($doc['estado'] ?? '') === 'ACEPTADO') {
                 $aceptados[$codigo] = true;
             }
         }

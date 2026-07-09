@@ -236,14 +236,17 @@ final class ExpedienteController
             ? EstadoExpediente::COMPLETO->value
             : ($bloqueACompleto ? EstadoExpediente::BLOQUE_A_COMPLETO->value : EstadoExpediente::INCOMPLETO->value);
 
-        // Mapear documentos existentes por tipo_id
+        // Mapear por codigo para no perder documentos si el tipo global
+        // paso a override del tenant al activar/desactivar.
         $docsPorTipo = [];
         foreach (array_merge($docsA, $docsB) as $d) {
             $codigo = (string) ($d['tipo_codigo'] ?? '');
-            if ($codigo !== '') {
+            if ($codigo !== '' && !isset($docsPorTipo[$codigo])) {
                 $docsPorTipo[$codigo] = $d;
             }
-            $docsPorTipo[$d['documento_tipo_id']] = $d;
+            if (!isset($docsPorTipo[$d['documento_tipo_id']])) {
+                $docsPorTipo[$d['documento_tipo_id']] = $d;
+            }
         }
 
         // Documentos por vencer (30 días)

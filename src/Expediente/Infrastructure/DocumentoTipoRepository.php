@@ -197,6 +197,8 @@ final class DocumentoTipoRepository
             'requiere_validacion_externa' => $global['requiere_validacion_externa'],
             'tiene_vencimiento' => $data['tiene_vencimiento'] ?? $global['tiene_vencimiento'],
             'dias_vigencia' => $data['dias_vigencia'] ?? $global['dias_vigencia'],
+            'formatos_permitidos' => $global['formatos_permitidos'],
+            'tamano_maximo_mb' => $global['tamano_maximo_mb'],
             'activo' => $data['activo'] ?? $global['activo'],
             'created_at' => $now,
             'updated_at' => $now,
