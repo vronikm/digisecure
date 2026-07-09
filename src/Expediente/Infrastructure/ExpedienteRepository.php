@@ -50,6 +50,21 @@ final class ExpedienteRepository extends BaseRepository
         );
     }
 
+    public function findFichaOwnerById(string $fichaId): ?string
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+        $owner = $this->db->fetchScalar(
+            'SELECT created_by
+               FROM fichas
+              WHERE id = :id
+                AND tenant_id = :tenant_id
+              LIMIT 1',
+            ['id' => $fichaId, 'tenant_id' => $tenantId],
+        );
+
+        return $owner !== null ? (string) $owner : null;
+    }
+
     /**
      * Crea un nuevo expediente vinculado a una ficha.
      *

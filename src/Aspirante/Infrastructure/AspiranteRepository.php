@@ -46,6 +46,11 @@ class AspiranteRepository
      *     origen: string,
      *     acepta_politicas: bool,
      *     politicas_version: ?string,
+     *     politicas_aceptadas_at?: ?string,
+     *     politicas_aceptadas_desde?: ?string,
+     *     politicas_aceptadas_ruta?: ?string,
+     *     politicas_aceptadas_ip?: ?string,
+     *     politicas_aceptadas_user_agent?: ?string,
      *     verificacion_token_hash: ?string,
      *     verificacion_token_expira_at: ?string,
      *     ip: ?string,
@@ -61,17 +66,27 @@ class AspiranteRepository
             $ipBinary = $packed !== false ? $packed : null;
         }
 
+        $politicasIpBinary = null;
+        if (!empty($a['politicas_aceptadas_ip'])) {
+            $packed = @inet_pton((string) $a['politicas_aceptadas_ip']);
+            $politicasIpBinary = $packed !== false ? $packed : null;
+        }
+
         $this->db->execute(
             'INSERT INTO aspirantes
                 (id, tenant_id, tipo_documento, documento, apellidos, nombres,
                  celular, correo, correo_normalizado, password_hash, estatura_cm, fecha_nacimiento,
                  estado, origen, acepta_politicas, politicas_version,
+                 politicas_aceptadas_at, politicas_aceptadas_desde, politicas_aceptadas_ruta,
+                 politicas_aceptadas_ip, politicas_aceptadas_user_agent,
                  verificacion_token_hash, verificacion_token_expira_at,
                  ip, user_agent, created_at, updated_at)
              VALUES
                 (:id, :tid, :tdoc, :doc, :ap, :no,
                  :cel, :co, :con, :pwh, :est, :fn,
                  :estado, :origen, :acepta, :pver,
+                 :pacc_at, :pacc_desde, :pacc_ruta,
+                 :pacc_ip, :pacc_ua,
                  :vth, :vte,
                  :ip, :ua, :ca, :ua2)',
             [
@@ -91,6 +106,11 @@ class AspiranteRepository
                 'origen' => $a['origen'],
                 'acepta' => $a['acepta_politicas'] ? 1 : 0,
                 'pver'   => $a['politicas_version'],
+                'pacc_at' => $a['politicas_aceptadas_at'] ?? null,
+                'pacc_desde' => $a['politicas_aceptadas_desde'] ?? null,
+                'pacc_ruta' => $a['politicas_aceptadas_ruta'] ?? null,
+                'pacc_ip' => $politicasIpBinary,
+                'pacc_ua' => $a['politicas_aceptadas_user_agent'] ?? null,
                 'vth'    => $a['verificacion_token_hash'],
                 'vte'    => $a['verificacion_token_expira_at'],
                 'ip'     => $ipBinary,
@@ -635,6 +655,86 @@ class AspiranteRepository
         );
     }
 
+    public function registrarAutorizacionLopdp(
+        string $usuarioId,
+        string $documentoId,
+        string $archivoNombre,
+        string $subidoAt,
+    ): void {
+        if ($usuarioId === '') {
+            return;
+        }
+
+        $this->db->execute(
+            'UPDATE aspirantes
+                SET lopdp_autorizacion_documento_id = :doc_id,
+                    lopdp_autorizacion_archivo_nombre = :archivo,
+                    lopdp_autorizacion_subida_at = :subido_at,
+                    updated_at = :updated_at
+              WHERE usuario_id = :usuario_id',
+            [
+                'doc_id' => $documentoId,
+                'archivo' => mb_substr($archivoNombre, 0, 255),
+                'subido_at' => $subidoAt,
+                'updated_at' => $subidoAt,
+                'usuario_id' => $usuarioId,
+            ],
+        );
+    }
+
+    /**
+     * @param array{tenant_id?: ?string, q?: ?string, documento_lopdp?: ?string, desde?: ?string, hasta?: ?string} $filtros
+     * @return list<array<string, mixed>>
+     */
+    public function listarAceptacionesPolitica(array $filtros, int $limit, int $offset): array
+    {
+        [$where, $bind] = $this->whereAceptacionesPolitica($filtros);
+
+        $sql = "SELECT id, tenant_id, usuario_id, tipo_documento, documento, nombres, apellidos,
+                       correo, celular, estado, email_verificado, acepta_politicas,
+                       politicas_version, politicas_aceptadas_at, politicas_aceptadas_desde,
+                       politicas_aceptadas_ruta, INET6_NTOA(politicas_aceptadas_ip) AS politicas_aceptadas_ip_texto,
+                       politicas_aceptadas_user_agent, lopdp_autorizacion_documento_id,
+                       lopdp_autorizacion_archivo_nombre, lopdp_autorizacion_subida_at, created_at
+                  FROM aspirantes
+                 {$where}
+                 ORDER BY COALESCE(politicas_aceptadas_at, created_at) DESC
+                 LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
+
+        return $this->db->fetchAll($sql, $bind);
+    }
+
+    /**
+     * @param array{tenant_id?: ?string, q?: ?string, documento_lopdp?: ?string, desde?: ?string, hasta?: ?string} $filtros
+     */
+    public function contarAceptacionesPolitica(array $filtros): int
+    {
+        [$where, $bind] = $this->whereAceptacionesPolitica($filtros);
+        return (int) $this->db->fetchScalar("SELECT COUNT(*) FROM aspirantes {$where}", $bind);
+    }
+
+    /**
+     * @return array{total: int, autorizacion_subida: int, autorizacion_pendiente: int}
+     */
+    public function kpisAceptacionesPolitica(string $tenantId): array
+    {
+        $row = $this->db->fetchOne(
+            'SELECT COUNT(*) AS total,
+                    SUM(lopdp_autorizacion_subida_at IS NOT NULL) AS autorizacion_subida,
+                    SUM(lopdp_autorizacion_subida_at IS NULL) AS autorizacion_pendiente
+               FROM aspirantes
+              WHERE tenant_id = :tenant_id
+                AND acepta_politicas = 1',
+            ['tenant_id' => $tenantId],
+        ) ?? [];
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'autorizacion_subida' => (int) ($row['autorizacion_subida'] ?? 0),
+            'autorizacion_pendiente' => (int) ($row['autorizacion_pendiente'] ?? 0),
+        ];
+    }
+
     /**
      * @param array{q?: ?string, estado?: ?string, verificado?: ?string} $filtros
      * @return array{0: string, 1: array<string, scalar|null>}
@@ -665,5 +765,52 @@ class AspiranteRepository
         $where = $conds === [] ? '' : 'WHERE ' . implode(' AND ', $conds);
 
         return [$where, $bind];
+    }
+
+    /**
+     * @param array{tenant_id?: ?string, q?: ?string, documento_lopdp?: ?string, desde?: ?string, hasta?: ?string} $filtros
+     * @return array{0: string, 1: array<string, scalar|null>}
+     */
+    private function whereAceptacionesPolitica(array $filtros): array
+    {
+        $conds = ['acepta_politicas = 1'];
+        $bind = [];
+
+        $tenantId = trim((string) ($filtros['tenant_id'] ?? ''));
+        if ($tenantId !== '') {
+            $conds[] = 'tenant_id = :tenant_id';
+            $bind['tenant_id'] = $tenantId;
+        }
+
+        $q = trim((string) ($filtros['q'] ?? ''));
+        if ($q !== '') {
+            $conds[] = '(nombres LIKE :q1 OR apellidos LIKE :q2 OR correo LIKE :q3 OR documento LIKE :q4)';
+            $like = '%' . $q . '%';
+            $bind['q1'] = $like;
+            $bind['q2'] = $like;
+            $bind['q3'] = $like;
+            $bind['q4'] = $like;
+        }
+
+        $docEstado = trim((string) ($filtros['documento_lopdp'] ?? ''));
+        if ($docEstado === 'subido') {
+            $conds[] = 'lopdp_autorizacion_subida_at IS NOT NULL';
+        } elseif ($docEstado === 'pendiente') {
+            $conds[] = 'lopdp_autorizacion_subida_at IS NULL';
+        }
+
+        $desde = trim((string) ($filtros['desde'] ?? ''));
+        if ($desde !== '') {
+            $conds[] = 'DATE(COALESCE(politicas_aceptadas_at, created_at)) >= :desde';
+            $bind['desde'] = $desde;
+        }
+
+        $hasta = trim((string) ($filtros['hasta'] ?? ''));
+        if ($hasta !== '') {
+            $conds[] = 'DATE(COALESCE(politicas_aceptadas_at, created_at)) <= :hasta';
+            $bind['hasta'] = $hasta;
+        }
+
+        return ['WHERE ' . implode(' AND ', $conds), $bind];
     }
 }

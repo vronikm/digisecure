@@ -3,7 +3,7 @@
  * Dashboard LOPDP - KPIs y accesos rapidos.
  *
  * Variables: $user, $csrfToken, $currentPath, $urgencia, $recientesSolicitudes,
- *            $consentActivos, $recientesConsentimientos
+ *            $consentActivos, $recientesConsentimientos, $aceptacionesPolitica
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -69,6 +69,20 @@ $estadoTone = static fn(string $estado) => match ($estado) {
         <div>
             <div class="ds-kpi-label">Consentimientos activos</div>
             <div class="ds-kpi-value"><?= (int) $consentActivos ?></div>
+        </div>
+    </div>
+    <div class="ds-kpi-card">
+        <span class="ds-kpi-icon"><i class="bi bi-person-check"></i></span>
+        <div>
+            <div class="ds-kpi-label">Aceptaciones politica</div>
+            <div class="ds-kpi-value"><?= (int) ($aceptacionesPolitica['total'] ?? 0) ?></div>
+        </div>
+    </div>
+    <div class="ds-kpi-card tone-warning">
+        <span class="ds-kpi-icon"><i class="bi bi-file-earmark-pdf"></i></span>
+        <div>
+            <div class="ds-kpi-label">Autorizacion pendiente</div>
+            <div class="ds-kpi-value"><?= (int) ($aceptacionesPolitica['autorizacion_pendiente'] ?? 0) ?></div>
         </div>
     </div>
 </div>

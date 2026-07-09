@@ -271,6 +271,7 @@ final class Bootstrap
             \DigiSecure\Expediente\Application\SubirDocumentoService::class,
             fn(Container $c) => new \DigiSecure\Expediente\Application\SubirDocumentoService(
                 $c->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class),
+                $c->get(\DigiSecure\Aspirante\Infrastructure\AspiranteRepository::class),
                 $c->get(AuditLogger::class),
                 "{$this->rootPath}/var/storage/documentos",
             ),
@@ -1002,6 +1003,7 @@ final class Bootstrap
 
         // LOPDP — Protección de datos personales (Fase 6)
         $router->get('/lopdp', [LopdpController::class, 'dashboard'], name: 'lopdp.index', permission: 'lopdp.gestionar');
+        $router->get('/lopdp/aceptaciones', [LopdpController::class, 'listarAceptacionesPolitica'], name: 'lopdp.aceptaciones.index', permission: 'lopdp.gestionar');
         $router->get('/lopdp/solicitudes', [LopdpController::class, 'listarSolicitudes'], name: 'lopdp.solicitudes.index', permission: 'lopdp.gestionar');
         $router->get('/lopdp/solicitudes/crear', [LopdpController::class, 'crearSolicitudForm'], name: 'lopdp.solicitudes.create', permission: 'lopdp.gestionar');
         $router->post('/lopdp/solicitudes/crear', [LopdpController::class, 'crearSolicitud'], name: 'lopdp.solicitudes.store', permission: 'lopdp.gestionar');

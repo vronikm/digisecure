@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Expediente\Application;
 
+use DigiSecure\Aspirante\Infrastructure\AspiranteRepository;
 use DigiSecure\Expediente\Domain\Enum\EstadoDocumento;
 use DigiSecure\Expediente\Domain\Enum\EstadoExpediente;
 use DigiSecure\Expediente\Infrastructure\ExpedienteRepository;
@@ -27,6 +28,7 @@ final class SubirDocumentoService
 
     public function __construct(
         private readonly ExpedienteRepository $repo,
+        private readonly AspiranteRepository $aspiranteRepo,
         private readonly AuditLogger $audit,
         private readonly string $storagePath,
     ) {
@@ -113,6 +115,16 @@ final class SubirDocumentoService
         }
 
         // 8. Auditoría
+        if ((string) ($tipo['codigo'] ?? '') === 'LOPDP_CONSENT') {
+            $fichaOwnerId = $this->repo->findFichaOwnerById((string) ($expediente['ficha_id'] ?? ''));
+            $this->aspiranteRepo->registrarAutorizacionLopdp(
+                $fichaOwnerId ?? $usuarioId,
+                (string) $docId,
+                (string) $file['name'],
+                (string) $data['subido_at'],
+            );
+        }
+
         $this->audit->log(
             'expediente.documento.subir',
             $usuarioId,

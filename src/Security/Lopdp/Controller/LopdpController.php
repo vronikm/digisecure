@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Security\Lopdp\Controller;
 
+use DigiSecure\Aspirante\Infrastructure\AspiranteRepository;
 use DigiSecure\Ficha\Domain\ValueObject\Cedula;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Kernel\Http\FlashBag;
@@ -34,6 +35,7 @@ final class LopdpController
         private readonly ViewRenderer $view,
         private readonly SolicitudArcopRepository $solicitudRepo,
         private readonly ConsentimientoRepository $consentRepo,
+        private readonly AspiranteRepository $aspiranteRepo,
         private readonly FichaRepository $fichaRepo,
         private readonly UserRepository $userRepo,
         private readonly ConsentManager $consentManager,
@@ -54,6 +56,7 @@ final class LopdpController
         $recientesSolicitudes = $this->solicitudRepo->listar(5, 0);
         $consentActivos = $this->consentRepo->contarActivos();
         $recientesConsentimientos = $this->consentRepo->listarRecientes(5);
+        $aceptacionesPolitica = $this->aspiranteRepo->kpisAceptacionesPolitica($user->tenantId);
 
         return $this->view->response('lopdp/index', [
             'user' => $user,
@@ -63,6 +66,52 @@ final class LopdpController
             'recientesSolicitudes' => $recientesSolicitudes,
             'consentActivos' => $consentActivos,
             'recientesConsentimientos' => $recientesConsentimientos,
+            'aceptacionesPolitica' => $aceptacionesPolitica,
+        ]);
+    }
+
+    public function listarAceptacionesPolitica(Request $request, CsrfGuard $csrf): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+        $page = max(1, (int) $request->query('page', 1));
+        $limit = 25;
+
+        $desde = $this->normalizeDate((string) $request->query('desde', ''));
+        $hasta = $this->normalizeDate((string) $request->query('hasta', ''));
+
+        if ($desde !== null && $hasta !== null && $desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
+        }
+
+        $filters = array_filter([
+            'tenant_id' => $user->tenantId,
+            'q' => trim((string) $request->query('q', '')),
+            'documento_lopdp' => $this->normalizeDocumentoLopdpStatus((string) $request->query('documento_lopdp', '')),
+            'desde' => $desde,
+            'hasta' => $hasta,
+        ], static fn($v) => $v !== null && $v !== '');
+
+        $total = $this->aspiranteRepo->contarAceptacionesPolitica($filters);
+        $totalPages = max(1, (int) ceil($total / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        $offset = ($page - 1) * $limit;
+        $aceptaciones = $this->aspiranteRepo->listarAceptacionesPolitica($filters, $limit, $offset);
+        $kpis = $this->aspiranteRepo->kpisAceptacionesPolitica($user->tenantId);
+
+        return $this->view->response('lopdp/aceptaciones/index', [
+            'user' => $user,
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'aceptaciones' => $aceptaciones,
+            'kpis' => $kpis,
+            'total' => $total,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'filters' => $filters,
         ]);
     }
 
@@ -343,7 +392,12 @@ final class LopdpController
             return '';
         }
 
-        if (preg_match_all('/[\p{L}\p{N}\s\.,;:\(\)\-\'"\\\/]{8,}/u', $clean, $m)) {
+        $readable = preg_replace('/[^\x20-\x7E\xC0-\xFF]+/', ' ', $clean);
+        if ($readable === null) {
+            return '';
+        }
+
+        if (preg_match_all('~[A-Za-z0-9\xC0-\xFF\s.,;:()\'"/\\\\-]{8,}~', $readable, $m)) {
             // Unir y truncar razonablemente
             $text = implode(' ', $m[0]);
             $text = preg_replace('/\s{2,}/', ' ', $text);
@@ -464,6 +518,12 @@ final class LopdpController
     {
         $status = strtolower(trim($status));
         return in_array($status, ['activo', 'revocado', 'rechazado'], true) ? $status : '';
+    }
+
+    private function normalizeDocumentoLopdpStatus(string $status): string
+    {
+        $status = strtolower(trim($status));
+        return in_array($status, ['pendiente', 'subido'], true) ? $status : '';
     }
 
     private function normalizeDate(string $value): ?string
