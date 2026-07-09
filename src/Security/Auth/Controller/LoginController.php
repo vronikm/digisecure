@@ -53,15 +53,6 @@ final class LoginController
             );
         }
 
-        if (!$acceptPolicies) {
-            return $this->renderLogin(
-                $csrf->token(),
-                $returnTo ?: null,
-                'Debes aceptar las Políticas de Privacidad y Tratamiento de Datos Personales para continuar.',
-                $email,
-            );
-        }
-
         try {
             $user = $auth->login($email, $password, $request->clientIp(), $request->userAgent());
         } catch (AuthenticationException $e) {
