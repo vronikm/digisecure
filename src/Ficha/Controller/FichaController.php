@@ -306,6 +306,24 @@ final class FichaController
                 'formEnableCedulaPrefill' => true,
                 'googleMapsKey' => $this->googleMapsKey(),
             ]);
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            $requestId = $this->errorHandler->requestId();
+            $cursos = $this->safeLoadCatalogoCursos();
+            $instituciones = $this->safeLoadInstitucionesFinancieras();
+            return $this->view->response('ficha/create', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/guardias/crear',
+                'cursos' => $cursos,
+                'instituciones' => $instituciones,
+                'input' => $input,
+                'error' => 'No se pudo guardar la ficha en este momento. Revisa los datos e intenta nuevamente. Si el problema continua, reporta este Request ID al equipo tecnico: ' . $requestId,
+                'lockedFields' => [],
+                'prefillByCedulaUrl' => '/guardias/prefill/cedula',
+                'formEnableCedulaPrefill' => true,
+                'googleMapsKey' => $this->googleMapsKey(),
+            ]);
         }
     }
 
@@ -676,6 +694,19 @@ final class FichaController
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    private function safeLoadCatalogoCursos(): array
+    {
+        try {
+            return $this->loadCatalogoCursos();
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            return [];
+        }
+    }
+
+    /**
      * Instituciones financieras activas para el campo Banco (bancos primero,
      * luego cooperativas). Catálogo global compartido por todos los tenants.
      *
@@ -688,6 +719,19 @@ final class FichaController
              WHERE activo = 1
              ORDER BY FIELD(tipo, 'BANCO', 'COOPERATIVA'), orden, nombre",
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function safeLoadInstitucionesFinancieras(): array
+    {
+        try {
+            return $this->loadInstitucionesFinancieras();
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            return [];
+        }
     }
 
     /**

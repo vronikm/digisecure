@@ -76,6 +76,11 @@ final class ErrorHandler
         $this->logException($e);
     }
 
+    public function requestId(): string
+    {
+        return $this->requestId;
+    }
+
     public function handleShutdown(): void
     {
         $error = error_get_last();
