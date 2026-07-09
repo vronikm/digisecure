@@ -57,7 +57,7 @@ final class SubirDocumentoService
         }
 
         // 3. Verificar bloque: si es Bloque B, debe estar desbloqueado
-        if ($tipo['bloque'] === 'B' && !$expediente['bloque_b_desbloqueado']) {
+        if ($tipo['bloque'] === 'B' && !$this->bloqueAActivoCompleto($expedienteId)) {
             throw new DomainException('El Bloque B no está desbloqueado. Complete primero el Bloque A.');
         }
 
@@ -149,6 +149,12 @@ final class SubirDocumentoService
         if (!in_array($mimeReal, $mimesPermitidos, true)) {
             throw new DomainException("El contenido del archivo no coincide con el tipo declarado.");
         }
+    }
+
+    private function bloqueAActivoCompleto(string $expedienteId): bool
+    {
+        $resumen = $this->repo->resumenActivosByBloque($expedienteId, 'A');
+        return $resumen['total'] > 0 && $resumen['aceptados'] >= $resumen['total'];
     }
 
     private function storeFile(array $file): string

@@ -205,14 +205,15 @@ final class ExpedienteRepository extends BaseRepository
     {
         $tenantId = $this->tenantContext->requireTenantId();
 
-        // Primero buscar override del tenant
+        // Primero buscar override del tenant. Si existe y esta inactivo, el
+        // tipo queda inactivo para este tenant y no debe caer al global.
         $row = $this->db->fetchOne(
-            'SELECT * FROM documento_tipos WHERE tenant_id = :tid AND codigo = :codigo AND activo = 1',
+            'SELECT * FROM documento_tipos WHERE tenant_id = :tid AND codigo = :codigo',
             ['tid' => $tenantId, 'codigo' => $codigo],
         );
 
         if ($row !== null) {
-            return $row;
+            return (int) ($row['activo'] ?? 0) === 1 ? $row : null;
         }
 
         // Fallback a plantilla global
@@ -224,10 +225,21 @@ final class ExpedienteRepository extends BaseRepository
 
     public function findDocumentoTipoById(string $id): ?array
     {
-        return $this->db->fetchOne(
+        $row = $this->db->fetchOne(
             'SELECT * FROM documento_tipos WHERE id = :id AND activo = 1',
             ['id' => $id],
         );
+
+        if ($row === null) {
+            return null;
+        }
+
+        $effective = $this->findDocumentoTipoByCodigo((string) $row['codigo']);
+        if ($effective === null || (string) $effective['id'] !== (string) $row['id']) {
+            return null;
+        }
+
+        return $row;
     }
 
     private function countDocumentoTiposByBloque(string $bloque): int
@@ -280,6 +292,7 @@ final class ExpedienteRepository extends BaseRepository
              FROM expediente_documentos ed
              INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
              WHERE ed.tenant_id = :tid AND ed.expediente_id = :eid
+               AND dt.activo = 1
              {$bloqueFilter}
              ORDER BY dt.bloque, dt.orden",
             $bindings,
@@ -374,15 +387,51 @@ final class ExpedienteRepository extends BaseRepository
      */
     public function countAceptadosByBloque(string $expedienteId, string $bloque): int
     {
-        $tenantId = $this->tenantContext->requireTenantId();
+        return $this->resumenActivosByBloque($expedienteId, $bloque)['aceptados'];
+    }
 
-        return (int) $this->db->fetchScalar(
-            "SELECT COUNT(*) FROM expediente_documentos ed
-             INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
-             WHERE ed.expediente_id = :eid AND ed.tenant_id = :tid
-               AND ed.estado = 'ACEPTADO' AND dt.bloque = :bloque AND dt.obligatorio = 1",
-            ['eid' => $expedienteId, 'tid' => $tenantId, 'bloque' => $bloque],
-        );
+    /**
+     * Calcula el progreso usando solo tipos documentales activos efectivos
+     * para el tenant. Se compara por codigo para soportar overrides del tenant.
+     *
+     * @return array{total:int, aceptados:int}
+     */
+    public function resumenActivosByBloque(string $expedienteId, string $bloque): array
+    {
+        $tipos = $this->getDocumentoTipos($bloque);
+        $obligatorios = [];
+
+        foreach ($tipos as $tipo) {
+            if ((int) ($tipo['obligatorio'] ?? 0) !== 1) {
+                continue;
+            }
+
+            $codigo = (string) ($tipo['codigo'] ?? '');
+            if ($codigo !== '') {
+                $obligatorios[$codigo] = true;
+            }
+        }
+
+        if ($obligatorios === []) {
+            return ['total' => 0, 'aceptados' => 0];
+        }
+
+        $aceptados = [];
+        foreach ($this->getDocumentos($expedienteId, $bloque) as $doc) {
+            $codigo = (string) ($doc['tipo_codigo'] ?? '');
+            if ($codigo === '' || !isset($obligatorios[$codigo])) {
+                continue;
+            }
+
+            if (($doc['estado'] ?? '') === 'ACEPTADO') {
+                $aceptados[$codigo] = true;
+            }
+        }
+
+        return [
+            'total' => count($obligatorios),
+            'aceptados' => count($aceptados),
+        ];
     }
 
     /**

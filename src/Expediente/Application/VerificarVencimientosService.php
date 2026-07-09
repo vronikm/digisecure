@@ -330,14 +330,16 @@ final class VerificarVencimientosService
             return;
         }
 
-        $aceptadosA = $this->repo->countAceptadosByBloque($expedienteId, 'A');
-        $aceptadosB = $this->repo->countAceptadosByBloque($expedienteId, 'B');
+        $resumenA = $this->repo->resumenActivosByBloque($expedienteId, 'A');
+        $resumenB = $this->repo->resumenActivosByBloque($expedienteId, 'B');
 
-        $totalA = (int) $expediente['bloque_a_total'];
-        $totalB = (int) $expediente['bloque_b_total'];
+        $aceptadosA = $resumenA['aceptados'];
+        $aceptadosB = $resumenB['aceptados'];
+        $totalA = $resumenA['total'];
+        $totalB = $resumenB['total'];
 
         $bloqueACompleto = $totalA > 0 && $aceptadosA >= $totalA;
-        $bloqueBCompleto = $totalB > 0 && $aceptadosB >= $totalB;
+        $bloqueBCompleto = $totalB === 0 || $aceptadosB >= $totalB;
 
         if ($bloqueACompleto && $bloqueBCompleto) {
             $estado = 'COMPLETO';
@@ -348,8 +350,11 @@ final class VerificarVencimientosService
         }
 
         $this->repo->updateExpediente($expedienteId, [
+            'bloque_a_total' => $totalA,
             'bloque_a_aceptados' => $aceptadosA,
+            'bloque_b_total' => $totalB,
             'bloque_b_aceptados' => $aceptadosB,
+            'bloque_b_desbloqueado' => $bloqueACompleto ? 1 : 0,
             'estado' => $estado,
         ]);
     }

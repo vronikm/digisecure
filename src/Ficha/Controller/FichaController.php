@@ -576,15 +576,27 @@ final class FichaController
         }
 
         $expediente = $expRepo->findExpedienteByFichaId($fichaId);
+        $totalActivo = static function (string $bloque) use ($expRepo): int {
+            return count(array_filter(
+                $expRepo->getDocumentoTipos($bloque),
+                static fn(array $tipo): bool => (int) ($tipo['obligatorio'] ?? 0) === 1,
+            ));
+        };
+        $resumenA = $expediente !== null
+            ? $expRepo->resumenActivosByBloque((string) $expediente['id'], 'A')
+            : ['total' => $totalActivo('A'), 'aceptados' => 0];
+        $resumenB = $expediente !== null
+            ? $expRepo->resumenActivosByBloque((string) $expediente['id'], 'B')
+            : ['total' => $totalActivo('B'), 'aceptados' => 0];
 
         return [
             'bloqueA' => [
-                'total' => count($expRepo->getDocumentoTipos('A')),
-                'aceptados' => $expediente !== null ? $expRepo->countAceptadosByBloque((string) $expediente['id'], 'A') : 0,
+                'total' => $resumenA['total'],
+                'aceptados' => $resumenA['aceptados'],
             ],
             'bloqueB' => [
-                'total' => count($expRepo->getDocumentoTipos('B')),
-                'aceptados' => $expediente !== null ? $expRepo->countAceptadosByBloque((string) $expediente['id'], 'B') : 0,
+                'total' => $resumenB['total'],
+                'aceptados' => $resumenB['aceptados'],
             ],
         ];
     }

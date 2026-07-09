@@ -188,7 +188,7 @@ $puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar
             </thead>
             <tbody>
                 <?php foreach ($tiposA as $tipo):
-                    $doc = $docsPorTipo[$tipo['id']] ?? null;
+                    $doc = $docsPorTipo[(string) ($tipo['codigo'] ?? '')] ?? $docsPorTipo[$tipo['id']] ?? null;
                     $docEstado = $doc ? EstadoDocumento::from($doc['estado']) : null;
                 ?>
                 <tr>
@@ -288,7 +288,7 @@ $puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar
             </thead>
             <tbody>
                 <?php foreach ($tiposB as $tipo):
-                    $doc = $docsPorTipo[$tipo['id']] ?? null;
+                    $doc = $docsPorTipo[(string) ($tipo['codigo'] ?? '')] ?? $docsPorTipo[$tipo['id']] ?? null;
                     $docEstado = $doc ? EstadoDocumento::from($doc['estado']) : null;
                 ?>
                 <tr>

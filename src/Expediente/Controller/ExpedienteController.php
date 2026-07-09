@@ -60,6 +60,9 @@ final class ExpedienteController
         if ($doc === null) {
             return $this->view->response('errors/404', [], 404);
         }
+        if (!$this->documentoTieneTipoActivo($doc)) {
+            return $this->view->response('errors/404', [], 404);
+        }
 
         $expediente = $this->expRepo->findExpedienteById((string) $doc['expediente_id']);
         $ficha = $expediente !== null ? $this->fichaRepo->findFichaById((string) $expediente['ficha_id']) : null;
@@ -203,17 +206,54 @@ final class ExpedienteController
         // Cargar tipos para ver cuáles faltan
         $tiposA = $this->expRepo->getDocumentoTipos('A');
         $tiposB = $this->expRepo->getDocumentoTipos('B');
+        $codigosActivos = [];
+        foreach (array_merge($tiposA, $tiposB) as $tipo) {
+            $codigo = (string) ($tipo['codigo'] ?? '');
+            if ($codigo !== '') {
+                $codigosActivos[$codigo] = true;
+            }
+        }
+
+        $docsA = array_values(array_filter(
+            $docsA,
+            static fn(array $doc): bool => isset($codigosActivos[(string) ($doc['tipo_codigo'] ?? '')]),
+        ));
+        $docsB = array_values(array_filter(
+            $docsB,
+            static fn(array $doc): bool => isset($codigosActivos[(string) ($doc['tipo_codigo'] ?? '')]),
+        ));
+
+        $resumenA = $this->expRepo->resumenActivosByBloque((string) $expediente['id'], 'A');
+        $resumenB = $this->expRepo->resumenActivosByBloque((string) $expediente['id'], 'B');
+        $bloqueACompleto = $resumenA['total'] > 0 && $resumenA['aceptados'] >= $resumenA['total'];
+        $bloqueBCompleto = $resumenB['total'] === 0 || $resumenB['aceptados'] >= $resumenB['total'];
+        $expediente['bloque_a_total'] = $resumenA['total'];
+        $expediente['bloque_a_aceptados'] = $resumenA['aceptados'];
+        $expediente['bloque_b_total'] = $resumenB['total'];
+        $expediente['bloque_b_aceptados'] = $resumenB['aceptados'];
+        $expediente['bloque_b_desbloqueado'] = $bloqueACompleto ? 1 : 0;
+        $expediente['estado'] = $bloqueACompleto && $bloqueBCompleto
+            ? EstadoExpediente::COMPLETO->value
+            : ($bloqueACompleto ? EstadoExpediente::BLOQUE_A_COMPLETO->value : EstadoExpediente::INCOMPLETO->value);
 
         // Mapear documentos existentes por tipo_id
         $docsPorTipo = [];
         foreach (array_merge($docsA, $docsB) as $d) {
+            $codigo = (string) ($d['tipo_codigo'] ?? '');
+            if ($codigo !== '') {
+                $docsPorTipo[$codigo] = $d;
+            }
             $docsPorTipo[$d['documento_tipo_id']] = $d;
         }
 
         // Documentos por vencer (30 días)
         $porVencer = $this->expRepo->getDocumentosPorVencer(30);
         // Filtrar solo los de este expediente
-        $porVencer = array_filter($porVencer, fn($d) => $d['expediente_id'] === $expediente['id']);
+        $porVencer = array_filter(
+            $porVencer,
+            fn($d) => $d['expediente_id'] === $expediente['id']
+                && isset($codigosActivos[(string) ($d['tipo_codigo'] ?? '')]),
+        );
 
         return $this->view->response('expediente/dashboard', [
             'user' => $user,
@@ -310,6 +350,9 @@ final class ExpedienteController
         if ($doc === null) {
             return $this->view->response('errors/404', [], 404);
         }
+        if (!$this->documentoTieneTipoActivo($doc)) {
+            return $this->view->response('errors/404', [], 404);
+        }
 
         $expediente = $this->expRepo->findExpedienteById((string) $doc['expediente_id']);
         $ficha = $expediente !== null ? $this->fichaRepo->findFichaById((string) $expediente['ficha_id']) : null;
@@ -336,6 +379,11 @@ final class ExpedienteController
 
         if ($user->tieneRol('aspirante')) {
             return $this->view->response('errors/403', [], 403);
+        }
+
+        $docActual = $this->expRepo->findDocumentoById($docId);
+        if ($docActual === null || !$this->documentoTieneTipoActivo($docActual)) {
+            return $this->view->response('errors/404', [], 404);
         }
 
         $accion = (string) ($request->post['accion'] ?? '');
@@ -399,5 +447,14 @@ final class ExpedienteController
         }
 
         return $ficha !== null && (string) ($ficha['created_by'] ?? '') === $user->id;
+    }
+
+    /**
+     * @param array<string, mixed> $doc
+     */
+    private function documentoTieneTipoActivo(array $doc): bool
+    {
+        $codigo = (string) ($doc['tipo_codigo'] ?? '');
+        return $codigo !== '' && $this->expRepo->findDocumentoTipoByCodigo($codigo) !== null;
     }
 }
