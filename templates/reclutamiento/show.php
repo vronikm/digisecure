@@ -51,9 +51,10 @@ $fv = static fn(string $k): string => $ficha !== null ? trim((string) ($ficha[$k
     .rc-span-3 { grid-column: span 3; } .rc-span-4 { grid-column: span 4; } .rc-span-12 { grid-column: span 12; }
     .rc-label { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ds-text-soft); margin-bottom: .2rem; }
     .rc-value { font-size: .93rem; font-weight: 600; color: var(--ds-text); }
-    .rc-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
-    .rc-reject { flex: 1 1 280px; }
-    .rc-reject textarea { width: 100%; border: 1px solid #d8dfe7; border-radius: 10px; padding: .55rem .7rem; font: inherit; font-size: .88rem; margin-bottom: .5rem; }
+    .rc-actions { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
+    .rc-actions form { margin: 0; }
+    .rc-reject-note { margin-top: .9rem; max-width: 760px; }
+    .rc-reject-note textarea { width: 100%; border: 1px solid #d8dfe7; border-radius: 10px; padding: .65rem .75rem; font: inherit; font-size: .88rem; resize: vertical; }
     .rc-subhead { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ds-text-soft); margin: 1.1rem 0 .55rem; padding-bottom: .3rem; border-bottom: 1px solid rgba(21,48,79,.09); display: flex; align-items: center; gap: .4rem; }
     .rc-subhead:first-child { margin-top: 0; }
     .rc-media { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: .3rem; }
@@ -319,14 +320,21 @@ $fv = static fn(string $k): string => $ficha !== null ? trim((string) ($ficha[$k
             </form>
             <?php endif ?>
             <?php if ($puedeRechazar): ?>
-            <form method="POST" action="<?= $view->url('/reclutamiento/' . $id . '/rechazar') ?>" class="rc-reject"
+            <form method="POST" action="<?= $view->url('/reclutamiento/' . $id . '/rechazar') ?>" id="rejectForm"
                   onsubmit="return confirm('¿Rechazar esta postulación?');">
                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-                <textarea name="motivo" rows="2" maxlength="255" placeholder="Motivo del rechazo (opcional)"></textarea>
                 <button type="submit" class="ds-btn ds-btn-danger"><i class="bi bi-x-circle"></i>Rechazar postulación</button>
             </form>
             <?php endif ?>
         </div>
+        <?php if ($puedeRechazar): ?>
+        <div class="rc-reject-note">
+            <label class="ds-form-label" for="motivoRechazo">Motivo de rechazo</label>
+            <textarea id="motivoRechazo" form="rejectForm" name="motivo" rows="3" maxlength="255"
+                      placeholder="Opcional: explica brevemente la razon del rechazo para auditoria interna."></textarea>
+            <span class="ds-form-help">Este texto queda asociado a la postulacion descartada.</span>
+        </div>
+        <?php endif ?>
     </div>
 </div>
 <?php endif ?>
