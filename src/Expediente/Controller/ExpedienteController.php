@@ -56,6 +56,17 @@ final class ExpedienteController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
+        $doc = $this->expRepo->findDocumentoById($docId);
+        if ($doc === null) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
+        $expediente = $this->expRepo->findExpedienteById((string) $doc['expediente_id']);
+        $ficha = $expediente !== null ? $this->fichaRepo->findFichaById((string) $expediente['ficha_id']) : null;
+        if (!$this->aspirantePuedeAccederFicha($user, $ficha)) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
         try {
             $file = $this->descargarService->execute($docId, $user->id, $request->clientIp());
         } catch (DomainException $e) {
@@ -171,12 +182,18 @@ final class ExpedienteController
         if ($ficha === null) {
             return $this->view->response('errors/404', [], 404);
         }
+        if (!$this->aspirantePuedeAccederFicha($user, $ficha)) {
+            return $this->view->response('errors/404', [], 404);
+        }
 
         // Buscar o crear expediente
         $expediente = $this->expRepo->findExpedienteByFichaId($fichaId);
         if ($expediente === null) {
             $expId = $this->expRepo->createExpediente($fichaId, $user->id);
             $expediente = $this->expRepo->findExpedienteById($expId);
+        }
+        if ($expediente === null) {
+            return $this->view->response('errors/404', [], 404);
         }
 
         // Cargar documentos por bloque
@@ -230,6 +247,9 @@ final class ExpedienteController
 
         $docExistente = $this->expRepo->findDocumentoByTipo($id, $tipoId);
         $ficha = $this->fichaRepo->findFichaById($expediente['ficha_id']);
+        if ($ficha === null || !$this->aspirantePuedeAccederFicha($user, $ficha)) {
+            return $this->view->response('errors/404', [], 404);
+        }
 
         return $this->view->response('expediente/upload', [
             'user' => $user,
@@ -250,18 +270,21 @@ final class ExpedienteController
         $file = $request->file('archivo');
         $input = $request->post;
 
+        $expediente = $this->expRepo->findExpedienteById($id);
+        $ficha = $expediente !== null ? $this->fichaRepo->findFichaById((string) $expediente['ficha_id']) : null;
+        if ($expediente === null || $ficha === null || !$this->aspirantePuedeAccederFicha($user, $ficha)) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
         try {
             $this->subirService->execute($id, $tipoId, $input, $file, $user->id, $request->clientIp());
 
-            $expediente = $this->expRepo->findExpedienteById($id);
             $this->flash->success('Documento subido correctamente.');
             return Response::redirect(
                 $this->securePath($request, "/guardias/{$expediente['ficha_id']}/expediente")
             );
         } catch (DomainException $e) {
-            $expediente = $this->expRepo->findExpedienteById($id);
             $tipo = $this->expRepo->findDocumentoTipoById($tipoId);
-            $ficha = $expediente ? $this->fichaRepo->findFichaById($expediente['ficha_id']) : null;
 
             return $this->view->response('expediente/upload', [
                 'user' => $user,
@@ -288,8 +311,11 @@ final class ExpedienteController
             return $this->view->response('errors/404', [], 404);
         }
 
-        $expediente = $this->expRepo->findExpedienteById($doc['expediente_id']);
-        $ficha = $this->fichaRepo->findFichaById($expediente['ficha_id']);
+        $expediente = $this->expRepo->findExpedienteById((string) $doc['expediente_id']);
+        $ficha = $expediente !== null ? $this->fichaRepo->findFichaById((string) $expediente['ficha_id']) : null;
+        if ($expediente === null || $ficha === null || !$this->aspirantePuedeAccederFicha($user, $ficha)) {
+            return $this->view->response('errors/404', [], 404);
+        }
 
         return $this->view->response('expediente/documento', [
             'user' => $user,
@@ -307,6 +333,10 @@ final class ExpedienteController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
+
+        if ($user->tieneRol('aspirante')) {
+            return $this->view->response('errors/403', [], 403);
+        }
 
         $accion = (string) ($request->post['accion'] ?? '');
         $observacion = (string) ($request->post['observacion'] ?? '');
@@ -357,5 +387,17 @@ final class ExpedienteController
         }
 
         return \is_string($secure) && $secure !== '' ? $secure : $path;
+    }
+
+    /**
+     * @param array<string, mixed>|null $ficha
+     */
+    private function aspirantePuedeAccederFicha(AuthenticatedUser $user, ?array $ficha): bool
+    {
+        if (!$user->tieneRol('aspirante')) {
+            return true;
+        }
+
+        return $ficha !== null && (string) ($ficha['created_by'] ?? '') === $user->id;
     }
 }

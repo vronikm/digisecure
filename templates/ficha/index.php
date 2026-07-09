@@ -11,15 +11,20 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 $listError = (bool) ($listError ?? false);
+$aspiranteMode = (bool) ($aspiranteMode ?? false);
 
 $hasFilters = !empty($filters['busqueda'] ?? null);
 $qs = http_build_query(array_filter([
     'q' => $filters['busqueda'] ?? '',
 ]));
 $qsPrefix = $qs !== '' ? "&{$qs}" : '';
+$pageTitle = $aspiranteMode ? 'Mi ficha' : 'Guardias';
+$pageSubtitle = $aspiranteMode
+    ? ($total > 0 ? 'Ficha registrada para actualizar datos y cargar documentos' : 'Completa tu ficha para habilitar el expediente documental')
+    : ((int) $total . ' registro' . ((int) $total !== 1 ? 's' : '') . ' encontrado' . ((int) $total !== 1 ? 's' : ''));
 ?>
 
-<?php $view->section('title') ?>Guardias - DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?><?= $e($pageTitle) ?> - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('head') ?>
 <style>
@@ -36,7 +41,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 <?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item active">Guardias</li>
+<li class="breadcrumb-item active"><?= $e($pageTitle) ?></li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
@@ -44,13 +49,17 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     <div class="ds-page-title">
         <span class="ds-page-mark"><i class="bi bi-person-badge"></i></span>
         <div>
-            <h1>Guardias</h1>
-            <small><?= (int) $total ?> registro<?= (int) $total !== 1 ? 's' : '' ?> encontrado<?= (int) $total !== 1 ? 's' : '' ?></small>
+            <h1><?= $e($pageTitle) ?></h1>
+            <small><?= $e($pageSubtitle) ?></small>
         </div>
     </div>
-    <?php if ($user->tienePermiso('guardias.crear')): ?>
+    <?php if (!$aspiranteMode && $user->tienePermiso('guardias.crear')): ?>
     <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary">
         <i class="bi bi-plus-lg"></i>Nueva ficha
+    </a>
+    <?php elseif ($aspiranteMode && $guardias === []): ?>
+    <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary">
+        <i class="bi bi-pencil-square"></i>Completar ficha
     </a>
     <?php endif ?>
 </div>
@@ -64,6 +73,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     </div>
 <?php endif; ?>
 
+<?php if (!$aspiranteMode): ?>
 <div class="ds-card ds-guardias-filter">
     <div class="ds-card-body">
         <div class="ds-filter-bar">
@@ -90,27 +100,35 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         </div>
     </div>
 </div>
+<?php endif ?>
 
 <div class="ds-card">
     <div class="ds-card-header tone-purple">
         <span class="ds-card-mark"><i class="bi bi-people"></i></span>
         <div>
-            <div class="ds-card-title">Listado de guardias</div>
-            <div class="ds-card-subtitle">Un registro por persona con acceso a su historial de fichas</div>
+            <div class="ds-card-title"><?= $aspiranteMode ? 'Ficha cargada' : 'Listado de guardias' ?></div>
+            <div class="ds-card-subtitle"><?= $aspiranteMode ? 'Actualiza tus datos y continua con la documentacion requerida' : 'Un registro por persona con acceso a su historial de fichas' ?></div>
         </div>
     </div>
     <?php if ($guardias === []): ?>
     <div class="ds-card-body">
         <div class="ds-empty-state">
             <div class="ds-empty-icon"><i class="bi bi-person-badge"></i></div>
-            <h3>No hay guardias para mostrar</h3>
+            <h3><?= $aspiranteMode ? 'Aun no has guardado tu ficha' : 'No hay guardias para mostrar' ?></h3>
             <p>
-                <?php if ($hasFilters): ?>
+                <?php if ($aspiranteMode): ?>
+                    Guarda tu ficha para habilitar el expediente documental y cargar los documentos del Bloque A y B.
+                <?php elseif ($hasFilters): ?>
                     Ningun guardia coincide con los criterios de busqueda.
                 <?php else: ?>
                     Cuando registres fichas de guardias, se mostraran aqui agrupadas por persona.
                 <?php endif ?>
             </p>
+            <?php if ($aspiranteMode): ?>
+            <a href="<?= $view->url('/guardias/crear') ?>" class="ds-btn ds-btn-primary">
+                <i class="bi bi-pencil-square"></i>Completar ficha
+            </a>
+            <?php endif ?>
         </div>
     </div>
     <?php else: ?>
@@ -129,9 +147,13 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
             </thead>
             <tbody>
                 <?php foreach ($guardias as $g):
-                    $historialUrl = $view->url('/guardias/' . $g['ficha_id'] . '/fichas');
+                    $fichaId = (string) ($g['ficha_id'] ?? '');
+                    $historialUrl = $view->url('/guardias/' . $fichaId . '/fichas');
+                    $editarUrl = $view->url('/guardias/' . $fichaId . '/editar');
+                    $expedienteUrl = $view->url('/guardias/' . $fichaId . '/expediente');
+                    $rowUrl = $aspiranteMode ? $editarUrl : $historialUrl;
                 ?>
-                <tr class="js-row-link" data-href="<?= $historialUrl ?>" style="cursor:pointer;">
+                <tr class="js-row-link" data-href="<?= $rowUrl ?>" style="cursor:pointer;">
                     <td><span class="ds-cell-mono"><?= $e((string) ($g['cedula_display'] ?? '-')) ?></span></td>
                     <td><div class="ds-cell-name"><?= $e((string) ($g['apellidos'] ?? '')) ?></div></td>
                     <td><div class="ds-cell-name"><?= $e((string) ($g['nombres'] ?? '')) ?></div></td>
@@ -158,11 +180,24 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                     </td>
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
+                            <?php if ($aspiranteMode): ?>
+                            <a href="<?= $editarUrl ?>"
+                               class="ds-btn ds-btn-outline ds-btn-sm"
+                               title="Actualizar ficha">
+                                Actualizar ficha
+                            </a>
+                            <a href="<?= $expedienteUrl ?>"
+                               class="ds-btn ds-btn-primary ds-btn-sm"
+                               title="Cargar expediente documental">
+                                Expediente documental
+                            </a>
+                            <?php else: ?>
                             <a href="<?= $historialUrl ?>"
                                class="ds-btn ds-btn-outline ds-btn-sm"
                                title="Ver fichas del guardia">
                                 Ver fichas
                             </a>
+                            <?php endif ?>
                         </div>
                     </td>
                 </tr>

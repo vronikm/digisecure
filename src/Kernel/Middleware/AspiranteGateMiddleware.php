@@ -9,20 +9,18 @@ use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Security\Auth\AuthenticatedUser;
 
 /**
- * Confina al usuario con rol 'aspirante' a completar SOLO su ficha de guardia.
- *
- * Un aspirante (guardia que validó su correo) puede iniciar sesión, pero su
- * único objetivo es completar su registro en /guardias/crear. Cualquier otra
- * ruta lo redirige de vuelta a esa vista.
+ * Confina al usuario con rol 'aspirante' a su flujo propio:
+ * crear/actualizar su ficha y cargar documentos del expediente.
  *
  * Debe ejecutarse DESPUES de AuthenticationMiddleware (necesita 'auth_user').
  */
 final class AspiranteGateMiddleware implements MiddlewareInterface
 {
-    private const DESTINO = '/guardias/crear';
+    private const DESTINO = '/guardias';
 
     /** Rutas exactas permitidas al aspirante restringido. */
     private const PERMITIDAS = [
+        '/guardias',
         '/guardias/crear',
         '/guardias/prefill/cedula',
         '/logout',
@@ -31,6 +29,20 @@ final class AspiranteGateMiddleware implements MiddlewareInterface
     /** Prefijos permitidos (recursos estáticos, etc.). */
     private const PREFIJOS = [
         '/assets/',
+    ];
+
+    /**
+     * Rutas con IDs tokenizados o planos permitidas al aspirante. La propiedad
+     * real de la ficha/documento se valida nuevamente en los controladores.
+     */
+    private const PATRONES = [
+        '#^/guardias/[A-Za-z0-9_-]+$#',
+        '#^/guardias/[A-Za-z0-9_-]+/editar$#',
+        '#^/guardias/[A-Za-z0-9_-]+/expediente$#',
+        '#^/guardias/[A-Za-z0-9_-]+/(croquis|foto)$#',
+        '#^/expedientes/[A-Za-z0-9_-]+/documento/[A-Za-z0-9_-]+$#',
+        '#^/expedientes/documento/[A-Za-z0-9_-]+$#',
+        '#^/expedientes/documento/[A-Za-z0-9_-]+/descargar$#',
     ];
 
     public function process(Request $request, RequestHandlerInterface $next): Response
@@ -56,6 +68,12 @@ final class AspiranteGateMiddleware implements MiddlewareInterface
 
         foreach (self::PREFIJOS as $prefijo) {
             if (str_starts_with($path, $prefijo)) {
+                return true;
+            }
+        }
+
+        foreach (self::PATRONES as $pattern) {
+            if (preg_match($pattern, $path) === 1) {
                 return true;
             }
         }

@@ -80,16 +80,17 @@ $input['referencias'] = array_values(is_array($referenciasInput) ? $referenciasI
 $input['cursos'] = array_values(is_array($cursosInput) ? $cursosInput : []);
 
 $label = $correlativo !== '' ? "Editar Ficha {$correlativo}" : 'Editar Ficha';
-$backUrl = $fichaId !== '' ? "/guardias/{$fichaId}" : '/guardias';
+$isAspirante = $user->tieneRol('aspirante');
+$backUrl = $isAspirante ? '/guardias' : ($fichaId !== '' ? "/guardias/{$fichaId}" : '/guardias');
 $actionUrl = $fichaId !== '' ? "/guardias/{$fichaId}/editar" : '/guardias/crear';
 
-$formPageTitle = $label;
-$formBreadcrumbParentLabel = 'Guardias';
+$formPageTitle = $isAspirante ? 'Mi ficha GEMESEG' : $label;
+$formBreadcrumbParentLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
 $formBreadcrumbParentUrl = '/guardias';
-$formBreadcrumbCurrent = $label;
-$formKickerLabel = $label;
+$formBreadcrumbCurrent = $isAspirante ? 'Actualizar ficha' : $label;
+$formKickerLabel = $isAspirante ? 'Actualiza tus datos' : $label;
 $formBackUrl = $backUrl;
-$formBackLabel = 'Volver';
+$formBackLabel = $isAspirante ? 'Volver a mi ficha' : 'Volver';
 $formAction = $actionUrl;
 $formCancelUrl = $backUrl;
 $formCancelLabel = 'Cancelar';
@@ -102,6 +103,6 @@ $formConfirmText = 'Se actualizarán los datos del empleado con la información 
 $formConfirmButton = 'Si, guardar cambios';
 $formConfirmCancel = 'No, revisar';
 $formEnableCedulaPrefill = false;
-$fotoActualUrl = !empty($ficha['foto_archivo_id']) ? "/guardias/{$fichaId}/foto" : '';
+$fotoActualUrl = !empty($ficha['foto_archivo_id']) ? $view->url("/guardias/{$fichaId}/foto") : '';
 
 require __DIR__ . '/create.php';

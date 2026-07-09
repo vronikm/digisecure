@@ -17,6 +17,9 @@ $e = ViewRenderer::e(...);
 $estado = EstadoExpediente::from($expediente['estado']);
 $fichaId = $ficha['id'];
 $expId = $expediente['id'];
+$isAspirante = $user->tieneRol('aspirante');
+$fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
+$guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
 
 $totalA = (int) $expediente['bloque_a_total'];
 $aceptA = (int) $expediente['bloque_a_aceptados'];
@@ -43,14 +46,14 @@ $docTone = static fn(EstadoDocumento $d): string => match ($d) {
 
 $toneA = $pctA === 100 ? 'tone-success' : ($pctA >= 50 ? '' : 'tone-warning');
 $toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
-$puedeCargarDocumentos = $user->tienePermiso('expedientes.cargar') || $user->tienePermiso('expedientes.subir');
+$puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar') || $user->tienePermiso('expedientes.subir');
 ?>
 
 <?php $view->section('title') ?>Expediente - <?= $e($ficha['correlativo']) ?><?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
-<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>"><?= $e($guardiasLabel) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url($fichaUrl) ?>"><?= $e($ficha['correlativo']) ?></a></li>
 <li class="breadcrumb-item active">Expediente</li>
 <?php $view->endSection() ?>
 
@@ -67,10 +70,20 @@ $puedeCargarDocumentos = $user->tienePermiso('expedientes.cargar') || $user->tie
             </small>
         </div>
     </div>
-    <a href="<?= $view->url('/guardias/' . $fichaId) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+    <a href="<?= $view->url($fichaUrl) ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
         <i class="bi bi-arrow-left"></i>Volver a ficha
     </a>
 </div>
+
+<?php if ($isAspirante): ?>
+<div class="login-info" style="margin-bottom: 1.25rem;">
+    <i class="bi bi-info-circle"></i>
+    <div>
+        <strong>Carga tus documentos digitales</strong>
+        Puedes subir, ver y reemplazar archivos del Bloque A en los formatos permitidos por cada requisito. El Bloque B se habilita cuando el Bloque A este aceptado por revision.
+    </div>
+</div>
+<?php endif ?>
 
 <?php if ($porVencer !== []): ?>
 <div class="ds-card" style="border-left: 4px solid #d97706; margin-bottom: 1.25rem;">

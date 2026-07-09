@@ -17,6 +17,9 @@ $fichaId = $ficha['id'];
 $docEstado = EstadoDocumento::from($doc['estado']);
 $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocumento::RECHAZADO, EstadoDocumento::VENCIDO]);
 $puedeValidarDocumentos = $user->tienePermiso('expedientes.validar') || $user->tienePermiso('expedientes.revisar');
+$isAspirante = $user->tieneRol('aspirante');
+$fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
+$guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
 
 $docTone = match ($docEstado) {
     EstadoDocumento::PENDIENTE   => 'tone-muted',
@@ -35,8 +38,8 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
 <?php $view->section('title') ?>Documento - <?= $e($doc['tipo_nombre']) ?><?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
-<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>"><?= $e($guardiasLabel) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url($fichaUrl) ?>"><?= $e($ficha['correlativo']) ?></a></li>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>">Expediente</a></li>
 <li class="breadcrumb-item active"><?= $e($doc['tipo_nombre']) ?></li>
 <?php $view->endSection() ?>

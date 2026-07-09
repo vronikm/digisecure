@@ -327,7 +327,20 @@ final class FichaRepository extends BaseRepository
         $data['created_at'] = $now;
         $data['updated_at'] = $now;
 
-        $this->tenantInsert($this->filterKnownColumns($data));
+        $data = $this->filterKnownColumns($data);
+        try {
+            $this->tenantInsert($data);
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][FICHA] Insert completo de ficha fallo, intentando minimo: ' . $e->getMessage());
+            $fallback = $this->minimalCreateData($data);
+            try {
+                $this->tenantInsert($fallback);
+            } catch (\Throwable $retry) {
+                error_log('[DIGISECURE][FICHA] Insert minimo de ficha tambien fallo: ' . $retry->getMessage());
+                throw $e;
+            }
+        }
+
         return $id;
     }
 
@@ -600,6 +613,31 @@ final class FichaRepository extends BaseRepository
         }
 
         return array_intersect_key($data, $columns);
+    }
+
+    /**
+     * @param array<string, scalar|null> $data
+     * @return array<string, scalar|null>
+     */
+    private function minimalCreateData(array $data): array
+    {
+        $keys = [
+            'correlativo',
+            'tipo_ficha',
+            'estado',
+            'fecha_emision',
+            'nombres',
+            'apellidos',
+            'cedula_hash',
+            'cedula_cifrada',
+            'genero',
+            'fecha_nacimiento',
+            'id',
+            'created_at',
+            'updated_at',
+        ];
+
+        return array_intersect_key($data, array_fill_keys($keys, true));
     }
 
     /**

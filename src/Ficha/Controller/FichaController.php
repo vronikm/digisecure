@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Ficha\Controller;
 
+use DigiSecure\Aspirante\Infrastructure\AspiranteRepository;
 use DigiSecure\Ficha\Domain\Enum\EstadoFicha;
 use DigiSecure\Ficha\Domain\Enum\TipoFicha;
 use DigiSecure\Ficha\Application\ActualizarFichaService;
@@ -67,6 +68,39 @@ final class FichaController
         $limit = 25;
         $busqueda = trim((string) $request->query('q', ''));
         $filters = [];
+
+        if ($user->tieneRol('aspirante')) {
+            $ficha = $this->aspiranteFicha($user);
+            $guardias = [];
+            if ($ficha !== null) {
+                $guardias[] = [
+                    'ficha_id' => (string) ($ficha['id'] ?? ''),
+                    'cedula_hash' => (string) ($ficha['cedula_hash'] ?? ''),
+                    'cedula_cifrada' => $ficha['cedula_cifrada'] ?? null,
+                    'cedula_display' => $this->decryptSafe($ficha['cedula_cifrada'] ?? null),
+                    'apellidos' => (string) ($ficha['apellidos'] ?? ''),
+                    'nombres' => (string) ($ficha['nombres'] ?? ''),
+                    'fecha_nacimiento' => $ficha['fecha_nacimiento'] ?? null,
+                    'celular' => $ficha['celular'] ?? null,
+                    'email' => $ficha['email'] ?? null,
+                    'ultima_ficha_at' => $ficha['updated_at'] ?? $ficha['created_at'] ?? null,
+                    'total_fichas' => 1,
+                ];
+            }
+
+            return $this->view->response('ficha/index', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => $request->path,
+                'guardias' => $guardias,
+                'total' => count($guardias),
+                'page' => 1,
+                'totalPages' => 1,
+                'filters' => ['busqueda' => ''],
+                'listError' => false,
+                'aspiranteMode' => true,
+            ]);
+        }
 
         if ($busqueda !== '') {
             $filters['busqueda'] = $busqueda;
@@ -198,6 +232,13 @@ final class FichaController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
+        if ($user->tieneRol('aspirante')) {
+            $fichaAspirante = $this->aspiranteFicha($user);
+            if ($fichaAspirante !== null && !empty($fichaAspirante['id'])) {
+                return Response::redirect($this->securePath($request, '/guardias/' . (string) $fichaAspirante['id'] . '/editar'));
+            }
+        }
+
         $cursos = $this->loadCatalogoCursos();
         $input = [];
         $prefillFromLast = false;
@@ -286,11 +327,24 @@ final class FichaController
         $user = $request->attribute('auth_user');
         $input = $request->post;
 
+        if ($user->tieneRol('aspirante')) {
+            $fichaAspirante = $this->aspiranteFicha($user);
+            if ($fichaAspirante !== null && !empty($fichaAspirante['id'])) {
+                $this->flash->info('Ya tienes una ficha registrada. Puedes actualizarla y cargar tu expediente documental.');
+                return Response::redirect($this->securePath($request, '/guardias/' . (string) $fichaAspirante['id'] . '/editar'));
+            }
+        }
+
         try {
             $this->verificarLimiteCrearGuardia();
             $result = $this->crearFichaService()->execute($input, $user->id, $request->clientIp());
-            $this->flash->success('Ficha de guardia creada correctamente.');
-            return Response::redirect($this->securePath($request, "/guardias/{$result['id']}"));
+            $isAspirante = $user->tieneRol('aspirante');
+            $this->flash->success($isAspirante
+                ? 'Ficha guardada correctamente. Ya puedes cargar tu expediente documental.'
+                : 'Ficha de guardia creada correctamente.'
+            );
+            $target = $isAspirante ? "/guardias/{$result['id']}/editar" : "/guardias/{$result['id']}";
+            return Response::redirect($this->securePath($request, $target));
         } catch (DomainException $e) {
             $cursos = $this->loadCatalogoCursos();
             return $this->view->response('ficha/create', [
@@ -338,6 +392,9 @@ final class FichaController
         if ($ficha === null) {
             return $this->view->response('errors/404', [], 404);
         }
+        if (!$this->aspirantePuedeAccederFicha($user, $ficha)) {
+            return $this->view->response('errors/404', [], 404);
+        }
 
         // Descifrar datos sensibles para display
         $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada']);
@@ -364,8 +421,14 @@ final class FichaController
 
     public function croquisImagen(Request $request, string $id): Response
     {
+        /** @var AuthenticatedUser|null $user */
+        $user = $request->attribute('auth_user');
+
         $ficha = $this->fichaRepo->findFichaById($id);
         if ($ficha === null || empty($ficha['croquis_archivo_id'])) {
+            return $this->view->response('errors/404', [], 404);
+        }
+        if ($user instanceof AuthenticatedUser && !$this->aspirantePuedeAccederFicha($user, $ficha)) {
             return $this->view->response('errors/404', [], 404);
         }
 
@@ -409,8 +472,14 @@ final class FichaController
 
     public function fotoImagen(Request $request, string $id): Response
     {
+        /** @var AuthenticatedUser|null $user */
+        $user = $request->attribute('auth_user');
+
         $ficha = $this->fichaRepo->findFichaById($id);
         if ($ficha === null || empty($ficha['foto_archivo_id'])) {
+            return $this->view->response('errors/404', [], 404);
+        }
+        if ($user instanceof AuthenticatedUser && !$this->aspirantePuedeAccederFicha($user, $ficha)) {
             return $this->view->response('errors/404', [], 404);
         }
 
@@ -461,6 +530,9 @@ final class FichaController
 
         $ficha = $this->fichaRepo->findFichaById($id);
         if ($ficha === null) {
+            return $this->view->response('errors/404', [], 404);
+        }
+        if (!$this->aspirantePuedeAccederFicha($user, $ficha)) {
             return $this->view->response('errors/404', [], 404);
         }
 
@@ -523,13 +595,17 @@ final class FichaController
         $user = $request->attribute('auth_user');
         $input = $request->post;
 
+        if (!$this->aspirantePuedeAccederFichaId($user, $id)) {
+            return $this->view->response('errors/404', [], 404);
+        }
+
         try {
             $this->actualizarFichaService()->execute($id, $input, $user->id, $request->clientIp());
             $this->flash->success('Ficha actualizada correctamente.');
             return Response::redirect($this->securePath($request, "/guardias/{$id}/editar"));
         } catch (DomainException $e) {
             $ficha = $this->fichaRepo->findFichaById($id) ?? [];
-            $catalogoCursos = $this->loadCatalogoCursos();
+            $catalogoCursos = $this->safeLoadCatalogoCursos();
             return $this->view->response('ficha/edit', [
                 'user' => $user,
                 'csrfToken' => $csrf->token(),
@@ -540,6 +616,10 @@ final class FichaController
                 'referencias' => $input['referencias'] ?? [],
                 'fichasCursos' => $input['cursos'] ?? [],
                 'cursos' => $catalogoCursos,
+                'instituciones' => $this->safeLoadInstitucionesFinancieras(),
+                'googleMapsKey' => $this->googleMapsKey(),
+                'expedienteResumen' => $this->buildExpedienteResumen($id),
+                'expedienteUrl' => '/guardias/' . $id . '/expediente',
                 'error' => $e->getMessage(),
             ]);
         }
@@ -771,6 +851,61 @@ final class FichaController
         }
 
         return \is_string($secure) && $secure !== '' ? $secure : $path;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function aspiranteFicha(AuthenticatedUser $user): ?array
+    {
+        if (!$user->tieneRol('aspirante')) {
+            return null;
+        }
+
+        try {
+            $repo = $this->container->get(AspiranteRepository::class);
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            return null;
+        }
+
+        if (!$repo instanceof AspiranteRepository) {
+            return null;
+        }
+
+        return $repo->findFichaDeUsuario($user->id);
+    }
+
+    /**
+     * Para aspirantes, solo permite acceder a la ficha creada por su usuario.
+     *
+     * @param array<string, mixed>|null $ficha
+     */
+    private function aspirantePuedeAccederFicha(AuthenticatedUser $user, ?array $ficha): bool
+    {
+        if (!$user->tieneRol('aspirante')) {
+            return true;
+        }
+
+        if ($ficha === null) {
+            return false;
+        }
+
+        if ((string) ($ficha['created_by'] ?? '') === $user->id) {
+            return true;
+        }
+
+        return $this->aspirantePuedeAccederFichaId($user, (string) ($ficha['id'] ?? ''));
+    }
+
+    private function aspirantePuedeAccederFichaId(AuthenticatedUser $user, string $fichaId): bool
+    {
+        if (!$user->tieneRol('aspirante')) {
+            return true;
+        }
+
+        $ficha = $this->aspiranteFicha($user);
+        return $ficha !== null && (string) ($ficha['id'] ?? '') === $fichaId;
     }
 
     /**

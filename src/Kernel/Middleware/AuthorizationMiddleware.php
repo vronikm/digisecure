@@ -65,8 +65,21 @@ final class AuthorizationMiddleware implements MiddlewareInterface
 
     private function permiteFlujoAspirante(AuthenticatedUser $user, string $requiredPermission, string $path): bool
     {
-        return $requiredPermission === 'guardias.crear'
-            && $user->tieneRol('aspirante')
-            && \in_array($path, ['/guardias/crear', '/guardias/prefill/cedula'], true);
+        if (!$user->tieneRol('aspirante')) {
+            return false;
+        }
+
+        return match ($requiredPermission) {
+            'guardias.crear' => \in_array($path, ['/guardias/crear', '/guardias/prefill/cedula'], true),
+            'guardias.ver' => $path === '/guardias'
+                || \preg_match('#^/guardias/[A-Za-z0-9_-]+$#', $path) === 1
+                || \preg_match('#^/guardias/[A-Za-z0-9_-]+/(croquis|foto)$#', $path) === 1,
+            'guardias.editar' => \preg_match('#^/guardias/[A-Za-z0-9_-]+/editar$#', $path) === 1,
+            'expedientes.ver' => \preg_match('#^/guardias/[A-Za-z0-9_-]+/expediente$#', $path) === 1
+                || \preg_match('#^/expedientes/documento/[A-Za-z0-9_-]+$#', $path) === 1
+                || \preg_match('#^/expedientes/documento/[A-Za-z0-9_-]+/descargar$#', $path) === 1,
+            'expedientes.cargar' => \preg_match('#^/expedientes/[A-Za-z0-9_-]+/documento/[A-Za-z0-9_-]+$#', $path) === 1,
+            default => false,
+        };
     }
 }

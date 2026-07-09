@@ -18,13 +18,16 @@ $expId = $expediente['id'];
 $tipoId = $tipo['id'];
 $esReemplazo = $docExistente !== null;
 $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
+$isAspirante = $user->tieneRol('aspirante');
+$fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
+$guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
 ?>
 
 <?php $view->section('title') ?><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
-<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
-<li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId) ?>"><?= $e($ficha['correlativo']) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>"><?= $e($guardiasLabel) ?></a></li>
+<li class="breadcrumb-item"><a href="<?= $view->url($fichaUrl) ?>"><?= $e($ficha['correlativo']) ?></a></li>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>">Expediente</a></li>
 <li class="breadcrumb-item active"><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?></li>
 <?php $view->endSection() ?>

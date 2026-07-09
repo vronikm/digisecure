@@ -115,7 +115,7 @@ class AspiranteRepository
     public function findFichaDeUsuario(string $usuarioId): ?array
     {
         return $this->db->fetchOne(
-            'SELECT * FROM fichas WHERE created_by = :uid ORDER BY created_at DESC LIMIT 1',
+            "SELECT * FROM fichas WHERE created_by = :uid AND estado <> 'ANULADA' ORDER BY created_at DESC LIMIT 1",
             ['uid' => $usuarioId],
         );
     }

@@ -1533,7 +1533,17 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
         <div class="card-header"><i class="bi bi-folder2-open me-2"></i>Expediente documental</div>
         <div class="card-body">
             <?php if ($expUrl === ''): ?>
-            <p class="mb-0" style="color:#64748b; font-size:.85rem;"><i class="bi bi-info-circle me-1"></i>El expediente documental (Bloque A y B) estará disponible para cargar y revisar documentos una vez que guarde la ficha.</p>
+            <div class="d-flex align-items-start gap-3" style="padding: .95rem 1rem; border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc;">
+                <span style="width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: rgba(37,99,235,.1); color: #2563eb; font-size: 1.25rem;">
+                    <i class="bi bi-folder-plus"></i>
+                </span>
+                <div style="min-width: 0;">
+                    <div style="font-weight: 800; color: #0f172a; margin-bottom: .25rem;">Guarda la ficha para habilitar documentos</div>
+                    <p class="mb-0" style="color:#64748b; font-size:.86rem; line-height: 1.55;">
+                        El expediente documental (Bloque A y B) estara disponible para cargar, revisar y reemplazar archivos digitales una vez que guardes la ficha.
+                    </p>
+                </div>
+            </div>
             <?php else: ?>
             <div class="d-flex flex-wrap gap-4 align-items-center justify-content-between">
                 <div class="d-flex flex-wrap gap-4">
@@ -1546,9 +1556,9 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                         <span class="ds-badge tone-warning"><?= (int) ($expResumen['bloqueB']['aceptados'] ?? 0) ?> / <?= (int) ($expResumen['bloqueB']['total'] ?? 0) ?> aceptados</span>
                     </div>
                 </div>
-                <a href="<?= $view->url($expUrl) ?>" class="ds-btn ds-btn-primary ds-btn-sm"><i class="bi bi-folder2-open me-1"></i>Gestionar documentos</a>
+                <a href="<?= $view->url($expUrl) ?>" class="ds-btn ds-btn-primary ds-btn-sm"><i class="bi bi-folder2-open me-1"></i>Cargar expediente documental</a>
             </div>
-            <p class="mb-0 mt-2" style="color:#64748b; font-size:.8rem;">El Bloque B se desbloquea cuando el Bloque A esté 100% aceptado.</p>
+            <p class="mb-0 mt-2" style="color:#64748b; font-size:.8rem;">Puedes subir, ver y reemplazar tus documentos. El Bloque B se desbloquea cuando el Bloque A este 100% aceptado.</p>
             <?php endif ?>
         </div>
     </div>
