@@ -44,6 +44,10 @@ final class AuthorizationMiddleware implements MiddlewareInterface
         }
 
         if (!$user->tienePermiso($requiredPermission)) {
+            if ($this->permiteFlujoAspirante($user, (string) $requiredPermission, $request->path)) {
+                return $next->handle($request);
+            }
+
             $this->audit->accesoProhibido($user->id, $requiredPermission, $request->clientIp());
 
             if ($request->isAjax()) {
@@ -57,5 +61,12 @@ final class AuthorizationMiddleware implements MiddlewareInterface
         }
 
         return $next->handle($request);
+    }
+
+    private function permiteFlujoAspirante(AuthenticatedUser $user, string $requiredPermission, string $path): bool
+    {
+        return $requiredPermission === 'guardias.crear'
+            && $user->tieneRol('aspirante')
+            && \in_array($path, ['/guardias/crear', '/guardias/prefill/cedula'], true);
     }
 }
