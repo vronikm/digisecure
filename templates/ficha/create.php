@@ -18,11 +18,9 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 $old = static fn(string $key, string $default = '') => $e((string)($input[$key] ?? $default));
 
-// Campos que llegan bloqueados (solo lectura) desde el registro del aspirante.
-$lockedFields = isset($lockedFields) && is_array($lockedFields) ? $lockedFields : [];
-$lockAttr = static fn(string $name): string => in_array($name, $lockedFields, true)
-    ? ' readonly title="Dato tomado de tu registro; no se puede modificar"'
-    : '';
+// Campos precargados desde registro o fichas previas. Siempre quedan editables.
+$lockedFields = [];
+$lockAttr = static fn(string $name): string => '';
 $prefillTrabajos = array_values(is_array($input['trabajos_anteriores'] ?? null) ? $input['trabajos_anteriores'] : []);
 $prefillHijos = array_values(is_array($input['hijos_menores'] ?? null) ? $input['hijos_menores'] : []);
 $prefillReferencias = array_values(is_array($input['referencias'] ?? null) ? $input['referencias'] : []);

@@ -201,20 +201,17 @@ final class FichaController
         $cursos = $this->loadCatalogoCursos();
         $input = [];
         $prefillFromLast = false;
-        $lockedFields = [];
-
         $baseFichaId = trim((string) $request->query('base_ficha', ''));
         if ($baseFichaId !== '') {
             $input = $this->buildCreatePrefillFromFicha($baseFichaId);
             $prefillFromLast = $input !== [];
         }
 
-        // Aspirante en su primer ingreso: los datos de su registro se cargan y se
-        // bloquean para que no pueda modificarlos al crear su ficha.
+        // Aspirante en su primer ingreso: se precargan datos del registro, pero
+        // todos los campos quedan editables para corregirlos antes de guardar.
         $registroLock = $this->aspiranteRegistroLock($user);
         if ($registroLock !== null) {
             $input = array_merge($input, $registroLock['input']);
-            $lockedFields = $registroLock['locked'];
         }
 
         return $this->view->response('ficha/create', [
@@ -225,9 +222,9 @@ final class FichaController
             'instituciones' => $this->loadInstitucionesFinancieras(),
             'input' => $input,
             'prefillFromLast' => $prefillFromLast,
-            'lockedFields' => $lockedFields,
+            'lockedFields' => [],
             'prefillByCedulaUrl' => '/guardias/prefill/cedula',
-            'formEnableCedulaPrefill' => $lockedFields === [],
+            'formEnableCedulaPrefill' => true,
             'googleMapsKey' => $this->googleMapsKey(),
         ]);
     }
@@ -289,16 +286,6 @@ final class FichaController
         $user = $request->attribute('auth_user');
         $input = $request->post;
 
-        // Aspirante: los campos de su registro son de solo lectura en el formulario.
-        // Se reimponen aquí en servidor para no confiar en el `readonly` del cliente.
-        $registroLock = $this->aspiranteRegistroLock($user);
-        $lockedFields = $registroLock !== null ? $registroLock['locked'] : [];
-        if ($registroLock !== null) {
-            foreach ($lockedFields as $campo) {
-                $input[$campo] = $registroLock['input'][$campo];
-            }
-        }
-
         try {
             $this->verificarLimite->verificarCrearGuardia();
             $result = $this->crearFichaService()->execute($input, $user->id, $request->clientIp());
@@ -314,9 +301,9 @@ final class FichaController
                 'instituciones' => $this->loadInstitucionesFinancieras(),
                 'input' => $input,
                 'error' => $e->getMessage(),
-                'lockedFields' => $lockedFields,
+                'lockedFields' => [],
                 'prefillByCedulaUrl' => '/guardias/prefill/cedula',
-                'formEnableCedulaPrefill' => $lockedFields === [],
+                'formEnableCedulaPrefill' => true,
                 'googleMapsKey' => $this->googleMapsKey(),
             ]);
         }
