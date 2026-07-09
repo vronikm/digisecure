@@ -26,6 +26,8 @@ $diasVigencia = (int) ($tipo['dias_vigencia'] ?? 0);
 $fechaObjetivoActual = !empty($docExistente['fecha_objetivo_actualizacion'] ?? null)
     ? date('d/m/Y', strtotime((string) $docExistente['fecha_objetivo_actualizacion']))
     : null;
+$puedeValidarDocumentos = (bool) ($puedeValidarDocumentos
+    ?? ($user->tienePermiso('expedientes.validar') || $user->tienePermiso('expedientes.revisar')));
 ?>
 
 <?php $view->section('title') ?><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento - DigiSecure<?php $view->endSection() ?>
@@ -187,7 +189,7 @@ $fechaObjetivoActual = !empty($docExistente['fecha_objetivo_actualizacion'] ?? n
         </div>
     </div>
 
-    <?php if ($tipo['requiere_validacion_externa']): ?>
+    <?php if ($tipo['requiere_validacion_externa'] && $puedeValidarDocumentos): ?>
     <div class="ds-card">
         <div class="ds-card-header tone-purple">
             <span class="ds-card-mark"><i class="bi bi-globe"></i></span>

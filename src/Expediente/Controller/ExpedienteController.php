@@ -302,6 +302,7 @@ final class ExpedienteController
             'ficha' => $ficha,
             'tipo' => $tipo,
             'docExistente' => $docExistente,
+            'puedeValidarDocumentos' => $this->puedeValidarDocumentos($user),
         ]);
     }
 
@@ -320,7 +321,15 @@ final class ExpedienteController
         }
 
         try {
-            $this->subirService->execute($id, $tipoId, $input, $file, $user->id, $request->clientIp());
+            $this->subirService->execute(
+                $id,
+                $tipoId,
+                $input,
+                $file,
+                $user->id,
+                $request->clientIp(),
+                $this->puedeValidarDocumentos($user),
+            );
 
             $this->flash->success('Documento subido correctamente.');
             return Response::redirect(
@@ -337,6 +346,7 @@ final class ExpedienteController
                 'ficha' => $ficha,
                 'tipo' => $tipo,
                 'docExistente' => $this->expRepo->findDocumentoByTipo($id, $tipoId),
+                'puedeValidarDocumentos' => $this->puedeValidarDocumentos($user),
                 'error' => $e->getMessage(),
             ]);
         }
@@ -438,6 +448,11 @@ final class ExpedienteController
         }
 
         return \is_string($secure) && $secure !== '' ? $secure : $path;
+    }
+
+    private function puedeValidarDocumentos(AuthenticatedUser $user): bool
+    {
+        return $user->tienePermiso('expedientes.validar') || $user->tienePermiso('expedientes.revisar');
     }
 
     /**

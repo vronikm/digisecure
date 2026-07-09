@@ -45,6 +45,7 @@ final class SubirDocumentoService
         array $file,
         string $usuarioId,
         string $ip,
+        bool $puedeRegistrarValidacionExterna = false,
     ): string {
         // 1. Validar expediente
         $expediente = $this->repo->findExpedienteById($expedienteId);
@@ -98,8 +99,8 @@ final class SubirDocumentoService
         ];
 
         // Screenshots de validación externa
-        if (!empty($input['validacion_url'])) {
-            $data['validacion_url'] = $input['validacion_url'];
+        if ($puedeRegistrarValidacionExterna && !empty($input['validacion_url'])) {
+            $data['validacion_url'] = $this->normalizarUrl((string) $input['validacion_url']);
         }
 
         if ($existente !== null) {
@@ -247,6 +248,21 @@ final class SubirDocumentoService
         }
 
         return $dt->format('Y-m-d');
+    }
+
+    private function normalizarUrl(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            throw new DomainException('URL de validacion externa no valida.');
+        }
+
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            throw new DomainException('La URL de validacion externa debe usar http o https.');
+        }
+
+        return $url;
     }
 
     /**

@@ -185,7 +185,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
     </div>
 
     <!-- Validacion externa -->
-    <?php if ($doc['requiere_validacion_externa']): ?>
+    <?php if ($doc['requiere_validacion_externa'] && $puedeValidarDocumentos): ?>
     <div class="col-12">
         <div class="ds-card">
             <div class="ds-card-header tone-purple">
