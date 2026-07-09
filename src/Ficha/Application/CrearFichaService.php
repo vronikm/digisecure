@@ -221,14 +221,18 @@ final class CrearFichaService
         }
 
         // 8. Auditoría
-        $this->audit->log(
-            'ficha.crear',
-            $usuarioId,
-            'ficha',
-            $fichaId,
-            detalles: ['correlativo' => $correlativo, 'tipo' => $tipo->value],
-            ip: $ip,
-        );
+        try {
+            $this->audit->log(
+                'ficha.crear',
+                $usuarioId,
+                'ficha',
+                $fichaId,
+                detalles: ['correlativo' => $correlativo, 'tipo' => $tipo->value],
+                ip: $ip,
+            );
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][FICHA] Ficha creada pero auditoria fallo: ' . $e->getMessage());
+        }
 
         return ['id' => $fichaId, 'correlativo' => $correlativo];
     }

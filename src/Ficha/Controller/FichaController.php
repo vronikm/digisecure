@@ -287,7 +287,7 @@ final class FichaController
         $input = $request->post;
 
         try {
-            $this->verificarLimite->verificarCrearGuardia();
+            $this->verificarLimiteCrearGuardia();
             $result = $this->crearFichaService()->execute($input, $user->id, $request->clientIp());
             $this->flash->success('Ficha de guardia creada correctamente.');
             return Response::redirect($this->securePath($request, "/guardias/{$result['id']}"));
@@ -682,6 +682,17 @@ final class FichaController
     }
 
     // ======================== HELPERS ========================
+
+    private function verificarLimiteCrearGuardia(): void
+    {
+        try {
+            $this->verificarLimite->verificarCrearGuardia();
+        } catch (DomainException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+        }
+    }
 
     /**
      * @return list<array<string, mixed>>
