@@ -193,19 +193,35 @@ final class CrearFichaService
 
                 // Guardar relaciones 1:N si vienen en el input
                 if (!empty($input['trabajos_anteriores']) && is_array($input['trabajos_anteriores'])) {
-                    $this->fichaRepo->saveTrabajosAnteriores($fichaId, $input['trabajos_anteriores']);
+                    try {
+                        $this->fichaRepo->saveTrabajosAnteriores($fichaId, $input['trabajos_anteriores']);
+                    } catch (\Throwable $e) {
+                        error_log('[DIGISECURE][FICHA] Ficha creada pero trabajos anteriores fallo: ' . $e->getMessage());
+                    }
                 }
 
                 if (!empty($input['hijos_menores']) && is_array($input['hijos_menores'])) {
-                    $this->fichaRepo->saveHijosMenores($fichaId, $input['hijos_menores']);
+                    try {
+                        $this->fichaRepo->saveHijosMenores($fichaId, $input['hijos_menores']);
+                    } catch (\Throwable $e) {
+                        error_log('[DIGISECURE][FICHA] Ficha creada pero hijos menores fallo: ' . $e->getMessage());
+                    }
                 }
 
                 if (!empty($input['referencias']) && is_array($input['referencias'])) {
-                    $this->fichaRepo->saveReferencias($fichaId, $input['referencias']);
+                    try {
+                        $this->fichaRepo->saveReferencias($fichaId, $input['referencias']);
+                    } catch (\Throwable $e) {
+                        error_log('[DIGISECURE][FICHA] Ficha creada pero referencias fallo: ' . $e->getMessage());
+                    }
                 }
 
                 if (!empty($input['cursos']) && is_array($input['cursos'])) {
-                    $this->fichaRepo->saveCursos($fichaId, $input['cursos']);
+                    try {
+                        $this->fichaRepo->saveCursos($fichaId, $input['cursos']);
+                    } catch (\Throwable $e) {
+                        error_log('[DIGISECURE][FICHA] Ficha creada pero cursos fallo: ' . $e->getMessage());
+                    }
                 }
 
                 return $fichaId;

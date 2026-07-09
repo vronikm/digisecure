@@ -20,6 +20,9 @@ use DigiSecure\Tenant\Domain\TenantContext;
  */
 final class FichaRepository extends BaseRepository
 {
+    /** @var array<string, true>|null */
+    private ?array $tableColumns = null;
+
     public function __construct(PdoConnection $db, TenantContext $tenantContext)
     {
         parent::__construct($db, $tenantContext);
@@ -324,7 +327,7 @@ final class FichaRepository extends BaseRepository
         $data['created_at'] = $now;
         $data['updated_at'] = $now;
 
-        $this->tenantInsert($data);
+        $this->tenantInsert($this->filterKnownColumns($data));
         return $id;
     }
 
@@ -580,5 +583,49 @@ final class FichaRepository extends BaseRepository
         }
 
         return '';
+    }
+
+    /**
+     * Permite que despliegues con migraciones pendientes no fallen por columnas
+     * opcionales nuevas. Las columnas obligatorias del esquema base se mantienen.
+     *
+     * @param array<string, scalar|null> $data
+     * @return array<string, scalar|null>
+     */
+    private function filterKnownColumns(array $data): array
+    {
+        $columns = $this->knownColumns();
+        if ($columns === []) {
+            return $data;
+        }
+
+        return array_intersect_key($data, $columns);
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function knownColumns(): array
+    {
+        if ($this->tableColumns !== null) {
+            return $this->tableColumns;
+        }
+
+        try {
+            $rows = $this->db->fetchAll('SHOW COLUMNS FROM fichas');
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][FICHA] No se pudo leer columnas de fichas: ' . $e->getMessage());
+            return $this->tableColumns = [];
+        }
+
+        $columns = [];
+        foreach ($rows as $row) {
+            $field = $this->scalarString($row['Field'] ?? '');
+            if ($field !== '') {
+                $columns[$field] = true;
+            }
+        }
+
+        return $this->tableColumns = $columns;
     }
 }

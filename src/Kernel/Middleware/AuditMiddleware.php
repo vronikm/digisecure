@@ -51,17 +51,21 @@ final class AuditMiddleware implements MiddlewareInterface
             }
         }
 
-        $this->audit->log(
-            evento: "http.{$request->method}.{$routeName}",
-            usuarioId: $user->id,
-            detalles: [
-                'method' => $request->method,
-                'path' => $request->path,
-                'status' => $response->status,
-            ],
-            ip: $request->clientIp(),
-            userAgent: $request->userAgent(),
-        );
+        try {
+            $this->audit->log(
+                evento: "http.{$request->method}.{$routeName}",
+                usuarioId: $user->id,
+                detalles: [
+                    'method' => $request->method,
+                    'path' => $request->path,
+                    'status' => $response->status,
+                ],
+                ip: $request->clientIp(),
+                userAgent: $request->userAgent(),
+            );
+        } catch (\Throwable $e) {
+            error_log('[DIGISECURE][AUDIT] No se pudo auditar request HTTP: ' . $e->getMessage());
+        }
 
         return $response;
     }
