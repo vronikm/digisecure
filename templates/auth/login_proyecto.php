@@ -27,7 +27,6 @@ $returnTo = $returnTo ?? null;
         <aside class="login-aside">
             <div class="login-brand gemeseg-brand">
                 <img class="brand-main-logo" src="<?= $view->url('/assets/img/gemeseg-logo.png') ?>" alt="GEMESEG Seguridad">
-                <span class="brand-system">Plataforma DigiSecure</span>
                 <img class="brand-secondary-logo" src="<?= $view->url('/assets/img/gemeseg-shield-logo.png') ?>" alt="" aria-hidden="true">
                 <hr class="login-brand-divider">
                 <a class="login-work-button" href="https://gemeseg.com/" target="_blank" rel="noopener noreferrer">

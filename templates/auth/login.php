@@ -26,7 +26,7 @@ $rsel = static fn (string $cur): string => ($rv('tipo_documento') === $cur) ? 's
 $racc = !empty($registroForm['acepta_politicas']);
 $maxFechaNac = date('Y-m-d', strtotime('-18 years'));
 $minFechaNac = date('Y-m-d', strtotime('-70 years'));
-$tiposDoc = ['cedula' => 'Cédula', 'ruc' => 'RUC', 'pasaporte' => 'Pasaporte'];
+$tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
 ?>
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
@@ -87,16 +87,6 @@ $tiposDoc = ['cedula' => 'Cédula', 'ruc' => 'RUC', 'pasaporte' => 'Pasaporte'];
                                placeholder="Tu contraseña" required autocomplete="current-password">
                     </div>
                 </div>
-
-                <div class="login-field">
-                    <div class="form-check">
-                        <label class="form-check-label" for="accept_policies">
-                        <input class="form-check-input" type="checkbox" id="accept_policies" name="accept_policies" value="1" required>                        
-                            Acepto la <a href="<?= $view->url('/lopdp/consentimientos/PoliticaPrivacidad_TDP.pdf') ?>" target="_blank" rel="noopener noreferrer">Política de Privacidad y Tratamiento de Datos Personales</a>.
-                        </label>
-                    </div>
-                </div>
-
                 <div class="login-actions">
                     <button type="submit" class="login-submit">
                         <i class="bi bi-box-arrow-in-right"></i>Iniciar sesión
