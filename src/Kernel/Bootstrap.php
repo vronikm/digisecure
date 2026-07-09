@@ -986,6 +986,8 @@ final class Bootstrap
 
         // Configuración — Tipos de documento (Fase 8)
         $router->get('/configuracion/documentos', [DocumentoTipoController::class, 'index'], name: 'doctipo.index', permission: 'configuracion.documentos');
+        $router->get('/configuracion/documentos/nuevo', [DocumentoTipoController::class, 'create'], name: 'doctipo.create', permission: 'configuracion.documentos');
+        $router->post('/configuracion/documentos', [DocumentoTipoController::class, 'store'], name: 'doctipo.store', permission: 'configuracion.documentos');
         $router->get('/configuracion/documentos/{codigo}', [DocumentoTipoController::class, 'edit'], name: 'doctipo.edit', permission: 'configuracion.documentos');
         $router->post('/configuracion/documentos/{codigo}', [DocumentoTipoController::class, 'update'], name: 'doctipo.update', permission: 'configuracion.documentos');
         $router->post('/configuracion/documentos/{codigo}/toggle', [DocumentoTipoController::class, 'toggle'], name: 'doctipo.toggle', permission: 'configuracion.documentos');

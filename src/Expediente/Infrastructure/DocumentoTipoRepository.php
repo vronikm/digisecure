@@ -94,6 +94,50 @@ final class DocumentoTipoRepository
     }
 
     /**
+     * Crea un tipo documental propio del tenant.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function createTenantTipo(array $data): string
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+        $id = IdGenerator::ulid();
+        $now = Clock::nowString();
+
+        $row = [
+            'id' => $id,
+            'tenant_id' => $tenantId,
+            'codigo' => $data['codigo'],
+            'nombre' => $data['nombre'],
+            'descripcion' => $data['descripcion'] ?? null,
+            'bloque' => $data['bloque'],
+            'orden' => $data['orden'],
+            'obligatorio' => $data['obligatorio'],
+            'requiere_validacion_externa' => $data['requiere_validacion_externa'],
+            'tiene_vencimiento' => $data['tiene_vencimiento'],
+            'dias_vigencia' => $data['dias_vigencia'],
+            'formatos_permitidos' => $data['formatos_permitidos'],
+            'tamano_maximo_mb' => $data['tamano_maximo_mb'],
+            'activo' => $data['activo'],
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        $columns = implode(', ', array_keys($row));
+        $placeholders = implode(', ', array_map(
+            static fn(string $col): string => ":{$col}",
+            array_keys($row),
+        ));
+
+        $this->db->execute(
+            "INSERT INTO documento_tipos ({$columns}) VALUES ({$placeholders})",
+            $row,
+        );
+
+        return $id;
+    }
+
+    /**
      * Crea un override del tenant para un tipo global, o actualiza un
      * override existente. Campos editables por tenant:
      *   - activo, obligatorio, tiene_vencimiento, dias_vigencia, orden.

@@ -19,6 +19,8 @@ use DigiSecure\Shared\Domain\DomainException;
  */
 final class ConfigurarDocumentoTipoService
 {
+    private const FORMATOS_PERMITIDOS = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+
     public function __construct(
         private readonly DocumentoTipoRepository $repo,
         private readonly AuditLogger $audit,
@@ -85,5 +87,99 @@ final class ConfigurarDocumentoTipoService
         );
 
         return $id;
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     */
+    public function crear(array $input, string $usuarioId, string $ip): string
+    {
+        $codigo = $this->normalizarCodigo((string) ($input['codigo'] ?? ''));
+        if ($codigo === '') {
+            throw new DomainException('El codigo del tipo de documento es obligatorio.');
+        }
+
+        if ($this->repo->findByCodigo($codigo) !== null) {
+            throw new DomainException("Ya existe un tipo de documento con el codigo '{$codigo}'.");
+        }
+
+        $nombre = trim((string) ($input['nombre'] ?? ''));
+        if ($nombre === '') {
+            throw new DomainException('El nombre del tipo de documento es obligatorio.');
+        }
+
+        $bloque = strtoupper(trim((string) ($input['bloque'] ?? 'A')));
+        if (!in_array($bloque, ['A', 'B'], true)) {
+            throw new DomainException('El bloque debe ser A o B.');
+        }
+
+        $tieneVencimiento = (int) (bool) ($input['tiene_vencimiento'] ?? false);
+        $diasVigencia = null;
+        if ($tieneVencimiento === 1) {
+            $diasVigencia = (int) ($input['dias_vigencia'] ?? 0);
+            if ($diasVigencia < 1) {
+                throw new DomainException('Ingrese los dias de vigencia del documento.');
+            }
+        }
+
+        $formatos = $this->normalizarFormatos((string) ($input['formatos_permitidos'] ?? 'pdf'));
+        $tamanoMaximo = (float) ($input['tamano_maximo_mb'] ?? 10);
+        if ($tamanoMaximo <= 0 || $tamanoMaximo > 50) {
+            throw new DomainException('El tamano maximo debe estar entre 1 y 50 MB.');
+        }
+
+        $id = $this->repo->createTenantTipo([
+            'codigo' => $codigo,
+            'nombre' => $nombre,
+            'descripcion' => trim((string) ($input['descripcion'] ?? '')) ?: null,
+            'bloque' => $bloque,
+            'orden' => max(0, (int) ($input['orden'] ?? 0)),
+            'obligatorio' => (int) (bool) ($input['obligatorio'] ?? false),
+            'requiere_validacion_externa' => (int) (bool) ($input['requiere_validacion_externa'] ?? false),
+            'tiene_vencimiento' => $tieneVencimiento,
+            'dias_vigencia' => $diasVigencia,
+            'formatos_permitidos' => implode(',', $formatos),
+            'tamano_maximo_mb' => $tamanoMaximo,
+            'activo' => (int) (bool) ($input['activo'] ?? true),
+        ]);
+
+        $this->audit->log(
+            'documento_tipo.creado',
+            $usuarioId,
+            'documento_tipo',
+            $id,
+            ['codigo' => $codigo, 'bloque' => $bloque],
+            ip: $ip,
+        );
+
+        return $id;
+    }
+
+    private function normalizarCodigo(string $codigo): string
+    {
+        $codigo = strtoupper(trim($codigo));
+        $codigo = preg_replace('/[^A-Z0-9_]+/', '_', $codigo) ?? '';
+        $codigo = trim($codigo, '_');
+        return substr($codigo, 0, 50);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizarFormatos(string $formatos): array
+    {
+        $parts = preg_split('/[,\s]+/', strtolower($formatos)) ?: [];
+        $parts = array_values(array_unique(array_filter(array_map('trim', $parts))));
+        if ($parts === []) {
+            throw new DomainException('Debe seleccionar al menos un formato permitido.');
+        }
+
+        foreach ($parts as $ext) {
+            if (!in_array($ext, self::FORMATOS_PERMITIDOS, true)) {
+                throw new DomainException("Formato no permitido: {$ext}.");
+            }
+        }
+
+        return $parts;
     }
 }

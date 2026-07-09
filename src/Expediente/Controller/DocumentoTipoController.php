@@ -61,6 +61,52 @@ final class DocumentoTipoController
         ]);
     }
 
+    public function create(Request $request, CsrfGuard $csrf): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        return $this->view->response('documento-tipos/create', [
+            'user' => $user,
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'input' => [
+                'bloque' => 'A',
+                'orden' => 0,
+                'obligatorio' => 1,
+                'requiere_validacion_externa' => 0,
+                'tiene_vencimiento' => 0,
+                'formatos_permitidos' => 'pdf',
+                'tamano_maximo_mb' => '10',
+                'activo' => 1,
+            ],
+        ]);
+    }
+
+    public function store(Request $request, CsrfGuard $csrf): Response
+    {
+        /** @var AuthenticatedUser $user */
+        $user = $request->attribute('auth_user');
+
+        try {
+            $this->configurarService->crear(
+                $request->post,
+                $user->id,
+                $request->clientIp(),
+            );
+            $this->flash->success('Tipo de documento creado correctamente.');
+            return Response::redirect('/configuracion/documentos');
+        } catch (DomainException $e) {
+            return $this->view->response('documento-tipos/create', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => '/configuracion/documentos/nuevo',
+                'input' => $request->post,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     public function edit(Request $request, CsrfGuard $csrf): Response
     {
         /** @var AuthenticatedUser $user */

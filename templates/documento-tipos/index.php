@@ -45,6 +45,9 @@ $e = ViewRenderer::e(...);
             <small>Catalogo de documentos exigidos por su empresa</small>
         </div>
     </div>
+    <a href="<?= $view->url('/configuracion/documentos/nuevo') ?>" class="ds-btn ds-btn-primary">
+        <i class="bi bi-plus-lg"></i>Nuevo tipo
+    </a>
 </div>
 
 <div class="ds-kpi-grid ds-kpi-grid-solid">
