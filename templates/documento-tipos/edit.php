@@ -116,7 +116,7 @@ $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
                     <span class="ds-card-mark"><i class="bi bi-clock-history"></i></span>
                     <div>
                         <div class="ds-card-title">Vigencia</div>
-                        <div class="ds-card-subtitle">Caducidad y validacion externa</div>
+                        <div class="ds-card-subtitle">Caducidad del documento</div>
                     </div>
                 </div>
                 <div class="ds-card-body">
@@ -141,16 +141,40 @@ $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
                                <?= (int) $tipo['tiene_vencimiento'] !== 1 ? 'disabled' : '' ?>>
                         <span class="ds-form-help">Vigencia predeterminada en dias desde la fecha de emision. El revisor puede sobreescribir por documento.</span>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <?php if ((int) $tipo['requiere_validacion_externa'] === 1): ?>
-                    <div class="login-info" style="margin: 0;">
-                        <i class="bi bi-globe"></i>
-                        <div>
-                            <strong>Validacion externa</strong>
-                            Este tipo requiere verificacion en sitio web oficial + capturas. La configuracion no es modificable.
+        <div class="col-12">
+            <div class="ds-card" style="margin-bottom: 0;">
+                <div class="ds-card-header tone-purple">
+                    <span class="ds-card-mark"><i class="bi bi-globe2"></i></span>
+                    <div>
+                        <div class="ds-card-title">Validacion externa</div>
+                        <div class="ds-card-subtitle">Define si este requisito necesita revision en fuentes oficiales</div>
+                    </div>
+                </div>
+                <div class="ds-card-body">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-5">
+                            <label style="display: flex; align-items: center; gap: .65rem; cursor: pointer; margin: 0;">
+                                <input type="hidden" name="requiere_validacion_externa" value="0">
+                                <input class="form-check-input" type="checkbox" name="requiere_validacion_externa" value="1"
+                                       id="chkValidacionExterna" <?= (int) $tipo['requiere_validacion_externa'] === 1 ? 'checked' : '' ?>
+                                       style="width: 2.5rem; height: 1.4rem; flex-shrink: 0;">
+                                <span style="font-weight: 700; color: var(--ds-text);">Requiere validacion externa</span>
+                            </label>
+                        </div>
+                        <div class="col-lg-7">
+                            <div class="login-info" style="margin: 0;">
+                                <i class="bi bi-shield-check"></i>
+                                <div>
+                                    <strong>Uso operativo</strong>
+                                    Si se activa, el documento se marca como requisito que debe validarse contra una fuente externa. La carga del archivo sigue disponible para el aspirante, pero la validacion la realiza solo personal con permiso de revision.
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <?php endif ?>
                 </div>
             </div>
         </div>
@@ -160,7 +184,7 @@ $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
         <i class="bi bi-info-circle"></i>
         <div>
             <strong>Campos no editables</strong>
-            El codigo, nombre, bloque y validacion externa los define el sistema. Los cambios aqui crean una configuracion propia de tu empresa que prevalece sobre la del sistema base.
+            El codigo, nombre y bloque los define el sistema. Los cambios aqui crean una configuracion propia de tu empresa que prevalece sobre la del sistema base.
         </div>
     </div>
 

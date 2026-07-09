@@ -49,6 +49,10 @@ final class ConfigurarDocumentoTipoService
             $data['obligatorio'] = (int)(bool)$input['obligatorio'];
         }
 
+        if (array_key_exists('requiere_validacion_externa', $input)) {
+            $data['requiere_validacion_externa'] = (int)(bool)$input['requiere_validacion_externa'];
+        }
+
         // Vigencia
         if (array_key_exists('tiene_vencimiento', $input)) {
             $data['tiene_vencimiento'] = (int)(bool)$input['tiene_vencimiento'];

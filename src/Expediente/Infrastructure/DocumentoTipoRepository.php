@@ -140,7 +140,7 @@ final class DocumentoTipoRepository
     /**
      * Crea un override del tenant para un tipo global, o actualiza un
      * override existente. Campos editables por tenant:
-     *   - activo, obligatorio, tiene_vencimiento, dias_vigencia, orden.
+     *   - activo, obligatorio, requiere_validacion_externa, tiene_vencimiento, dias_vigencia, orden.
      *
      * @param array<string, mixed> $data
      */
@@ -194,7 +194,7 @@ final class DocumentoTipoRepository
             'bloque' => $global['bloque'],
             'orden' => $data['orden'] ?? $global['orden'],
             'obligatorio' => $data['obligatorio'] ?? $global['obligatorio'],
-            'requiere_validacion_externa' => $global['requiere_validacion_externa'],
+            'requiere_validacion_externa' => $data['requiere_validacion_externa'] ?? $global['requiere_validacion_externa'],
             'tiene_vencimiento' => $data['tiene_vencimiento'] ?? $global['tiene_vencimiento'],
             'dias_vigencia' => $data['dias_vigencia'] ?? $global['dias_vigencia'],
             'formatos_permitidos' => $global['formatos_permitidos'],
