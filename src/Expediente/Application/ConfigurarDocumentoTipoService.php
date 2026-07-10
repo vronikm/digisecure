@@ -49,6 +49,10 @@ final class ConfigurarDocumentoTipoService
             $data['obligatorio'] = (int)(bool)$input['obligatorio'];
         }
 
+        if (array_key_exists('numero_documentos', $input)) {
+            $data['numero_documentos'] = $this->normalizarNumeroDocumentos($input['numero_documentos']);
+        }
+
         if (array_key_exists('requiere_validacion_externa', $input)) {
             $data['requiere_validacion_externa'] = (int)(bool)$input['requiere_validacion_externa'];
         }
@@ -139,6 +143,7 @@ final class ConfigurarDocumentoTipoService
             'bloque' => $bloque,
             'orden' => max(0, (int) ($input['orden'] ?? 0)),
             'obligatorio' => (int) (bool) ($input['obligatorio'] ?? false),
+            'numero_documentos' => $this->normalizarNumeroDocumentos($input['numero_documentos'] ?? 1),
             'requiere_validacion_externa' => (int) (bool) ($input['requiere_validacion_externa'] ?? false),
             'tiene_vencimiento' => $tieneVencimiento,
             'dias_vigencia' => $diasVigencia,
@@ -165,6 +170,16 @@ final class ConfigurarDocumentoTipoService
         $codigo = preg_replace('/[^A-Z0-9_]+/', '_', $codigo) ?? '';
         $codigo = trim($codigo, '_');
         return substr($codigo, 0, 50);
+    }
+
+    private function normalizarNumeroDocumentos(mixed $value): int
+    {
+        $numero = (int) $value;
+        if ($numero < 1 || $numero > 20) {
+            throw new DomainException('El numero de documentos debe estar entre 1 y 20.');
+        }
+
+        return $numero;
     }
 
     /**

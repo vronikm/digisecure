@@ -119,6 +119,14 @@ $checked = static fn(string $key, bool $default = false): string => (int) ($inpu
                                        value="<?= (int) $old('orden', 0) ?>">
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="ds-form-field">
+                                <label class="ds-form-label">Numero de documentos</label>
+                                <input type="number" name="numero_documentos" class="form-control" min="1" max="20"
+                                       value="<?= (int) $old('numero_documentos', 1) ?>">
+                                <span class="ds-form-help">Cantidad de archivos requeridos para este tipo.</span>
+                            </div>
+                        </div>
                         <div class="col-12">
                             <label style="display:flex; align-items:center; gap:.65rem; cursor:pointer; margin-bottom:.75rem;">
                                 <input type="hidden" name="activo" value="0">

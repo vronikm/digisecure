@@ -106,6 +106,13 @@ $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
                                value="<?= (int) $tipo['orden'] ?>" min="0" max="999">
                         <span class="ds-form-help">Orden dentro de su bloque (menor = primero).</span>
                     </div>
+
+                    <div class="ds-form-field" style="margin-top: 1rem;">
+                        <label class="ds-form-label">Numero de documentos</label>
+                        <input type="number" name="numero_documentos" class="form-control"
+                               value="<?= max(1, (int) ($tipo['numero_documentos'] ?? 1)) ?>" min="1" max="20">
+                        <span class="ds-form-help">Cantidad de archivos que deben cargarse para este requisito.</span>
+                    </div>
                 </div>
             </div>
         </div>

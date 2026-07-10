@@ -534,12 +534,19 @@ final class GemesegStagingProcessorService
 
         $counts = $this->db->fetchOne(
             "SELECT
-                SUM(CASE WHEN bloque = 'A' THEN 1 ELSE 0 END) AS bloque_a_total,
-                SUM(CASE WHEN bloque = 'B' THEN 1 ELSE 0 END) AS bloque_b_total
-             FROM documento_tipos
-             WHERE activo = 1
-               AND (tenant_id = :tenant_id OR tenant_id IS NULL)",
-            ['tenant_id' => $tenantId],
+                SUM(CASE WHEN dt.bloque = 'A' THEN COALESCE(dt.numero_documentos, 1) ELSE 0 END) AS bloque_a_total,
+                SUM(CASE WHEN dt.bloque = 'B' THEN COALESCE(dt.numero_documentos, 1) ELSE 0 END) AS bloque_b_total
+             FROM documento_tipos dt
+             WHERE (dt.tenant_id = :tid_outer OR dt.tenant_id IS NULL)
+               AND dt.activo = 1
+               AND dt.obligatorio = 1
+               AND NOT EXISTS (
+                   SELECT 1 FROM documento_tipos dt2
+                   WHERE dt2.tenant_id = :tid_inner
+                     AND dt2.codigo = dt.codigo
+                     AND dt.tenant_id IS NULL
+               )",
+            ['tid_outer' => $tenantId, 'tid_inner' => $tenantId],
         ) ?? [];
 
         $id = IdGenerator::ulid();

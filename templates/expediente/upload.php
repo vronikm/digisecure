@@ -2,7 +2,7 @@
 /**
  * Formulario para subir/reemplazar un documento del expediente.
  *
- * Variables: $user, $csrfToken, $currentPath, $expediente, $ficha, $tipo, $docExistente
+ * Variables: $user, $csrfToken, $currentPath, $expediente, $ficha, $tipo, $docExistente, $docsExistentes
  * Opcionales: $error (string)
  */
 
@@ -16,7 +16,24 @@ $e = ViewRenderer::e(...);
 $fichaId = $ficha['id'];
 $expId = $expediente['id'];
 $tipoId = $tipo['id'];
-$esReemplazo = $docExistente !== null;
+$docExistente = $docExistente ?? null;
+$docsExistentes = $docsExistentes ?? ($docExistente !== null ? [$docExistente] : []);
+$docsPorIndice = [];
+foreach ($docsExistentes as $docSlot) {
+    $indice = max(1, (int) ($docSlot['documento_indice'] ?? 1));
+    $docsPorIndice[$indice] ??= $docSlot;
+}
+$numeroDocumentos = max(1, (int) ($tipo['numero_documentos'] ?? 1));
+$documentosSubidos = count($docsPorIndice);
+$esReemplazo = $documentosSubidos > 0;
+$ranurasEditables = 0;
+for ($i = 1; $i <= $numeroDocumentos; $i++) {
+    $docSlot = $docsPorIndice[$i] ?? null;
+    if ($docSlot === null || (string) ($docSlot['estado'] ?? '') !== EstadoDocumento::ACEPTADO->value) {
+        $ranurasEditables++;
+    }
+}
+$todasLasRanurasAceptadas = $ranurasEditables === 0;
 $esBloqueB = (string) ($tipo['bloque'] ?? '') === 'B';
 $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
 $isAspirante = $user->esAspiranteGuardia();
@@ -24,21 +41,26 @@ $fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . 
 $guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
 $tieneVencimiento = (int) $tipo['tiene_vencimiento'] === 1;
 $diasVigencia = (int) ($tipo['dias_vigencia'] ?? 0);
-$fechaObjetivoActual = !empty($docExistente['fecha_objetivo_actualizacion'] ?? null)
-    ? date('d/m/Y', strtotime((string) $docExistente['fecha_objetivo_actualizacion']))
+$primerDocumento = array_values($docsPorIndice)[0] ?? null;
+$fechaObjetivoActual = !empty($primerDocumento['fecha_objetivo_actualizacion'] ?? null)
+    ? date('d/m/Y', strtotime((string) $primerDocumento['fecha_objetivo_actualizacion']))
     : null;
+$accept = $e(implode(',', array_map(
+    static fn($f) => '.' . ltrim(trim((string) $f), '.'),
+    explode(',', (string) $tipo['formatos_permitidos']),
+)));
 $puedeValidarDocumentos = (bool) ($puedeValidarDocumentos
     ?? ($user->tienePermiso('expedientes.validar') || $user->tienePermiso('expedientes.revisar')));
 $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
 ?>
 
-<?php $view->section('title') ?><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento - DigiSecure<?php $view->endSection() ?>
+<?php $view->section('title') ?><?= $todasLasRanurasAceptadas ? 'Ver' : ($esReemplazo ? 'Reemplazar' : 'Subir') ?> documento - DigiSecure<?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>"><?= $e($guardiasLabel) ?></a></li>
 <li class="breadcrumb-item"><a href="<?= $view->url($fichaUrl) ?>"><?= $e($ficha['correlativo']) ?></a></li>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>">Expediente</a></li>
-<li class="breadcrumb-item active"><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?></li>
+<li class="breadcrumb-item active"><?= $todasLasRanurasAceptadas ? 'Ver' : ($esReemplazo ? 'Reemplazar' : 'Subir') ?></li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
@@ -46,7 +68,7 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
     <div class="ds-page-title">
         <span class="ds-page-mark"><i class="bi bi-cloud-upload"></i></span>
         <div>
-            <h1><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento</h1>
+            <h1><?= $todasLasRanurasAceptadas ? 'Documento aceptado' : ($esReemplazo ? 'Reemplazar' : 'Subir') ?> documento</h1>
             <small style="display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;">
                 <span class="ds-badge <?= $bloqueTone ?> no-dot">Bloque <?= $e((string) $tipo['bloque']) ?></span>
                 <strong style="color: var(--ds-text);"><?= $e($tipo['nombre']) ?></strong>
@@ -72,12 +94,20 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
 </div>
 <?php endif ?>
 
-<?php if ($esReemplazo): ?>
+<?php if ($todasLasRanurasAceptadas): ?>
+<div class="login-info" style="margin-bottom: 1.25rem;">
+    <i class="bi bi-lock"></i>
+    <div>
+        <strong>Documento aceptado en solo lectura</strong>
+        Este requisito ya fue aceptado. Puedes ver los archivos cargados, pero no reemplazarlos.
+    </div>
+</div>
+<?php elseif ($esReemplazo): ?>
 <div class="login-info" style="margin-bottom: 1.25rem;">
     <i class="bi bi-info-circle"></i>
     <div>
-        <strong>Reemplazo de documento</strong>
-        Ya existe un documento de este tipo (<span class="ds-cell-mono"><?= $e($docExistente['archivo_nombre_original'] ?? 'archivo') ?></span>, estado: <?= $e(EstadoDocumento::from($docExistente['estado'])->label()) ?>). Al subir uno nuevo se reemplazará el anterior.
+        <strong>Documentos cargados</strong>
+        Este requisito tiene <?= (int) $documentosSubidos ?> de <?= (int) $numeroDocumentos ?> archivo(s) cargado(s). Solo las ranuras no aceptadas pueden corregirse o reemplazarse.
     </div>
 </div>
 <?php endif ?>
@@ -115,6 +145,10 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                     <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
                         <i class="bi bi-file-earmark" style="width: 1rem;"></i>
                         Formatos: <strong style="color: var(--ds-text);"><?= $e($tipo['formatos_permitidos']) ?></strong>
+                    </li>
+                    <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
+                        <i class="bi bi-files" style="width: 1rem;"></i>
+                        Numero de archivos: <strong style="color: var(--ds-text);"><?= (int) $numeroDocumentos ?></strong>
                     </li>
                     <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
                         <i class="bi bi-hdd" style="width: 1rem;"></i>
@@ -156,18 +190,54 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
         <div class="ds-card-body">
             <div class="row g-3">
                 <div class="col-md-8">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Seleccionar archivo <span class="ds-required">*</span></label>
-                        <input type="file" name="archivo" class="form-control" required
-                               accept="<?= $e(implode(',', array_map(fn($f) => '.' . trim($f), explode(',', $tipo['formatos_permitidos'])))) ?>">
-                        <span class="ds-form-help">Solo se aceptan los formatos indicados arriba.</span>
+                    <div class="row g-3">
+                        <?php for ($i = 1; $i <= $numeroDocumentos; $i++):
+                            $docSlot = $docsPorIndice[$i] ?? null;
+                            $slotEstado = $docSlot ? EstadoDocumento::from((string) $docSlot['estado']) : null;
+                            $slotAceptado = $slotEstado === EstadoDocumento::ACEPTADO;
+                        ?>
+                        <div class="col-12">
+                            <div class="ds-form-field">
+                                <label class="ds-form-label">
+                                    Archivo <?= $i ?> de <?= (int) $numeroDocumentos ?>
+                                    <?php if (!$slotAceptado && $numeroDocumentos === 1 && !$docSlot): ?><span class="ds-required">*</span><?php endif ?>
+                                </label>
+                                <?php if ($docSlot): ?>
+                                    <div class="login-info" style="margin: 0 0 .5rem; padding: .65rem .75rem;">
+                                        <i class="bi <?= $slotEstado?->iconClass() ?? 'bi-file-earmark' ?>"></i>
+                                        <div>
+                                            <strong><?= $e((string) ($docSlot['archivo_nombre_original'] ?? 'Archivo cargado')) ?></strong>
+                                            <span class="ds-cell-sub">Estado: <?= $e($slotEstado?->label() ?? 'Cargado') ?></span>
+                                        </div>
+                                        <a href="<?= $view->url('/expedientes/documento/' . $docSlot['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm" style="margin-left:auto;">
+                                            Ver
+                                        </a>
+                                    </div>
+                                <?php endif ?>
+                                <?php if ($slotAceptado): ?>
+                                <div class="ds-form-help" style="display:flex; align-items:center; gap:.35rem; color:#047857;">
+                                    <i class="bi bi-lock"></i>
+                                    Archivo aceptado. No se permite reemplazar esta posicion.
+                                </div>
+                                <?php else: ?>
+                                <input type="file" name="archivo_<?= $i ?>" class="form-control"
+                                       <?= $numeroDocumentos === 1 && !$docSlot ? 'required' : '' ?>
+                                       accept="<?= $accept ?>">
+                                <span class="ds-form-help">
+                                    <?= $docSlot ? 'Selecciona un archivo solo si deseas reemplazar esta posicion.' : 'Carga el archivo correspondiente a esta posicion.' ?>
+                                </span>
+                                <?php endif ?>
+                            </div>
+                        </div>
+                        <?php endfor ?>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Fecha emisión del documento</label>
                         <input type="date" name="fecha_emision_documento" class="form-control"
-                               value="<?= $e($docExistente['fecha_emision_documento'] ?? '') ?>">
+                               value="<?= $e($primerDocumento['fecha_emision_documento'] ?? '') ?>"
+                               <?= $todasLasRanurasAceptadas ? 'disabled' : '' ?>>
                     </div>
                 </div>
 
@@ -176,7 +246,8 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                     <div class="ds-form-field">
                         <label class="ds-form-label">Fecha vencimiento del documento</label>
                         <input type="date" name="fecha_vencimiento" class="form-control"
-                               value="<?= $e($docExistente['fecha_vencimiento'] ?? '') ?>">
+                               value="<?= $e($primerDocumento['fecha_vencimiento'] ?? '') ?>"
+                               <?= $todasLasRanurasAceptadas ? 'disabled' : '' ?>>
                         <span class="ds-form-help">Opcional. Usala si el documento ya trae una fecha impresa.</span>
                     </div>
                 </div>
@@ -199,7 +270,8 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                 <label class="ds-form-label">URL del sitio donde se verifico</label>
                 <input type="url" name="validacion_url" class="form-control"
                        placeholder="https://..."
-                       value="<?= $e($docExistente['validacion_url'] ?? '') ?>">
+                       value="<?= $e($primerDocumento['validacion_url'] ?? '') ?>"
+                       <?= $todasLasRanurasAceptadas ? 'disabled' : '' ?>>
             </div>
             <div class="login-info" style="margin: 0;">
                 <i class="bi bi-info-circle"></i>
@@ -214,9 +286,15 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
 
     <div class="ds-form-actions">
         <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="ds-btn ds-btn-outline">Cancelar</a>
+        <?php if ($ranurasEditables > 0): ?>
         <button type="submit" class="ds-btn ds-btn-primary">
-            <i class="bi bi-cloud-upload"></i><?= $autoAceptaBloqueB ? ($esReemplazo ? 'Reemplazar y aceptar' : 'Subir y aceptar') : ($esReemplazo ? 'Reemplazar documento' : 'Subir documento') ?>
+            <i class="bi bi-cloud-upload"></i><?= $autoAceptaBloqueB ? ($esReemplazo ? 'Cargar y aceptar cambios' : 'Subir y aceptar') : ($esReemplazo ? 'Guardar cambios' : ($numeroDocumentos > 1 ? 'Subir documentos' : 'Subir documento')) ?>
         </button>
+        <?php else: ?>
+        <button type="button" class="ds-btn ds-btn-primary" disabled style="opacity:.65;">
+            <i class="bi bi-lock"></i>Solo lectura
+        </button>
+        <?php endif ?>
     </div>
 </form>
 <?php $view->endSection() ?>
