@@ -41,8 +41,11 @@ if (!$user instanceof AuthenticatedUser) {
 
 $e = ViewRenderer::e(...);
 $pageTitle = $view->yieldSection('title', 'DigiSecure');
+$isGuardiaMenu = $user->esAspiranteGuardia();
+$homeUrl = $isGuardiaMenu ? '/guardias' : '/dashboard';
+$menuSearchPlaceholder = $isGuardiaMenu ? 'Buscar ficha o documento' : 'Buscar modulo o accion';
 $menuPermisos = $user->permisos;
-if ($user->esAspiranteGuardia()) {
+if ($isGuardiaMenu) {
     $menuPermisos = array_values(array_unique(array_merge(
         $menuPermisos,
         ['guardias.ver', 'guardias.crear', 'guardias.editar', 'expedientes.ver', 'expedientes.cargar'],
@@ -56,6 +59,7 @@ $sectionMetaMap = [
     'Configuracion' => ['icon' => 'bi-sliders2', 'accent' => '#00a86b', 'soft' => 'rgba(0, 168, 107, 0.18)'],
     'Privacidad' => ['icon' => 'bi-shield-lock', 'accent' => '#e76f51', 'soft' => 'rgba(231, 111, 81, 0.18)'],
     'Plataforma' => ['icon' => 'bi-grid-1x2-fill', 'accent' => '#6f42c1', 'soft' => 'rgba(111, 66, 193, 0.18)'],
+    'Mi gestion' => ['icon' => 'bi-person-vcard', 'accent' => '#0ea5a4', 'soft' => 'rgba(14, 165, 164, 0.18)'],
 ];
 
 $menuSections = [];
@@ -77,6 +81,25 @@ foreach (MenuBuilder::build() as $entry) {
     }
 
     $item = $entry['item'];
+    if ($isGuardiaMenu && $currentSectionLabel === 'Inicio') {
+        continue;
+    }
+    if ($isGuardiaMenu && $item->url === '/dashboard') {
+        continue;
+    }
+    if ($isGuardiaMenu && $item->url === '/guardias') {
+        $item = new MenuItem(
+            label: 'Fichas',
+            icon: 'bi-person-vcard',
+            url: '/guardias',
+            permisos: $item->permisos,
+            children: $item->children,
+            badge: $item->badge,
+            badgeClass: $item->badgeClass,
+            description: 'Mi ficha y expediente documental',
+            activeWhenPrefixes: ['/guardias/'],
+        );
+    }
     $isVisible = $item->isVisibleFor($menuPermisos);
     $hasVisibleChildren = $item->children === [] || $item->hasVisibleChildren($menuPermisos);
     if (!$isVisible || !$hasVisibleChildren) {
@@ -84,6 +107,9 @@ foreach (MenuBuilder::build() as $entry) {
     }
 
     $sectionLabel = $currentSectionLabel ?? 'General';
+    if ($isGuardiaMenu && $sectionLabel === 'Operacion') {
+        $sectionLabel = 'Mi gestion';
+    }
     $menuSections[$sectionLabel] ??= [
         'label' => $sectionLabel,
         'meta' => $sectionMetaMap[$sectionLabel] ?? ['icon' => 'bi-grid', 'accent' => '#2e86de', 'soft' => 'rgba(46, 134, 222, 0.18)'],
@@ -215,7 +241,7 @@ $normalizeMenuSearch = static function (array $parts): string {
         <i class="bi bi-list fs-3"></i>
     </button>
 
-    <a href="<?= $view->url('/dashboard') ?>" class="brand">
+    <a href="<?= $view->url($homeUrl) ?>" class="brand">
         <img class="ds-brand-logo" src="<?= $view->url('/assets/img/logoGemeseg.png') ?>?v=1"
              alt="<?= $e($user->tenantNombre) ?>" title="<?= $e($user->tenantNombre) ?>">
         <span class="ds-brand-copy">
@@ -328,13 +354,13 @@ $normalizeMenuSearch = static function (array $parts): string {
 
 <aside class="ds-sidebar">
     <div class="ds-sidebar-inner">
-        <a href="<?= $view->url('/dashboard') ?>" class="ds-sidebar-brand" title="<?= $e($user->tenantNombre) ?>">
+        <a href="<?= $view->url($homeUrl) ?>" class="ds-sidebar-brand" title="<?= $e($user->tenantNombre) ?>">
             <img src="<?= $view->url('/assets/img/logoGemeseg.png') ?>?v=1" alt="<?= $e($user->tenantNombre) ?>">
         </a>
         <div class="ds-sidebar-profile">
             <label class="ds-search-wrap" for="ds-menu-search">
                 <i class="bi bi-search"></i>
-                <input id="ds-menu-search" type="search" placeholder="Buscar modulo o accion" autocomplete="off">
+                <input id="ds-menu-search" type="search" placeholder="<?= $e($menuSearchPlaceholder) ?>" autocomplete="off">
             </label>
         </div>
 
