@@ -70,7 +70,7 @@ final class Authenticator
         // 2. Buscar usuario (puede estar en cualquier tenant)
         $usuario = $this->db->fetchOne(
             'SELECT u.id, u.tenant_id, u.email, u.password_hash, u.nombres, u.apellidos,
-                    u.estado, u.intentos_fallidos, u.bloqueado_hasta, u.debe_cambiar_password
+                    u.cargo, u.estado, u.intentos_fallidos, u.bloqueado_hasta, u.debe_cambiar_password
              FROM usuarios u
              WHERE u.email_normalizado = :email_normalizado',
             ['email_normalizado' => $emailNorm],
@@ -150,6 +150,7 @@ final class Authenticator
             email: $usuario['email'],
             nombres: $usuario['nombres'],
             apellidos: $usuario['apellidos'],
+            cargo: (string) ($usuario['cargo'] ?? ''),
             estado: $usuario['estado'],
             tenantNombre: $usuario['tenant_nombre'],
             tenantEstado: $usuario['tenant_estado'],
@@ -224,9 +225,21 @@ final class Authenticator
         $lastSyncAt = (int) $this->session->get(self::SESSION_USER_SYNC_AT_KEY, 0);
         $now = time();
 
-        if (($now - $lastSyncAt) < self::SESSION_USER_SYNC_INTERVAL_SECONDS) {
+        if (($now - $lastSyncAt) < self::SESSION_USER_SYNC_INTERVAL_SECONDS && $user->cargo !== '') {
             return $user;
         }
+
+        $usuario = $this->db->fetchOne(
+            'SELECT cargo, estado
+               FROM usuarios
+              WHERE id = :usuario_id
+                AND tenant_id = :tenant_id
+              LIMIT 1',
+            [
+                'usuario_id' => $user->id,
+                'tenant_id' => $user->tenantId,
+            ],
+        );
 
         $permisos = array_column($this->db->fetchAll(
             'SELECT DISTINCT p.codigo
@@ -256,7 +269,10 @@ final class Authenticator
 
         $this->session->set(self::SESSION_USER_SYNC_AT_KEY, $now);
 
-        if ($permisos === $user->permisos && $roles === $user->roles) {
+        $cargo = (string) ($usuario['cargo'] ?? $user->cargo);
+        $estado = (string) ($usuario['estado'] ?? $user->estado);
+
+        if ($permisos === $user->permisos && $roles === $user->roles && $cargo === $user->cargo && $estado === $user->estado) {
             return $user;
         }
 
@@ -266,7 +282,8 @@ final class Authenticator
             email: $user->email,
             nombres: $user->nombres,
             apellidos: $user->apellidos,
-            estado: $user->estado,
+            cargo: $cargo,
+            estado: $estado,
             tenantNombre: $user->tenantNombre,
             tenantEstado: $user->tenantEstado,
             permisos: $permisos,

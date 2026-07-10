@@ -17,7 +17,7 @@ $e = ViewRenderer::e(...);
 $estado = EstadoExpediente::from($expediente['estado']);
 $fichaId = $ficha['id'];
 $expId = $expediente['id'];
-$isAspirante = $user->tieneRol('aspirante');
+$isAspirante = $user->esAspiranteGuardia();
 $fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
 $guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
 

@@ -15,41 +15,46 @@ final class LoginRedirectGuard
     public function resolve(string $returnTo, AuthenticatedUser $user): string
     {
         $candidate = trim($returnTo);
+        $default = $user->esAspiranteGuardia() ? '/guardias' : '/dashboard';
 
         if ($candidate === '') {
-            return '/dashboard';
+            return $default;
         }
 
         if ($candidate === '/' || $candidate === '\\') {
-            return '/dashboard';
+            return $default;
         }
 
         if ($candidate === null || $candidate === '0') {
-            return '/dashboard';
+            return $default;
         }
 
         if (str_contains($candidate, "\0")) {
-            return '/dashboard';
+            return $default;
         }
 
         if (!str_starts_with($candidate, '/')) {
-            return '/dashboard';
+            return $default;
         }
 
         if (str_starts_with($candidate, '//')) {
-            return '/dashboard';
+            return $default;
         }
 
         if (preg_match('#^[a-z]+://#i', $candidate) === 1) {
-            return '/dashboard';
+            return $default;
         }
 
         if (str_contains($candidate, '../')) {
-            return '/dashboard';
+            return $default;
         }
 
         if (str_starts_with($candidate, '/admin') && !$user->tienePermiso('superadmin.panel')) {
-            return '/dashboard';
+            return $default;
+        }
+
+        if ($user->esAspiranteGuardia() && !str_starts_with($candidate, '/guardias') && !str_starts_with($candidate, '/expedientes/documento/')) {
+            return $default;
         }
 
         return $candidate;

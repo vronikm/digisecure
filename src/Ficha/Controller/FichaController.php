@@ -69,7 +69,7 @@ final class FichaController
         $busqueda = trim((string) $request->query('q', ''));
         $filters = [];
 
-        if ($user->tieneRol('aspirante')) {
+        if ($user->esAspiranteGuardia()) {
             $ficha = $this->aspiranteFicha($user);
             $guardias = [];
             if ($ficha !== null) {
@@ -232,7 +232,7 @@ final class FichaController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
-        if ($user->tieneRol('aspirante')) {
+        if ($user->esAspiranteGuardia()) {
             $fichaAspirante = $this->aspiranteFicha($user);
             if ($fichaAspirante !== null && !empty($fichaAspirante['id'])) {
                 return Response::redirect($this->securePath($request, '/guardias/' . (string) $fichaAspirante['id'] . '/editar'));
@@ -242,7 +242,7 @@ final class FichaController
         $cursos = $this->loadCatalogoCursos();
         $input = [];
         $prefillFromLast = false;
-        $baseFichaId = trim((string) $request->query('base_ficha', ''));
+        $baseFichaId = $user->esAspiranteGuardia() ? '' : trim((string) $request->query('base_ficha', ''));
         if ($baseFichaId !== '') {
             $input = $this->buildCreatePrefillFromFicha($baseFichaId);
             $prefillFromLast = $input !== [];
@@ -272,12 +272,25 @@ final class FichaController
 
     public function prefillByCedula(Request $request): Response
     {
+        /** @var AuthenticatedUser|null $user */
+        $user = $request->attribute('auth_user');
         $cedulaRaw = preg_replace('/\D+/', '', (string) $request->query('cedula', '')) ?? '';
         if (strlen($cedulaRaw) !== 10) {
             return Response::json([
                 'found' => false,
                 'error' => 'cedula_invalida',
             ], Response::STATUS_BAD_REQUEST);
+        }
+
+        if ($user instanceof AuthenticatedUser && $user->esAspiranteGuardia()) {
+            $registro = $this->aspiranteRegistroLock($user);
+            $documento = (string) ($registro['input']['cedula'] ?? '');
+            if ($documento !== '' && $documento !== $cedulaRaw) {
+                return Response::json([
+                    'found' => false,
+                    'tipo_ficha' => TipoFicha::INGRESO->value,
+                ]);
+            }
         }
 
         $cedulaHash = hash('sha256', $cedulaRaw);
@@ -327,7 +340,7 @@ final class FichaController
         $user = $request->attribute('auth_user');
         $input = $request->post;
 
-        if ($user->tieneRol('aspirante')) {
+        if ($user->esAspiranteGuardia()) {
             $fichaAspirante = $this->aspiranteFicha($user);
             if ($fichaAspirante !== null && !empty($fichaAspirante['id'])) {
                 $this->flash->info('Ya tienes una ficha registrada. Puedes actualizarla y cargar tu expediente documental.');
@@ -338,7 +351,7 @@ final class FichaController
         try {
             $this->verificarLimiteCrearGuardia();
             $result = $this->crearFichaService()->execute($input, $user->id, $request->clientIp());
-            $isAspirante = $user->tieneRol('aspirante');
+            $isAspirante = $user->esAspiranteGuardia();
             $this->flash->success($isAspirante
                 ? 'Ficha guardada correctamente. Ya puedes cargar tu expediente documental.'
                 : 'Ficha de guardia creada correctamente.'
@@ -870,7 +883,7 @@ final class FichaController
      */
     private function aspiranteFicha(AuthenticatedUser $user): ?array
     {
-        if (!$user->tieneRol('aspirante')) {
+        if (!$user->esAspiranteGuardia()) {
             return null;
         }
 
@@ -895,7 +908,7 @@ final class FichaController
      */
     private function aspirantePuedeAccederFicha(AuthenticatedUser $user, ?array $ficha): bool
     {
-        if (!$user->tieneRol('aspirante')) {
+        if (!$user->esAspiranteGuardia()) {
             return true;
         }
 
@@ -912,7 +925,7 @@ final class FichaController
 
     private function aspirantePuedeAccederFichaId(AuthenticatedUser $user, string $fichaId): bool
     {
-        if (!$user->tieneRol('aspirante')) {
+        if (!$user->esAspiranteGuardia()) {
             return true;
         }
 
@@ -930,7 +943,7 @@ final class FichaController
      */
     private function aspiranteRegistroLock(AuthenticatedUser $user): ?array
     {
-        if (!$user->tieneRol('aspirante')) {
+        if (!$user->esAspiranteGuardia()) {
             return null;
         }
 

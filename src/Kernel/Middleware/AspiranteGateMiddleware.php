@@ -49,7 +49,7 @@ final class AspiranteGateMiddleware implements MiddlewareInterface
     {
         $user = $request->attribute('auth_user');
 
-        if (!$user instanceof AuthenticatedUser || !$user->tieneRol('aspirante')) {
+        if (!$user instanceof AuthenticatedUser || !$user->esAspiranteGuardia()) {
             return $next->handle($request);
         }
 

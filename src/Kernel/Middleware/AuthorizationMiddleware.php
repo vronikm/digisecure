@@ -65,7 +65,7 @@ final class AuthorizationMiddleware implements MiddlewareInterface
 
     private function permiteFlujoAspirante(AuthenticatedUser $user, string $requiredPermission, string $path): bool
     {
-        if (!$user->tieneRol('aspirante')) {
+        if (!$user->esAspiranteGuardia()) {
             return false;
         }
 

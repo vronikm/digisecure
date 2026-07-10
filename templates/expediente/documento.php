@@ -17,7 +17,7 @@ $fichaId = $ficha['id'];
 $docEstado = EstadoDocumento::from($doc['estado']);
 $puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocumento::RECHAZADO, EstadoDocumento::VENCIDO]);
 $puedeValidarDocumentos = $user->tienePermiso('expedientes.validar') || $user->tienePermiso('expedientes.revisar');
-$isAspirante = $user->tieneRol('aspirante');
+$isAspirante = $user->esAspiranteGuardia();
 $fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
 $guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
 

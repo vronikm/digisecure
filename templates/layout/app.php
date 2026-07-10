@@ -30,6 +30,7 @@ if (!$user instanceof AuthenticatedUser) {
         email: '',
         nombres: 'Usuario',
         apellidos: '',
+        cargo: '',
         estado: 'inactivo',
         tenantNombre: '-',
         tenantEstado: 'inactivo',
@@ -40,6 +41,13 @@ if (!$user instanceof AuthenticatedUser) {
 
 $e = ViewRenderer::e(...);
 $pageTitle = $view->yieldSection('title', 'DigiSecure');
+$menuPermisos = $user->permisos;
+if ($user->esAspiranteGuardia()) {
+    $menuPermisos = array_values(array_unique(array_merge(
+        $menuPermisos,
+        ['guardias.ver', 'guardias.crear', 'guardias.editar', 'expedientes.ver', 'expedientes.cargar'],
+    )));
+}
 
 $sectionMetaMap = [
     'Inicio' => ['icon' => 'bi-house-door', 'accent' => '#2f80ed', 'soft' => 'rgba(47, 128, 237, 0.18)'],
@@ -69,8 +77,8 @@ foreach (MenuBuilder::build() as $entry) {
     }
 
     $item = $entry['item'];
-    $isVisible = $item->isVisibleFor($user->permisos);
-    $hasVisibleChildren = $item->children === [] || $item->hasVisibleChildren($user->permisos);
+    $isVisible = $item->isVisibleFor($menuPermisos);
+    $hasVisibleChildren = $item->children === [] || $item->hasVisibleChildren($menuPermisos);
     if (!$isVisible || !$hasVisibleChildren) {
         continue;
     }
@@ -352,7 +360,7 @@ $normalizeMenuSearch = static function (array $parts): string {
                         $visibleChildren = [];
                         $childSearch = [];
                         foreach ($item->children as $child) {
-                            if (!$child->isVisibleFor($user->permisos)) {
+                            if (!$child->isVisibleFor($menuPermisos)) {
                                 continue;
                             }
                             $childSearchText = $normalizeMenuSearch([

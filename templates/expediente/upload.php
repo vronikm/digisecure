@@ -18,7 +18,7 @@ $expId = $expediente['id'];
 $tipoId = $tipo['id'];
 $esReemplazo = $docExistente !== null;
 $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
-$isAspirante = $user->tieneRol('aspirante');
+$isAspirante = $user->esAspiranteGuardia();
 $fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
 $guardiasLabel = $isAspirante ? 'Mi ficha' : 'Guardias';
 $tieneVencimiento = (int) $tipo['tiene_vencimiento'] === 1;

@@ -80,7 +80,7 @@ $input['referencias'] = array_values(is_array($referenciasInput) ? $referenciasI
 $input['cursos'] = array_values(is_array($cursosInput) ? $cursosInput : []);
 
 $label = $correlativo !== '' ? "Editar Ficha {$correlativo}" : 'Editar Ficha';
-$isAspirante = $user->tieneRol('aspirante');
+$isAspirante = $user->esAspiranteGuardia();
 $backUrl = $isAspirante ? '/guardias' : ($fichaId !== '' ? "/guardias/{$fichaId}" : '/guardias');
 $actionUrl = $fichaId !== '' ? "/guardias/{$fichaId}/editar" : '/guardias/crear';
 

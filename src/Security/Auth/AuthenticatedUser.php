@@ -22,6 +22,7 @@ final readonly class AuthenticatedUser
         public string $email,
         public string $nombres,
         public string $apellidos,
+        public string $cargo,
         public string $estado,
         public string $tenantNombre,
         public string $tenantEstado,
@@ -65,6 +66,16 @@ final readonly class AuthenticatedUser
         return false;
     }
 
+    public function esAspiranteGuardia(): bool
+    {
+        if ($this->tieneRol('aspirante')) {
+            return true;
+        }
+
+        $cargo = mb_strtolower(trim(preg_replace('/\s+/', ' ', $this->cargo) ?? ''), 'UTF-8');
+        return $cargo === 'aspirante (guardia)';
+    }
+
     public function rolPrincipal(): string
     {
         return $this->roles[0]['codigo'] ?? 'sin_rol';
@@ -81,6 +92,7 @@ final readonly class AuthenticatedUser
             'email' => $this->email,
             'nombres' => $this->nombres,
             'apellidos' => $this->apellidos,
+            'cargo' => $this->cargo,
             'estado' => $this->estado,
             'tenant_nombre' => $this->tenantNombre,
             'tenant_estado' => $this->tenantEstado,
@@ -100,6 +112,7 @@ final readonly class AuthenticatedUser
             email: $data['email'],
             nombres: $data['nombres'],
             apellidos: $data['apellidos'],
+            cargo: (string) ($data['cargo'] ?? ''),
             estado: $data['estado'],
             tenantNombre: $data['tenant_nombre'],
             tenantEstado: $data['tenant_estado'],

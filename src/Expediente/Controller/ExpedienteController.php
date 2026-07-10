@@ -390,7 +390,7 @@ final class ExpedienteController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        if ($user->tieneRol('aspirante')) {
+        if ($user->esAspiranteGuardia()) {
             return $this->view->response('errors/403', [], 403);
         }
 
@@ -460,7 +460,7 @@ final class ExpedienteController
      */
     private function aspirantePuedeAccederFicha(AuthenticatedUser $user, ?array $ficha): bool
     {
-        if (!$user->tieneRol('aspirante')) {
+        if (!$user->esAspiranteGuardia()) {
             return true;
         }
 
