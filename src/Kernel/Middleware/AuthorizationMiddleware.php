@@ -44,6 +44,10 @@ final class AuthorizationMiddleware implements MiddlewareInterface
         }
 
         if (!$user->tienePermiso($requiredPermission)) {
+            if ($this->permitePermisoImplicito($user, (string) $requiredPermission)) {
+                return $next->handle($request);
+            }
+
             if ($this->permiteFlujoAspirante($user, (string) $requiredPermission, $request->path)) {
                 return $next->handle($request);
             }
@@ -61,6 +65,14 @@ final class AuthorizationMiddleware implements MiddlewareInterface
         }
 
         return $next->handle($request);
+    }
+
+    private function permitePermisoImplicito(AuthenticatedUser $user, string $requiredPermission): bool
+    {
+        return match ($requiredPermission) {
+            'expedientes.ver' => $user->tieneAlgunPermiso('expedientes.validar', 'expedientes.revisar'),
+            default => false,
+        };
     }
 
     private function permiteFlujoAspirante(AuthenticatedUser $user, string $requiredPermission, string $path): bool

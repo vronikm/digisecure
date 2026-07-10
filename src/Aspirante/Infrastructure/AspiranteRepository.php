@@ -314,11 +314,19 @@ class AspiranteRepository
     {
         [$where, $bind] = $this->whereAdmin($filtros);
 
-        $sql = "SELECT id, tipo_documento, documento, nombres, apellidos, correo, celular,
-                       estado, email_verificado, usuario_id, created_at
-                  FROM aspirantes
+        $sql = "SELECT a.id, a.tipo_documento, a.documento, a.nombres, a.apellidos, a.correo, a.celular,
+                       a.estado, a.email_verificado, a.usuario_id, a.created_at,
+                       (
+                           SELECT f.id
+                             FROM fichas f
+                            WHERE f.created_by = a.usuario_id
+                              AND f.estado <> 'ANULADA'
+                            ORDER BY f.created_at DESC
+                            LIMIT 1
+                       ) AS ficha_id
+                  FROM aspirantes a
                  {$where}
-                 ORDER BY created_at DESC
+                 ORDER BY a.created_at DESC
                  LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
 
         return $this->db->fetchAll($sql, $bind);

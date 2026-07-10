@@ -213,6 +213,8 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                 <?php foreach ($aspirantes as $a):
                     $tone = $estadoTone[$a['estado']] ?? 'tone-muted';
                     $verificado = (int) $a['email_verificado'] === 1;
+                    $fichaId = trim((string) ($a['ficha_id'] ?? ''));
+                    $puedeAbrirExpediente = $fichaId !== '' && $user->tieneAlgunPermiso('expedientes.ver', 'expedientes.validar', 'expedientes.revisar');
                 ?>
                 <tr>
                     <td>
@@ -237,7 +239,22 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                     </td>
                     <td><span class="ds-badge <?= $tone ?>"><?= $e($estadoLabel[$a['estado']] ?? (string) $a['estado']) ?></span></td>
                     <td class="ds-cell-end">
-                        <a href="<?= $view->url('/reclutamiento/' . $a['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm">Revisar</a>
+                        <div class="ds-row-actions">
+                            <a href="<?= $view->url('/reclutamiento/' . $a['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm">Revisar</a>
+                            <?php if ($puedeAbrirExpediente): ?>
+                                <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
+                                    <i class="bi bi-folder-check"></i>Validar documentos
+                                </a>
+                            <?php elseif ($fichaId === ''): ?>
+                                <span class="ds-btn ds-btn-ghost ds-btn-sm is-disabled" title="El aspirante aun no ha creado su ficha.">
+                                    <i class="bi bi-folder-x"></i>Sin expediente
+                                </span>
+                            <?php else: ?>
+                                <span class="ds-btn ds-btn-ghost ds-btn-sm is-disabled" title="Tu usuario necesita permiso para ver o validar expedientes.">
+                                    <i class="bi bi-lock"></i>Validar documentos
+                                </span>
+                            <?php endif ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach ?>
