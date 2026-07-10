@@ -132,16 +132,17 @@ final class CompletarFichaService
             $incumplimientos[] = 'No se registró ningún trabajo anterior (mínimo 1 año de experiencia).';
         }
 
-        // 5. Consentimiento LOPDP vigente (Art. 7 LOPDP Ecuador)
-        if ($this->consentManager !== null) {
-            $tieneConsent = $this->consentManager->tieneConsentimientoVigente(
+        // 5. Consentimiento LOPDP vigente o autorizacion firmada en expediente.
+        $tieneConsentimientoHistorico = $this->consentManager !== null
+            && $this->consentManager->tieneConsentimientoVigente(
                 'guardia',
                 $fichaId,
                 'tratamiento_datos_basico',
             );
-            if (!$tieneConsent) {
-                $incumplimientos[] = 'El guardia no ha firmado el consentimiento LOPDP de tratamiento de datos personales.';
-            }
+        $tieneAutorizacionEnExpediente = $this->fichaRepo->tieneAutorizacionLopdpCargada($fichaId);
+
+        if (!$tieneConsentimientoHistorico && !$tieneAutorizacionEnExpediente) {
+            $incumplimientos[] = 'El guardia no ha firmado el consentimiento LOPDP de tratamiento de datos personales.';
         }
 
         return $incumplimientos;

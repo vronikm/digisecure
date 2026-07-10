@@ -1,7 +1,7 @@
 <?php
 /**
  * =====================================================================
- * DigiSecure - Sincronizador IDEMPOTENTE del schema de Aspirantes (021-025)
+ * DigiSecure - Sincronizador IDEMPOTENTE del schema de Aspirantes (021-025, 029)
  * =====================================================================
  *
  * Aplica SOLO lo que falte del flujo de registro de guardias/aspirantes:
@@ -10,6 +10,7 @@
  *   - 024: usuario_id (+FK), aprobado_at, revisado_por, motivo_descarte,
  *          estado 'aprobado', permiso aspirantes.gestionar (+grants)
  *   - 025: estado 'aspirante', tabla aspirante_eventos, rol 'aspirante' (+grant)
+ *   - 029: trazabilidad LOPDP del registro publico y del documento subido
  *
  * Es SEGURO ejecutarlo varias veces: cada paso verifica antes de aplicar.
  * Úsalo cuando el runner de migraciones esté bloqueado (checksum drift) pero
@@ -75,6 +76,10 @@ $enumHas = static fn(string $t, string $c, string $v): bool => str_contains(
 $fk = static fn(string $name): bool => (int) $db->fetchScalar(
     "SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = :s AND CONSTRAINT_NAME = :n AND CONSTRAINT_TYPE = 'FOREIGN KEY'",
     ['s' => $schema, 'n' => $name],
+) > 0;
+$idx = static fn(string $t, string $i): bool => (int) $db->fetchScalar(
+    "SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = :s AND TABLE_NAME = :t AND INDEX_NAME = :i",
+    ['s' => $schema, 't' => $t, 'i' => $i],
 ) > 0;
 
 $done = [];
@@ -180,10 +185,102 @@ $step('025 rol aspirante (+grant guardias.crear)', function () use ($db) {
     return true;
 });
 
-// ---- Registrar migraciones 021-025 en la tabla `migraciones` (idempotente) ----
-echo "\nRegistrando migraciones 021-025 en `migraciones`...\n";
+// ---- 029: trazabilidad LOPDP ----
+$step('029 columnas trazabilidad LOPDP', function () use ($db, $col) {
+    $changed = false;
+    $addColumn = static function (string $column, string $ddl) use ($db, $col, &$changed): void {
+        if ($col('aspirantes', $column)) {
+            return;
+        }
+
+        $db->rawExec("ALTER TABLE aspirantes ADD COLUMN {$ddl}");
+        $changed = true;
+    };
+
+    $addColumn('politicas_aceptadas_at', 'politicas_aceptadas_at DATETIME(6) NULL AFTER politicas_version');
+    $addColumn('politicas_aceptadas_desde', 'politicas_aceptadas_desde VARCHAR(80) NULL AFTER politicas_aceptadas_at');
+    $addColumn('politicas_aceptadas_ruta', 'politicas_aceptadas_ruta VARCHAR(255) NULL AFTER politicas_aceptadas_desde');
+    $addColumn('politicas_aceptadas_ip', 'politicas_aceptadas_ip VARBINARY(16) NULL AFTER politicas_aceptadas_ruta');
+    $addColumn('politicas_aceptadas_user_agent', 'politicas_aceptadas_user_agent VARCHAR(500) NULL AFTER politicas_aceptadas_ip');
+    $addColumn('lopdp_autorizacion_documento_id', 'lopdp_autorizacion_documento_id CHAR(26) NULL AFTER politicas_aceptadas_user_agent');
+    $addColumn('lopdp_autorizacion_archivo_nombre', 'lopdp_autorizacion_archivo_nombre VARCHAR(255) NULL AFTER lopdp_autorizacion_documento_id');
+    $addColumn('lopdp_autorizacion_subida_at', 'lopdp_autorizacion_subida_at DATETIME(6) NULL AFTER lopdp_autorizacion_archivo_nombre');
+
+    return $changed ? true : false;
+});
+$step('029 indices LOPDP', function () use ($db, $col, $idx) {
+    $changed = false;
+
+    if (!$idx('aspirantes', 'ix_aspirantes_lopdp_politicas') && $col('aspirantes', 'politicas_aceptadas_at')) {
+        $db->rawExec('ALTER TABLE aspirantes ADD KEY ix_aspirantes_lopdp_politicas (tenant_id, acepta_politicas, politicas_aceptadas_at)');
+        $changed = true;
+    }
+    if (!$idx('aspirantes', 'ix_aspirantes_lopdp_autorizacion') && $col('aspirantes', 'lopdp_autorizacion_subida_at')) {
+        $db->rawExec('ALTER TABLE aspirantes ADD KEY ix_aspirantes_lopdp_autorizacion (tenant_id, lopdp_autorizacion_subida_at)');
+        $changed = true;
+    }
+    if (!$idx('aspirantes', 'ix_aspirantes_lopdp_documento') && $col('aspirantes', 'lopdp_autorizacion_documento_id')) {
+        $db->rawExec('ALTER TABLE aspirantes ADD KEY ix_aspirantes_lopdp_documento (lopdp_autorizacion_documento_id)');
+        $changed = true;
+    }
+
+    return $changed ? true : false;
+});
+$step('029 FK LOPDP documento', function () use ($db, $col, $table, $fk) {
+    if ($fk('fk_aspirantes_lopdp_documento')) { return false; }
+    if (!$table('expediente_documentos') || !$col('aspirantes', 'lopdp_autorizacion_documento_id')) { return false; }
+
+    $db->rawExec('ALTER TABLE aspirantes ADD CONSTRAINT fk_aspirantes_lopdp_documento
+        FOREIGN KEY (lopdp_autorizacion_documento_id)
+        REFERENCES expediente_documentos(id)
+        ON DELETE SET NULL
+        ON UPDATE RESTRICT');
+    return true;
+});
+$step('029 backfill aceptaciones LOPDP', function () use ($db, $col) {
+    if (!$col('aspirantes', 'politicas_aceptadas_at')) { return false; }
+
+    $pendientes = (int) $db->fetchScalar("SELECT COUNT(*) FROM aspirantes
+     WHERE acepta_politicas = 1
+       AND (
+           politicas_aceptadas_at IS NULL
+           OR politicas_aceptadas_desde IS NULL
+           OR politicas_aceptadas_ruta IS NULL
+       )");
+    if ($pendientes === 0) { return false; }
+
+    $db->rawExec("UPDATE aspirantes
+       SET politicas_aceptadas_at = COALESCE(politicas_aceptadas_at, created_at),
+           politicas_aceptadas_desde = COALESCE(
+               NULLIF(politicas_aceptadas_desde, ''),
+               CASE WHEN origen = 'login_publico' THEN 'modal_postula_gemeseg' ELSE origen END
+           ),
+           politicas_aceptadas_ruta = COALESCE(
+               NULLIF(politicas_aceptadas_ruta, ''),
+               CASE WHEN origen = 'login_publico' THEN '/login' ELSE origen END
+           ),
+           politicas_aceptadas_ip = COALESCE(politicas_aceptadas_ip, ip),
+           politicas_aceptadas_user_agent = COALESCE(NULLIF(politicas_aceptadas_user_agent, ''), user_agent)
+     WHERE acepta_politicas = 1
+       AND (
+           politicas_aceptadas_at IS NULL
+           OR politicas_aceptadas_desde IS NULL
+           OR politicas_aceptadas_ruta IS NULL
+       )");
+    return true;
+});
+
+// ---- Registrar migraciones 021-025 y 029 en la tabla `migraciones` (idempotente) ----
+echo "\nRegistrando migraciones 021-025 y 029 en `migraciones`...\n";
 if ($table('migraciones')) {
-    foreach (['021_aspirantes', '022_aspirantes_password', '023_aspirantes_verificacion', '024_aspirantes_aprobacion', '025_guardia_registro_flow'] as $base) {
+    foreach ([
+        '021_aspirantes',
+        '022_aspirantes_password',
+        '023_aspirantes_verificacion',
+        '024_aspirantes_aprobacion',
+        '025_guardia_registro_flow',
+        '029_aspirantes_lopdp_tracking',
+    ] as $base) {
         $file = DIGISECURE_ROOT . "/migrations/{$base}.sql";
         if (!is_file($file)) { continue; }
         $m = Migration::fromFile($file);

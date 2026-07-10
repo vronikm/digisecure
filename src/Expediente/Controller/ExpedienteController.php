@@ -287,6 +287,9 @@ final class ExpedienteController
         if ($tipo === null) {
             return $this->view->response('errors/404', [], 404);
         }
+        if ((string) ($tipo['bloque'] ?? '') === 'B' && !$this->puedeCargarBloqueB($user)) {
+            return $this->view->response('errors/403', [], 403);
+        }
 
         $docExistente = $this->expRepo->findDocumentoByTipo($id, $tipoId);
         $ficha = $this->fichaRepo->findFichaById($expediente['ficha_id']);
@@ -319,6 +322,13 @@ final class ExpedienteController
         if ($expediente === null || $ficha === null || !$this->aspirantePuedeAccederFicha($user, $ficha)) {
             return $this->view->response('errors/404', [], 404);
         }
+        $tipo = $this->expRepo->findDocumentoTipoById($tipoId);
+        if ($tipo === null) {
+            return $this->view->response('errors/404', [], 404);
+        }
+        if ((string) ($tipo['bloque'] ?? '') === 'B' && !$this->puedeCargarBloqueB($user)) {
+            return $this->view->response('errors/403', [], 403);
+        }
 
         try {
             $this->subirService->execute(
@@ -329,15 +339,17 @@ final class ExpedienteController
                 $user->id,
                 $request->clientIp(),
                 $this->puedeValidarDocumentos($user),
+                $this->puedeCargarBloqueB($user),
             );
 
-            $this->flash->success('Documento subido correctamente.');
+            $mensaje = (string) ($tipo['bloque'] ?? '') === 'B'
+                ? 'Documento de Bloque B cargado y aceptado correctamente.'
+                : 'Documento subido correctamente.';
+            $this->flash->success($mensaje);
             return Response::redirect(
                 $this->securePath($request, "/guardias/{$expediente['ficha_id']}/expediente")
             );
         } catch (DomainException $e) {
-            $tipo = $this->expRepo->findDocumentoTipoById($tipoId);
-
             return $this->view->response('expediente/upload', [
                 'user' => $user,
                 'csrfToken' => $csrf->token(),
@@ -453,6 +465,15 @@ final class ExpedienteController
     private function puedeValidarDocumentos(AuthenticatedUser $user): bool
     {
         return $user->tienePermiso('expedientes.validar') || $user->tienePermiso('expedientes.revisar');
+    }
+
+    private function puedeCargarBloqueB(AuthenticatedUser $user): bool
+    {
+        if ($user->esAspiranteGuardia()) {
+            return false;
+        }
+
+        return $user->tienePermiso('expedientes.cargar') || $user->tienePermiso('expedientes.subir');
     }
 
     /**

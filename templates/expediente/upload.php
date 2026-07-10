@@ -17,6 +17,7 @@ $fichaId = $ficha['id'];
 $expId = $expediente['id'];
 $tipoId = $tipo['id'];
 $esReemplazo = $docExistente !== null;
+$esBloqueB = (string) ($tipo['bloque'] ?? '') === 'B';
 $bloqueTone = $tipo['bloque'] === 'A' ? 'tone-info' : 'tone-warning';
 $isAspirante = $user->esAspiranteGuardia();
 $fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
@@ -28,6 +29,7 @@ $fechaObjetivoActual = !empty($docExistente['fecha_objetivo_actualizacion'] ?? n
     : null;
 $puedeValidarDocumentos = (bool) ($puedeValidarDocumentos
     ?? ($user->tienePermiso('expedientes.validar') || $user->tienePermiso('expedientes.revisar')));
+$autoAceptaBloqueB = $esBloqueB && !$isAspirante;
 ?>
 
 <?php $view->section('title') ?><?= $esReemplazo ? 'Reemplazar' : 'Subir' ?> documento - DigiSecure<?php $view->endSection() ?>
@@ -76,6 +78,16 @@ $puedeValidarDocumentos = (bool) ($puedeValidarDocumentos
     <div>
         <strong>Reemplazo de documento</strong>
         Ya existe un documento de este tipo (<span class="ds-cell-mono"><?= $e($docExistente['archivo_nombre_original'] ?? 'archivo') ?></span>, estado: <?= $e(EstadoDocumento::from($docExistente['estado'])->label()) ?>). Al subir uno nuevo se reemplazara el anterior.
+    </div>
+</div>
+<?php endif ?>
+
+<?php if ($autoAceptaBloqueB): ?>
+<div class="login-info" style="margin-bottom: 1.25rem;">
+    <i class="bi bi-check-circle"></i>
+    <div>
+        <strong>Carga administrativa de Bloque B</strong>
+        Este documento quedara en estado <strong>Aceptado</strong> al guardarse, sin pasar por doble revision.
     </div>
 </div>
 <?php endif ?>
@@ -219,7 +231,7 @@ $puedeValidarDocumentos = (bool) ($puedeValidarDocumentos
     <div class="ds-form-actions">
         <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="ds-btn ds-btn-outline">Cancelar</a>
         <button type="submit" class="ds-btn ds-btn-primary">
-            <i class="bi bi-cloud-upload"></i><?= $esReemplazo ? 'Reemplazar documento' : 'Subir documento' ?>
+            <i class="bi bi-cloud-upload"></i><?= $autoAceptaBloqueB ? ($esReemplazo ? 'Reemplazar y aceptar' : 'Subir y aceptar') : ($esReemplazo ? 'Reemplazar documento' : 'Subir documento') ?>
         </button>
     </div>
 </form>

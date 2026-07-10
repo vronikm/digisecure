@@ -48,6 +48,7 @@ final class SubirDocumentoService
         string $usuarioId,
         string $ip,
         bool $puedeRegistrarValidacionExterna = false,
+        bool $autoAceptarBloqueB = false,
     ): string {
         // 1. Validar expediente
         $expediente = $this->repo->findExpedienteById($expedienteId);
@@ -62,8 +63,13 @@ final class SubirDocumentoService
         }
 
         // 3. Verificar bloque: si es Bloque B, debe estar desbloqueado
-        if ($tipo['bloque'] === 'B' && !$this->bloqueAActivoCompleto($expedienteId)) {
+        $esBloqueB = (string) $tipo['bloque'] === 'B';
+
+        if ($esBloqueB && !$this->bloqueAActivoCompleto($expedienteId)) {
             throw new DomainException('El Bloque B no está desbloqueado. Complete primero el Bloque A.');
+        }
+        if ($esBloqueB && !$autoAceptarBloqueB) {
+            throw new DomainException('Los documentos del Bloque B solo pueden ser cargados por administracion o usuarios autorizados.');
         }
 
         // 4. Validar archivo
@@ -82,6 +88,11 @@ final class SubirDocumentoService
         // 7. Crear o actualizar documento
         $existente = $this->repo->findDocumentoByTipo($expedienteId, $documentoTipoId);
 
+        $now = date('Y-m-d H:i:s.u');
+        $estadoDocumento = $esBloqueB && $autoAceptarBloqueB
+            ? EstadoDocumento::ACEPTADO
+            : EstadoDocumento::EN_REVISION;
+
         $data = [
             'expediente_id' => $expedienteId,
             'documento_tipo_id' => $documentoTipoId,
@@ -89,15 +100,17 @@ final class SubirDocumentoService
             'archivo_nombre_storage' => $storageFilename,
             'archivo_mime' => $file['type'],
             'archivo_tamano_bytes' => $file['size'],
-            'estado' => EstadoDocumento::EN_REVISION->value,
+            'estado' => $estadoDocumento->value,
             'fecha_emision_documento' => $fechaEmision,
             'fecha_vencimiento' => $fechaVencimiento,
             'fecha_objetivo_actualizacion' => $fechaObjetivoActualizacion,
             'subido_por' => $usuarioId,
-            'subido_at' => date('Y-m-d H:i:s.u'),
-            'observacion_revisor' => null,
-            'revisado_por' => null,
-            'revisado_at' => null,
+            'subido_at' => $now,
+            'observacion_revisor' => $estadoDocumento === EstadoDocumento::ACEPTADO
+                ? 'Carga administrativa de Bloque B aceptada automaticamente.'
+                : null,
+            'revisado_por' => $estadoDocumento === EstadoDocumento::ACEPTADO ? $usuarioId : null,
+            'revisado_at' => $estadoDocumento === EstadoDocumento::ACEPTADO ? $now : null,
         ];
 
         // Screenshots de validación externa
@@ -113,6 +126,8 @@ final class SubirDocumentoService
         } else {
             $docId = $this->repo->createDocumento($data);
         }
+
+        $this->recalcularProgreso($expedienteId);
 
         // 8. Auditoría
         if ((string) ($tipo['codigo'] ?? '') === 'LOPDP_CONSENT') {
@@ -134,6 +149,8 @@ final class SubirDocumentoService
                 'expediente_id' => $expedienteId,
                 'tipo_codigo' => $tipo['codigo'],
                 'archivo' => $file['name'],
+                'estado' => $estadoDocumento->value,
+                'auto_aceptado' => $estadoDocumento === EstadoDocumento::ACEPTADO,
             ],
             ip: $ip,
         );
@@ -244,6 +261,35 @@ final class SubirDocumentoService
         }
 
         return $objetivo->format('Y-m-d');
+    }
+
+    private function recalcularProgreso(string $expedienteId): void
+    {
+        $resumenA = $this->repo->resumenActivosByBloque($expedienteId, 'A');
+        $resumenB = $this->repo->resumenActivosByBloque($expedienteId, 'B');
+
+        $totalA = $resumenA['total'];
+        $totalB = $resumenB['total'];
+        $aceptadosA = $resumenA['aceptados'];
+        $aceptadosB = $resumenB['aceptados'];
+
+        $bloqueACompleto = $totalA > 0 && $aceptadosA >= $totalA;
+        $bloqueBCompleto = $totalB === 0 || $aceptadosB >= $totalB;
+
+        $estado = match (true) {
+            $bloqueACompleto && $bloqueBCompleto => EstadoExpediente::COMPLETO,
+            $bloqueACompleto => EstadoExpediente::BLOQUE_A_COMPLETO,
+            default => EstadoExpediente::INCOMPLETO,
+        };
+
+        $this->repo->updateExpediente($expedienteId, [
+            'bloque_a_total' => $totalA,
+            'bloque_a_aceptados' => $aceptadosA,
+            'bloque_b_total' => $totalB,
+            'bloque_b_aceptados' => $aceptadosB,
+            'bloque_b_desbloqueado' => $bloqueACompleto ? 1 : 0,
+            'estado' => $estado->value,
+        ]);
     }
 
     private function normalizarFecha(string $fecha, string $mensajeError): string

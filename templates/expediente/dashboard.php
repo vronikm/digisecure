@@ -47,6 +47,7 @@ $docTone = static fn(EstadoDocumento $d): string => match ($d) {
 $toneA = $pctA === 100 ? 'tone-success' : ($pctA >= 50 ? '' : 'tone-warning');
 $toneB = $pctB === 100 ? 'tone-success' : 'tone-info';
 $puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar') || $user->tienePermiso('expedientes.subir');
+$puedeCargarBloqueB = !$isAspirante && $puedeCargarDocumentos;
 ?>
 
 <?php $view->section('title') ?>Expediente - <?= $e($ficha['correlativo']) ?><?php $view->endSection() ?>
@@ -80,7 +81,7 @@ $puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar
     <i class="bi bi-info-circle"></i>
     <div>
         <strong>Carga tus documentos digitales</strong>
-        Puedes subir, ver y reemplazar archivos del Bloque A en los formatos permitidos por cada requisito. El Bloque B se habilita cuando el Bloque A este aceptado por revision.
+        Puedes subir, ver y reemplazar archivos del Bloque A en los formatos permitidos por cada requisito. El Bloque B lo gestiona administracion cuando el Bloque A este aceptado.
     </div>
 </div>
 <?php endif ?>
@@ -139,7 +140,7 @@ $puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar
                 <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
                     <div>
                         <div class="ds-card-title">Bloque B &middot; Vinculacion laboral</div>
-                        <div class="ds-card-subtitle"><?= $bloqueado ? 'Bloqueado &mdash; pendiente Bloque A' : '4 documentos post-contratacion' ?></div>
+                        <div class="ds-card-subtitle"><?= $bloqueado ? 'Bloqueado &mdash; pendiente Bloque A' : 'Carga administrativa, aceptacion automatica' ?></div>
                     </div>
                     <?php if (!$bloqueado): ?>
                         <span class="ds-badge <?= $pctB === 100 ? 'tone-success' : 'tone-info' ?> no-dot"><?= $aceptB ?>/<?= $totalB ?></span>
@@ -159,7 +160,7 @@ $puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar
                     </div>
                     <small><strong><?= $pctB ?>%</strong></small>
                 </div>
-                <div class="ds-cell-sub" style="margin-top: .5rem;"><?= $pctB ?>% completado &mdash; documentos post-contratacion</div>
+                <div class="ds-cell-sub" style="margin-top: .5rem;"><?= $pctB ?>% completado &mdash; documentos post-contratacion cargados por administracion</div>
                 <?php endif ?>
             </div>
         </div>
@@ -263,7 +264,7 @@ $puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar
         </span>
         <div>
             <div class="ds-card-title">Bloque B &middot; Documentos de vinculacion laboral</div>
-            <div class="ds-card-subtitle">Post-contratacion &mdash; <?= $bloqueado ? 'pendiente desbloqueo' : 'documentos del contrato' ?></div>
+            <div class="ds-card-subtitle">Post-contratacion &mdash; <?= $bloqueado ? 'pendiente desbloqueo' : 'carga administrativa con aceptacion automatica' ?></div>
         </div>
     </div>
     <?php if ($bloqueado): ?>
@@ -318,7 +319,7 @@ $puedeCargarDocumentos = $isAspirante || $user->tienePermiso('expedientes.cargar
                                 Ver
                             </a>
                             <?php endif ?>
-                            <?php if ($puedeCargarDocumentos): ?>
+                            <?php if ($puedeCargarBloqueB): ?>
                             <a href="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipo['id']) ?>"
                                class="ds-btn ds-btn-outline ds-btn-sm" title="<?= $doc ? 'Reemplazar' : 'Subir' ?>">
                                 <?= $doc ? 'Reemplazar' : 'Subir' ?>

@@ -451,6 +451,31 @@ final class FichaRepository extends BaseRepository
     }
 
     /**
+     * Verifica si la ficha tiene cargada la autorizacion LOPDP firmada en el
+     * expediente documental. El documento puede estar en revision o aceptado;
+     * si fue rechazado, no cuenta como evidencia valida.
+     */
+    public function tieneAutorizacionLopdpCargada(string $fichaId): bool
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+
+        return (int) $this->db->fetchScalar(
+            "SELECT COUNT(*)
+               FROM expedientes e
+               INNER JOIN expediente_documentos ed
+                       ON ed.expediente_id = e.id
+                      AND ed.tenant_id = e.tenant_id
+               INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
+              WHERE e.tenant_id = :tid
+                AND e.ficha_id = :fid
+                AND dt.codigo = 'LOPDP_CONSENT'
+                AND ed.estado IN ('EN_REVISION', 'ACEPTADO', 'VENCIDO')
+                AND ed.archivo_nombre_storage IS NOT NULL",
+            ['tid' => $tenantId, 'fid' => $fichaId],
+        ) > 0;
+    }
+
+    /**
      * Guarda/reemplaza trabajos anteriores de una ficha.
      *
      * @param list<array<string, scalar|null>> $trabajos
