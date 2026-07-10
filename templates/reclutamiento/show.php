@@ -18,7 +18,7 @@ $verificado = (int) ($a['email_verificado'] ?? 0) === 1;
 
 $estadoTone = [
     'nuevo' => 'tone-warning', 'aspirante' => 'tone-info', 'en_revision' => 'tone-info', 'contactado' => 'tone-info',
-    'aprobado' => 'tone-success', 'descartado' => 'tone-muted', 'contratado' => 'tone-success',
+    'aprobado' => 'tone-info', 'descartado' => 'tone-muted', 'contratado' => 'tone-success',
 ][$estado] ?? 'tone-muted';
 $estadoLabel = [
     'aspirante' => 'Aspirante',
@@ -30,9 +30,6 @@ $tipoLabel = ['cedula' => 'Cédula', 'ruc' => 'RUC', 'pasaporte' => 'Pasaporte']
 $nombre = trim($a['nombres'] . ' ' . $a['apellidos']);
 $estatura = (int) ($a['estatura_cm'] ?? 0);
 $estaturaTxt = $estatura > 0 ? number_format($estatura / 100, 2) . ' m' : '-';
-$puedeAprobar = $verificado && in_array($estado, ['nuevo', 'aspirante', 'en_revision', 'contactado'], true);
-$puedeRechazar = !in_array($estado, ['aprobado', 'descartado'], true);
-
 $item = static function (string $label, string $value, string $span = '6') use ($e): void {
     $value = trim($value);
     echo '<div class="rc-item rc-span-' . $span . '"><div class="rc-label">' . $e($label) . '</div><div class="rc-value">' . ($value !== '' ? $e($value) : '<span style="color:var(--ds-text-soft);font-weight:500">—</span>') . '</div></div>';
@@ -40,6 +37,27 @@ $item = static function (string $label, string $value, string $span = '6') use (
 
 $ficha = isset($ficha) && is_array($ficha) ? $ficha : null;
 $fv = static fn(string $k): string => $ficha !== null ? trim((string) ($ficha[$k] ?? '')) : '';
+$expediente = $ficha !== null && isset($ficha['expediente']) && is_array($ficha['expediente']) ? $ficha['expediente'] : null;
+$fichaCompleta = $ficha !== null && $fv('estado') === 'COMPLETA';
+$totalBloqueA = (int) ($expediente['bloque_a_total'] ?? 0);
+$aceptadosBloqueA = (int) ($expediente['bloque_a_aceptados'] ?? 0);
+$docsBloqueAListos = $totalBloqueA > 0 && $aceptadosBloqueA >= $totalBloqueA;
+$bloqueosContratacion = [];
+if (!$verificado) {
+    $bloqueosContratacion[] = 'Correo pendiente de verificar.';
+}
+if ($ficha === null) {
+    $bloqueosContratacion[] = 'Ficha de ingreso pendiente.';
+} elseif (!$fichaCompleta) {
+    $bloqueosContratacion[] = 'Revision de informacion pendiente: la ficha debe estar completa.';
+}
+if ($ficha !== null && $expediente === null) {
+    $bloqueosContratacion[] = 'Expediente documental pendiente.';
+} elseif ($ficha !== null && !$docsBloqueAListos) {
+    $bloqueosContratacion[] = 'Documentos Bloque A pendientes de aceptar (' . $aceptadosBloqueA . '/' . $totalBloqueA . ').';
+}
+$puedeContratar = in_array($estado, ['nuevo', 'aspirante', 'en_revision', 'contactado', 'aprobado'], true) && $bloqueosContratacion === [];
+$puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], true);
 ?>
 
 <?php $view->section('title') ?><?= $e($nombre) ?> - Reclutamiento<?php $view->endSection() ?>
@@ -95,10 +113,15 @@ $fv = static fn(string $k): string => $ficha !== null ? trim((string) ($ficha[$k
     <a href="<?= $view->url('/reclutamiento') ?>" class="ds-btn ds-btn-ghost"><i class="bi bi-arrow-left"></i>Volver</a>
 </div>
 
-<?php if ($estado === 'aprobado'): ?>
+<?php if ($estado === 'contratado'): ?>
 <div class="login-success" role="status" style="border-radius:12px;">
     <i class="bi bi-check-circle-fill"></i>
-    <div><strong>Aspirante aprobado</strong> Se creó su cuenta de usuario activa<?= !empty($a['usuario_id']) ? ' (ID: ' . $e((string) $a['usuario_id']) . ')' : '' ?>.</div>
+    <div><strong>Aspirante contratado</strong> Ya consta como empleado en Guardias<?= !empty($a['usuario_id']) ? ' (ID usuario: ' . $e((string) $a['usuario_id']) . ')' : '' ?>.</div>
+</div>
+<?php elseif ($estado === 'aprobado'): ?>
+<div class="login-info" role="status" style="border-radius:12px;">
+    <i class="bi bi-info-circle"></i>
+    <div><strong>Aprobacion previa registrada</strong> Puedes finalizar la contratacion cuando la ficha y el Bloque A documental esten completos.</div>
 </div>
 <?php elseif ($estado === 'descartado'): ?>
 <div class="login-error" role="alert" style="border-radius:12px;">
@@ -158,6 +181,9 @@ $fv = static fn(string $k): string => $ficha !== null ? trim((string) ($ficha[$k
                 <span class="ds-badge tone-info"><i class="bi bi-hash"></i> <?= $e($fv('correlativo')) ?></span>
                 <span class="ds-badge tone-muted"><?= $e($tipoFichaLabel) ?></span>
                 <span class="ds-badge tone-muted"><?= $e($estadoFichaLabel) ?></span>
+                <span class="ds-badge <?= $docsBloqueAListos ? 'tone-success' : 'tone-warning' ?> no-dot">
+                    <i class="bi bi-folder-check"></i> Bloque A <?= $aceptadosBloqueA ?>/<?= $totalBloqueA ?>
+                </span>
             </div>
 
             <?php if ($ficha['foto_data_uri'] !== '' || $ficha['croquis_data_uri'] !== ''): ?>
@@ -295,32 +321,39 @@ $fv = static fn(string $k): string => $ficha !== null ? trim((string) ($ficha[$k
     </div>
 </div>
 
-<?php if ($puedeAprobar || $puedeRechazar): ?>
+<?php if ($puedeContratar || $puedeRechazar || $bloqueosContratacion !== []): ?>
 <div class="ds-card">
     <div class="ds-card-header tone-success">
         <span class="ds-card-mark"><i class="bi bi-clipboard-check"></i></span>
         <div>
-            <div class="ds-card-title">Revisión</div>
-            <div class="ds-card-subtitle">Aprobar crea la cuenta de usuario; rechazar descarta la postulación</div>
+            <div class="ds-card-title">Contratacion</div>
+            <div class="ds-card-subtitle">Contratar mueve al aspirante a empleado y lo muestra en Guardias</div>
         </div>
     </div>
     <div class="ds-card-body">
-        <?php if (!$verificado): ?>
+        <?php if ($bloqueosContratacion !== [] && $estado !== 'contratado'): ?>
         <div class="login-info" role="status" style="border-radius:12px;">
             <i class="bi bi-info-circle"></i>
-            <div><strong>Aún no puedes aprobar</strong> El aspirante debe confirmar su correo antes de poder crear su cuenta. Puedes rechazar la postulación si corresponde.</div>
+            <div>
+                <strong>Aun no puedes contratar</strong>
+                <ul style="margin:.35rem 0 0; padding-left:1.1rem;">
+                    <?php foreach ($bloqueosContratacion as $bloqueo): ?>
+                    <li><?= $e($bloqueo) ?></li>
+                    <?php endforeach ?>
+                </ul>
+            </div>
         </div>
         <?php endif ?>
         <div class="rc-actions">
-            <?php if ($puedeAprobar): ?>
-            <form method="POST" action="<?= $view->url('/reclutamiento/' . $id . '/aprobar') ?>"
+            <?php if ($puedeContratar): ?>
+            <form method="POST" action="<?= $view->url('/reclutamiento/' . $id . '/contratar') ?>"
                   data-confirm
-                  data-confirm-title="Aprobar aspirante"
-                  data-confirm-text="Se creara una cuenta de usuario activa para este aspirante."
+                  data-confirm-title="Contratar aspirante"
+                  data-confirm-text="El aspirante pasara a empleado, se quitara el acceso restringido de aspirante y su ficha quedara visible en Guardias."
                   data-confirm-type="success"
-                  data-confirm-button="Si, aprobar">
+                  data-confirm-button="Si, contratar">
                 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-                <button type="submit" class="ds-btn ds-btn-primary"><i class="bi bi-person-check"></i>Aprobar y crear usuario</button>
+                <button type="submit" class="ds-btn ds-btn-primary"><i class="bi bi-person-check"></i>Contratar y pasar a empleado</button>
             </form>
             <?php endif ?>
             <?php if ($puedeRechazar): ?>

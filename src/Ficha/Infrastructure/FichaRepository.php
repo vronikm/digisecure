@@ -197,7 +197,7 @@ final class FichaRepository extends BaseRepository
             'off' => $offset,
         ];
 
-        $conditions = [];
+        $conditions = ["f.estado <> 'ANULADA'"];
         $hasBusqueda = !empty($filters['busqueda']);
         $hasCedulaHash = !empty($filters['cedula_hash']);
 
@@ -215,56 +215,54 @@ final class FichaRepository extends BaseRepository
         if ($hasBusqueda && $hasCedulaHash) {
             // Si el usuario busca por cedula, no forzamos un AND con filtros textuales:
             // debe coincidir por texto O por hash de cedula.
-            $conditions[] = '((apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4) OR cedula_hash = :cedula_hash)';
+            $conditions[] = '((f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.email LIKE :busq3 OR f.celular LIKE :busq4) OR f.cedula_hash = :cedula_hash)';
         } elseif ($hasBusqueda) {
-            $conditions[] = '(apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4)';
+            $conditions[] = '(f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.email LIKE :busq3 OR f.celular LIKE :busq4)';
         } elseif ($hasCedulaHash) {
-            $conditions[] = 'cedula_hash = :cedula_hash';
+            $conditions[] = 'f.cedula_hash = :cedula_hash';
         }
 
         $tenantId = $this->tenantContext->requireTenantId();
         $bindings['__tenant_id'] = $tenantId;
 
-        $where = 'WHERE tenant_id = :__tenant_id';
-        if ($conditions !== []) {
-            $where .= ' AND ' . implode(' AND ', $conditions);
-        }
+        $where = 'WHERE f.tenant_id = :__tenant_id AND ' . implode(' AND ', $conditions);
 
-        // cedula_cifrada se toma de la ÚLTIMA ficha (id = MAX(id)), NO con
-        // MAX(cedula_cifrada): cada cifrado usa un IV aleatorio, por lo que
-        // MAX() podía devolver el ciphertext de una ficha antigua/corrupta que
-        // no descifra y el listado mostraba "[cifrado]". La última ficha es la
-        // vigente (misma que abre el detalle) y descifra correctamente.
+        // Prioriza la ficha COMPLETA y luego la mas reciente para no mezclar
+        // datos de fichas antiguas del mismo documento.
+        $personaKey = "COALESCE(NULLIF(f.cedula_hash, ''), f.id)";
         $sql = "SELECT
-                    g.ficha_id,
-                    g.cedula_hash,
-                    lf.cedula_cifrada AS cedula_cifrada,
-                    g.apellidos,
-                    g.nombres,
-                    g.fecha_nacimiento,
-                    g.celular,
-                    g.email,
-                    g.ultima_ficha_at,
-                    g.total_fichas
+                    r.ficha_id,
+                    r.cedula_hash,
+                    r.cedula_cifrada,
+                    r.apellidos,
+                    r.nombres,
+                    r.fecha_nacimiento,
+                    r.celular,
+                    r.email,
+                    r.ultima_ficha_at,
+                    r.total_fichas
                 FROM (
                     SELECT
-                        MAX(id) AS ficha_id,
-                        cedula_hash,
-                        MAX(apellidos) AS apellidos,
-                        MAX(nombres) AS nombres,
-                        MAX(fecha_nacimiento) AS fecha_nacimiento,
-                        MAX(celular) AS celular,
-                        MAX(email) AS email,
-                        MAX(created_at) AS ultima_ficha_at,
-                        COUNT(*) AS total_fichas
-                    FROM fichas
+                        f.id AS ficha_id,
+                        f.cedula_hash,
+                        f.cedula_cifrada,
+                        f.apellidos,
+                        f.nombres,
+                        f.fecha_nacimiento,
+                        f.celular,
+                        f.email,
+                        MAX(f.created_at) OVER (PARTITION BY {$personaKey}) AS ultima_ficha_at,
+                        COUNT(*) OVER (PARTITION BY {$personaKey}) AS total_fichas,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY {$personaKey}
+                            ORDER BY (f.estado = 'COMPLETA') DESC, f.created_at DESC, f.id DESC
+                        ) AS rn
+                    FROM fichas f
                     {$where}
-                    GROUP BY cedula_hash
-                    ORDER BY MAX(created_at) DESC
-                    LIMIT :lim OFFSET :off
-                ) g
-                JOIN fichas lf ON lf.id = g.ficha_id
-                ORDER BY g.ultima_ficha_at DESC";
+                ) r
+                WHERE r.rn = 1
+                ORDER BY r.ultima_ficha_at DESC
+                LIMIT :lim OFFSET :off";
 
         return $this->db->fetchAll($sql, $bindings);
     }
@@ -277,7 +275,7 @@ final class FichaRepository extends BaseRepository
     public function countGuardias(array $filters = []): int
     {
         $bindings = [];
-        $conditions = [];
+        $conditions = ["f.estado <> 'ANULADA'"];
         $hasBusqueda = !empty($filters['busqueda']);
         $hasCedulaHash = !empty($filters['cedula_hash']);
 
@@ -293,23 +291,25 @@ final class FichaRepository extends BaseRepository
         }
 
         if ($hasBusqueda && $hasCedulaHash) {
-            $conditions[] = '((apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4) OR cedula_hash = :cedula_hash)';
+            $conditions[] = '((f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.email LIKE :busq3 OR f.celular LIKE :busq4) OR f.cedula_hash = :cedula_hash)';
         } elseif ($hasBusqueda) {
-            $conditions[] = '(apellidos LIKE :busq OR nombres LIKE :busq2 OR email LIKE :busq3 OR celular LIKE :busq4)';
+            $conditions[] = '(f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.email LIKE :busq3 OR f.celular LIKE :busq4)';
         } elseif ($hasCedulaHash) {
-            $conditions[] = 'cedula_hash = :cedula_hash';
+            $conditions[] = 'f.cedula_hash = :cedula_hash';
         }
 
-        $sql = 'SELECT COUNT(*) FROM (
-                    SELECT cedula_hash
-                    FROM fichas';
-        if ($conditions !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $conditions);
-        }
-        $sql .= ' GROUP BY cedula_hash
-                ) AS guardias_unicos';
+        $bindings['__tenant_id'] = $this->tenantContext->requireTenantId();
+        $where = 'WHERE f.tenant_id = :__tenant_id AND ' . implode(' AND ', $conditions);
+        $personaKey = "COALESCE(NULLIF(f.cedula_hash, ''), f.id)";
 
-        $result = $this->tenantScalar($sql, $bindings);
+        $sql = "SELECT COUNT(*) FROM (
+                    SELECT {$personaKey} AS guardia_key
+                    FROM fichas f
+                    {$where}
+                    GROUP BY guardia_key
+                ) AS guardias_unicos";
+
+        $result = $this->db->fetchScalar($sql, $bindings);
         return (int) $result;
     }
 

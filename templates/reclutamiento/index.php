@@ -17,7 +17,7 @@ $estadoTone = [
     'aspirante'   => 'tone-info',
     'en_revision' => 'tone-info',
     'contactado'  => 'tone-info',
-    'aprobado'    => 'tone-success',
+    'aprobado'    => 'tone-info',
     'descartado'  => 'tone-muted',
     'contratado'  => 'tone-success',
 ];
@@ -125,8 +125,8 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     <div class="ds-kpi-card tone-success">
         <span class="ds-kpi-icon"><i class="bi bi-person-check"></i></span>
         <div>
-            <div class="ds-kpi-label">Aprobados</div>
-            <div class="ds-kpi-value"><?= (int) $kpis['aprobados'] ?></div>
+            <div class="ds-kpi-label">Contratados</div>
+            <div class="ds-kpi-value"><?= (int) ($kpis['contratados'] ?? $kpis['aprobados']) ?></div>
         </div>
     </div>
 </div>
