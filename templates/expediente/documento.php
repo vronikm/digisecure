@@ -148,7 +148,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
             <div class="ds-card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Fecha emision doc.</div>
+                        <div style="<?= $ds_dt ?>">Fecha emisión doc.</div>
                     <div class="ds-cell-mono"><?= $doc['fecha_emision_documento'] ? date('d/m/Y', strtotime($doc['fecha_emision_documento'])) : '-' ?></div>
                     </div>
                     <div class="col-md-6">
@@ -172,7 +172,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Fecha obj. actualizacion</div>
+                        <div style="<?= $ds_dt ?>">Fecha obj. actualización</div>
                     <div class="ds-cell-mono"><?= $doc['fecha_objetivo_actualizacion'] ? date('d/m/Y', strtotime($doc['fecha_objetivo_actualizacion'])) : '-' ?></div>
                     </div>
                     <div class="col-md-6">
@@ -191,8 +191,8 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
             <div class="ds-card-header tone-purple">
                 <span class="ds-card-mark"><i class="bi bi-globe"></i></span>
                 <div>
-                    <div class="ds-card-title">Validacion externa</div>
-                    <div class="ds-card-subtitle">Verificacion en sitio web oficial + capturas</div>
+                    <div class="ds-card-title">Validación externa</div>
+                    <div class="ds-card-subtitle">Verificación en sitio web oficial + capturas</div>
                 </div>
             </div>
             <div class="ds-card-body">

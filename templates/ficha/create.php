@@ -65,7 +65,7 @@ $formCancelLabel = isset($formCancelLabel) && is_string($formCancelLabel) && $fo
     : 'Cancelar';
 $formSubmitLabel = isset($formSubmitLabel) && is_string($formSubmitLabel) && $formSubmitLabel !== ''
     ? $formSubmitLabel
-    : 'Crear Ficha';
+    : 'Guardar Ficha';
 $formSubmitIcon = isset($formSubmitIcon) && is_string($formSubmitIcon) && $formSubmitIcon !== ''
     ? $formSubmitIcon
     : 'bi bi-save';
@@ -1540,7 +1540,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                 <div style="min-width: 0;">
                     <div style="font-weight: 800; color: #0f172a; margin-bottom: .25rem;">Guarda la ficha para habilitar documentos</div>
                     <p class="mb-0" style="color:#64748b; font-size:.86rem; line-height: 1.55;">
-                        El expediente documental (Bloque A y B) estara disponible para cargar, revisar y reemplazar archivos digitales una vez que guardes la ficha.
+                        El expediente documental estará disponible para cargar, revisar y reemplazar archivos digitales una vez que guardes la ficha.
                     </p>
                 </div>
             </div>

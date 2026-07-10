@@ -81,7 +81,7 @@ $puedeCargarBloqueB = !$isAspirante && $puedeCargarDocumentos;
     <i class="bi bi-info-circle"></i>
     <div>
         <strong>Carga tus documentos digitales</strong>
-        Puedes subir, ver y reemplazar archivos del Bloque A en los formatos permitidos por cada requisito. El Bloque B lo gestiona administracion cuando el Bloque A este aceptado.
+        Puedes subir, ver y reemplazar archivos del Bloque A en los formatos permitidos por cada requisito. El Bloque B lo gestiona administración de GEMESEG cuando el Bloque A este aceptado.
     </div>
 </div>
 <?php endif ?>

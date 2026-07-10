@@ -77,7 +77,7 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
     <i class="bi bi-info-circle"></i>
     <div>
         <strong>Reemplazo de documento</strong>
-        Ya existe un documento de este tipo (<span class="ds-cell-mono"><?= $e($docExistente['archivo_nombre_original'] ?? 'archivo') ?></span>, estado: <?= $e(EstadoDocumento::from($docExistente['estado'])->label()) ?>). Al subir uno nuevo se reemplazara el anterior.
+        Ya existe un documento de este tipo (<span class="ds-cell-mono"><?= $e($docExistente['archivo_nombre_original'] ?? 'archivo') ?></span>, estado: <?= $e(EstadoDocumento::from($docExistente['estado'])->label()) ?>). Al subir uno nuevo se reemplazará el anterior.
     </div>
 </div>
 <?php endif ?>
@@ -165,12 +165,9 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                 </div>
                 <div class="col-md-4">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Fecha emision del documento</label>
+                        <label class="ds-form-label">Fecha emisión del documento</label>
                         <input type="date" name="fecha_emision_documento" class="form-control"
                                value="<?= $e($docExistente['fecha_emision_documento'] ?? '') ?>">
-                        <?php if ($tieneVencimiento): ?>
-                        <span class="ds-form-help">Si no ingresas vencimiento, se calcula automaticamente (+<?= $diasVigencia ?> dias).</span>
-                        <?php endif ?>
                     </div>
                 </div>
 
@@ -181,19 +178,6 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                         <input type="date" name="fecha_vencimiento" class="form-control"
                                value="<?= $e($docExistente['fecha_vencimiento'] ?? '') ?>">
                         <span class="ds-form-help">Opcional. Usala si el documento ya trae una fecha impresa.</span>
-                    </div>
-                </div>
-
-                <div class="col-md-8">
-                    <div class="login-info" style="margin: 0; height: 100%; align-items: flex-start;">
-                        <i class="bi bi-calendar-check"></i>
-                        <div>
-                            <strong>Renovacion programada automaticamente</strong>
-                            El sistema calcula la fecha objetivo 30 dias antes del vencimiento. Si el documento esta muy cerca de vencer, la agenda desde hoy o desde la fecha de emision.
-                            <?php if ($fechaObjetivoActual !== null): ?>
-                                <div class="ds-cell-sub" style="margin-top: .35rem;">Fecha objetivo actual: <span class="ds-cell-mono"><?= $e($fechaObjetivoActual) ?></span></div>
-                            <?php endif ?>
-                        </div>
                     </div>
                 </div>
                 <?php endif ?>
