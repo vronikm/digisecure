@@ -105,7 +105,7 @@ SET @sync_fichas_vacunas_sql := IF(
         SET d.tenant_id = f.tenant_id
       WHERE a.estado = 'contratado'
         AND CAST(d.tenant_id AS BINARY) <> CAST(f.tenant_id AS BINARY)",
-    "SELECT 1"
+    "SET @sync_fichas_vacunas_noop := 1"
 );
 
 PREPARE sync_fichas_vacunas_stmt FROM @sync_fichas_vacunas_sql;
