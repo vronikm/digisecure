@@ -61,6 +61,32 @@ $docsForTipo = static function (array $tipo) use ($docsPorTipo): array {
     return array_values($porIndice);
 };
 $docSlotCount = static fn(array $tipo): int => max(1, (int) ($tipo['numero_documentos'] ?? 1));
+$docEstadoTone = static fn(EstadoDocumento $estado): string => match ($estado) {
+    EstadoDocumento::ACEPTADO => 'tone-success',
+    EstadoDocumento::RECHAZADO => 'tone-danger',
+    EstadoDocumento::EN_REVISION => 'tone-warning',
+    EstadoDocumento::VENCIDO => 'tone-danger',
+    default => 'tone-muted',
+};
+$docSlots = static function (array $tipo, array $docs) use ($docSlotCount): array {
+    $porIndice = [];
+    foreach ($docs as $doc) {
+        $indice = max(1, (int) ($doc['documento_indice'] ?? 1));
+        $porIndice[$indice] ??= $doc;
+    }
+
+    $slots = [];
+    for ($i = 1, $total = $docSlotCount($tipo); $i <= $total; $i++) {
+        $doc = $porIndice[$i] ?? null;
+        $slots[] = [
+            'indice' => $i,
+            'doc' => $doc,
+            'estado' => $doc !== null ? EstadoDocumento::from((string) $doc['estado']) : EstadoDocumento::PENDIENTE,
+        ];
+    }
+
+    return $slots;
+};
 $docTieneRanurasEditables = static function (array $tipo, array $docs) use ($docSlotCount): bool {
     $porIndice = [];
     foreach ($docs as $doc) {
@@ -169,6 +195,14 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
     <div>
         <strong>Carga tus documentos digitales</strong>
         Puedes subir documentos y corregir los rechazados. Cuando un documento sea aceptado queda en solo lectura.
+    </div>
+</div>
+<?php else: ?>
+<div class="login-info" style="margin-bottom: 1.25rem;">
+    <i class="bi bi-clipboard-check"></i>
+    <div>
+        <strong>Revision documental</strong>
+        Cada archivo muestra su estado individual. Si un documento aceptado presenta una novedad posterior, abre el detalle y rechazalo con motivo para que el usuario pueda cargar la correccion.
     </div>
 </div>
 <?php endif ?>
@@ -281,6 +315,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                     $docs = $docsForTipo($tipo);
                     $resDoc = $docEstadoResumen($tipo, $docs);
                     $numeroDocs = $docSlotCount($tipo);
+                    $slots = $docSlots($tipo, $docs);
                     $puedeEditarRanuras = $docTieneRanurasEditables($tipo, $docs);
                     $vence = $docFechaVencimiento($docs);
                 ?>
@@ -301,6 +336,18 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                                 <span><i class="bi bi-calendar-event"></i> <?= $tipo['dias_vigencia'] ?>d vigencia</span>
                             <?php endif ?>
                             <span><i class="bi bi-files"></i> <?= (int) $resDoc['subidos'] ?>/<?= (int) $numeroDocs ?> archivo(s)</span>
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem;">
+                            <?php foreach ($slots as $slot):
+                                $slotEstado = $slot['estado'];
+                                $slotDoc = $slot['doc'];
+                            ?>
+                            <span class="ds-badge <?= $docEstadoTone($slotEstado) ?> no-dot"
+                                  title="<?= $slotDoc ? $e((string) ($slotDoc['archivo_nombre_original'] ?? 'Archivo cargado')) : 'Pendiente de carga' ?>">
+                                <i class="bi <?= $e($slotEstado->iconClass()) ?>"></i>
+                                Archivo <?= (int) $slot['indice'] ?>: <?= $e($slotEstado->label()) ?>
+                            </span>
+                            <?php endforeach ?>
                         </div>
                     </td>
                     <td>
@@ -388,6 +435,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                     $docs = $docsForTipo($tipo);
                     $resDoc = $docEstadoResumen($tipo, $docs);
                     $numeroDocs = $docSlotCount($tipo);
+                    $slots = $docSlots($tipo, $docs);
                     $puedeEditarRanuras = $docTieneRanurasEditables($tipo, $docs);
                 ?>
                 <tr>
@@ -401,6 +449,18 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                                 Opcional
                             <?php endif ?>
                             <span style="margin-left:.45rem;"><i class="bi bi-files"></i> <?= (int) $resDoc['subidos'] ?>/<?= (int) $numeroDocs ?> archivo(s)</span>
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem;">
+                            <?php foreach ($slots as $slot):
+                                $slotEstado = $slot['estado'];
+                                $slotDoc = $slot['doc'];
+                            ?>
+                            <span class="ds-badge <?= $docEstadoTone($slotEstado) ?> no-dot"
+                                  title="<?= $slotDoc ? $e((string) ($slotDoc['archivo_nombre_original'] ?? 'Archivo cargado')) : 'Pendiente de carga' ?>">
+                                <i class="bi <?= $e($slotEstado->iconClass()) ?>"></i>
+                                Archivo <?= (int) $slot['indice'] ?>: <?= $e($slotEstado->label()) ?>
+                            </span>
+                            <?php endforeach ?>
                         </div>
                     </td>
                     <td>

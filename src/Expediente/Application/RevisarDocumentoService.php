@@ -42,7 +42,7 @@ final class RevisarDocumentoService
         }
 
         $estadoActual = EstadoDocumento::from($doc['estado']);
-        if (!in_array($estadoActual, [EstadoDocumento::EN_REVISION, EstadoDocumento::RECHAZADO, EstadoDocumento::VENCIDO], true)) {
+        if (!in_array($estadoActual, [EstadoDocumento::EN_REVISION, EstadoDocumento::RECHAZADO, EstadoDocumento::VENCIDO, EstadoDocumento::ACEPTADO], true)) {
             throw new DomainException("No se puede revisar un documento en estado '{$estadoActual->label()}'.");
         }
 
@@ -51,6 +51,15 @@ final class RevisarDocumentoService
             'rechazar' => EstadoDocumento::RECHAZADO,
             default => throw new DomainException("Acción no válida: {$accion}."),
         };
+
+        if ($estadoActual === EstadoDocumento::ACEPTADO && $nuevoEstado === EstadoDocumento::ACEPTADO) {
+            throw new DomainException('El documento ya esta aceptado. En segunda revision solo puede rechazarse si hay una observacion.');
+        }
+
+        $observacion = trim($observacion);
+        if ($nuevoEstado === EstadoDocumento::RECHAZADO && $observacion === '') {
+            throw new DomainException('Ingresa el motivo del rechazo para que el usuario pueda corregir el documento.');
+        }
 
         // Actualizar documento
         $this->repo->updateDocumento($documentoId, [
@@ -73,6 +82,8 @@ final class RevisarDocumentoService
             detalles: [
                 'expediente_id' => $expedienteId,
                 'tipo_codigo' => $doc['tipo_codigo'],
+                'estado_anterior' => $estadoActual->value,
+                'estado_nuevo' => $nuevoEstado->value,
                 'observacion' => $observacion,
             ],
             ip: $ip,
