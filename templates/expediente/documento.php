@@ -15,7 +15,8 @@ $e = ViewRenderer::e(...);
 
 $fichaId = $ficha['id'];
 $docEstado = EstadoDocumento::from($doc['estado']);
-$puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocumento::RECHAZADO, EstadoDocumento::VENCIDO]);
+$esSegundaRevisionAceptado = $docEstado === EstadoDocumento::ACEPTADO;
+$puedeRevisar = in_array($docEstado, [EstadoDocumento::EN_REVISION, EstadoDocumento::RECHAZADO, EstadoDocumento::VENCIDO, EstadoDocumento::ACEPTADO], true);
 $puedeValidarDocumentos = $user->tienePermiso('expedientes.validar') || $user->tienePermiso('expedientes.revisar');
 $isAspirante = $user->esAspiranteGuardia();
 $fichaUrl = $isAspirante ? '/guardias/' . $fichaId . '/editar' : '/guardias/' . $fichaId;
@@ -269,14 +270,26 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                 <?php endif ?>
 
                 <?php if ($puedeRevisar && $puedeValidarDocumentos): ?>
-                <form method="post" action="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/revisar') ?>" class="ds-form-main">
+                <?php if ($esSegundaRevisionAceptado): ?>
+                <div class="login-info" style="margin-bottom: 1rem;">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <div>
+                        <strong>Segunda revision</strong>
+                        Este documento ya fue aceptado. Si encuentras una novedad posterior, rechazalo con el motivo para que el usuario pueda subir una correccion.
+                    </div>
+                </div>
+                <?php endif ?>
+                <form method="post" action="<?= $view->url('/expedientes/documento/' . $doc['id'] . '/revisar') ?>" class="ds-form-main" data-review-document-form>
                     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
                     <div class="ds-form-field" style="margin-bottom: 1rem;">
                         <label class="ds-form-label">Observacion del revisor</label>
                         <textarea name="observacion" class="form-control" rows="3"
-                                  placeholder="Opcional: razon del rechazo o comentario..."><?= $e($doc['observacion_revisor'] ?? '') ?></textarea>
+                                  placeholder="<?= $esSegundaRevisionAceptado ? 'Indica la novedad encontrada para que el usuario pueda corregir...' : 'Obligatoria si vas a rechazar; opcional si vas a aceptar...' ?>"
+                                  <?= $esSegundaRevisionAceptado ? 'required' : '' ?>><?= $e($doc['observacion_revisor'] ?? '') ?></textarea>
+                        <span class="ds-form-help"><?= $esSegundaRevisionAceptado ? 'Este motivo quedara visible para que el usuario suba una nueva version.' : 'Al rechazar, el usuario podra corregir y cargar nuevamente el archivo.' ?></span>
                     </div>
                     <div style="display: flex; gap: .55rem; flex-wrap: wrap;">
+                        <?php if (!$esSegundaRevisionAceptado): ?>
                         <button type="submit" name="accion" value="aceptar" class="ds-btn ds-btn-success"
                                 data-confirm
                                 data-confirm-title="Aceptar documento"
@@ -285,13 +298,15 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                                 data-confirm-button="Si, aceptar">
                             <i class="bi bi-check-circle"></i>Aceptar documento
                         </button>
+                        <?php endif ?>
                         <button type="submit" name="accion" value="rechazar" class="ds-btn ds-btn-danger"
+                                data-reject-document
                                 data-confirm
-                                data-confirm-title="Rechazar documento"
-                                data-confirm-text="Confirmas el rechazo de este documento?"
+                                data-confirm-title="<?= $esSegundaRevisionAceptado ? 'Rechazar documento aceptado' : 'Rechazar documento' ?>"
+                                data-confirm-text="<?= $esSegundaRevisionAceptado ? 'El documento volvera a estado rechazado y el usuario podra cargar una correccion. Confirmas?' : 'El documento quedara rechazado y el usuario podra cargar una correccion. Confirmas?' ?>"
                                 data-confirm-type="danger"
                                 data-confirm-button="Si, rechazar">
-                            <i class="bi bi-x-circle"></i>Rechazar documento
+                            <i class="bi bi-x-circle"></i><?= $esSegundaRevisionAceptado ? 'Rechazar en segunda revision' : 'Rechazar documento' ?>
                         </button>
                     </div>
                 </form>
@@ -308,4 +323,35 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
         </div>
     </div>
 </div>
+<?php $view->endSection() ?>
+
+<?php $view->section('scripts') ?>
+<script>
+(() => {
+    const form = document.querySelector('[data-review-document-form]');
+    if (!form) {
+        return;
+    }
+
+    const observacion = form.querySelector('textarea[name="observacion"]');
+    const rejectButtons = form.querySelectorAll('[data-reject-document]');
+    const acceptButtons = form.querySelectorAll('button[name="accion"][value="aceptar"]');
+
+    rejectButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            if (observacion) {
+                observacion.required = true;
+            }
+        });
+    });
+
+    acceptButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            if (observacion) {
+                observacion.required = false;
+            }
+        });
+    });
+})();
+</script>
 <?php $view->endSection() ?>

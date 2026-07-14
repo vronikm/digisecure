@@ -74,6 +74,7 @@ final class DocumentoTipoController
                 'bloque' => 'A',
                 'orden' => 0,
                 'obligatorio' => 1,
+                'numero_documentos' => 1,
                 'requiere_validacion_externa' => 0,
                 'tiene_vencimiento' => 0,
                 'formatos_permitidos' => 'pdf',

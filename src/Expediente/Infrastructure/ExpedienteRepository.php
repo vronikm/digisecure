@@ -259,27 +259,16 @@ final class ExpedienteRepository extends BaseRepository
 
     private function countDocumentoTiposByBloque(string $bloque): int
     {
-        $tenantId = $this->tenantContext->requireTenantId();
+        $total = 0;
+        foreach ($this->getDocumentoTipos($bloque) as $tipo) {
+            if ((int) ($tipo['obligatorio'] ?? 0) !== 1) {
+                continue;
+            }
 
-        // Nota: PDO::ATTR_EMULATE_PREPARES = false no permite reusar el mismo
-        // named placeholder en dos lugares de la query, por eso :tid_outer y :tid_inner
-        // (ambos bindeados al mismo valor).
-        $result = $this->db->fetchScalar(
-            "SELECT COUNT(*) FROM documento_tipos dt
-             WHERE (dt.tenant_id = :tid_outer OR dt.tenant_id IS NULL)
-               AND dt.activo = 1
-               AND dt.obligatorio = 1
-               AND dt.bloque = :bloque
-               AND NOT EXISTS (
-                   SELECT 1 FROM documento_tipos dt2
-                   WHERE dt2.tenant_id = :tid_inner
-                     AND dt2.codigo = dt.codigo
-                     AND dt.tenant_id IS NULL
-               )",
-            ['tid_outer' => $tenantId, 'tid_inner' => $tenantId, 'bloque' => $bloque],
-        );
+            $total += max(1, (int) ($tipo['numero_documentos'] ?? 1));
+        }
 
-        return (int) $result;
+        return $total;
     }
 
     // ==================== DOCUMENTOS ====================
@@ -307,7 +296,7 @@ final class ExpedienteRepository extends BaseRepository
 
         return $this->db->fetchAll(
             "SELECT ed.*, dt.codigo AS tipo_codigo, dt.nombre AS tipo_nombre,
-                    dt.bloque, dt.obligatorio, dt.requiere_validacion_externa,
+                    dt.bloque, dt.obligatorio, dt.numero_documentos, dt.requiere_validacion_externa,
                     dt.tiene_vencimiento, dt.dias_vigencia
              FROM expediente_documentos ed
              INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
@@ -317,6 +306,7 @@ final class ExpedienteRepository extends BaseRepository
              {$bloqueFilter}
              ORDER BY dt.bloque, dt.orden,
                       CASE WHEN dt.tenant_id = :order_tid THEN 0 ELSE 1 END,
+                      ed.documento_indice ASC,
                       ed.updated_at DESC",
             $bindings,
         );
@@ -331,7 +321,7 @@ final class ExpedienteRepository extends BaseRepository
 
         return $this->db->fetchOne(
             'SELECT ed.*, dt.codigo AS tipo_codigo, dt.nombre AS tipo_nombre,
-                    dt.bloque, dt.obligatorio, dt.requiere_validacion_externa,
+                    dt.bloque, dt.obligatorio, dt.numero_documentos, dt.requiere_validacion_externa,
                     dt.tiene_vencimiento, dt.dias_vigencia
              FROM expediente_documentos ed
              INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
@@ -344,6 +334,61 @@ final class ExpedienteRepository extends BaseRepository
      * Busca un documento existente de un expediente para un tipo dado.
      */
     public function findDocumentoByTipo(string $expedienteId, string $tipoId): ?array
+    {
+        $docs = $this->findDocumentosByTipo($expedienteId, $tipoId);
+        return $docs[0] ?? null;
+    }
+
+    /**
+     * Busca documentos existentes de un expediente para un tipo dado.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findDocumentosByTipo(string $expedienteId, string $tipoId): array
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+
+        $tipo = $this->db->fetchOne(
+            'SELECT codigo
+             FROM documento_tipos
+             WHERE id = :id
+               AND (tenant_id = :tipo_tid OR tenant_id IS NULL)',
+            ['id' => $tipoId, 'tipo_tid' => $tenantId],
+        );
+
+        if ($tipo === null || empty($tipo['codigo'])) {
+            return [];
+        }
+
+        return $this->db->fetchAll(
+            'SELECT ed.*
+             FROM expediente_documentos ed
+             INNER JOIN documento_tipos dt ON dt.id = ed.documento_tipo_id
+             WHERE ed.expediente_id = :eid
+               AND ed.tenant_id = :tid
+               AND dt.codigo = :codigo
+               AND (dt.tenant_id = :doc_tipo_tid OR dt.tenant_id IS NULL)
+              ORDER BY CASE WHEN ed.documento_tipo_id = :target_tipo_id THEN 0 ELSE 1 END,
+                       CASE WHEN dt.tenant_id = :order_tid THEN 0 ELSE 1 END,
+                       ed.documento_indice ASC,
+                       ed.updated_at DESC,
+                       ed.created_at DESC
+             LIMIT 100',
+            [
+                'eid' => $expedienteId,
+                'tid' => $tenantId,
+                'codigo' => (string) $tipo['codigo'],
+                'doc_tipo_tid' => $tenantId,
+                'target_tipo_id' => $tipoId,
+                'order_tid' => $tenantId,
+            ],
+        );
+    }
+
+    /**
+     * Busca un documento por tipo e indice configurado (1..numero_documentos).
+     */
+    public function findDocumentoByTipoIndice(string $expedienteId, string $tipoId, int $indice): ?array
     {
         $tenantId = $this->tenantContext->requireTenantId();
 
@@ -366,6 +411,7 @@ final class ExpedienteRepository extends BaseRepository
              WHERE ed.expediente_id = :eid
                AND ed.tenant_id = :tid
                AND dt.codigo = :codigo
+               AND ed.documento_indice = :indice
                AND (dt.tenant_id = :doc_tipo_tid OR dt.tenant_id IS NULL)
              ORDER BY CASE WHEN ed.documento_tipo_id = :target_tipo_id THEN 0 ELSE 1 END,
                       CASE WHEN dt.tenant_id = :order_tid THEN 0 ELSE 1 END,
@@ -376,6 +422,7 @@ final class ExpedienteRepository extends BaseRepository
                 'eid' => $expedienteId,
                 'tid' => $tenantId,
                 'codigo' => (string) $tipo['codigo'],
+                'indice' => $indice,
                 'doc_tipo_tid' => $tenantId,
                 'target_tipo_id' => $tipoId,
                 'order_tid' => $tenantId,
@@ -451,7 +498,8 @@ final class ExpedienteRepository extends BaseRepository
     public function resumenActivosByBloque(string $expedienteId, string $bloque): array
     {
         $tipos = $this->getDocumentoTipos($bloque);
-        $obligatorios = [];
+        $total = 0;
+        $aceptados = 0;
 
         foreach ($tipos as $tipo) {
             if ((int) ($tipo['obligatorio'] ?? 0) !== 1) {
@@ -459,31 +507,29 @@ final class ExpedienteRepository extends BaseRepository
             }
 
             $codigo = (string) ($tipo['codigo'] ?? '');
-            if ($codigo !== '') {
-                $obligatorios[$codigo] = true;
-            }
-        }
-
-        if ($obligatorios === []) {
-            return ['total' => 0, 'aceptados' => 0];
-        }
-
-        $aceptados = [];
-        foreach ($tipos as $tipo) {
-            $codigo = (string) ($tipo['codigo'] ?? '');
-            if ($codigo === '' || !isset($obligatorios[$codigo])) {
+            if ($codigo === '') {
                 continue;
             }
 
-            $doc = $this->findDocumentoByTipo($expedienteId, (string) $tipo['id']);
-            if ($doc !== null && ($doc['estado'] ?? '') === 'ACEPTADO') {
-                $aceptados[$codigo] = true;
+            $requeridos = max(1, (int) ($tipo['numero_documentos'] ?? 1));
+            $total += $requeridos;
+
+            $indicesAceptados = [];
+            foreach ($this->findDocumentosByTipo($expedienteId, (string) $tipo['id']) as $doc) {
+                $indice = max(1, (int) ($doc['documento_indice'] ?? 1));
+                if ($indice > $requeridos || isset($indicesAceptados[$indice])) {
+                    continue;
+                }
+                if (($doc['estado'] ?? '') === 'ACEPTADO') {
+                    $indicesAceptados[$indice] = true;
+                }
             }
+            $aceptados += count($indicesAceptados);
         }
 
         return [
-            'total' => count($obligatorios),
-            'aceptados' => count($aceptados),
+            'total' => $total,
+            'aceptados' => $aceptados,
         ];
     }
 
@@ -497,7 +543,7 @@ final class ExpedienteRepository extends BaseRepository
         $tenantId = $this->tenantContext->requireTenantId();
 
         return $this->db->fetchAll(
-            "SELECT ed.*, dt.nombre AS tipo_nombre, dt.codigo AS tipo_codigo,
+            "SELECT ed.*, dt.nombre AS tipo_nombre, dt.codigo AS tipo_codigo, dt.bloque,
                     f.correlativo, f.nombres, f.apellidos,
                     f.email AS guardia_email, f.celular AS guardia_telefono,
                     t.email_contacto AS admin_email, t.telefono AS admin_telefono,

@@ -13,6 +13,7 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 $titulo = $titulo ?? 'Expedientes documentales';
+$mostrarBloqueB = (bool) ($mostrarBloqueB ?? false);
 
 $estadoTone = [
     'INCOMPLETO'         => 'tone-warning',
@@ -106,7 +107,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
         <span class="ds-card-mark"><i class="bi bi-folder2"></i></span>
         <div>
             <div class="ds-card-title">Listado de expedientes</div>
-            <div class="ds-card-subtitle">Control documental por estado y avance de bloques</div>
+            <div class="ds-card-subtitle">Control documental por estado y avance</div>
         </div>
     </div>
 
@@ -133,7 +134,9 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                     <th>Guardia</th>
                     <th>Estado</th>
                     <th>Bloque A</th>
+                    <?php if ($mostrarBloqueB): ?>
                     <th>Bloque B</th>
+                    <?php endif ?>
                     <th class="ds-cell-end">Acciones</th>
                 </tr>
             </thead>
@@ -160,6 +163,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                             <small><?= $exp['bloque_a_aceptados'] ?>/<?= $exp['bloque_a_total'] ?></small>
                         </div>
                     </td>
+                    <?php if ($mostrarBloqueB): ?>
                     <td>
                         <?php if ($exp['bloque_b_desbloqueado']): ?>
                         <div class="ds-progress-row">
@@ -172,6 +176,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                         <span class="ds-cell-sub"><i class="bi bi-lock"></i> Bloqueado</span>
                         <?php endif ?>
                     </td>
+                    <?php endif ?>
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <a href="<?= $view->url('/guardias/' . $exp['ficha_id'] . '/expediente') ?>"

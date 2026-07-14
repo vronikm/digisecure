@@ -145,6 +145,7 @@ $e = ViewRenderer::e(...);
                     <th>Nombre</th>
                     <th class="ds-cell-end">Bloque</th>
                     <th class="ds-cell-end">Oblig.</th>
+                    <th class="ds-cell-end">Docs</th>
                     <th class="ds-cell-end">Vigencia</th>
                     <th class="ds-cell-end">Dias</th>
                     <th class="ds-cell-end">Activo</th>
@@ -175,6 +176,9 @@ $e = ViewRenderer::e(...);
                         <?php else: ?>
                             <i class="bi bi-dash-circle" style="color:#94a3b8;"></i>
                         <?php endif ?>
+                    </td>
+                    <td class="ds-cell-end">
+                        <span class="ds-badge tone-info no-dot"><?= max(1, (int) ($t['numero_documentos'] ?? 1)) ?></span>
                     </td>
                     <td class="ds-cell-end">
                         <?php if ((int) $t['tiene_vencimiento'] === 1): ?>

@@ -7,6 +7,7 @@ namespace DigiSecure\Expediente\Controller;
 use DigiSecure\Expediente\Application\DescargarDocumentoService;
 use DigiSecure\Expediente\Application\RevisarDocumentoService;
 use DigiSecure\Expediente\Application\SubirDocumentoService;
+use DigiSecure\Expediente\Domain\Enum\EstadoDocumento;
 use DigiSecure\Expediente\Domain\Enum\EstadoExpediente;
 use DigiSecure\Expediente\Infrastructure\ExpedienteRepository;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
@@ -61,6 +62,9 @@ final class ExpedienteController
             return $this->view->response('errors/404', [], 404);
         }
         if (!$this->documentoTieneTipoActivo($doc)) {
+            return $this->view->response('errors/404', [], 404);
+        }
+        if ($this->documentoEsBloqueB($doc) && !$this->puedeVerBloqueB($user)) {
             return $this->view->response('errors/404', [], 404);
         }
 
@@ -140,6 +144,7 @@ final class ExpedienteController
             'page' => $page,
             'totalPages' => $totalPages,
             'filters' => $filters,
+            'mostrarBloqueB' => $this->puedeVerBloqueB($user),
         ]);
     }
 
@@ -171,6 +176,7 @@ final class ExpedienteController
             'totalPages' => $totalPages,
             'filters' => $filters,
             'titulo' => 'Expedientes Pendientes',
+            'mostrarBloqueB' => $this->puedeVerBloqueB($user),
         ]);
     }
 
@@ -199,6 +205,8 @@ final class ExpedienteController
             return $this->view->response('errors/404', [], 404);
         }
 
+        $puedeVerBloqueB = $this->puedeVerBloqueB($user);
+
         // Cargar documentos por bloque
         $docsA = $this->expRepo->getDocumentos($expediente['id'], 'A');
         $docsB = $this->expRepo->getDocumentos($expediente['id'], 'B');
@@ -222,6 +230,10 @@ final class ExpedienteController
             $docsB,
             static fn(array $doc): bool => isset($codigosActivos[(string) ($doc['tipo_codigo'] ?? '')]),
         ));
+        if (!$puedeVerBloqueB) {
+            $docsB = [];
+            $tiposB = [];
+        }
 
         $resumenA = $this->expRepo->resumenActivosByBloque((string) $expediente['id'], 'A');
         $resumenB = $this->expRepo->resumenActivosByBloque((string) $expediente['id'], 'B');
@@ -241,13 +253,18 @@ final class ExpedienteController
         $docsPorTipo = [];
         foreach (array_merge($docsA, $docsB) as $d) {
             $codigo = (string) ($d['tipo_codigo'] ?? '');
-            if ($codigo !== '' && !isset($docsPorTipo[$codigo])) {
-                $docsPorTipo[$codigo] = $d;
+            if ($codigo !== '') {
+                $docsPorTipo[$codigo] ??= [];
+                $docsPorTipo[$codigo][] = $d;
             }
-            if (!isset($docsPorTipo[$d['documento_tipo_id']])) {
-                $docsPorTipo[$d['documento_tipo_id']] = $d;
-            }
+            $tipoKey = (string) $d['documento_tipo_id'];
+            $docsPorTipo[$tipoKey] ??= [];
+            $docsPorTipo[$tipoKey][] = $d;
         }
+        foreach ($docsPorTipo as &$docsTipo) {
+            usort($docsTipo, static fn(array $a, array $b): int => ((int) ($a['documento_indice'] ?? 1)) <=> ((int) ($b['documento_indice'] ?? 1)));
+        }
+        unset($docsTipo);
 
         // Documentos por vencer (30 días)
         $porVencer = $this->expRepo->getDocumentosPorVencer(30);
@@ -255,7 +272,8 @@ final class ExpedienteController
         $porVencer = array_filter(
             $porVencer,
             fn($d) => $d['expediente_id'] === $expediente['id']
-                && isset($codigosActivos[(string) ($d['tipo_codigo'] ?? '')]),
+                && isset($codigosActivos[(string) ($d['tipo_codigo'] ?? '')])
+                && ($puedeVerBloqueB || (string) ($d['bloque'] ?? '') !== 'B'),
         );
 
         return $this->view->response('expediente/dashboard', [
@@ -268,6 +286,7 @@ final class ExpedienteController
             'tiposB' => $tiposB,
             'docsPorTipo' => $docsPorTipo,
             'porVencer' => array_values($porVencer),
+            'mostrarBloqueB' => $puedeVerBloqueB,
         ]);
     }
 
@@ -291,7 +310,8 @@ final class ExpedienteController
             return $this->view->response('errors/403', [], 403);
         }
 
-        $docExistente = $this->expRepo->findDocumentoByTipo($id, $tipoId);
+        $docsExistentes = $this->expRepo->findDocumentosByTipo($id, $tipoId);
+        $docExistente = $docsExistentes[0] ?? null;
         $ficha = $this->fichaRepo->findFichaById($expediente['ficha_id']);
         if ($ficha === null || !$this->aspirantePuedeAccederFicha($user, $ficha)) {
             return $this->view->response('errors/404', [], 404);
@@ -305,6 +325,7 @@ final class ExpedienteController
             'ficha' => $ficha,
             'tipo' => $tipo,
             'docExistente' => $docExistente,
+            'docsExistentes' => $docsExistentes,
             'puedeValidarDocumentos' => $this->puedeValidarDocumentos($user),
         ]);
     }
@@ -314,7 +335,6 @@ final class ExpedienteController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $file = $request->file('archivo');
         $input = $request->post;
 
         $expediente = $this->expRepo->findExpedienteById($id);
@@ -331,20 +351,30 @@ final class ExpedienteController
         }
 
         try {
-            $this->subirService->execute(
-                $id,
-                $tipoId,
-                $input,
-                $file,
-                $user->id,
-                $request->clientIp(),
-                $this->puedeValidarDocumentos($user),
-                $this->puedeCargarBloqueB($user),
-            );
+            $files = $this->uploadedDocumentFiles($request, max(1, (int) ($tipo['numero_documentos'] ?? 1)));
+            if ($files === []) {
+                throw new DomainException('Selecciona al menos un archivo para cargar.');
+            }
+
+            $this->ensureDocumentSlotsAreReplaceable($id, $tipoId, $files);
+
+            foreach ($files as $indice => $file) {
+                $this->subirService->execute(
+                    $id,
+                    $tipoId,
+                    $input,
+                    $file,
+                    $user->id,
+                    $request->clientIp(),
+                    $this->puedeValidarDocumentos($user),
+                    $this->puedeCargarBloqueB($user),
+                    (int) $indice,
+                );
+            }
 
             $mensaje = (string) ($tipo['bloque'] ?? '') === 'B'
-                ? 'Documento de Bloque B cargado y aceptado correctamente.'
-                : 'Documento subido correctamente.';
+                ? sprintf('%d documento(s) de Bloque B cargado(s) y aceptado(s) correctamente.', count($files))
+                : sprintf('%d documento(s) subido(s) correctamente.', count($files));
             $this->flash->success($mensaje);
             return Response::redirect(
                 $this->securePath($request, "/guardias/{$expediente['ficha_id']}/expediente")
@@ -358,6 +388,7 @@ final class ExpedienteController
                 'ficha' => $ficha,
                 'tipo' => $tipo,
                 'docExistente' => $this->expRepo->findDocumentoByTipo($id, $tipoId),
+                'docsExistentes' => $this->expRepo->findDocumentosByTipo($id, $tipoId),
                 'puedeValidarDocumentos' => $this->puedeValidarDocumentos($user),
                 'error' => $e->getMessage(),
             ]);
@@ -376,6 +407,9 @@ final class ExpedienteController
             return $this->view->response('errors/404', [], 404);
         }
         if (!$this->documentoTieneTipoActivo($doc)) {
+            return $this->view->response('errors/404', [], 404);
+        }
+        if ($this->documentoEsBloqueB($doc) && !$this->puedeVerBloqueB($user)) {
             return $this->view->response('errors/404', [], 404);
         }
 
@@ -408,6 +442,9 @@ final class ExpedienteController
 
         $docActual = $this->expRepo->findDocumentoById($docId);
         if ($docActual === null || !$this->documentoTieneTipoActivo($docActual)) {
+            return $this->view->response('errors/404', [], 404);
+        }
+        if ($this->documentoEsBloqueB($docActual) && !$this->puedeVerBloqueB($user)) {
             return $this->view->response('errors/404', [], 404);
         }
 
@@ -473,7 +510,72 @@ final class ExpedienteController
             return false;
         }
 
+        if ($this->esAdminOperativo($user)) {
+            return true;
+        }
+
         return $user->tienePermiso('expedientes.cargar') || $user->tienePermiso('expedientes.subir');
+    }
+
+    private function puedeVerBloqueB(AuthenticatedUser $user): bool
+    {
+        if ($user->esAspiranteGuardia()) {
+            return false;
+        }
+
+        if ($this->esAdminOperativo($user)) {
+            return true;
+        }
+
+        return $this->puedeCargarBloqueB($user) || $this->puedeValidarDocumentos($user);
+    }
+
+    private function esAdminOperativo(AuthenticatedUser $user): bool
+    {
+        return $user->esSuperAdmin() || $user->tieneRol('admin_tenant');
+    }
+
+    /**
+     * @return array<int, array{name: string, type: string, tmp_name: string, error: int, size: int}>
+     */
+    private function uploadedDocumentFiles(Request $request, int $maxDocumentos): array
+    {
+        $files = [];
+
+        $legacy = $request->file('archivo');
+        if ($legacy !== null && (int) ($legacy['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $files[1] = $legacy;
+        }
+
+        for ($i = 1; $i <= $maxDocumentos; $i++) {
+            $file = $request->file('archivo_' . $i);
+            if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $files[$i] = $file;
+        }
+
+        ksort($files);
+        return $files;
+    }
+
+    /**
+     * @param array<int, array{name: string, type: string, tmp_name: string, error: int, size: int}> $files
+     */
+    private function ensureDocumentSlotsAreReplaceable(string $expedienteId, string $tipoId, array $files): void
+    {
+        $docsPorIndice = [];
+        foreach ($this->expRepo->findDocumentosByTipo($expedienteId, $tipoId) as $doc) {
+            $indice = max(1, (int) ($doc['documento_indice'] ?? 1));
+            $docsPorIndice[$indice] ??= $doc;
+        }
+
+        foreach (array_keys($files) as $indice) {
+            $doc = $docsPorIndice[(int) $indice] ?? null;
+            if ($doc !== null && (string) ($doc['estado'] ?? '') === EstadoDocumento::ACEPTADO->value) {
+                throw new DomainException('El documento aceptado no puede reemplazarse. Solo puedes visualizarlo.');
+            }
+        }
     }
 
     /**
@@ -495,5 +597,13 @@ final class ExpedienteController
     {
         $codigo = (string) ($doc['tipo_codigo'] ?? '');
         return $codigo !== '' && $this->expRepo->findDocumentoTipoByCodigo($codigo) !== null;
+    }
+
+    /**
+     * @param array<string, mixed> $doc
+     */
+    private function documentoEsBloqueB(array $doc): bool
+    {
+        return (string) ($doc['bloque'] ?? '') === 'B';
     }
 }

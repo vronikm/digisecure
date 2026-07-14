@@ -22,7 +22,8 @@ use DigiSecure\Shared\Domain\DomainException;
  * Rutas (permiso aspirantes.gestionar):
  *   GET  /reclutamiento              listado + filtros + KPIs
  *   GET  /reclutamiento/{id}         detalle del aspirante
- *   POST /reclutamiento/{id}/aprobar crea usuario y aprueba
+ *   POST /reclutamiento/{id}/contratar promueve al aspirante a empleado
+ *   POST /reclutamiento/{id}/aprobar alias legacy de contratar
  *   POST /reclutamiento/{id}/rechazar marca descartado
  */
 final class AspiranteAdminController
@@ -119,6 +120,7 @@ final class AspiranteAdminController
         $ficha['hijos']                   = $this->repo->fichaHijos($fichaId);
         $ficha['referencias']             = $this->repo->fichaReferencias($fichaId);
         $ficha['cursos']                  = $this->repo->fichaCursos($fichaId);
+        $ficha['expediente']              = $this->repo->findExpedienteDeFicha($fichaId);
 
         return $ficha;
     }
@@ -158,14 +160,25 @@ final class AspiranteAdminController
 
     public function aprobar(Request $request, CsrfGuard $csrf, string $id): Response
     {
+        return $this->contratar($request, $csrf, $id);
+    }
+
+    public function contratar(Request $request, CsrfGuard $csrf, string $id): Response
+    {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
         try {
-            $this->service->aprobar($id, $user->tenantId, $user->id, $request->clientIp());
-            $this->flash->success('Aspirante aprobado: se creó su cuenta de usuario activa.');
+            $this->service->contratar($id, $user->tenantId, $user->id, $request->clientIp());
+            $this->flash->success('Aspirante contratado: ahora consta como empleado en Guardias.');
+
+            $aspirante = $this->repo->findDetalle($id);
+            $usuarioId = (string) ($aspirante['usuario_id'] ?? '');
+            $ficha = $usuarioId !== '' ? $this->repo->findFichaDeUsuario($usuarioId) : null;
+            $destino = $ficha !== null && !empty($ficha['id']) ? '/guardias/' . (string) $ficha['id'] : '/guardias';
+            return Response::redirect($this->securePath($request, $destino));
         } catch (DomainException $e) {
-            $this->flash->error($e->getMessage(), 'No se pudo aprobar al aspirante');
+            $this->flash->error($e->getMessage(), 'No se pudo contratar al aspirante');
         }
 
         return Response::redirect($this->securePath($request, "/reclutamiento/{$id}"));

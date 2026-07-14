@@ -49,6 +49,7 @@ final class SubirDocumentoService
         string $ip,
         bool $puedeRegistrarValidacionExterna = false,
         bool $autoAceptarBloqueB = false,
+        int $documentoIndice = 1,
     ): string {
         // 1. Validar expediente
         $expediente = $this->repo->findExpedienteById($expedienteId);
@@ -62,6 +63,11 @@ final class SubirDocumentoService
             throw new DomainException('Tipo de documento no válido.');
         }
 
+        $maxDocumentos = max(1, (int) ($tipo['numero_documentos'] ?? 1));
+        if ($documentoIndice < 1 || $documentoIndice > $maxDocumentos) {
+            throw new DomainException('Indice de documento no valido para este tipo documental.');
+        }
+
         // 3. Verificar bloque: si es Bloque B, debe estar desbloqueado
         $esBloqueB = (string) $tipo['bloque'] === 'B';
 
@@ -70,6 +76,11 @@ final class SubirDocumentoService
         }
         if ($esBloqueB && !$autoAceptarBloqueB) {
             throw new DomainException('Los documentos del Bloque B solo pueden ser cargados por administracion o usuarios autorizados.');
+        }
+
+        $existente = $this->repo->findDocumentoByTipoIndice($expedienteId, $documentoTipoId, $documentoIndice);
+        if ($existente !== null && (string) ($existente['estado'] ?? '') === EstadoDocumento::ACEPTADO->value) {
+            throw new DomainException('El documento ya fue aceptado y no puede reemplazarse. Solo puedes visualizarlo.');
         }
 
         // 4. Validar archivo
@@ -86,8 +97,6 @@ final class SubirDocumentoService
         $fechaObjetivoActualizacion = $this->calcularObjetivoActualizacion($fechaVencimiento, $fechaEmision);
 
         // 7. Crear o actualizar documento
-        $existente = $this->repo->findDocumentoByTipo($expedienteId, $documentoTipoId);
-
         $now = date('Y-m-d H:i:s.u');
         $estadoDocumento = $esBloqueB && $autoAceptarBloqueB
             ? EstadoDocumento::ACEPTADO
@@ -96,6 +105,7 @@ final class SubirDocumentoService
         $data = [
             'expediente_id' => $expedienteId,
             'documento_tipo_id' => $documentoTipoId,
+            'documento_indice' => $documentoIndice,
             'archivo_nombre_original' => $file['name'],
             'archivo_nombre_storage' => $storageFilename,
             'archivo_mime' => $file['type'],
@@ -148,6 +158,7 @@ final class SubirDocumentoService
             detalles: [
                 'expediente_id' => $expedienteId,
                 'tipo_codigo' => $tipo['codigo'],
+                'documento_indice' => $documentoIndice,
                 'archivo' => $file['name'],
                 'estado' => $estadoDocumento->value,
                 'auto_aceptado' => $estadoDocumento === EstadoDocumento::ACEPTADO,

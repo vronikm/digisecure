@@ -1075,9 +1075,10 @@ final class Bootstrap
         $router->get('/verificar/reenviar', [VerificacionController::class, 'reenviarForm'], name: 'aspirantes.reenviar.form');
         $router->post('/verificar/reenviar', [VerificacionController::class, 'reenviar'], name: 'aspirantes.reenviar');
 
-        // Reclutamiento — revisión y aprobación de aspirantes (Fase 4, protegida)
+        // Reclutamiento — revision y contratacion de aspirantes (Fase 4, protegida)
         $router->get('/reclutamiento', [AspiranteAdminController::class, 'index'], name: 'reclutamiento.index', permission: 'aspirantes.gestionar');
         $router->get('/reclutamiento/{id}', [AspiranteAdminController::class, 'show'], name: 'reclutamiento.show', permission: 'aspirantes.gestionar');
+        $router->post('/reclutamiento/{id}/contratar', [AspiranteAdminController::class, 'contratar'], name: 'reclutamiento.contratar', permission: 'aspirantes.gestionar');
         $router->post('/reclutamiento/{id}/aprobar', [AspiranteAdminController::class, 'aprobar'], name: 'reclutamiento.aprobar', permission: 'aspirantes.gestionar');
         $router->post('/reclutamiento/{id}/rechazar', [AspiranteAdminController::class, 'rechazar'], name: 'reclutamiento.rechazar', permission: 'aspirantes.gestionar');
 

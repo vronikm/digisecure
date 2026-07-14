@@ -172,8 +172,23 @@ class AspiranteRepository
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function findExpedienteDeFicha(string $fichaId): ?array
+    {
+        return $this->db->fetchOne(
+            'SELECT *
+               FROM expedientes
+              WHERE ficha_id = :fid
+              ORDER BY created_at DESC
+              LIMIT 1',
+            ['fid' => $fichaId],
+        );
+    }
+
+    /**
      * Mueve al usuario y TODAS sus fichas (con sus filas dependientes) al tenant
-     * destino. Se usa al aprobar: el empleado y su ficha pasan del tenant de
+     * destino. Se usa al contratar: el empleado y su ficha pasan del tenant de
      * plataforma al tenant de la empresa del reclutador.
      */
     public function moverUsuarioYFichasATenant(string $usuarioId, string $tenantDestino): void
@@ -181,7 +196,11 @@ class AspiranteRepository
         $now = Clock::nowString();
 
         $this->db->execute(
-            'UPDATE usuarios SET tenant_id = :t, updated_at = :now WHERE id = :uid',
+            "UPDATE usuarios
+                SET tenant_id = :t,
+                    cargo = 'Empleado',
+                    updated_at = :now
+              WHERE id = :uid",
             ['t' => $tenantDestino, 'now' => $now, 'uid' => $usuarioId],
         );
 
@@ -200,16 +219,28 @@ class AspiranteRepository
         $in = implode(', ', $placeholders);
 
         // Filas dependientes por ficha_id (todas son tenant-aware) y la propia ficha.
-        foreach ([
+        $tablasDependientes = [
             'fichas_trabajos_anteriores',
             'fichas_hijos_menores',
             'fichas_referencias',
             'fichas_cursos',
             'expedientes',
             'asignaciones',
-        ] as $tabla) {
+        ];
+        if ($this->tableExists('fichas_vacunas')) {
+            $tablasDependientes[] = 'fichas_vacunas';
+        }
+
+        foreach ($tablasDependientes as $tabla) {
             $this->db->execute("UPDATE {$tabla} SET tenant_id = :t WHERE ficha_id IN ({$in})", $bind);
         }
+        $this->db->execute(
+            "UPDATE expediente_documentos ed
+                INNER JOIN expedientes e ON e.id = ed.expediente_id
+                SET ed.tenant_id = :t
+              WHERE e.ficha_id IN ({$in})",
+            $bind,
+        );
         $this->db->execute("UPDATE fichas SET tenant_id = :t WHERE id IN ({$in})", $bind);
     }
 
@@ -342,7 +373,7 @@ class AspiranteRepository
     }
 
     /**
-     * @return array{total: int, pendientes: int, verificados: int, aprobados: int, descartados: int}
+     * @return array{total: int, pendientes: int, verificados: int, aprobados: int, contratados: int, descartados: int}
      */
     public function kpisAdmin(): array
     {
@@ -351,16 +382,19 @@ class AspiranteRepository
                 COUNT(*) AS total,
                 SUM(email_verificado = 0 AND estado = 'nuevo') AS pendientes,
                 SUM(email_verificado = 1 AND estado IN ('nuevo', 'aspirante', 'en_revision', 'contactado')) AS verificados,
-                SUM(estado = 'aprobado') AS aprobados,
+                SUM(estado IN ('aprobado', 'contratado')) AS contratados,
                 SUM(estado = 'descartado') AS descartados
              FROM aspirantes",
         ) ?? [];
+
+        $contratados = (int) ($row['contratados'] ?? 0);
 
         return [
             'total'       => (int) ($row['total'] ?? 0),
             'pendientes'  => (int) ($row['pendientes'] ?? 0),
             'verificados' => (int) ($row['verificados'] ?? 0),
-            'aprobados'   => (int) ($row['aprobados'] ?? 0),
+            'aprobados'   => $contratados,
+            'contratados' => $contratados,
             'descartados' => (int) ($row['descartados'] ?? 0),
         ];
     }
@@ -477,6 +511,21 @@ class AspiranteRepository
                     usuario_id = :uid,
                     tenant_id = :tid,
                     aprobado_at = :cuando,
+                    revisado_por = :por,
+                    updated_at = :cuando2
+              WHERE id = :id",
+            ['uid' => $usuarioId, 'tid' => $tenantId, 'cuando' => $cuando, 'por' => $revisadoPor, 'cuando2' => $cuando, 'id' => $aspiranteId],
+        );
+    }
+
+    public function marcarContratado(string $aspiranteId, string $usuarioId, string $tenantId, ?string $revisadoPor, string $cuando): void
+    {
+        $this->db->execute(
+            "UPDATE aspirantes
+                SET estado = 'contratado',
+                    usuario_id = :uid,
+                    tenant_id = :tid,
+                    aprobado_at = COALESCE(aprobado_at, :cuando),
                     revisado_por = :por,
                     updated_at = :cuando2
               WHERE id = :id",
@@ -655,6 +704,18 @@ class AspiranteRepository
         );
     }
 
+    public function quitarRolesPorCodigo(string $usuarioId, string $codigoRol): void
+    {
+        $this->db->execute(
+            'DELETE ur
+               FROM usuarios_roles ur
+               INNER JOIN roles r ON r.id = ur.role_id
+              WHERE ur.usuario_id = :uid
+                AND r.codigo = :codigo',
+            ['uid' => $usuarioId, 'codigo' => $codigoRol],
+        );
+    }
+
     public function actualizarEstadoUsuario(string $usuarioId, string $estado, string $cuando): void
     {
         $this->db->execute(
@@ -754,8 +815,12 @@ class AspiranteRepository
 
         $q = trim((string) ($filtros['q'] ?? ''));
         if ($q !== '') {
-            $conds[] = '(nombres LIKE :q OR apellidos LIKE :q OR correo LIKE :q OR documento LIKE :q)';
-            $bind['q'] = '%' . $q . '%';
+            $conds[] = '(nombres LIKE :q_nombres OR apellidos LIKE :q_apellidos OR correo LIKE :q_correo OR documento LIKE :q_documento)';
+            $like = '%' . $q . '%';
+            $bind['q_nombres'] = $like;
+            $bind['q_apellidos'] = $like;
+            $bind['q_correo'] = $like;
+            $bind['q_documento'] = $like;
         }
 
         $estado = trim((string) ($filtros['estado'] ?? ''));
@@ -773,6 +838,17 @@ class AspiranteRepository
         $where = $conds === [] ? '' : 'WHERE ' . implode(' AND ', $conds);
 
         return [$where, $bind];
+    }
+
+    private function tableExists(string $tableName): bool
+    {
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*)
+               FROM information_schema.TABLES
+              WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = :table',
+            ['table' => $tableName],
+        ) > 0;
     }
 
     /**
