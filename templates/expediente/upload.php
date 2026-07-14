@@ -155,7 +155,7 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
         </div>
         <div class="ds-card-body">
             <div class="row g-3">
-                <div class="col-md-8">
+                <div class="col-md-6">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Seleccionar archivo <span class="ds-required">*</span></label>
                         <input type="file" name="archivo" class="form-control" required
@@ -163,7 +163,7 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                         <span class="ds-form-help">Solo se aceptan los formatos indicados arriba.</span>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Fecha emisión del documento</label>
                         <input type="date" name="fecha_emision_documento" class="form-control"
@@ -172,7 +172,7 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                 </div>
 
                 <?php if ($tieneVencimiento): ?>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Fecha vencimiento del documento</label>
                         <input type="date" name="fecha_vencimiento" class="form-control"

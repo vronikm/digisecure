@@ -117,7 +117,7 @@ $pageSubtitle = $aspiranteMode
             <h3><?= $aspiranteMode ? 'Aun no has guardado tu ficha' : 'No hay guardias para mostrar' ?></h3>
             <p>
                 <?php if ($aspiranteMode): ?>
-                    Guarda tu ficha para habilitar el expediente documental y cargar los documentos del Bloque A y B.
+                    Guarda tu ficha para habilitar el expediente documental y cargar los documentos digitales.
                 <?php elseif ($hasFilters): ?>
                     Ningun guardia coincide con los criterios de busqueda.
                 <?php else: ?>

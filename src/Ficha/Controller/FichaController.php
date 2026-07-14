@@ -70,36 +70,14 @@ final class FichaController
         $filters = [];
 
         if ($user->esAspiranteGuardia()) {
+            // El aspirante no ve un listado: tras el login se lo lleva directo a
+            // su ficha (editarla si ya existe, o crearla en su primer ingreso).
             $ficha = $this->aspiranteFicha($user);
-            $guardias = [];
-            if ($ficha !== null) {
-                $guardias[] = [
-                    'ficha_id' => (string) ($ficha['id'] ?? ''),
-                    'cedula_hash' => (string) ($ficha['cedula_hash'] ?? ''),
-                    'cedula_cifrada' => $ficha['cedula_cifrada'] ?? null,
-                    'cedula_display' => $this->decryptSafe($ficha['cedula_cifrada'] ?? null),
-                    'apellidos' => (string) ($ficha['apellidos'] ?? ''),
-                    'nombres' => (string) ($ficha['nombres'] ?? ''),
-                    'fecha_nacimiento' => $ficha['fecha_nacimiento'] ?? null,
-                    'celular' => $ficha['celular'] ?? null,
-                    'email' => $ficha['email'] ?? null,
-                    'ultima_ficha_at' => $ficha['updated_at'] ?? $ficha['created_at'] ?? null,
-                    'total_fichas' => 1,
-                ];
-            }
+            $target = ($ficha !== null && !empty($ficha['id']))
+                ? '/guardias/' . (string) $ficha['id'] . '/editar'
+                : '/guardias/crear';
 
-            return $this->view->response('ficha/index', [
-                'user' => $user,
-                'csrfToken' => $csrf->token(),
-                'currentPath' => $request->path,
-                'guardias' => $guardias,
-                'total' => count($guardias),
-                'page' => 1,
-                'totalPages' => 1,
-                'filters' => ['busqueda' => ''],
-                'listError' => false,
-                'aspiranteMode' => true,
-            ]);
+            return Response::redirect($this->securePath($request, $target));
         }
 
         if ($busqueda !== '') {
