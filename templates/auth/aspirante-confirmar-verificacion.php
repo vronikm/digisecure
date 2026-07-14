@@ -25,6 +25,32 @@ $correo = (string) ($correo ?? '');
     <title>Confirmar correo - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-verificacion-post">
+    <style>
+        /* Botones de accion en una sola linea y de menor tamano (solo esta pantalla). */
+        .verificacion-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .6rem;
+            margin-top: .75rem;
+        }
+        .verificacion-actions form {
+            flex: 1 1 0;
+            min-width: 0;
+            margin: 0;
+        }
+        .verificacion-actions > .login-secondary-btn {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+        .verificacion-actions .login-submit,
+        .verificacion-actions .login-secondary-btn {
+            width: 100%;
+            margin: 0;
+            padding: .55rem .7rem;
+            font-size: .82rem;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body class="gemeseg-login">
 <div class="login-shell is-single">
@@ -45,18 +71,20 @@ $correo = (string) ($correo ?? '');
             </div>
         </div>
 
-        <form method="POST" action="<?= $view->url('/verificar') ?>" novalidate>
-            <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
-            <input type="hidden" name="token" value="<?= $e($token) ?>">
+        <div class="verificacion-actions">
+            <form method="POST" action="<?= $view->url('/verificar') ?>" novalidate>
+                <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+                <input type="hidden" name="token" value="<?= $e($token) ?>">
 
-            <button type="submit" class="login-submit">
-                <i class="bi bi-patch-check-fill"></i>Confirmar mi correo
-            </button>
-        </form>
+                <button type="submit" class="login-submit">
+                    <i class="bi bi-patch-check-fill"></i>Confirmar mi correo
+                </button>
+            </form>
 
-        <a href="<?= $view->url('/verificar/reenviar') ?>" class="login-secondary-btn">
-            <i class="bi bi-envelope-arrow-up"></i>Solicitar un nuevo enlace
-        </a>
+            <a href="<?= $view->url('/verificar/reenviar') ?>" class="login-secondary-btn">
+                <i class="bi bi-envelope-arrow-up"></i>Solicitar un nuevo enlace
+            </a>
+        </div>
 
         <div class="login-foot-mini">
             &copy; <?= date('Y') ?> GEMESEG Seguridad &middot; Plataforma DigiSecure
