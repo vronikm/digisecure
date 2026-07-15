@@ -189,14 +189,12 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
         </div>
         <div class="ds-card-body">
             <div class="row g-3">
-<<<<<<< HEAD
                 <div class="col-md-6">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Seleccionar archivo <span class="ds-required">*</span></label>
                         <input type="file" name="archivo" class="form-control" required
                                accept="<?= $e(implode(',', array_map(fn($f) => '.' . trim($f), explode(',', $tipo['formatos_permitidos'])))) ?>">
                         <span class="ds-form-help">Solo se aceptan los formatos indicados arriba.</span>
-=======
                 <div class="col-md-8">
                     <div class="row g-3">
                         <?php for ($i = 1; $i <= $numeroDocumentos; $i++):
@@ -238,7 +236,6 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                             </div>
                         </div>
                         <?php endfor ?>
->>>>>>> fd24f315d3bd052e29a335171e0aa760eff6fd3d
                     </div>
                 </div>
                 <div class="col-md-3">
