@@ -23,6 +23,18 @@ $correo = $correo ?? '';
     <title>Revisa tu correo - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260626-registro2">
+    <style>
+        /* Ventana de notificacion mas compacta y boton a su tamano (solo esta pantalla). */
+        .gemeseg-login .login-shell.is-single {
+            max-width: 420px;
+        }
+        .login-form .login-secondary-btn {
+            width: auto;
+            align-self: center;
+            padding: .5rem 1.15rem;
+            font-size: .82rem;
+        }
+    </style>
 </head>
 <body class="gemeseg-login">
 <div class="login-shell is-single">
