@@ -58,9 +58,15 @@ final class ActualizarFichaService
 
         // Cifrar cuenta bancaria si cambia
         if (array_key_exists('cuenta_bancaria', $input)) {
-            $data['cuenta_bancaria_cifrada'] = !empty($input['cuenta_bancaria'])
-                ? $this->encryption->encrypt((string)$input['cuenta_bancaria'])
-                : null;
+            $cuentaBancaria = trim((string) $input['cuenta_bancaria']);
+            $conservarCuentaAnterior = $cuentaBancaria === ''
+                && (string) ($input['cuenta_bancaria_conservar'] ?? '') === '1';
+
+            if (!$conservarCuentaAnterior) {
+                $data['cuenta_bancaria_cifrada'] = $cuentaBancaria !== ''
+                    ? $this->encryption->encrypt($cuentaBancaria)
+                    : null;
+            }
         }
 
         // Validar género si se envía

@@ -90,12 +90,28 @@ $prefillByCedulaUrl = isset($prefillByCedulaUrl) && is_string($prefillByCedulaUr
     ? $prefillByCedulaUrl
     : '/guardias/prefill/cedula';
 $formEnableCedulaPrefill = isset($formEnableCedulaPrefill) ? (bool)$formEnableCedulaPrefill : false;
+$formIsAspirante = isset($isAspirante)
+    ? (bool) $isAspirante
+    : $user->esAspiranteGuardia();
+$formCanReviewExpediente = !$formIsAspirante
+    && $user->tieneAlgunPermiso('expedientes.validar', 'expedientes.revisar');
+$formStepOptions = ['base', 'contacto', 'familiares', 'historial', 'cursos'];
+$formInitialStepCandidate = (string) ($formInitialStep ?? $input['_active_step'] ?? 'base');
+$formInitialStep = in_array($formInitialStepCandidate, $formStepOptions, true)
+    ? $formInitialStepCandidate
+    : 'base';
+$formCuentaBancariaRequiereActualizacion = isset($formCuentaBancariaRequiereActualizacion)
+    ? (bool) $formCuentaBancariaRequiereActualizacion
+    : (bool) ($input['cuenta_bancaria_requiere_actualizacion'] ?? false);
 $defaultTipoFicha = isset($input['tipo_ficha']) && is_string($input['tipo_ficha']) && $input['tipo_ficha'] !== ''
     ? $input['tipo_ficha']
     : 'INGRESO';
 $currentFichaId = isset($fichaId) && is_string($fichaId) ? $fichaId : (string)($input['id'] ?? '');
 $croquisArchivoId = (string)($input['croquis_archivo_id'] ?? '');
-$croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
+$formFotoArchivoNoDisponible = isset($formFotoArchivoNoDisponible) && (bool) $formFotoArchivoNoDisponible;
+$formCroquisArchivoDisponible = !isset($formCroquisArchivoDisponible) || (bool) $formCroquisArchivoDisponible;
+$formCroquisArchivoNoDisponible = isset($formCroquisArchivoNoDisponible) && (bool) $formCroquisArchivoNoDisponible;
+$croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formCroquisArchivoDisponible
     ? $view->url('/guardias/' . $currentFichaId . '/croquis')
     : '';
 ?>
@@ -906,6 +922,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
     <div class="col-xl-8">
 <form method="post" action="<?= $view->url($formAction) ?>" id="fichaForm" class="ds-form-main" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
+    <input type="hidden" name="_active_step" id="fichaActiveStep" value="<?= $e($formInitialStep) ?>">
 
     <div class="card ds-step-nav-card shadow-sm mb-4">
         <div class="card-body">
@@ -991,7 +1008,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                             <img id="fotoPreview" alt="Foto del empleado" src="<?= $e($fotoPreviewSrc) ?>" style="<?= $tieneFoto ? 'display:block;' : 'display:none;' ?>">
                             <div class="ff-foto-placeholder" id="fotoPlaceholder" style="<?= $tieneFoto ? 'display:none;' : '' ?>">
                                 <i class="bi bi-person-bounding-box"></i>
-                                <span>Sin foto</span>
+                                <span><?= $formFotoArchivoNoDisponible ? 'Foto no disponible' : 'Sin foto' ?></span>
                             </div>
                         </div>
                         <input type="file" id="fotoInput" accept="image/png,image/jpeg" hidden>
@@ -1006,6 +1023,11 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                             </button>
                         </div>
                         <span class="ds-form-help" style="text-align: center;">JPG o PNG &middot; máx 2 MB</span>
+                        <?php if ($formFotoArchivoNoDisponible): ?>
+                        <div class="alert alert-warning py-2 px-3 mb-0 small" role="status">
+                            La foto anterior no está en el almacenamiento. Cárgala nuevamente para restaurarla.
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -1196,7 +1218,17 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                 </div>
                 <div class="ff-span-2">
                     <label class="form-label">Número de Cuenta Bancaria</label>
-                    <input type="text" name="cuenta_bancaria" class="form-control" maxlength="30" value="<?= $old('cuenta_bancaria') ?>">
+                    <input type="text" name="cuenta_bancaria" class="form-control" maxlength="30"
+                           inputmode="numeric" autocomplete="off"
+                           placeholder="<?= $formCuentaBancariaRequiereActualizacion ? 'Ingresa nuevamente el número de cuenta' : '' ?>"
+                           value="<?= $old('cuenta_bancaria') ?>">
+                    <?php if ($formCuentaBancariaRequiereActualizacion): ?>
+                        <input type="hidden" name="cuenta_bancaria_conservar" value="1">
+                        <div class="alert alert-warning mt-2 mb-0 py-2 px-3 small" role="status">
+                            <i class="bi bi-shield-lock me-1"></i>
+                            El número anterior fue cifrado con otra clave y no puede mostrarse. Ingresa nuevamente el número para actualizarlo de forma segura; si lo dejas vacío, el registro anterior se conservará.
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -1289,9 +1321,16 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                          style="<?= $croquisImagenUrl !== '' ? '' : 'display:none;' ?>">
                     <div id="croquis-preview-empty" class="ds-croquis-placeholder" style="<?= $croquisImagenUrl !== '' ? 'display:none;' : '' ?>">
                         <i class="bi bi-map"></i>
-                        Aún no hay imagen del croquis. Abra el mapa y capture la ubicacion.
+                        <?= $formCroquisArchivoNoDisponible
+                            ? 'La imagen anterior no está disponible. Abra el mapa y capture nuevamente el croquis.'
+                            : 'Aún no hay imagen del croquis. Abra el mapa y capture la ubicacion.' ?>
                     </div>
                 </div>                
+                <?php if ($formCroquisArchivoNoDisponible): ?>
+                <div class="alert alert-warning py-2 px-3 mb-0 small" role="status">
+                    Se conservaron las coordenadas registradas para facilitar una nueva captura.
+                </div>
+                <?php endif; ?>
             </div>
 
             <div class="ds-croquis-modal" id="croquis-modal" hidden aria-hidden="true">
@@ -1540,10 +1579,16 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== ''
                 <div style="min-width: 0;">
                     <div style="font-weight: 800; color: #0f172a; margin-bottom: .25rem;">Guarda la ficha para habilitar documentos</div>
                     <p class="mb-0" style="color:#64748b; font-size:.86rem; line-height: 1.55;">
-                        El expediente documental estará disponible para cargar, revisar y reemplazar archivos digitales una vez que guardes la ficha.
+                        <?= $formIsAspirante
+                            ? 'La opción para cargar el expediente documental se habilitará una vez que guardes la ficha.'
+                            : 'El expediente documental estará disponible para cargar, revisar y reemplazar archivos digitales una vez que guardes la ficha.' ?>
                     </p>
                 </div>
             </div>
+            <?php elseif (!$formCanReviewExpediente): ?>
+            <a href="<?= $view->url($expUrl) ?>" class="ds-btn ds-btn-primary w-100 justify-content-center">
+                <i class="bi bi-folder2-open me-1"></i>Cargar expediente documental
+            </a>
             <?php else: ?>
             <div class="d-flex flex-wrap gap-4 align-items-center justify-content-between">
                 <div class="d-flex flex-wrap gap-4">
@@ -1620,6 +1665,7 @@ const SUBMIT_CONFIRM_CONFIG = <?= json_encode([
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 const CEDULA_PREFILL_ENABLED = <?= $formEnableCedulaPrefill ? 'true' : 'false' ?>;
 const CEDULA_PREFILL_URL = <?= json_encode($view->url($prefillByCedulaUrl), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+const INITIAL_STEP = <?= json_encode($formInitialStep, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 let currentStepIndex = 0;
 let prefillLookupInProgress = false;
 let lastCedulaPrefilled = '';
@@ -1677,6 +1723,9 @@ function refreshSummary() {
 
 function showStep(index) {
     currentStepIndex = Math.max(0, Math.min(index, STEP_ORDER.length - 1));
+    const activeStep = STEP_ORDER[currentStepIndex];
+    const activeStepField = document.getElementById('fichaActiveStep');
+    if (activeStepField) activeStepField.value = activeStep;
     STEP_ORDER.forEach((step, idx) => {
         const active = idx === currentStepIndex;
         getPanel(step)?.classList.toggle('active', active);
@@ -2389,7 +2438,10 @@ if (fichaForm) {
 
     document.querySelector('[name="estado_civil"]')?.addEventListener('change', syncConyugeRequerido);
 
-    showStep(0);
+    const hashStep = new URLSearchParams(window.location.hash.slice(1)).get('step');
+    const requestedStep = STEP_ORDER.includes(hashStep) ? hashStep : INITIAL_STEP;
+    const requestedStepIndex = STEP_ORDER.indexOf(requestedStep);
+    showStep(requestedStepIndex >= 0 ? requestedStepIndex : 0);
     refreshSummary();
     updateReferenciasState(false);
     syncConyugeRequerido();

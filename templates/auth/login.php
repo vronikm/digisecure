@@ -36,13 +36,13 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
     <meta name="robots" content="noindex, nofollow">
     <title>Iniciar sesion - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260708-registro3">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260722-logo-small">
 </head>
 <body class="gemeseg-login">
     <div class="login-shell">
         <aside class="login-aside">
             <div class="login-brand gemeseg-brand">
-                <img src="<?= $view->url('/assets/img/logoGemeseg.png') ?>" alt="GEMESEG Seguridad">
+                <img class="login-company-logo" src="<?= $view->url('/assets/img/logoGemeseg.png') ?>" alt="GEMESEG Seguridad">
             </div>
             <div class="login-foot">
                 &copy; <?= date('Y') ?> GEMESEG Seguridad &middot; Plataforma DigiSecure

@@ -389,7 +389,10 @@ final class FichaController
 
         // Descifrar datos sensibles para display
         $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada']);
-        $ficha['cuenta_bancaria_display'] = $this->decryptSafe($ficha['cuenta_bancaria_cifrada']);
+        $cuentaBancaria = $this->decryptSafe($ficha['cuenta_bancaria_cifrada']);
+        $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === '[cifrado]';
+        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
+        $ficha = $this->withImageAvailability($ficha);
 
         // Cargar relaciones
         $trabajos = $this->fichaRepo->getTrabajosAnteriores($id);
@@ -528,7 +531,10 @@ final class FichaController
         }
 
         $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada']);
-        $ficha['cuenta_bancaria_display'] = $this->decryptSafe($ficha['cuenta_bancaria_cifrada']);
+        $cuentaBancaria = $this->decryptSafe($ficha['cuenta_bancaria_cifrada']);
+        $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === '[cifrado]';
+        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
+        $ficha = $this->withImageAvailability($ficha);
 
         $trabajos = $this->fichaRepo->getTrabajosAnteriores($id);
         $hijos = $this->fichaRepo->getHijosMenores($id);
@@ -556,7 +562,9 @@ final class FichaController
             'cursos' => $catalogoCursos,
             'instituciones' => $this->loadInstitucionesFinancieras(),
             'googleMapsKey' => $this->googleMapsKey(),
-            'expedienteResumen' => $this->buildExpedienteResumen($id),
+            'expedienteResumen' => $user->tieneAlgunPermiso('expedientes.validar', 'expedientes.revisar')
+                ? $this->buildExpedienteResumen($id)
+                : null,
             'expedienteUrl' => '/guardias/' . $id . '/expediente',
         ]);
     }
@@ -605,6 +613,7 @@ final class FichaController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
         $input = $request->post;
+        $activeStep = $this->normalizeFichaFormStep($input['_active_step'] ?? null);
 
         if (!$this->aspirantePuedeAccederFichaId($user, $id)) {
             return $this->view->response('errors/404', [], 404);
@@ -613,15 +622,21 @@ final class FichaController
         try {
             $this->actualizarFichaService()->execute($id, $input, $user->id, $request->clientIp());
             $this->flash->success('Ficha actualizada correctamente.');
-            return Response::redirect($this->securePath($request, "/guardias/{$id}/editar"));
+            $redirect = $this->securePath($request, "/guardias/{$id}/editar");
+            return Response::redirect($redirect . '#step=' . rawurlencode($activeStep));
         } catch (DomainException $e) {
             $ficha = $this->fichaRepo->findFichaById($id) ?? [];
+            $ficha = array_merge($ficha, $input);
+            $ficha['cuenta_bancaria_requiere_actualizacion'] =
+                (string) ($input['cuenta_bancaria_conservar'] ?? '') === '1'
+                && trim((string) ($input['cuenta_bancaria'] ?? '')) === '';
+            $ficha = $this->withImageAvailability($ficha);
             $catalogoCursos = $this->safeLoadCatalogoCursos();
             return $this->view->response('ficha/edit', [
                 'user' => $user,
                 'csrfToken' => $csrf->token(),
                 'currentPath' => "/guardias/{$id}/editar",
-                'ficha' => array_merge($ficha, $input),
+                'ficha' => $ficha,
                 'trabajos' => $input['trabajos_anteriores'] ?? [],
                 'hijos' => $input['hijos_menores'] ?? [],
                 'referencias' => $input['referencias'] ?? [],
@@ -629,7 +644,9 @@ final class FichaController
                 'cursos' => $catalogoCursos,
                 'instituciones' => $this->safeLoadInstitucionesFinancieras(),
                 'googleMapsKey' => $this->googleMapsKey(),
-                'expedienteResumen' => $this->buildExpedienteResumen($id),
+                'expedienteResumen' => $user->tieneAlgunPermiso('expedientes.validar', 'expedientes.revisar')
+                    ? $this->buildExpedienteResumen($id)
+                    : null,
                 'expedienteUrl' => '/guardias/' . $id . '/expediente',
                 'error' => $e->getMessage(),
             ]);
@@ -667,7 +684,10 @@ final class FichaController
                 // Volver al detalle con los incumplimientos
                 $ficha = $this->fichaRepo->findFichaById($id);
                 $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada'] ?? '');
-                $ficha['cuenta_bancaria_display'] = $this->decryptSafe($ficha['cuenta_bancaria_cifrada'] ?? '');
+                $cuentaBancaria = $this->decryptSafe($ficha['cuenta_bancaria_cifrada'] ?? '');
+                $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === '[cifrado]';
+                $ficha['cuenta_bancaria_display'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
+                $ficha = $this->withImageAvailability($ficha);
 
                 return $this->view->response('ficha/show', [
                     'user' => $user,
@@ -864,6 +884,29 @@ final class FichaController
         return \is_string($secure) && $secure !== '' ? $secure : $path;
     }
 
+    private function normalizeFichaFormStep(mixed $step): string
+    {
+        $step = is_string($step) ? trim($step) : '';
+        return in_array($step, ['base', 'contacto', 'familiares', 'historial', 'cursos'], true)
+            ? $step
+            : 'base';
+    }
+
+    /**
+     * @param array<string, mixed> $ficha
+     * @return array<string, mixed>
+     */
+    private function withImageAvailability(array $ficha): array
+    {
+        $storage = $this->croquisStorage();
+        foreach (['foto', 'croquis'] as $type) {
+            $id = trim((string) ($ficha[$type . '_archivo_id'] ?? ''));
+            $ficha[$type . '_archivo_disponible'] = $id !== '' && $storage->find($id) !== null;
+        }
+
+        return $ficha;
+    }
+
     /**
      * @return array<string, mixed>|null
      */
@@ -1033,7 +1076,9 @@ final class FichaController
         }
 
         $input['cedula'] = $this->decryptSafe($sourceFicha['cedula_cifrada'] ?? null);
-        $input['cuenta_bancaria'] = $this->decryptSafe($sourceFicha['cuenta_bancaria_cifrada'] ?? null);
+        $cuentaBancaria = $this->decryptSafe($sourceFicha['cuenta_bancaria_cifrada'] ?? null);
+        $input['cuenta_bancaria'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
+        $input['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === '[cifrado]';
 
         $sourceId = (string) ($sourceFicha['id'] ?? '');
         if ($sourceId === '') {

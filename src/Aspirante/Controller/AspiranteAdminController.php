@@ -112,8 +112,9 @@ final class AspiranteAdminController
         }
         $fichaId = (string) $ficha['id'];
 
-        $ficha['cedula_display']          = $this->decryptSafe($ficha['cedula_cifrada'] ?? null);
-        $ficha['cuenta_bancaria_display'] = $this->decryptSafe($ficha['cuenta_bancaria_cifrada'] ?? null);
+        $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada'] ?? null);
+        $cuentaBancaria = $this->decryptSafe($ficha['cuenta_bancaria_cifrada'] ?? null);
+        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
         $ficha['foto_data_uri']           = $this->imagenDataUri($ficha['foto_archivo_id'] ?? null);
         $ficha['croquis_data_uri']        = $this->imagenDataUri($ficha['croquis_archivo_id'] ?? null);
         $ficha['trabajos']                = $this->repo->fichaTrabajos($fichaId);

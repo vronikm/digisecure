@@ -7,6 +7,7 @@ use DigiSecure\Infrastructure\Persistence\MigrationRunner;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Config\Config;
 use DigiSecure\Kernel\Config\EnvLoader;
+use DigiSecure\Kernel\Config\StoragePathResolver;
 use DigiSecure\Kernel\Container\Container;
 use DigiSecure\Kernel\Error\ErrorHandler;
 use DigiSecure\Kernel\Http\Request;
@@ -205,8 +206,12 @@ final class Bootstrap
         );
         $container->singleton(
             \DigiSecure\Ficha\Infrastructure\CroquisStorage::class,
-            fn(): \DigiSecure\Ficha\Infrastructure\CroquisStorage => new \DigiSecure\Ficha\Infrastructure\CroquisStorage(
-                "{$this->rootPath}/var/storage/croquis",
+            fn(Container $c): \DigiSecure\Ficha\Infrastructure\CroquisStorage => new \DigiSecure\Ficha\Infrastructure\CroquisStorage(
+                StoragePathResolver::resolve(
+                    $this->rootPath,
+                    $c->get(Config::class)->string('storage.path', 'var/storage'),
+                    'croquis',
+                ),
             ),
         );
         $container->singleton(
@@ -281,7 +286,11 @@ final class Bootstrap
                 $c->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class),
                 $c->get(\DigiSecure\Aspirante\Infrastructure\AspiranteRepository::class),
                 $c->get(AuditLogger::class),
-                "{$this->rootPath}/var/storage/documentos",
+                StoragePathResolver::resolve(
+                    $this->rootPath,
+                    $c->get(Config::class)->string('storage.path', 'var/storage'),
+                    'documentos',
+                ),
             ),
         );
         $container->singleton(
@@ -304,7 +313,11 @@ final class Bootstrap
             fn(Container $c) => new \DigiSecure\Expediente\Application\DescargarDocumentoService(
                 $c->get(\DigiSecure\Expediente\Infrastructure\ExpedienteRepository::class),
                 $c->get(AuditLogger::class),
-                "{$this->rootPath}/var/storage/documentos",
+                StoragePathResolver::resolve(
+                    $this->rootPath,
+                    $c->get(Config::class)->string('storage.path', 'var/storage'),
+                    'documentos',
+                ),
             ),
         );
 
@@ -830,6 +843,9 @@ final class Bootstrap
             ],
             'encryption' => [
                 'key' => $envVars['ENCRYPTION_KEY'] ?? '',
+            ],
+            'storage' => [
+                'path' => $envVars['STORAGE_PATH'] ?? 'var/storage',
             ],
             'security' => [
                 'secure_url_ttl' => $envVars['SECURE_URL_TTL_SECONDS'] ?? '900',

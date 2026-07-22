@@ -53,6 +53,7 @@ $scalarKeys = [
     'instruccion_superior',
     'fecha_ultimo_reentrenamiento',
     'fecha_revision',
+    '_active_step',
     'familiar_padre_nombre',
     'familiar_padre_direccion',
     'familiar_padre_telefono',
@@ -80,6 +81,7 @@ $input['cedula'] = isset($ficha['cedula'])
 $input['cuenta_bancaria'] = isset($ficha['cuenta_bancaria'])
     ? (string)$ficha['cuenta_bancaria']
     : (string)($ficha['cuenta_bancaria_display'] ?? '');
+$formCuentaBancariaRequiereActualizacion = (bool) ($ficha['cuenta_bancaria_requiere_actualizacion'] ?? false);
 
 $trabajosInput = $trabajos ?? ($ficha['trabajos_anteriores'] ?? []);
 $hijosInput = $hijos ?? ($ficha['hijos_menores'] ?? []);
@@ -147,6 +149,12 @@ $formConfirmText = 'Se actualizarán los datos del empleado con la información 
 $formConfirmButton = 'Si, guardar cambios';
 $formConfirmCancel = 'No, revisar';
 $formEnableCedulaPrefill = false;
-$fotoActualUrl = !empty($ficha['foto_archivo_id']) ? $view->url("/guardias/{$fichaId}/foto") : '';
+$fotoArchivoRegistrado = !empty($ficha['foto_archivo_id']);
+$croquisArchivoRegistrado = !empty($ficha['croquis_archivo_id']);
+$formFotoArchivoDisponible = (bool) ($ficha['foto_archivo_disponible'] ?? $fotoArchivoRegistrado);
+$formCroquisArchivoDisponible = (bool) ($ficha['croquis_archivo_disponible'] ?? $croquisArchivoRegistrado);
+$formFotoArchivoNoDisponible = $fotoArchivoRegistrado && !$formFotoArchivoDisponible;
+$formCroquisArchivoNoDisponible = $croquisArchivoRegistrado && !$formCroquisArchivoDisponible;
+$fotoActualUrl = $formFotoArchivoDisponible ? $view->url("/guardias/{$fichaId}/foto") : '';
 
 require __DIR__ . '/create.php';

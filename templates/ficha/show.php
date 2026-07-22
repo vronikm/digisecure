@@ -132,7 +132,7 @@ $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr(
 <!-- Header con avatar -->
 <div class="ds-card" style="margin-bottom: 1.25rem;">
     <div class="ds-card-body" style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
-        <?php if (!empty($ficha['foto_archivo_id'])): ?>
+        <?php if (!empty($ficha['foto_archivo_disponible'])): ?>
         <img src="<?= $view->url('/guardias/' . $fichaId . '/foto') ?>" alt="Foto del empleado"
              style="width: 80px; height: 80px; border-radius: 20px; object-fit: cover; box-shadow: 0 8px 24px rgba(47,128,237,.32); flex-shrink: 0;">
         <?php else: ?>
@@ -325,7 +325,7 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
                     <?php if (!empty($ficha['croquis_archivo_id']) || (!empty($ficha['croquis_latitud']) && !empty($ficha['croquis_longitud']))): ?>
                     <div class="ds-personal-item span-12">
                         <div class="ds-personal-label">Croquis / ubicación del domicilio</div>
-                        <?php if (!empty($ficha['croquis_archivo_id'])): ?>
+                        <?php if (!empty($ficha['croquis_archivo_disponible'])): ?>
                         <div style="margin:.5rem 0 .75rem;">
                             <img src="<?= $view->url('/guardias/' . $fichaId . '/croquis') ?>"
                                  alt="Croquis del domicilio"
@@ -365,7 +365,13 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
                     </div>
                     <div class="ds-personal-item span-12">
                         <div class="ds-personal-label">Cuenta bancaria</div>
-                        <div class="ds-cell-mono" style="font-weight: 700;"><?= $e($ficha['cuenta_bancaria_display'] ?? '[cifrado]') ?></div>
+                        <?php if (!empty($ficha['cuenta_bancaria_requiere_actualizacion'])): ?>
+                            <div class="text-warning" style="font-weight: 700;">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Actualización requerida
+                            </div>
+                        <?php else: ?>
+                            <div class="ds-cell-mono" style="font-weight: 700;"><?= $e($ficha['cuenta_bancaria_display'] ?? '-') ?></div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
