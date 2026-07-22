@@ -26,6 +26,7 @@ final class ActualizarFichaService
         private readonly FichaRepository $fichaRepo,
         private readonly PdoConnection $db,
         private readonly Encryption $encryption,
+        private readonly NormalizarFamiliaresFicha $familiares,
         private readonly AuditLogger $audit,
         private readonly CroquisStorage $croquisStorage,
     ) {
@@ -66,6 +67,11 @@ final class ActualizarFichaService
         if (!empty($input['genero'])) {
             Genero::from((string)$input['genero']);
         }
+
+        $actualizarFamiliares = $this->familiares->contieneCamposFamiliares($input);
+        $familiares = $actualizarFamiliares
+            ? $this->familiares->normalizar($input, (string) ($input['estado_civil'] ?? $ficha['estado_civil'] ?? ''))
+            : [];
 
         // Mapear campos directos
         $directFields = [
@@ -147,7 +153,7 @@ final class ActualizarFichaService
         $data['updated_by'] = $usuarioId;
 
         try {
-            $this->db->transactional(function () use ($fichaId, $data, $input): void {
+            $this->db->transactional(function () use ($fichaId, $data, $input, $actualizarFamiliares, $familiares): void {
                 if ($data !== []) {
                     $this->fichaRepo->update($fichaId, $data);
                 }
@@ -158,6 +164,9 @@ final class ActualizarFichaService
                 }
                 if (isset($input['hijos_menores']) && is_array($input['hijos_menores'])) {
                     $this->fichaRepo->saveHijosMenores($fichaId, $input['hijos_menores']);
+                }
+                if ($actualizarFamiliares) {
+                    $this->fichaRepo->saveFamiliares($fichaId, $familiares);
                 }
                 if (isset($input['referencias']) && is_array($input['referencias'])) {
                     $this->fichaRepo->saveReferencias($fichaId, $input['referencias']);

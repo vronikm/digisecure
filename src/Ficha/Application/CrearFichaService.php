@@ -35,6 +35,7 @@ final class CrearFichaService
         private readonly FichaRepository $fichaRepo,
         private readonly PdoConnection $db,
         private readonly Encryption $encryption,
+        private readonly NormalizarFamiliaresFicha $familiares,
         private readonly AuditLogger $audit,
         private readonly CroquisStorage $croquisStorage,
     ) {
@@ -67,6 +68,7 @@ final class CrearFichaService
         );
         $tipoSangre = $this->tipoSangreOptional($this->scalarString($input['tipo_sangre'] ?? ''));
         $estadoCivil = $this->estadoCivilOptional($this->scalarString($input['estado_civil'] ?? ''));
+        $familiares = $this->familiares->normalizar($input, $estadoCivil ?? '');
         $tipoCuenta = $this->allowedOptional(
             $this->scalarString($input['tipo_cuenta'] ?? ''),
             ['AHORROS', 'CORRIENTE'],
@@ -145,6 +147,7 @@ final class CrearFichaService
                 $usuarioId,
                 $croquisArchivoId,
                 $fotoArchivoId,
+                $familiares,
             ): string {
                 $data = [
                 'correlativo' => $correlativo,
@@ -206,6 +209,10 @@ final class CrearFichaService
                     } catch (\Throwable $e) {
                         error_log('[DIGISECURE][FICHA] Ficha creada pero hijos menores fallo: ' . $e->getMessage());
                     }
+                }
+
+                if ($familiares !== []) {
+                    $this->fichaRepo->saveFamiliares($fichaId, $familiares);
                 }
 
                 if (!empty($input['referencias']) && is_array($input['referencias'])) {

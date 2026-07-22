@@ -438,6 +438,19 @@ final class FichaRepository extends BaseRepository
     /**
      * @return list<array<string, mixed>>
      */
+    public function getFamiliares(string $fichaId): array
+    {
+        return $this->tenantQuery(
+            "SELECT * FROM fichas_familiares
+              WHERE ficha_id = :fid
+              ORDER BY FIELD(parentesco, 'PADRE', 'MADRE', 'HERMANO', 'CONYUGE')",
+            ['fid' => $fichaId],
+        );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function getCursos(string $fichaId): array
     {
         return $this->tenantQuery(
@@ -609,6 +622,45 @@ final class FichaRepository extends BaseRepository
                     'tid' => $tenantId,
                     'fecha' => $fecha !== '' ? $fecha : null,
                     'obs' => $observacion !== '' ? $observacion : null,
+                ],
+            );
+        }
+    }
+
+    /**
+     * Guarda/reemplaza los familiares directos de una ficha.
+     *
+     * @param list<array{parentesco:string,nombre:string,direccion:?string,telefono:?string,cedula_hash:?string,cedula_cifrada:?string,edad:?int}> $familiares
+     */
+    public function saveFamiliares(string $fichaId, array $familiares): void
+    {
+        $tenantId = $this->tenantContext->requireTenantId();
+
+        $this->db->execute(
+            'DELETE FROM fichas_familiares WHERE ficha_id = :fid AND tenant_id = :tid',
+            ['fid' => $fichaId, 'tid' => $tenantId],
+        );
+
+        $now = Clock::nowString();
+        foreach ($familiares as $familiar) {
+            $this->db->execute(
+                'INSERT INTO fichas_familiares
+                    (id, tenant_id, ficha_id, parentesco, nombre, direccion, telefono, cedula_hash, cedula_cifrada, edad, created_at, updated_at)
+                 VALUES
+                    (:id, :tid, :fid, :parentesco, :nombre, :direccion, :telefono, :cedula_hash, :cedula_cifrada, :edad, :created_at, :updated_at)',
+                [
+                    'id' => IdGenerator::ulid(),
+                    'tid' => $tenantId,
+                    'fid' => $fichaId,
+                    'parentesco' => $familiar['parentesco'],
+                    'nombre' => $familiar['nombre'],
+                    'direccion' => $familiar['direccion'],
+                    'telefono' => $familiar['telefono'],
+                    'cedula_hash' => $familiar['cedula_hash'],
+                    'cedula_cifrada' => $familiar['cedula_cifrada'],
+                    'edad' => $familiar['edad'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ],
             );
         }

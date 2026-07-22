@@ -210,11 +210,18 @@ final class Bootstrap
             ),
         );
         $container->singleton(
+            \DigiSecure\Ficha\Application\NormalizarFamiliaresFicha::class,
+            static fn(Container $c): \DigiSecure\Ficha\Application\NormalizarFamiliaresFicha => new \DigiSecure\Ficha\Application\NormalizarFamiliaresFicha(
+                $c->get(Encryption::class),
+            ),
+        );
+        $container->singleton(
             \DigiSecure\Ficha\Application\CrearFichaService::class,
             static fn(Container $c) => new \DigiSecure\Ficha\Application\CrearFichaService(
                 $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
                 $c->get(PdoConnection::class),
                 $c->get(Encryption::class),
+                $c->get(\DigiSecure\Ficha\Application\NormalizarFamiliaresFicha::class),
                 $c->get(AuditLogger::class),
                 $c->get(\DigiSecure\Ficha\Infrastructure\CroquisStorage::class),
             ),
@@ -225,6 +232,7 @@ final class Bootstrap
                 $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
                 $c->get(PdoConnection::class),
                 $c->get(Encryption::class),
+                $c->get(\DigiSecure\Ficha\Application\NormalizarFamiliaresFicha::class),
                 $c->get(AuditLogger::class),
                 $c->get(\DigiSecure\Ficha\Infrastructure\CroquisStorage::class),
             ),

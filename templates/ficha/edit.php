@@ -53,6 +53,18 @@ $scalarKeys = [
     'instruccion_superior',
     'fecha_ultimo_reentrenamiento',
     'fecha_revision',
+    'familiar_padre_nombre',
+    'familiar_padre_direccion',
+    'familiar_padre_telefono',
+    'familiar_madre_nombre',
+    'familiar_madre_direccion',
+    'familiar_madre_telefono',
+    'familiar_hermano_nombre',
+    'familiar_hermano_direccion',
+    'familiar_hermano_telefono',
+    'conyuge_nombre',
+    'conyuge_cedula',
+    'conyuge_edad',
 ];
 
 foreach ($scalarKeys as $key) {
@@ -78,6 +90,38 @@ $input['trabajos_anteriores'] = array_values(is_array($trabajosInput) ? $trabajo
 $input['hijos_menores'] = array_values(is_array($hijosInput) ? $hijosInput : []);
 $input['referencias'] = array_values(is_array($referenciasInput) ? $referenciasInput : []);
 $input['cursos'] = array_values(is_array($cursosInput) ? $cursosInput : []);
+
+$familiaresPorParentesco = [];
+foreach ((array) ($familiares ?? []) as $familiar) {
+    if (is_array($familiar) && !empty($familiar['parentesco'])) {
+        $familiaresPorParentesco[(string) $familiar['parentesco']] = $familiar;
+    }
+}
+
+foreach ([
+    'PADRE' => 'padre',
+    'MADRE' => 'madre',
+    'HERMANO' => 'hermano',
+] as $parentesco => $prefix) {
+    $familiar = $familiaresPorParentesco[$parentesco] ?? [];
+    foreach (['nombre', 'direccion', 'telefono'] as $field) {
+        $inputKey = "familiar_{$prefix}_{$field}";
+        if (!array_key_exists($inputKey, $input)) {
+            $input[$inputKey] = $familiar[$field] ?? '';
+        }
+    }
+}
+
+$conyuge = $familiaresPorParentesco['CONYUGE'] ?? [];
+foreach ([
+    'conyuge_nombre' => 'nombre',
+    'conyuge_cedula' => 'cedula_display',
+    'conyuge_edad' => 'edad',
+] as $inputKey => $field) {
+    if (!array_key_exists($inputKey, $input)) {
+        $input[$inputKey] = $conyuge[$field] ?? '';
+    }
+}
 
 $label = $correlativo !== '' ? "Editar Ficha {$correlativo}" : 'Editar Ficha';
 $isAspirante = $user->esAspiranteGuardia();

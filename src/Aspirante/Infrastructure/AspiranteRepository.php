@@ -230,6 +230,9 @@ class AspiranteRepository
         if ($this->tableExists('fichas_vacunas')) {
             $tablasDependientes[] = 'fichas_vacunas';
         }
+        if ($this->tableExists('fichas_familiares')) {
+            $tablasDependientes[] = 'fichas_familiares';
+        }
 
         foreach ($tablasDependientes as $tabla) {
             $this->db->execute("UPDATE {$tabla} SET tenant_id = :t WHERE ficha_id IN ({$in})", $bind);

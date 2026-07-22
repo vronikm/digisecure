@@ -533,6 +533,13 @@ final class FichaController
         $trabajos = $this->fichaRepo->getTrabajosAnteriores($id);
         $hijos = $this->fichaRepo->getHijosMenores($id);
         $referencias = $this->fichaRepo->getReferencias($id);
+        $familiares = $this->fichaRepo->getFamiliares($id);
+        foreach ($familiares as &$familiar) {
+            if (($familiar['parentesco'] ?? '') === 'CONYUGE') {
+                $familiar['cedula_display'] = $this->decryptSafe($familiar['cedula_cifrada'] ?? null);
+            }
+        }
+        unset($familiar);
         $fichasCursos = $this->fichaRepo->getCursos($id);
         $catalogoCursos = $this->loadCatalogoCursos();
 
@@ -544,6 +551,7 @@ final class FichaController
             'trabajos' => $trabajos,
             'hijos' => $hijos,
             'referencias' => $referencias,
+            'familiares' => $familiares,
             'fichasCursos' => $fichasCursos,
             'cursos' => $catalogoCursos,
             'instituciones' => $this->loadInstitucionesFinancieras(),
