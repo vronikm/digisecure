@@ -190,22 +190,17 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
         <div class="ds-card-body">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Seleccionar archivo <span class="ds-required">*</span></label>
-                        <input type="file" name="archivo" class="form-control" required
-                               accept="<?= $e(implode(',', array_map(fn($f) => '.' . trim($f), explode(',', $tipo['formatos_permitidos'])))) ?>">
-                        <span class="ds-form-help">Solo se aceptan los formatos indicados arriba.</span>
-                <div class="col-md-8">
                     <div class="row g-3">
                         <?php for ($i = 1; $i <= $numeroDocumentos; $i++):
                             $docSlot = $docsPorIndice[$i] ?? null;
                             $slotEstado = $docSlot ? EstadoDocumento::from((string) $docSlot['estado']) : null;
                             $slotAceptado = $slotEstado === EstadoDocumento::ACEPTADO;
+                            $slotInput = $numeroDocumentos === 1 ? 'archivo' : 'archivo_' . $i;
                         ?>
                         <div class="col-12">
                             <div class="ds-form-field">
                                 <label class="ds-form-label">
-                                    Archivo <?= $i ?> de <?= (int) $numeroDocumentos ?>
+                                    <?= $numeroDocumentos === 1 ? 'Seleccionar archivo' : 'Archivo ' . $i . ' de ' . (int) $numeroDocumentos ?>
                                     <?php if (!$slotAceptado && $numeroDocumentos === 1 && !$docSlot): ?><span class="ds-required">*</span><?php endif ?>
                                 </label>
                                 <?php if ($docSlot): ?>
@@ -226,11 +221,15 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                                     Archivo aceptado. No se permite reemplazar esta posicion.
                                 </div>
                                 <?php else: ?>
-                                <input type="file" name="archivo_<?= $i ?>" class="form-control"
+                                <input type="file" name="<?= $slotInput ?>" class="form-control"
                                        <?= $numeroDocumentos === 1 && !$docSlot ? 'required' : '' ?>
                                        accept="<?= $accept ?>">
                                 <span class="ds-form-help">
-                                    <?= $docSlot ? 'Selecciona un archivo solo si deseas reemplazar esta posicion.' : 'Carga el archivo correspondiente a esta posicion.' ?>
+                                    <?php if ($numeroDocumentos === 1): ?>
+                                        <?= $docSlot ? 'Selecciona un archivo solo si deseas reemplazar el documento.' : 'Solo se aceptan los formatos indicados arriba.' ?>
+                                    <?php else: ?>
+                                        <?= $docSlot ? 'Selecciona un archivo solo si deseas reemplazar esta posicion.' : 'Carga el archivo correspondiente a esta posicion.' ?>
+                                    <?php endif ?>
                                 </span>
                                 <?php endif ?>
                             </div>
