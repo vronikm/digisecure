@@ -12,16 +12,16 @@ enum BloqueExpediente: string
     public function label(): string
     {
         return match ($this) {
-            self::A => 'Bloque A — Admisibilidad (pre-empleo)',
-            self::B => 'Bloque B — Vinculación laboral (post-contratación)',
+            self::A => 'Documentos de Admisibilidad',
+            self::B => 'Documentos de Vinculación Laboral (post-contratación)',
         };
     }
 
     public function shortLabel(): string
     {
         return match ($this) {
-            self::A => 'Bloque A',
-            self::B => 'Bloque B',
+            self::A => 'Documentos de Admisibilidad',
+            self::B => 'Documentos de Vinculación Laboral',
         };
     }
 }

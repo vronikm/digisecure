@@ -235,8 +235,8 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                 <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
                 <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
                     <div>
-                        <div class="ds-card-title">Bloque A &middot; Admisibilidad</div>
-                        <div class="ds-card-subtitle">26 documentos pre-empleo</div>
+                        <div class="ds-card-title">Documentos de &middot; Admisibilidad</div>
+                        <div class="ds-card-subtitle">26 documentos</div>
                     </div>
                     <span class="ds-badge <?= $pctA === 100 ? 'tone-success' : 'tone-info' ?> no-dot"><?= $aceptA ?>/<?= $totalA ?></span>
                 </div>
@@ -248,7 +248,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                     </div>
                     <small><strong><?= $pctA ?>%</strong></small>
                 </div>
-                <div class="ds-cell-sub" style="margin-top: .5rem;"><?= $pctA ?>% completado del bloque pre-empleo</div>
+                <div class="ds-cell-sub" style="margin-top: .5rem;"><?= $pctA ?>% completado</div>
             </div>
         </div>
     </div>
@@ -273,7 +273,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                 <?php if ($bloqueado): ?>
                 <div class="ds-cell-sub" style="display: flex; gap: .45rem; align-items: flex-start;">
                     <i class="bi bi-info-circle" style="color: #2563eb; font-size: 1rem;"></i>
-                    <span>Se desbloquea cuando el Bloque A este 100% aceptado.</span>
+                    <span>Se desbloquea cuando se hayan aceptado todos los documentos de admisibilidad.</span>
                 </div>
                 <?php else: ?>
                 <div class="ds-progress-row">
@@ -295,8 +295,8 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
     <div class="ds-card-header">
         <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
         <div>
-            <div class="ds-card-title">Bloque A &middot; Documentos de admisibilidad</div>
-            <div class="ds-card-subtitle">Pre-empleo &mdash; carga obligatoria antes de la vinculacion</div>
+            <div class="ds-card-title">Carga de &middot; Documentos de admisibilidad</div>
+            <div class="ds-card-subtitle">Carga obligatoria antes de la vinculacion</div>
         </div>
     </div>
     <div class="table-responsive">

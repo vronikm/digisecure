@@ -14,7 +14,7 @@ enum EstadoExpediente: string
     {
         return match ($this) {
             self::INCOMPLETO => 'Incompleto',
-            self::BLOQUE_A_COMPLETO => 'Bloque A completo',
+            self::BLOQUE_A_COMPLETO => 'Sección de documentos de admisibilidad completa',
             self::COMPLETO => 'Completo',
         };
     }

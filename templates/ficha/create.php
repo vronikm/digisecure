@@ -1593,17 +1593,17 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formC
             <div class="d-flex flex-wrap gap-4 align-items-center justify-content-between">
                 <div class="d-flex flex-wrap gap-4">
                     <div>
-                        <div style="font-size:.72rem; font-weight:700; letter-spacing:.05em; color:#64748b; text-transform:uppercase; margin-bottom:.25rem;">Bloque A &middot; Admisibilidad</div>
+                        <div style="font-size:.72rem; font-weight:700; letter-spacing:.05em; color:#64748b; text-transform:uppercase; margin-bottom:.25rem;">Documentos de Admisibilidad</div>
                         <span class="ds-badge tone-success"><?= (int) ($expResumen['bloqueA']['aceptados'] ?? 0) ?> / <?= (int) ($expResumen['bloqueA']['total'] ?? 0) ?> aceptados</span>
                     </div>
                     <div>
-                        <div style="font-size:.72rem; font-weight:700; letter-spacing:.05em; color:#64748b; text-transform:uppercase; margin-bottom:.25rem;">Bloque B &middot; Vinculación laboral</div>
+                        <div style="font-size:.72rem; font-weight:700; letter-spacing:.05em; color:#64748b; text-transform:uppercase; margin-bottom:.25rem;">Documentos de Vinculación Laboral</div>
                         <span class="ds-badge tone-warning"><?= (int) ($expResumen['bloqueB']['aceptados'] ?? 0) ?> / <?= (int) ($expResumen['bloqueB']['total'] ?? 0) ?> aceptados</span>
                     </div>
                 </div>
                 <a href="<?= $view->url($expUrl) ?>" class="ds-btn ds-btn-primary ds-btn-sm"><i class="bi bi-folder2-open me-1"></i>Cargar expediente documental</a>
             </div>
-            <p class="mb-0 mt-2" style="color:#64748b; font-size:.8rem;">Puedes subir, ver y reemplazar tus documentos. El Bloque B se desbloquea cuando el Bloque A este 100% aceptado.</p>
+            <p class="mb-0 mt-2" style="color:#64748b; font-size:.8rem;">Puedes subir, ver y reemplazar tus documentos. El Bloque B se desbloquea cuando los documentos de admisibilidad se hayan aceptado al 100%.</p>
             <?php endif ?>
         </div>
     </div>

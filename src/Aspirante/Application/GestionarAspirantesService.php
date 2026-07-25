@@ -203,7 +203,7 @@ final class GestionarAspirantesService
         $totalA = (int) ($expediente['bloque_a_total'] ?? 0);
         $aceptadosA = (int) ($expediente['bloque_a_aceptados'] ?? 0);
         if ($totalA <= 0 || $aceptadosA < $totalA) {
-            throw new DomainException('No se puede contratar: primero valida y acepta todos los documentos del Bloque A.');
+            throw new DomainException('No se puede contratar: primero valida y acepta todos los documentos de adminisibilidad.');
         }
     }
 }

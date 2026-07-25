@@ -600,7 +600,7 @@ $expedientesCompletosPct = $expedientesTotal > 0 ? (int) round(($expedientesComp
 
     makeDoughnut(
         'chartExpedientes',
-        ['Incompleto', 'Bloque A completo', 'Completo'],
+        ['Incompleto', 'Documentos de adminisibilidad completos', 'Completo'],
         [
             <?= (int) ($kpi['expedientes_por_estado']['INCOMPLETO'] ?? 0) ?>,
             <?= (int) ($kpi['expedientes_por_estado']['BLOQUE_A_COMPLETO'] ?? 0) ?>,

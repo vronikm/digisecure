@@ -61,7 +61,7 @@ $e = ViewRenderer::e(...);
     <div class="ds-kpi-card tone-info">
         <span class="ds-kpi-icon"><i class="bi bi-1-square"></i></span>
         <div>
-            <div class="ds-kpi-label">Bloque A &middot; Pre-empleo</div>
+            <div class="ds-kpi-label">Documentos de &middot; Admisibilidads</div>
             <div class="ds-kpi-value"><?= $kpis['bloque_a'] ?></div>
         </div>
     </div>

@@ -121,7 +121,7 @@ $puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], tr
 <?php elseif ($estado === 'aprobado'): ?>
 <div class="login-info" role="status" style="border-radius:12px;">
     <i class="bi bi-info-circle"></i>
-    <div><strong>Aprobacion previa registrada</strong> Puedes finalizar la contratacion cuando la ficha y el Bloque A documental esten completos.</div>
+    <div><strong>Aprobacion previa registrada</strong> Puedes finalizar la contratación cuando la ficha y el Bloque A documental esten completos.</div>
 </div>
 <?php elseif ($estado === 'descartado'): ?>
 <div class="login-error" role="alert" style="border-radius:12px;">
@@ -182,7 +182,7 @@ $puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], tr
                 <span class="ds-badge tone-muted"><?= $e($tipoFichaLabel) ?></span>
                 <span class="ds-badge tone-muted"><?= $e($estadoFichaLabel) ?></span>
                 <span class="ds-badge <?= $docsBloqueAListos ? 'tone-success' : 'tone-warning' ?> no-dot">
-                    <i class="bi bi-folder-check"></i> Bloque A <?= $aceptadosBloqueA ?>/<?= $totalBloqueA ?>
+                    <i class="bi bi-folder-check"></i> Documentos de <?= $aceptadosBloqueA ?>/<?= $totalBloqueA ?>
                 </span>
             </div>
 

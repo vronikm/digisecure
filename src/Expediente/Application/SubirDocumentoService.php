@@ -72,7 +72,7 @@ final class SubirDocumentoService
         $esBloqueB = (string) $tipo['bloque'] === 'B';
 
         if ($esBloqueB && !$this->bloqueAActivoCompleto($expedienteId)) {
-            throw new DomainException('El Bloque B no está desbloqueado. Complete primero el Bloque A.');
+            throw new DomainException('El Bloque B no está desbloqueado. Complete primero los documentos de admisibilidad.');
         }
         if ($esBloqueB && !$autoAceptarBloqueB) {
             throw new DomainException('Los documentos del Bloque B solo pueden ser cargados por administracion o usuarios autorizados.');
