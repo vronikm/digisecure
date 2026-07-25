@@ -176,7 +176,7 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
     </div>
 </div>
 
-<form method="post" action="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipoId) ?>" enctype="multipart/form-data" class="ds-form-main">
+<form method="post" action="<?= $view->url('/expedientes/' . $expId . '/documento/' . $tipoId) ?>" enctype="multipart/form-data" class="ds-form-main" style="max-width: none;">
     <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>">
 
     <div class="ds-card">
