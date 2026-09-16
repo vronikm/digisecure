@@ -241,6 +241,12 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                     <td class="ds-cell-end">
                         <div class="ds-row-actions">
                             <a href="<?= $view->url('/reclutamiento/' . $a['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm">Revisar</a>
+                            <?php if (in_array((string) $a['estado'], $estadosEditables ?? [], true)): ?>
+                                <a href="<?= $view->url('/reclutamiento/' . $a['id'] . '/editar') ?>" class="ds-btn ds-btn-ghost ds-btn-sm"
+                                   title="Corregir datos del registro (correo, documento, nombres...)" aria-label="Editar datos de <?= $e(trim($a['nombres'] . ' ' . $a['apellidos'])) ?>">
+                                    <i class="bi bi-pencil-square"></i>Editar
+                                </a>
+                            <?php endif ?>
                             <?php if ($puedeAbrirExpediente): ?>
                                 <a href="<?= $view->url('/guardias/' . $fichaId . '/expediente') ?>" class="ds-btn ds-btn-primary ds-btn-sm">
                                     <i class="bi bi-folder-check"></i>Validar documentos

@@ -1440,6 +1440,37 @@ body.ds-menu-hidden .ds-brand-logo {
     color: var(--ds-text);
 }
 
+/* Callout: aviso contextual dentro del shell (info, advertencia, exito, error).
+   Uso: <div class="ds-callout tone-warning"><i class="bi ..."></i><div><strong>Titulo</strong> texto</div></div> */
+.ds-callout {
+    display: flex;
+    gap: .7rem;
+    align-items: flex-start;
+    padding: .85rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--ds-border);
+    border-left: 4px solid var(--ds-text-soft);
+    border-radius: 12px;
+    background: #f8fafc;
+    color: var(--ds-text);
+    font-size: .86rem;
+    line-height: 1.45;
+}
+.ds-callout > i { font-size: 1.15rem; line-height: 1.2; flex-shrink: 0; }
+.ds-callout strong { display: block; font-weight: 700; margin-bottom: .1rem; }
+.ds-callout p { margin: .25rem 0 0; }
+.ds-callout ul { margin: .35rem 0 0; padding-left: 1.1rem; }
+.ds-callout code { color: inherit; background: rgba(255,255,255,.75); padding: 0 .3rem; border-radius: 4px; }
+.ds-callout.tone-info    { background: rgba(37,99,235,.06);  border-color: rgba(37,99,235,.18);  border-left-color: #2563eb; }
+.ds-callout.tone-info > i    { color: #1d4ed8; }
+.ds-callout.tone-warning { background: rgba(217,119,6,.07);  border-color: rgba(217,119,6,.22);  border-left-color: #d97706; }
+.ds-callout.tone-warning > i { color: #b45309; }
+.ds-callout.tone-success { background: rgba(5,150,105,.06);  border-color: rgba(5,150,105,.2);   border-left-color: #059669; }
+.ds-callout.tone-success > i { color: #047857; }
+.ds-callout.tone-danger  { background: rgba(220,38,38,.06);  border-color: rgba(220,38,38,.18);  border-left-color: #dc2626; }
+.ds-callout.tone-danger > i  { color: #b91c1c; }
+.ds-callout.tone-danger strong { color: #991b1b; }
+
 /* Empty state con ilustracion */
 .ds-empty-state {
     padding: 3rem 2rem;

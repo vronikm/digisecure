@@ -274,6 +274,104 @@ class AspiranteRepository
         ) > 0;
     }
 
+    public function existeDocumentoEnOtro(string $documento, string $exceptoAspiranteId): bool
+    {
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM aspirantes WHERE documento = :doc AND id <> :id',
+            ['doc' => $documento, 'id' => $exceptoAspiranteId],
+        ) > 0;
+    }
+
+    public function existeCorreoEnOtro(string $correoNormalizado, string $exceptoAspiranteId): bool
+    {
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM aspirantes WHERE correo_normalizado = :co AND id <> :id',
+            ['co' => $correoNormalizado, 'id' => $exceptoAspiranteId],
+        ) > 0;
+    }
+
+    /**
+     * Correo usado por un usuario distinto del propio aspirante (si ya tiene uno).
+     */
+    public function existeCorreoEnOtroUsuario(string $correoNormalizado, ?string $exceptoUsuarioId): bool
+    {
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM usuarios WHERE email_normalizado = :co AND id <> :uid',
+            ['co' => $correoNormalizado, 'uid' => $exceptoUsuarioId ?? ''],
+        ) > 0;
+    }
+
+    /**
+     * Corrige los datos del registro y, si el aspirante ya tiene usuario,
+     * sincroniza correo (login), nombres y telefono en la misma transaccion.
+     * Con token, reemplaza el enlace de verificacion pendiente.
+     *
+     * @param array{tipo_documento: string, documento: string, apellidos: string, nombres: string,
+     *     celular: string, correo: string, correo_normalizado: string, estatura_cm: int,
+     *     fecha_nacimiento: string} $datos
+     * @param array{hash: string, expira_at: string}|null $token
+     */
+    public function actualizarDatos(string $aspiranteId, array $datos, ?array $token, ?string $usuarioId, string $cuando): void
+    {
+        $this->db->transactional(function (PdoConnection $db) use ($aspiranteId, $datos, $token, $usuarioId, $cuando): void {
+            $sets = [
+                'tipo_documento = :tdoc',
+                'documento = :doc',
+                'apellidos = :ap',
+                'nombres = :no',
+                'celular = :cel',
+                'correo = :co',
+                'correo_normalizado = :con',
+                'estatura_cm = :est',
+                'fecha_nacimiento = :fn',
+                'updated_at = :cuando',
+            ];
+            $bind = [
+                'tdoc'   => $datos['tipo_documento'],
+                'doc'    => $datos['documento'],
+                'ap'     => $datos['apellidos'],
+                'no'     => $datos['nombres'],
+                'cel'    => $datos['celular'],
+                'co'     => $datos['correo'],
+                'con'    => $datos['correo_normalizado'],
+                'est'    => $datos['estatura_cm'],
+                'fn'     => $datos['fecha_nacimiento'],
+                'cuando' => $cuando,
+                'id'     => $aspiranteId,
+            ];
+            if ($token !== null) {
+                $sets[] = 'verificacion_token_hash = :vth';
+                $sets[] = 'verificacion_token_expira_at = :vte';
+                $bind['vth'] = $token['hash'];
+                $bind['vte'] = $token['expira_at'];
+            }
+
+            $db->execute('UPDATE aspirantes SET ' . implode(', ', $sets) . ' WHERE id = :id', $bind);
+
+            if ($usuarioId !== null && $usuarioId !== '') {
+                $db->execute(
+                    'UPDATE usuarios
+                        SET email = :em,
+                            email_normalizado = :emn,
+                            nombres = :no,
+                            apellidos = :ap,
+                            telefono = :tel,
+                            updated_at = :cuando
+                      WHERE id = :uid',
+                    [
+                        'em'     => $datos['correo'],
+                        'emn'    => $datos['correo_normalizado'],
+                        'no'     => $datos['nombres'],
+                        'ap'     => $datos['apellidos'],
+                        'tel'    => $datos['celular'],
+                        'cuando' => $cuando,
+                        'uid'    => $usuarioId,
+                    ],
+                );
+            }
+        });
+    }
+
     /**
      * Busca un aspirante por el hash de su token de verificacion de email.
      *

@@ -56,6 +56,8 @@ if ($ficha !== null && $expediente === null) {
 } elseif ($ficha !== null && !$docsBloqueAListos) {
     $bloqueosContratacion[] = 'Documentos Bloque A pendientes de aceptar (' . $aceptadosBloqueA . '/' . $totalBloqueA . ').';
 }
+$puedeEditar = !empty($puedeEditar);
+$vence = (string) ($a['verificacion_token_expira_at'] ?? '');
 $puedeContratar = in_array($estado, ['nuevo', 'aspirante', 'en_revision', 'contactado', 'aprobado'], true) && $bloqueosContratacion === [];
 $puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], true);
 ?>
@@ -110,21 +112,37 @@ $puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], tr
             </small>
         </div>
     </div>
-    <a href="<?= $view->url('/reclutamiento') ?>" class="ds-btn ds-btn-ghost"><i class="bi bi-arrow-left"></i>Volver</a>
+    <div class="rc-actions">
+        <?php if ($puedeEditar): ?>
+        <a href="<?= $view->url('/reclutamiento/' . $id . '/editar') ?>" class="ds-btn ds-btn-outline"><i class="bi bi-pencil-square"></i>Editar datos</a>
+        <?php endif ?>
+        <a href="<?= $view->url('/reclutamiento') ?>" class="ds-btn ds-btn-ghost"><i class="bi bi-arrow-left"></i>Volver</a>
+    </div>
 </div>
 
+<?php if (!$verificado && $puedeEditar): ?>
+<div class="ds-callout tone-warning" role="status">
+    <i class="bi bi-envelope-exclamation"></i>
+    <div>
+        <strong>El aspirante no ha verificado su correo</strong>
+        Si el correo <code><?= $e((string) $a['correo']) ?></code> está mal escrito, el enlace nunca le llegará y no podrá continuar.
+        Corrígelo en <a href="<?= $view->url('/reclutamiento/' . $id . '/editar') ?>">Editar datos</a>: se enviará un enlace nuevo al correo correcto.
+    </div>
+</div>
+<?php endif ?>
+
 <?php if ($estado === 'contratado'): ?>
-<div class="login-success" role="status" style="border-radius:12px;">
+<div class="ds-callout tone-success" role="status">
     <i class="bi bi-check-circle-fill"></i>
     <div><strong>Aspirante contratado</strong> Ya consta como empleado en Guardias<?= !empty($a['usuario_id']) ? ' (ID usuario: ' . $e((string) $a['usuario_id']) . ')' : '' ?>.</div>
 </div>
 <?php elseif ($estado === 'aprobado'): ?>
-<div class="login-info" role="status" style="border-radius:12px;">
+<div class="ds-callout tone-info" role="status">
     <i class="bi bi-info-circle"></i>
     <div><strong>Aprobacion previa registrada</strong> Puedes finalizar la contratación cuando la ficha y el Bloque A documental esten completos.</div>
 </div>
 <?php elseif ($estado === 'descartado'): ?>
-<div class="login-error" role="alert" style="border-radius:12px;">
+<div class="ds-callout tone-danger" role="alert">
     <i class="bi bi-x-octagon-fill"></i>
     <div><strong>Aspirante descartado</strong> <?= !empty($a['motivo_descarte']) ? $e((string) $a['motivo_descarte']) : 'Sin motivo registrado.' ?></div>
 </div>
@@ -150,7 +168,7 @@ $puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], tr
             $item('Estatura', $estaturaTxt, '4');
             $item('Fecha de nacimiento', (string) $a['fecha_nacimiento'], '4');
             $item('Registrado', (string) $a['created_at'], '4');
-            $item('Verificación de correo', $verificado ? 'Verificado' . (!empty($a['email_verificado_at']) ? ' · ' . $a['email_verificado_at'] : '') : 'Pendiente', '4');
+            $item('Verificación de correo', $verificado ? 'Verificado' . (!empty($a['email_verificado_at']) ? ' · ' . $a['email_verificado_at'] : '') : 'Pendiente' . ($vence !== '' ? ' · enlace vence ' . $vence : ''), '4');
             ?>
         </div>
     </div>
@@ -166,7 +184,7 @@ $puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], tr
     </div>
     <div class="ds-card-body">
         <?php if ($ficha === null): ?>
-            <div class="login-info" role="status" style="border-radius:12px; margin:0;">
+            <div class="ds-callout tone-info" role="status" style="margin:0;">
                 <i class="bi bi-info-circle"></i>
                 <div><strong>Ficha pendiente</strong> El aspirante aún no ha completado su ficha de ingreso.</div>
             </div>
@@ -332,7 +350,7 @@ $puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], tr
     </div>
     <div class="ds-card-body">
         <?php if ($bloqueosContratacion !== [] && $estado !== 'contratado'): ?>
-        <div class="login-info" role="status" style="border-radius:12px;">
+        <div class="ds-callout tone-info" role="status">
             <i class="bi bi-info-circle"></i>
             <div>
                 <strong>Aun no puedes contratar</strong>

@@ -15,7 +15,8 @@ use DigiSecure\Shared\Infrastructure\Clock;
  * viven en su propia tabla `aspirante_eventos`.
  *
  * Eventos: registro_creado, link_enviado, link_abierto, correo_validado,
- *          registro_completado, token_expirado, reenvio_link.
+ *          registro_completado, token_expirado, reenvio_link,
+ *          datos_actualizados (corrección desde reclutamiento, migración 034).
  */
 final class AspiranteEventLogger
 {
@@ -26,6 +27,7 @@ final class AspiranteEventLogger
     public const REGISTRO_COMPLETADO = 'registro_completado';
     public const TOKEN_EXPIRADO = 'token_expirado';
     public const REENVIO_LINK = 'reenvio_link';
+    public const DATOS_ACTUALIZADOS = 'datos_actualizados';
 
     public function __construct(
         private readonly PdoConnection $db,

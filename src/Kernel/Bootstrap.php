@@ -715,20 +715,21 @@ final class Bootstrap
         );
 
         // 28. Modulo Aspirantes (registro publico desde el login)
-        // Se registra explicitamente para inyectar la lista negra de dominios
+        // Se registran explicitamente para inyectar la lista negra de dominios
         // de email desde configuracion (autowiring no resuelve el array).
+        // ActualizarAspiranteService se autoconecta con este validador.
         $container->singleton(
             \DigiSecure\Aspirante\Application\RegistrarAspiranteService::class,
             static fn(Container $c) => new \DigiSecure\Aspirante\Application\RegistrarAspiranteService(
                 $c->get(\DigiSecure\Aspirante\Infrastructure\AspiranteRepository::class),
                 $c->get(Hasher::class),
-                array_values(array_filter(
-                    array_map(
-                        static fn(string $d): string => strtolower(trim($d)),
-                        explode(',', $c->get(Config::class)->string('registro.email_blacklist', '')),
-                    ),
-                    static fn(string $d): bool => $d !== '',
-                )),
+                self::emailBlacklist($c->get(Config::class)),
+            ),
+        );
+        $container->singleton(
+            \DigiSecure\Aspirante\Application\ValidadorDatosAspirante::class,
+            static fn(Container $c) => new \DigiSecure\Aspirante\Application\ValidadorDatosAspirante(
+                self::emailBlacklist($c->get(Config::class)),
             ),
         );
         $container->singleton(
@@ -816,6 +817,22 @@ final class Bootstrap
         // 7. Procesar y enviar
         $response = $pipeline->handle($request);
         $response->send();
+    }
+
+    /**
+     * Dominios de email bloqueados para aspirantes (REGISTRO_EMAIL_BLACKLIST).
+     *
+     * @return list<string>
+     */
+    private static function emailBlacklist(Config $config): array
+    {
+        return array_values(array_filter(
+            array_map(
+                static fn(string $d): string => strtolower(trim($d)),
+                explode(',', $config->string('registro.email_blacklist', '')),
+            ),
+            static fn(string $d): bool => $d !== '',
+        ));
     }
 
     private function loadConfig(): Config
@@ -1112,6 +1129,8 @@ final class Bootstrap
         // Reclutamiento — revision y contratacion de aspirantes (Fase 4, protegida)
         $router->get('/reclutamiento', [AspiranteAdminController::class, 'index'], name: 'reclutamiento.index', permission: 'aspirantes.gestionar');
         $router->get('/reclutamiento/{id}', [AspiranteAdminController::class, 'show'], name: 'reclutamiento.show', permission: 'aspirantes.gestionar');
+        $router->get('/reclutamiento/{id}/editar', [AspiranteAdminController::class, 'edit'], name: 'reclutamiento.edit', permission: 'aspirantes.gestionar');
+        $router->post('/reclutamiento/{id}/editar', [AspiranteAdminController::class, 'update'], name: 'reclutamiento.update', permission: 'aspirantes.gestionar');
         $router->post('/reclutamiento/{id}/contratar', [AspiranteAdminController::class, 'contratar'], name: 'reclutamiento.contratar', permission: 'aspirantes.gestionar');
         $router->post('/reclutamiento/{id}/aprobar', [AspiranteAdminController::class, 'aprobar'], name: 'reclutamiento.aprobar', permission: 'aspirantes.gestionar');
         $router->post('/reclutamiento/{id}/rechazar', [AspiranteAdminController::class, 'rechazar'], name: 'reclutamiento.rechazar', permission: 'aspirantes.gestionar');
