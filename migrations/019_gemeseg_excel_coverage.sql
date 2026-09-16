@@ -18,11 +18,14 @@
 -- en algunos despliegues `tenants` quedo en MyISAM/utf8mb4_spanish2_ci
 -- y las FK nuevas fallan si las columnas CHAR(26) referenciadas no comparten
 -- motor/collation con las tablas nuevas.
+-- FK checks apagados solo durante la conversion (ver migracion 018).
+SET FOREIGN_KEY_CHECKS = 0;
 ALTER TABLE tenants ENGINE=InnoDB;
 ALTER TABLE tenants CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE usuarios CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE fichas CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE expediente_documentos CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SET FOREIGN_KEY_CHECKS = 1;
 
 ALTER TABLE fichas
     ADD COLUMN procedencia VARCHAR(150) NULL AFTER lugar_nacimiento_provincia;

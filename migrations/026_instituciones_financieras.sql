@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS instituciones_financieras (
     PRIMARY KEY (id),
     UNIQUE KEY uq_inst_fin_nombre (nombre),
     KEY ix_inst_fin_orden (tipo, orden)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- Semilla: primero bancos, luego cooperativas.
 INSERT IGNORE INTO instituciones_financieras (id, nombre, tipo, orden, activo, created_at) VALUES

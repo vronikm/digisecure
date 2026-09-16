@@ -55,7 +55,8 @@ SELECT 'ASPIRANTEROLE0000000000001', p.id, UTC_TIMESTAMP(6)
 FROM permisos p
 LEFT JOIN roles_permisos rp ON rp.role_id = 'ASPIRANTEROLE0000000000001' AND rp.permiso_id = p.id
 WHERE p.codigo = 'guardias.crear'
-  AND rp.role_id IS NULL;
+  AND rp.role_id IS NULL
+  AND EXISTS (SELECT 1 FROM roles WHERE id = 'ASPIRANTEROLE0000000000001');
 
 -- @down
 

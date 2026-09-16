@@ -131,6 +131,7 @@ final class SecureUrlTokenServiceTest extends TestCase
             email: 'qa@digisecure.test',
             nombres: 'QA',
             apellidos: 'Tester',
+            cargo: 'QA',
             estado: 'activo',
             tenantNombre: 'Tenant QA',
             tenantEstado: 'activo',

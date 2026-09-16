@@ -15,9 +15,10 @@ final class SecureRouteCatalogTest extends TestCase
     {
         $scopes = SecureRouteCatalog::routeParamScopes('expedientes.documento.upload');
 
+        // `tipoId` queda plano a proposito: hay seeds legacy (SEEDDOC...) sin
+        // formato ULID. Se protege el expediente, que es el dato sensible.
         self::assertSame([
             'id' => 'expedientes.id',
-            'tipoId' => 'documento_tipos.id',
         ], $scopes);
     }
 
@@ -90,10 +91,9 @@ final class SecureRouteCatalogTest extends TestCase
             },
         );
 
-        self::assertSame('/expedientes/tok_id/documento/tok_tipoId?foo=bar#top', $tokenized);
-        self::assertCount(2, $calls);
+        self::assertSame("/expedientes/tok_id/documento/{$tipoId}?foo=bar#top", $tokenized);
+        self::assertCount(1, $calls);
         self::assertSame([$expId, 'id', 'expedientes.id'], $calls[0]);
-        self::assertSame([$tipoId, 'tipoId', 'documento_tipos.id'], $calls[1]);
     }
 
     #[Test]

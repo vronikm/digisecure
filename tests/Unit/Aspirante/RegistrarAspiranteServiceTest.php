@@ -234,6 +234,27 @@ final class RegistrarAspiranteServiceTest extends TestCase
         $this->expectException(DomainException::class);
         $service->execute($this->entradaValida(['correo' => 'bot@tempmail.com']), '200.1.2.3', 'PHPUnit');
     }
+
+    #[Test]
+    public function asigna_el_aspirante_al_tenant_gemeseg(): void
+    {
+        $this->service->execute($this->entradaValida(), '200.1.2.3', 'PHPUnit');
+
+        self::assertSame('TEN_GEMESEG_TEST', $this->repo->creados[0]['tenant_id']);
+    }
+
+    #[Test]
+    public function rechaza_registro_si_el_tenant_gemeseg_no_existe(): void
+    {
+        $this->repo->tenantGemesegId = null;
+
+        $this->expectException(DomainException::class);
+        try {
+            $this->service->execute($this->entradaValida(), '200.1.2.3', 'PHPUnit');
+        } finally {
+            self::assertSame([], $this->repo->creados);
+        }
+    }
 }
 
 /**
@@ -251,10 +272,16 @@ final class FakeAspiranteRepository extends AspiranteRepository
     /** @var list<string> */
     public array $correosUsuarios = [];
     public int $intentos = 0;
+    public ?string $tenantGemesegId = 'TEN_GEMESEG_TEST';
 
     public function __construct()
     {
         // Intencionalmente NO llamamos al constructor padre (sin DB en tests).
+    }
+
+    public function tenantGemeseg(): ?string
+    {
+        return $this->tenantGemesegId;
     }
 
     public function crear(array $a): void

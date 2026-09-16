@@ -1,0 +1,12 @@
+# =====================================================================
+# DigiSecure - normalizacion de finales de linea
+# =====================================================================
+# El repositorio guarda LF. Las migraciones SQL se fuerzan a LF tambien en
+# Windows para que su checksum (tabla `migraciones`) sea identico en todos
+# los entornos.
+# =====================================================================
+
+* text=auto
+
+*.sql text eol=lf
+*.sh  text eol=lf

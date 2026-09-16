@@ -84,3 +84,7 @@ tmp_*.txt
 *_backup.sql
 secrets/
 private/
+
+# --- Herramientas de desarrollo (phpunit/phpstan) fuera de vendor/ versionado ---
+/.devtools/
+/var/.phpunit.cache/

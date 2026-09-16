@@ -27,7 +27,7 @@ final class Migration
         public readonly string $filename,   // "001_initial_security_core.sql"
         public readonly string $upSql,
         public readonly string $downSql,
-        public readonly string $checksum,   // sha256 del contenido completo
+        public readonly string $checksum,   // sha256 del contenido completo con finales de línea LF
     ) {
     }
 
@@ -48,6 +48,10 @@ final class Migration
             throw new MigrationException("No se pudo leer la migración: {$absolutePath}");
         }
 
+        // Git en Windows (core.autocrlf=true) entrega CRLF; el repo y Linux usan LF.
+        // Normalizar evita CHECKSUM_MISMATCH falsos entre entornos.
+        $contents = self::normalizeLineEndings($contents);
+
         [$up, $down] = self::parseSections($contents, $filename);
 
         return new self(
@@ -58,6 +62,11 @@ final class Migration
             downSql: trim($down),
             checksum: hash('sha256', $contents),
         );
+    }
+
+    public static function normalizeLineEndings(string $contents): string
+    {
+        return str_replace(["\r\n", "\r"], "\n", $contents);
     }
 
     /**

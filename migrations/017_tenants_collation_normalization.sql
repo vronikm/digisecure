@@ -16,9 +16,14 @@
 
 -- @up
 
+-- FK checks apagados solo durante la conversion (ver migracion 018).
+SET FOREIGN_KEY_CHECKS = 0;
+
 ALTER TABLE tenants
     CONVERT TO CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- @down
 -- No reversible sin conocer collation previa del entorno.

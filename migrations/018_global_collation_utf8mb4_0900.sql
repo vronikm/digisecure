@@ -19,6 +19,11 @@
 
 -- @up
 
+-- Con FOREIGN_KEY_CHECKS=1 MySQL 8 rechaza (error 3780) convertir una tabla
+-- cuya columna participa en una FK hacia otra tabla aun no convertida.
+-- Se desactivan solo durante la conversion y se reactivan al final.
+SET FOREIGN_KEY_CHECKS = 0;
+
 ALTER TABLE asignaciones CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE auditoria CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE catalogo_cursos CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -47,6 +52,47 @@ ALTER TABLE suscripcion_ciclos CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_
 ALTER TABLE tenants CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE usuarios CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE usuarios_roles CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tablas de migraciones posteriores (021+) que pueden existir ya si el
+-- entorno aplico migraciones fuera de orden. Si no existen, no-op.
+-- Sin esto, 027/031 fallan con 1267 al cruzar aspirantes con usuarios.
+SET @ds_sql := IF(
+    (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'aspirantes') > 0,
+    'ALTER TABLE aspirantes CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
+    'SET @ds_noop := 1'
+);
+PREPARE ds_stmt FROM @ds_sql;
+EXECUTE ds_stmt;
+DEALLOCATE PREPARE ds_stmt;
+
+SET @ds_sql := IF(
+    (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'aspirante_eventos') > 0,
+    'ALTER TABLE aspirante_eventos CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
+    'SET @ds_noop := 1'
+);
+PREPARE ds_stmt FROM @ds_sql;
+EXECUTE ds_stmt;
+DEALLOCATE PREPARE ds_stmt;
+
+SET @ds_sql := IF(
+    (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'instituciones_financieras') > 0,
+    'ALTER TABLE instituciones_financieras CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
+    'SET @ds_noop := 1'
+);
+PREPARE ds_stmt FROM @ds_sql;
+EXECUTE ds_stmt;
+DEALLOCATE PREPARE ds_stmt;
+
+SET @ds_sql := IF(
+    (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fichas_familiares') > 0,
+    'ALTER TABLE fichas_familiares CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
+    'SET @ds_noop := 1'
+);
+PREPARE ds_stmt FROM @ds_sql;
+EXECUTE ds_stmt;
+DEALLOCATE PREPARE ds_stmt;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- @down
 -- No reversible sin conocer la collation historica de cada entorno.
