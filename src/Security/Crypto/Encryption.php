@@ -154,15 +154,20 @@ final class Encryption
     }
 
     /**
-     * Hash determinista para blind index (búsquedas sobre datos cifrados).
+     * Blind index para búsquedas sobre datos cifrados (`WHERE cedula_hash = :h`).
      *
-     * Usado para permitir `WHERE cedula_hash = :h` sin descifrar todas las filas.
-     * Usa HMAC-SHA256 con la clave maestra para que un atacante con acceso solo
-     * a la BD no pueda precomputar rainbow tables.
+     * Usa una subclave HKDF, no la clave maestra: la clave que cifra datos
+     * nunca se reutiliza para HMAC.
      */
-    public function blindIndex(string $value): string
+    public function blindIndexer(): BlindIndex
     {
-        return \hash_hmac('sha256', $value, $this->key);
+        return new BlindIndex(\hash_hkdf(
+            'sha256',
+            $this->key,
+            self::KEY_LENGTH,
+            'digisecure:blind-index:v1',
+            '',
+        ));
     }
 
     private static function base64UrlEncode(string $data): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DigiSecure\Ficha\Application;
 
 use DigiSecure\Ficha\Domain\ValueObject\Cedula;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Shared\Domain\DomainException;
 
@@ -14,6 +15,7 @@ final class NormalizarFamiliaresFicha
 {
     public function __construct(
         private readonly Encryption $encryption,
+        private readonly BlindIndex $blindIndex,
     ) {
     }
 
@@ -92,7 +94,7 @@ final class NormalizarFamiliaresFicha
                 'nombre' => $nombreConyuge,
                 'direccion' => null,
                 'telefono' => null,
-                'cedula_hash' => $cedula->hash(),
+                'cedula_hash' => $this->blindIndex->cedula($cedula->valor),
                 'cedula_cifrada' => $this->encryption->encrypt($cedula->valor),
                 'edad' => (int) $edadConyuge,
             ];

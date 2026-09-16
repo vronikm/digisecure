@@ -6,6 +6,7 @@ namespace DigiSecure\Infrastructure\Import;
 use DigiSecure\Ficha\Domain\ValueObject\Cedula;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Security\Audit\AuditLogger;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Shared\Domain\DomainException;
 use DigiSecure\Shared\Infrastructure\Clock;
@@ -19,6 +20,7 @@ final class GemesegStagingProcessorService
         private readonly PdoConnection $db,
         private readonly TenantContext $tenantContext,
         private readonly Encryption $encryption,
+        private readonly BlindIndex $blindIndex,
         private readonly AuditLogger $audit,
     ) {
     }
@@ -66,14 +68,16 @@ final class GemesegStagingProcessorService
                     $payload = $this->decryptPayload($tenantEncryption, $tenantId, $row);
                     $data = is_array($payload['data'] ?? null) ? $payload['data'] : [];
                     $cedula = $this->cedulaFromPayload($payload);
-                    $cedulaHash = (string) ($row['cedula_hash'] ?? '');
 
-                    if ($cedula === '' || $cedulaHash === '') {
+                    if ($cedula === '') {
                         $this->markRow((string) $row['id'], 'error', null, 'Cedula ausente o invalida.');
                         $result['error_rows']++;
                         continue;
                     }
 
+                    // Se recalcula desde la cedula descifrada: no depende de que
+                    // el staging tenga el indice vigente.
+                    $cedulaHash = $this->blindIndex->cedula($cedula);
                     $ficha = $this->findLatestActiveFicha($tenantId, $cedulaHash);
                     $mapped = $this->mapFichaData($data);
                     $created = false;

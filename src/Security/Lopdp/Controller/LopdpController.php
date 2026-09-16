@@ -12,6 +12,7 @@ use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\AuthenticatedUser;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Security\Lopdp\Application\ConsentManager;
 use DigiSecure\Security\Lopdp\Application\RegistrarSolicitudArcopService;
@@ -42,6 +43,7 @@ final class LopdpController
         private readonly RegistrarSolicitudArcopService $registrarService,
         private readonly ResponderSolicitudArcopService $responderService,
         private readonly FlashBag $flash,
+        private readonly BlindIndex $blindIndex,
     ) {
     }
 
@@ -217,7 +219,7 @@ final class LopdpController
             ]);
         }
 
-        $hash = $cedula->hash();
+        $hash = $this->blindIndex->cedula($cedula->valor);
         if ($tipo === 'guardia') {
             $guardia = $this->fichaRepo->findLatestByCedulaHash($hash);
             if ($guardia === null) {

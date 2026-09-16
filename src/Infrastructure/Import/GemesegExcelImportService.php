@@ -6,6 +6,7 @@ namespace DigiSecure\Infrastructure\Import;
 use DigiSecure\Ficha\Domain\ValueObject\Cedula;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Security\Audit\AuditLogger;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Shared\Domain\DomainException;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
@@ -21,6 +22,7 @@ final class GemesegExcelImportService
         private readonly PdoConnection $db,
         private readonly TenantContext $tenantContext,
         private readonly Encryption $encryption,
+        private readonly BlindIndex $blindIndex,
         private readonly AuditLogger $audit,
         private readonly XlsxReader $reader,
         private readonly string $tempPath,
@@ -105,7 +107,7 @@ final class GemesegExcelImportService
                     continue;
                 }
 
-                $cedulaInfo = $this->cedulaInfo($data);
+                $cedulaInfo = self::cedulaInfo($data, $this->blindIndex);
                 $issues = [];
                 if ($cedulaInfo['digits'] === null) {
                     $issues[] = 'cedula_missing';
@@ -490,10 +492,14 @@ final class GemesegExcelImportService
     }
 
     /**
-     * @param array<string, string> $data
+     * Publico y estatico para que los CLI (`bin/import-gemeseg-excel.php`,
+     * `bin/rehash-cedulas.php`) usen exactamente la misma extraccion.
+     * Sin BlindIndex (analisis sin ENCRYPTION_KEY) el hash queda en null.
+     *
+     * @param array<string, mixed> $data
      * @return array{digits: ?string, hash: ?string, valid: bool, padded: bool}
      */
-    private function cedulaInfo(array $data): array
+    public static function cedulaInfo(array $data, ?BlindIndex $blindIndex): array
     {
         $raw = $data['CEDULA'] ?? $data['CEDULA_2'] ?? '';
         if ($raw === '') {
@@ -505,7 +511,7 @@ final class GemesegExcelImportService
             }
         }
 
-        $digits = preg_replace('/\D+/', '', $raw) ?? '';
+        $digits = preg_replace('/\D+/', '', (string) $raw) ?? '';
         if ($digits === '') {
             return ['digits' => null, 'hash' => null, 'valid' => false, 'padded' => false];
         }
@@ -527,7 +533,7 @@ final class GemesegExcelImportService
 
         return [
             'digits' => $candidate,
-            'hash' => strlen($candidate) === 10 ? hash('sha256', $candidate) : null,
+            'hash' => $blindIndex !== null && strlen($candidate) === 10 ? $blindIndex->cedula($candidate) : null,
             'valid' => $valid,
             'padded' => $padded,
         ];

@@ -25,6 +25,7 @@ use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
 use DigiSecure\Security\Auth\AuthenticatedUser;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Shared\Domain\DomainException;
@@ -54,6 +55,7 @@ final class FichaController
         private readonly PdoConnection $db,
         private readonly VerificarLimiteService $verificarLimite,
         private readonly FlashBag $flash,
+        private readonly BlindIndex $blindIndex,
     ) {
     }
 
@@ -84,11 +86,7 @@ final class FichaController
             $filters['busqueda'] = $busqueda;
             $digits = preg_replace('/\D+/', '', $busqueda) ?? '';
             if (strlen($digits) === 10) {
-                try {
-                    $filters['cedula_hash'] = hash('sha256', $digits);
-                } catch (DomainException) {
-                    // Si la cédula no valida, se mantiene búsqueda textual.
-                }
+                $filters['cedula_hash'] = $this->blindIndex->cedula($digits);
             }
         }
 
@@ -271,7 +269,7 @@ final class FichaController
             }
         }
 
-        $cedulaHash = hash('sha256', $cedulaRaw);
+        $cedulaHash = $this->blindIndex->cedula($cedulaRaw);
         $latestFicha = $this->fichaRepo->findLatestByCedulaHash($cedulaHash);
         if ($latestFicha === null) {
             // La cédula no existe => Ingreso.

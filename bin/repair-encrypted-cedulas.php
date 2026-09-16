@@ -49,6 +49,7 @@ $config = new Config([
 ]);
 
 $encryption = Encryption::fromHexKey((string) ($env['ENCRYPTION_KEY'] ?? ''));
+$blindIndex = $encryption->blindIndexer();
 $db = PdoConnection::fromConfig($config);
 $rows = $db->fetchAll(
     "SELECT f.id, f.cedula_hash, f.cedula_cifrada, a.documento
@@ -67,7 +68,7 @@ $stats = [
     'omitidas' => 0,
 ];
 
-$db->transactional(function (PdoConnection $connection) use ($rows, $encryption, $apply, &$stats): void {
+$db->transactional(function (PdoConnection $connection) use ($rows, $encryption, $blindIndex, $apply, &$stats): void {
     foreach ($rows as $row) {
         $ciphertext = (string) $row['cedula_cifrada'];
         try {
@@ -78,8 +79,12 @@ $db->transactional(function (PdoConnection $connection) use ($rows, $encryption,
             // Se valida una fuente primaria antes de re-cifrar.
         }
 
+        // Prueba de identidad: el hash guardado coincide con el documento del
+        // aspirante, sea el indice HMAC vigente o el sha256 legado (pre-rehash).
         $documento = (string) $row['documento'];
-        if (!hash_equals((string) $row['cedula_hash'], hash('sha256', $documento))) {
+        $hashActual = (string) $row['cedula_hash'];
+        $indice = $blindIndex->cedula($documento);
+        if (!hash_equals($hashActual, $indice) && !hash_equals($hashActual, hash('sha256', $documento))) {
             $stats['omitidas']++;
             continue;
         }
@@ -88,13 +93,15 @@ $db->transactional(function (PdoConnection $connection) use ($rows, $encryption,
             $connection->execute(
                 'UPDATE fichas
                     SET cedula_cifrada = :cedula_cifrada,
+                        cedula_hash = :cedula_hash_nuevo,
                         updated_at = UTC_TIMESTAMP(6)
                   WHERE id = :id
                     AND cedula_hash = :cedula_hash',
                 [
                     'cedula_cifrada' => $encryption->encrypt($documento),
+                    'cedula_hash_nuevo' => $indice,
                     'id' => (string) $row['id'],
-                    'cedula_hash' => (string) $row['cedula_hash'],
+                    'cedula_hash' => $hashActual,
                 ],
             );
         }

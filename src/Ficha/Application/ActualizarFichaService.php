@@ -11,6 +11,7 @@ use DigiSecure\Ficha\Infrastructure\CroquisStorage;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Security\Audit\AuditLogger;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Shared\Domain\DomainException;
 
@@ -26,6 +27,7 @@ final class ActualizarFichaService
         private readonly FichaRepository $fichaRepo,
         private readonly PdoConnection $db,
         private readonly Encryption $encryption,
+        private readonly BlindIndex $blindIndex,
         private readonly NormalizarFamiliaresFicha $familiares,
         private readonly AuditLogger $audit,
         private readonly CroquisStorage $croquisStorage,
@@ -52,7 +54,7 @@ final class ActualizarFichaService
         $data = [];
         if (!empty($input['cedula'])) {
             $cedula = Cedula::fromString((string)$input['cedula']);
-            $data['cedula_hash'] = $cedula->hash();
+            $data['cedula_hash'] = $this->blindIndex->cedula($cedula->valor);
             $data['cedula_cifrada'] = $this->encryption->encrypt($cedula->valor);
         }
 

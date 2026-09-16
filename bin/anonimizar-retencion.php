@@ -17,6 +17,7 @@
  *     género, dirección, contactos, instrucción, email, banco, etc.
  *   - fichas_trabajos_anteriores
  *   - fichas_hijos_menores
+ *   - fichas_familiares
  *   - fichas_referencias
  *
  * Criterio de selección:
@@ -205,10 +206,15 @@ try {
                     ['now' => $now, 'id' => $fichaId, 'tid' => $tenantId],
                 );
 
-                // 2) Borrar relacionadas con PII de terceros (hijos, referencias).
+                // 2) Borrar relacionadas con PII de terceros (hijos, familiares
+                //    con cédula del cónyuge, referencias).
                 //    Trabajos anteriores se conservan SIN datos identificables.
                 $db->execute(
                     'DELETE FROM fichas_hijos_menores WHERE ficha_id = :fid AND tenant_id = :tid',
+                    ['fid' => $fichaId, 'tid' => $tenantId],
+                );
+                $db->execute(
+                    'DELETE FROM fichas_familiares WHERE ficha_id = :fid AND tenant_id = :tid',
                     ['fid' => $fichaId, 'tid' => $tenantId],
                 );
                 $db->execute(

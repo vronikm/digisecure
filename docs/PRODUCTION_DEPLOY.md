@@ -171,6 +171,25 @@ php bin/migrate.php migrate
 php bin/migrate.php status
 ```
 
+### Indice de cedulas (blind index HMAC)
+
+`cedula_hash` es un HMAC con una subclave derivada de `ENCRYPTION_KEY` (antes
+era sha256 sin clave, reversible por fuerza bruta). Ejecutar **inmediatamente
+despues de desplegar el codigo**; hasta hacerlo, la busqueda por cedula y la
+deteccion de reingreso no encuentran fichas existentes:
+
+```bash
+php bin/rehash-cedulas.php --dry-run
+php bin/rehash-cedulas.php --apply
+```
+
+Es idempotente. Si reporta filas "no descifrables", la `ENCRYPTION_KEY` del
+servidor no es la que cifro esos datos: no continuar sin revisar. Para fichas
+de aspirantes existe `php bin/repair-encrypted-cedulas.php --dry-run`.
+
+Rotar `ENCRYPTION_KEY` exige re-cifrar los datos y volver a ejecutar
+`bin/rehash-cedulas.php --apply`.
+
 La migracion `020_importaciones_gemeseg_permission` habilita el permiso
 `importaciones.gemeseg`. Despues de aplicarla, la opcion queda en:
 

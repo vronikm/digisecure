@@ -26,6 +26,7 @@ use DigiSecure\Kernel\Routing\RouteDispatcher;
 use DigiSecure\Kernel\Routing\Router;
 use DigiSecure\Security\Audit\AuditLogger;
 use DigiSecure\Security\Auth\Authenticator;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Security\Crypto\Hasher;
 use DigiSecure\Security\Captcha\RecaptchaVerifier;
@@ -139,6 +140,10 @@ final class Bootstrap
             ),
         );
         $container->singleton(
+            BlindIndex::class,
+            static fn(Container $c): BlindIndex => $c->get(Encryption::class)->blindIndexer(),
+        );
+        $container->singleton(
             SecureUrlTokenService::class,
             static fn(Container $c): SecureUrlTokenService => new SecureUrlTokenService(
                 $c->get(Encryption::class),
@@ -218,6 +223,7 @@ final class Bootstrap
             \DigiSecure\Ficha\Application\NormalizarFamiliaresFicha::class,
             static fn(Container $c): \DigiSecure\Ficha\Application\NormalizarFamiliaresFicha => new \DigiSecure\Ficha\Application\NormalizarFamiliaresFicha(
                 $c->get(Encryption::class),
+                $c->get(BlindIndex::class),
             ),
         );
         $container->singleton(
@@ -226,6 +232,7 @@ final class Bootstrap
                 $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
                 $c->get(PdoConnection::class),
                 $c->get(Encryption::class),
+                $c->get(BlindIndex::class),
                 $c->get(\DigiSecure\Ficha\Application\NormalizarFamiliaresFicha::class),
                 $c->get(AuditLogger::class),
                 $c->get(\DigiSecure\Ficha\Infrastructure\CroquisStorage::class),
@@ -237,6 +244,7 @@ final class Bootstrap
                 $c->get(\DigiSecure\Ficha\Infrastructure\FichaRepository::class),
                 $c->get(PdoConnection::class),
                 $c->get(Encryption::class),
+                $c->get(BlindIndex::class),
                 $c->get(\DigiSecure\Ficha\Application\NormalizarFamiliaresFicha::class),
                 $c->get(AuditLogger::class),
                 $c->get(\DigiSecure\Ficha\Infrastructure\CroquisStorage::class),
@@ -680,6 +688,7 @@ final class Bootstrap
                 $c->get(PdoConnection::class),
                 $c->get(TenantContext::class),
                 $c->get(Encryption::class),
+                $c->get(BlindIndex::class),
                 $c->get(AuditLogger::class),
                 $c->get(\DigiSecure\Infrastructure\Import\XlsxReader::class),
                 "{$this->rootPath}/var/imports/gemeseg",
@@ -691,6 +700,7 @@ final class Bootstrap
                 $c->get(PdoConnection::class),
                 $c->get(TenantContext::class),
                 $c->get(Encryption::class),
+                $c->get(BlindIndex::class),
                 $c->get(AuditLogger::class),
             ),
         );

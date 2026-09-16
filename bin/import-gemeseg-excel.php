@@ -10,11 +10,12 @@ declare(strict_types=1);
  *   - No imprime nombres, cedulas, telefonos, correos ni direcciones.
  */
 
-use DigiSecure\Ficha\Domain\ValueObject\Cedula;
+use DigiSecure\Infrastructure\Import\GemesegExcelImportService;
 use DigiSecure\Infrastructure\Import\XlsxReader;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Config\Config;
 use DigiSecure\Kernel\Config\EnvLoader;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
 
@@ -76,7 +77,15 @@ function main(array $argv): void
 
     $reader = new XlsxReader();
     $workbook = $reader->read($file);
-    $analysis = analyzeWorkbook($workbook, $sheetFilter, $limit);
+    // El indice de cedula es HMAC: sin ENCRYPTION_KEY solo se puede analizar.
+    $env = EnvLoader::load(DIGISECURE_ROOT . '/.env');
+    $encryptionKey = trim((string) ($env['ENCRYPTION_KEY'] ?? ''));
+    $blindIndex = $encryptionKey !== '' ? Encryption::fromHexKey($encryptionKey)->blindIndexer() : null;
+    // --apply ya exige --tenant-id (validado arriba).
+    if ($blindIndex === null && $tenantId !== null) {
+        throw new InvalidArgumentException('ENCRYPTION_KEY es obligatoria para validar contra la BD o aplicar staging.');
+    }
+    $analysis = analyzeWorkbook($workbook, $sheetFilter, $limit, $blindIndex);
 
     echo line('=', 78);
     echo "DigiSecure :: Importacion GEMESEG Excel\n";
@@ -113,8 +122,7 @@ function main(array $argv): void
         return;
     }
 
-    $env = EnvLoader::load(DIGISECURE_ROOT . '/.env');
-    $encryption = Encryption::fromHexKey((string) ($env['ENCRYPTION_KEY'] ?? ''));
+    $encryption = Encryption::fromHexKey($encryptionKey);
 
     $result = stageRows($db, $encryption, (string) $tenantId, $userId, $source, $analysis);
 
@@ -263,7 +271,7 @@ function listTenants(PdoConnection $db): void
  * @param array{path: string, sheets: list<array{name: string, rows: list<array{number: int, cells: array<int, string>}>}>} $workbook
  * @return array{source_path: string, sheets: list<array{name: string, header_row: int, headers: array<int, array{name: string, key: string}>, rows: list<array{row: int, entity_tipo: string, data: array<string, string>, cedula_digits: ?string, cedula_hash: ?string, cedula_valid: bool, cedula_padded: bool, issues: list<string>}>, stats: array<string, int>}>}
  */
-function analyzeWorkbook(array $workbook, ?string $sheetFilter, ?int $limit): array
+function analyzeWorkbook(array $workbook, ?string $sheetFilter, ?int $limit, ?BlindIndex $blindIndex): array
 {
     $result = ['source_path' => $workbook['path'], 'sheets' => []];
 
@@ -297,7 +305,7 @@ function analyzeWorkbook(array $workbook, ?string $sheetFilter, ?int $limit): ar
                 continue;
             }
 
-            $cedulaInfo = cedulaInfo($data);
+            $cedulaInfo = GemesegExcelImportService::cedulaInfo($data, $blindIndex);
             $issues = [];
             if ($cedulaInfo['digits'] === null) {
                 $issues[] = 'cedula_missing';
@@ -460,51 +468,6 @@ function isEmptyDataRow(array $data): bool
         }
     }
     return true;
-}
-
-/**
- * @param array<string, string> $data
- * @return array{digits: ?string, hash: ?string, valid: bool, padded: bool}
- */
-function cedulaInfo(array $data): array
-{
-    $raw = $data['CEDULA'] ?? $data['CEDULA_2'] ?? '';
-    if ($raw === '') {
-        foreach ($data as $key => $value) {
-            if ($key === 'C_EDULA' || preg_match('/^C_?EDULA(_\d+)?$/', $key) === 1) {
-                $raw = $value;
-                break;
-            }
-        }
-    }
-    $digits = preg_replace('/\D+/', '', $raw) ?? '';
-    if ($digits === '') {
-        return ['digits' => null, 'hash' => null, 'valid' => false, 'padded' => false];
-    }
-
-    $candidate = $digits;
-    $padded = false;
-    if (strlen($digits) === 9) {
-        $candidate = '0' . $digits;
-        $padded = true;
-    }
-
-    $valid = false;
-    try {
-        Cedula::fromString($candidate);
-        $valid = true;
-    } catch (Throwable) {
-        $valid = false;
-    }
-
-    $hash = strlen($candidate) === 10 ? hash('sha256', $candidate) : null;
-
-    return [
-        'digits' => $candidate,
-        'hash' => $hash,
-        'valid' => $valid,
-        'padded' => $padded,
-    ];
 }
 
 function sheetEntityType(string $sheetName): string

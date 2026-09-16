@@ -97,7 +97,7 @@ try {
     $cedula = $encryption->decrypt((string) ($conyuge['cedula_cifrada'] ?? ''));
     $cedulaDescifrable = $cedula !== '';
     $hashCoincide = $cedulaDescifrable
-        && hash_equals((string) ($conyuge['cedula_hash'] ?? ''), hash('sha256', $cedula));
+        && hash_equals((string) ($conyuge['cedula_hash'] ?? ''), $encryption->blindIndexer()->cedula($cedula));
 } catch (Throwable) {
     // El diagnostico no expone el dato ni el detalle criptografico.
 }

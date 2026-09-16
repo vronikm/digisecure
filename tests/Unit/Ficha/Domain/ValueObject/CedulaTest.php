@@ -119,11 +119,11 @@ final class CedulaTest extends TestCase
     }
 
     #[Test]
-    public function hash_es_sha256(): void
+    public function no_expone_hash_sin_clave(): void
     {
-        $vo = Cedula::fromString('1710034065');
-        self::assertSame(hash('sha256', '1710034065'), $vo->hash());
-        self::assertSame(64, strlen($vo->hash()));
+        // El indice de busqueda es HMAC (Security\Crypto\BlindIndex); un sha256
+        // plano de la cedula se puede revertir por fuerza bruta.
+        self::assertFalse(method_exists(Cedula::class, 'hash'));
     }
 
     #[Test]

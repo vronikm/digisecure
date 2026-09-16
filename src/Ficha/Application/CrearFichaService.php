@@ -14,6 +14,7 @@ use DigiSecure\Ficha\Infrastructure\CroquisStorage;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Security\Audit\AuditLogger;
+use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Shared\Domain\DomainException;
 
@@ -35,6 +36,7 @@ final class CrearFichaService
         private readonly FichaRepository $fichaRepo,
         private readonly PdoConnection $db,
         private readonly Encryption $encryption,
+        private readonly BlindIndex $blindIndex,
         private readonly NormalizarFamiliaresFicha $familiares,
         private readonly AuditLogger $audit,
         private readonly CroquisStorage $croquisStorage,
@@ -86,7 +88,8 @@ final class CrearFichaService
         $estatura = $this->decimalOptional($this->scalarString($input['estatura'] ?? ''), 'Estatura', 1.0, 2.5);
 
         // 4. Verificar si hay fichas previas con la misma cédula (reingreso)
-        $fichasPrevias = $this->fichaRepo->findByCedulaHash($cedula->hash());
+        $cedulaHash = $this->blindIndex->cedula($cedula->valor);
+        $fichasPrevias = $this->fichaRepo->findByCedulaHash($cedulaHash);
         if ($tipo === TipoFicha::REINGRESO && $fichasPrevias === []) {
             throw new DomainException('Para tipo REINGRESO debe existir al menos una ficha previa con la misma cédula.');
         }
@@ -129,7 +132,7 @@ final class CrearFichaService
         try {
             $fichaId = $this->db->transactional(function () use (
                 $input,
-                $cedula,
+                $cedulaHash,
                 $cedulaCifrada,
                 $cuentaCifrada,
                 $correlativo,
@@ -156,7 +159,7 @@ final class CrearFichaService
                 'fecha_emision' => date('Y-m-d'),
                 'nombres' => $this->requiredString($input, 'nombres'),
                 'apellidos' => $this->requiredString($input, 'apellidos'),
-                'cedula_hash' => $cedula->hash(),
+                'cedula_hash' => $cedulaHash,
                 'cedula_cifrada' => $cedulaCifrada,
                 'genero' => $genero->value,
                 'fecha_nacimiento' => $fechaNacimiento,

@@ -76,14 +76,6 @@ final readonly class Cedula
         return $digitoEsperado === (int)$cedula[9];
     }
 
-    /**
-     * Hash SHA-256 para búsquedas sin descifrar.
-     */
-    public function hash(): string
-    {
-        return hash('sha256', $this->valor);
-    }
-
     public function __toString(): string
     {
         return $this->valor;
