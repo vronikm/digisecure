@@ -16,15 +16,19 @@ use DigiSecure\Notification\Infrastructure\Channel\EmailChannel;
  * envía en el momento vía EmailChannel.
  *
  * Siempre intenta enviar vía EmailChannel (que por defecto usa mail() nativo si
- * no hay SMTP configurado). Si el envío falla (p. ej. sin MTA en localhost),
- * registra el cuerpo (con su enlace) en var/logs/mail.log para continuar el flujo.
+ * no hay SMTP configurado). Si el envío falla lo registra en var/logs/mail.log;
+ * el cuerpo (con su enlace) solo fuera de producción, ver RegistroEnvioFallido.
  */
 final class Mailer
 {
+    private readonly RegistroEnvioFallido $fallos;
+
     public function __construct(
         private readonly EmailChannel $email,
-        private readonly string $devLogPath,
+        string $logPath,
+        bool $registrarContenido = false,
     ) {
+        $this->fallos = new RegistroEnvioFallido($logPath, $registrarContenido, 'MAIL');
     }
 
     public function enviar(
@@ -56,16 +60,7 @@ final class Mailer
         ]);
 
         if (!$resultado->success) {
-            // Se registra el cuerpo (con su enlace) para poder continuar el flujo
-            // en entornos sin MTA local (mail() a localhost:25 falla en dev).
-            $this->logDev(sprintf(
-                "Fallo enviando a %s (%s): %s\n  Asunto: %s\n  --- Cuerpo (texto) ---\n%s",
-                $correo,
-                $resultado->codigo ?? 'ERROR',
-                $resultado->mensaje ?? 'sin detalle',
-                $asunto,
-                $cuerpoTexto,
-            ));
+            $this->fallos->registrar($correo, $resultado->codigo, $resultado->mensaje, $asunto, $cuerpoTexto);
         }
 
         return [
@@ -73,11 +68,5 @@ final class Mailer
             'code' => $resultado->codigo,
             'message' => $resultado->mensaje,
         ];
-    }
-
-    private function logDev(string $mensaje): void
-    {
-        @file_put_contents($this->devLogPath, '[' . date('Y-m-d H:i:s') . "] {$mensaje}\n", FILE_APPEND);
-        error_log('[DIGISECURE][MAIL] ' . str_replace("\n", ' | ', $mensaje));
     }
 }

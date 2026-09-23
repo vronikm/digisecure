@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Aspirante\Infrastructure;
 
+use DigiSecure\Notification\Application\RegistroEnvioFallido;
 use DigiSecure\Notification\Infrastructure\Channel\EmailChannel;
 
 /**
@@ -17,19 +18,24 @@ use DigiSecure\Notification\Infrastructure\Channel\EmailChannel;
  *   enviarlo en el momento.
  *
  * Siempre intenta enviar vía EmailChannel (que por defecto usa mail() nativo si
- * no hay SMTP configurado). Si el envío falla (p. ej. sin MTA en localhost),
- * registra el enlace en var/logs/verificacion.log para poder continuar el flujo.
+ * no hay SMTP configurado). Si el envío falla lo registra en
+ * var/logs/verificacion.log; el enlace solo fuera de producción, ver
+ * RegistroEnvioFallido.
  */
 final class VerificationMailer
 {
     /** Content-ID del logo embebido en el encabezado del correo. */
     private const LOGO_CID = 'logoGemeseg';
 
+    private readonly RegistroEnvioFallido $fallos;
+
     public function __construct(
         private readonly EmailChannel $email,
-        private readonly string $devLogPath,
+        string $logPath,
         private readonly string $logoPath = '',
+        bool $registrarContenido = false,
     ) {
+        $this->fallos = new RegistroEnvioFallido($logPath, $registrarContenido, 'VERIFICACION');
     }
 
     /**
@@ -62,13 +68,7 @@ final class VerificationMailer
         $resultado = $this->email->send($notificacion);
 
         if (!$resultado->success) {
-            $this->logDev(sprintf(
-                'Fallo enviando verificación a %s (%s): %s. Enlace: %s',
-                $correo,
-                $resultado->codigo ?? 'ERROR',
-                $resultado->mensaje ?? 'sin detalle',
-                $enlace,
-            ));
+            $this->fallos->registrar($correo, $resultado->codigo, $resultado->mensaje, $asunto, "Enlace: {$enlace}");
         }
 
         return [
@@ -76,13 +76,6 @@ final class VerificationMailer
             'code' => $resultado->codigo,
             'message' => $resultado->mensaje,
         ];
-    }
-
-    private function logDev(string $mensaje): void
-    {
-        $linea = '[' . date('Y-m-d H:i:s') . "] {$mensaje}\n";
-        @file_put_contents($this->devLogPath, $linea, FILE_APPEND);
-        error_log("[DIGISECURE][VERIFICACION] {$mensaje}");
     }
 
     private function tieneLogo(): bool

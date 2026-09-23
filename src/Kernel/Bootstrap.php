@@ -635,7 +635,7 @@ final class Bootstrap
                 $c->get(\DigiSecure\Subscription\Infrastructure\PlanRepository::class),
                 $c->get(\DigiSecure\Subscription\Infrastructure\SuscripcionCicloRepository::class),
                 $c->get(\DigiSecure\Tenant\Infrastructure\RegistroEmpresaRepository::class),
-                $c->get(\DigiSecure\Notification\Application\EncolarNotificacionService::class),
+                $c->get(\DigiSecure\Notification\Application\Mailer::class),
                 $c->get(TenantContext::class),
                 $c->get(Config::class),
             ),
@@ -762,6 +762,8 @@ final class Bootstrap
             fn(Container $c) => new \DigiSecure\Notification\Application\Mailer(
                 $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
                 "{$this->rootPath}/var/logs/mail.log",
+                // Fuera de producción el log conserva el enlace para seguir el flujo sin MTA.
+                $c->get(Config::class)->string('app.env', 'production') !== 'production',
             ),
         );
         $container->singleton(
@@ -770,6 +772,7 @@ final class Bootstrap
                 $c->get(\DigiSecure\Notification\Infrastructure\Channel\EmailChannel::class),
                 "{$this->rootPath}/var/logs/verificacion.log",
                 "{$this->rootPath}/public/assets/img/logoGemeseg.png",
+                $c->get(Config::class)->string('app.env', 'production') !== 'production',
             ),
         );
 
@@ -1150,7 +1153,7 @@ final class Bootstrap
 
             if ($config->string('app.env', 'production') !== 'production') {
                 $payload += [
-                    'phase' => '18.0',
+                    'phase' => '18.1',
                     'php' => PHP_VERSION,
                     'session_active' => $session->isStarted(),
                     'csrf_token_present' => $csrf->token() !== '',

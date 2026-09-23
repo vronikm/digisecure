@@ -6,9 +6,7 @@ namespace DigiSecure\Tenant\Application;
 
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Config\Config;
-use DigiSecure\Notification\Application\EncolarNotificacionService;
-use DigiSecure\Notification\Domain\Enum\CanalNotificacion;
-use DigiSecure\Notification\Domain\Enum\PrioridadNotificacion;
+use DigiSecure\Notification\Application\Mailer;
 use DigiSecure\Security\Crypto\Hasher;
 use DigiSecure\Shared\Domain\DomainException;
 use DigiSecure\Shared\Infrastructure\Clock;
@@ -53,7 +51,7 @@ final class RegistrarTenantService
         private readonly PlanRepository $planRepo,
         private readonly SuscripcionCicloRepository $ciclosRepo,
         private readonly RegistroEmpresaRepository $registrosRepo,
-        private readonly EncolarNotificacionService $encolar,
+        private readonly Mailer $mailer,
         private readonly TenantContext $tenantContext,
         private readonly Config $config,
     ) {
@@ -240,24 +238,18 @@ final class RegistrarTenantService
             ]);
         });
 
-        // 6. Encolar email de activación (fuera de la transacción).
+        // 6. Enviar el email de activación en el momento (fuera de la transacción).
+        //    No va a la cola: la cola solo se despacha por cron para tenants
+        //    activos, y este tenant sigue 'pendiente' hasta activarse.
         $enlace = rtrim($this->config->string('app.url', ''), '/') . '/activar/' . $tokenPlano;
         $nombreCompleto = trim($nombres . ' ' . $apellidos);
-        $this->encolar->execute([
-            'evento' => 'tenant.registro.solicitado',
-            'canal' => CanalNotificacion::EMAIL,
-            'prioridad' => PrioridadNotificacion::ALTA,
-            'destinatario_usuario_id' => $usuarioId,
-            'destinatario_email' => $email,
-            'destinatario_nombre' => $nombreCompleto !== '' ? $nombreCompleto : $email,
-            'asunto' => 'DigiSecure · Activa tu cuenta empresarial',
-            'cuerpo_texto' => $this->buildTextBody($nombreCompleto, $razonSocial, $enlace),
-            'cuerpo_html'  => $this->buildHtmlBody($nombreCompleto, $razonSocial, $enlace),
-            'entidad_tipo' => 'tenant',
-            'entidad_id' => $tenantId,
-            'dedupe_key' => 'tenant_activacion:' . $tenantId . ':' . substr($tokenHash, 0, 16),
-            'max_intentos' => 3,
-        ], $usuarioId, $ip);
+        $envio = $this->mailer->enviarDetallado(
+            $email,
+            $nombreCompleto !== '' ? $nombreCompleto : $email,
+            'DigiSecure · Activa tu cuenta empresarial',
+            $this->buildTextBody($nombreCompleto, $razonSocial, $enlace),
+            $this->buildHtmlBody($nombreCompleto, $razonSocial, $enlace),
+        );
 
         // 7. Auditar
         $this->registrosRepo->registrar(
@@ -272,6 +264,8 @@ final class RegistrarTenantService
                 'plan' => $planTrial->codigo,
                 'trial_dias' => self::TRIAL_DIAS,
                 'expira_at' => $expiraStr,
+                'correo_activacion_enviado' => $envio['success'],
+                'correo_error' => $envio['success'] ? null : ($envio['code'] ?? 'ERROR'),
             ],
         );
 
