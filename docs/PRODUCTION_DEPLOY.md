@@ -187,8 +187,42 @@ Es idempotente. Si reporta filas "no descifrables", la `ENCRYPTION_KEY` del
 servidor no es la que cifro esos datos: no continuar sin revisar. Para fichas
 de aspirantes existe `php bin/repair-encrypted-cedulas.php --dry-run`.
 
-Rotar `ENCRYPTION_KEY` exige re-cifrar los datos y volver a ejecutar
-`bin/rehash-cedulas.php --apply`.
+### Comprobar si hace falta recifrar
+
+Solo lectura, no imprime valores ni claves:
+
+```bash
+php bin/diagnostico-cifrado.php
+```
+
+Sale con codigo 0 si todo se descifra con la `ENCRYPTION_KEY` actual, y con 2 si
+hay valores cifrados con otra clave (se veran como "No disponible" en cedulas y
+cuentas bancarias). En ese caso, seguir el procedimiento siguiente.
+
+### Cambio de clave de cifrado
+
+Si se rota `ENCRYPTION_KEY`, o si se sube a produccion una base cifrada con la
+clave de otro entorno (p. ej. la de desarrollo), esas filas dejan de
+descifrarse. Para pasarlas a la clave actual:
+
+1. Agregar temporalmente al `.env`: `ENCRYPTION_KEY_ANTERIOR=<clave anterior>`.
+2. Ejecutar:
+
+```bash
+php bin/recifrar-datos.php --dry-run
+php bin/recifrar-datos.php --apply
+php bin/rehash-cedulas.php --dry-run
+php bin/rehash-cedulas.php --apply
+```
+
+3. Quitar `ENCRYPTION_KEY_ANTERIOR` del `.env`.
+
+`recifrar-datos.php` usa el propio dato cifrado como fuente: lo que ya
+descifra con la clave actual no se toca, y lo que no descifra con ninguna de
+las dos claves se reporta sin modificarlo. Es repetible.
+
+Nunca subir una base de desarrollo a produccion sin este paso: ademas del
+cifrado, reemplaza los datos reales creados despues de la copia.
 
 La migracion `020_importaciones_gemeseg_permission` habilita el permiso
 `importaciones.gemeseg`. Despues de aplicarla, la opcion queda en:
@@ -211,6 +245,40 @@ php bin/create-superadmin.php --email=admin@digitech.com.ec
 ```
 
 El script imprime la contrasena generada si no se pasa `--password`.
+
+## 6.bis Tareas programadas (cron)
+
+`bin/notify-expirations.php` revisa vencimientos documentales y despacha la cola
+de notificaciones. Sin cron, esos avisos no salen nunca. En cPanel, una vez al
+dia (la hora es indiferente, conviene fuera de horario de oficina):
+
+```text
+0 6 * * *  /usr/local/bin/php /home/USUARIO/digisecure/bin/notify-expirations.php >> /home/USUARIO/digisecure/var/logs/cron-notificaciones.log 2>&1
+```
+
+Los correos transaccionales (verificacion de aspirante, recuperar contrasena y
+activacion de empresa) NO dependen de este cron: se envian en el momento.
+
+Retencion LOPDP (5 anios), si se decide automatizar, va aparte:
+
+```text
+30 3 * * 0  /usr/local/bin/php /home/USUARIO/digisecure/bin/anonimizar-retencion.php --apply >> /home/USUARIO/digisecure/var/logs/cron-retencion.log 2>&1
+```
+
+## 6.ter Logs con enlaces de un solo uso
+
+Hasta esta version, si fallaba el envio de un correo, el cuerpo quedaba escrito
+en `var/logs/mail.log` y `var/logs/verificacion.log` con el enlace de
+recuperacion o verificacion dentro. Ya no ocurre en produccion (`APP_ENV=production`
+solo guarda metadata con el destinatario enmascarado), pero los archivos
+anteriores siguen en el servidor: borrarlos tras desplegar.
+
+```bash
+rm -f var/logs/mail.log var/logs/verificacion.log
+```
+
+Comprobar que `APP_ENV=production` en el `.env` del servidor: es lo que activa
+ese comportamiento.
 
 ## 7. Archivos que no deben subirse
 

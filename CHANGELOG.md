@@ -1,8 +1,56 @@
 # DigiSecure — Changelog
 
-Estado actual: **Phase 18.0** · 34 migraciones · 120/120 tests verdes.
+Estado actual: **Phase 18.1** · 36 migraciones · 122/122 tests verdes.
 
-Stack: PHP 8.3 / MySQL 8 / Bootstrap 5.3 / Chart.js 4.4 + sistema de diseño propio `ds-system`.
+Stack: PHP 8.3 / MySQL 8 / Chart.js 4.4 + sistema de diseño propio `ds-system` (iconos Bootstrap; la hoja CSS de Bootstrap ya no se carga).
+
+---
+
+## QA integral — Correcciones de la prueba end to end (2026-09-22)
+
+Una prueba de todo el flujo (registro de aspirante → contratación → asignación, más superadmin) dejó 8 fallos y una lista de mejoras de interfaz. Se corrigen todos.
+
+**Fallos**
+
+1. **El alta de empresa nunca llegaba.** `RegistrarTenantService` encolaba el correo de activación, pero el despachador (`bin/notify-expirations.php`) solo atiende tenants `activo`: el tenant recién registrado queda `pendiente` y su correo no salía jamás. Ahora se envía en el momento con `Mailer` y el resultado (`correo_activacion_enviado`, `correo_error`) queda en `registros_empresa`.
+2. **Los cupos del plan contaban de más.** Nuevo `Subscription\Infrastructure\CriteriosCupo`, único lugar que define qué consume cupo: usuarios activos **con rol operativo** (las cuentas de aspirante no cuentan) y **personas** con ficha vigente (por `cedula_hash`, sin anuladas, bajas ni aspirantes sin contratar). Lo usan `CalcularUsoService` y las vistas del superadmin. En GEMESEG: 37/5 usuarios → 2/5; 12 fichas → 0 guardias.
+3. **Requisitos básicos con Y en lugar de O.** `CompletarFichaService` exigía bachillerato **y** trabajo anterior; la decisión vinculante #10 pide bachillerato **o** un año de experiencia. El formulario ya no llama "Opcional" a los trabajos: explica el requisito.
+4. **Suscripción vencida sin aviso.** Aviso fijo en el layout para quien administra la empresa, alerta "Suscripciones vencidas" para el superadmin y marca `· vencido` en el listado de empresas. No bloquea el servicio: la decisión de suspender sigue siendo comercial.
+5. **`/dashboard` sin control de acceso.** Un empleado sin permisos veía los KPIs de la empresa. Ahora los KPIs exigen `guardias.ver`, `expedientes.ver` o `reportes.ver`; el resto ve una bienvenida.
+6. **Un usuario torpe bloqueaba la oficina entera.** El rate-limit contaba `email OR ip` contra el mismo umbral (5/15 min): 5 fallos desde una IP dejaban fuera a todos los usuarios detrás de ese NAT. Ahora son dos umbrales: 5 por cuenta y 30 por IP.
+7. **Enlaces con token en los logs.** `Mailer` y `VerificationMailer` escribían el cuerpo del correo (con el enlace de recuperación o verificación) en `var/logs` y en `error_log`, también en producción. Nuevo `RegistroEnvioFallido`: fuera de producción guarda el contenido para poder seguir el flujo sin MTA; en producción solo metadata con el destinatario enmascarado.
+8. **La hoja de Bootstrap estaba bloqueada.** Su hash SRI era incorrecto, así que el navegador la descartaba desde abril: rejilla, barras de progreso, badges, pestañas y `d-none` no tenían estilo. Se retira el enlace (layout y páginas de error) y `ds-system.css` incorpora el subconjunto que las plantillas usan de verdad (rejilla de 12 columnas, tarjetas, formularios, botones, tablas, alertas, badges, progreso, pestañas y utilidades). Sin dependencia externa de CSS.
+
+**Interfaz**
+
+- Registro público: confirmación de correo (un correo mal escrito dejaba al aspirante sin poder verificarse) y el botón ambiguo "Registro" pasa a "Postúlate como guardia".
+- Ficha: acceso al expediente desde cualquier paso, los contadores "0/0" de fases sin obligatorios se ocultan y la barra de progreso aclara que solo mide campos del formulario.
+- Expediente: títulos sin el "·" suelto, numeración correlativa (antes saltaba números al usar el campo `orden`), total real de documentos (decía 26 con 25) y el estado por archivo solo cuando el tipo admite varios.
+- Documentos: se muestra el nombre de quien subió y revisó, en vez del ULID; "Tamaño" y "Número" con tilde; se rechaza un vencimiento anterior o igual a la emisión (servidor y formulario).
+- Privacidad: los listados enmascaran la cédula (`******1234`); el detalle la muestra completa. Lo que no se puede descifrar dice "No disponible" en vez de `[cifrado]`.
+- Guardias: distintivo Aspirante / Empleado / De baja en el listado.
+- Usuarios: la contraseña inicial ya no viaja visible en el HTML (campo `password` con botón de mostrar).
+- Empresa: provincia y ciudad como listas encadenadas (mismo script que clientes).
+- Asignaciones: si no hay fichas COMPLETA o no hay puestos, el botón queda deshabilitado con la explicación, en lugar de redirigir con un mensaje.
+- Móvil: KPIs en dos columnas compactas, tarjetas de filtros plegadas, el menú lateral ya no queda tapado por su pie y el pie muestra empresa y rol en vez de "N permisos activos".
+
+**Segunda pasada (lo que había quedado a decisión)**
+
+- **Guardar la ficha desde cualquier paso.** El botón ya no aparece solo en el último paso: al guardar, el formulario lleva al paso del primer campo incompleto (el manejador de submit ya lo hacía, pero el botón estaba oculto). Además, las dos referencias personales entran en el porcentaje de avance — antes marcaba 100% sin poder guardar — y los nombres de los pasos dejan de recortarse ("Historia…") ahora que la rejilla comparte ancho con el resumen.
+- **Migración 036:** los tipos documentales cuyo nombre declara una cantidad ("2 fotografías tamaño carnet", "2 certificados de trabajo") pedían un solo archivo, así que el expediente daba el requisito por cumplido con una foto. Se ajusta `numero_documentos` a la cantidad del nombre (2..10), sin pisar lo que ya estaba bien configurado. Efecto: los expedientes con una sola foto vuelven a contarse como incompletos, que es el estado real.
+- **Nuevo `bin/diagnostico-cifrado.php`:** de solo lectura, informa cuántos valores no se descifran con la `ENCRYPTION_KEY` actual (nunca imprime valores ni claves) e indica el procedimiento con `recifrar-datos.php`. En la base local: 26 valores (6 cédulas de ficha, 12 cuentas bancarias y 8 cédulas de familiares) siguen cifrados con la clave anterior.
+
+**Migración 035** concede `suscripcion.ver` a los roles con `tenants.ver` (la 007 lo hizo antes de que `admin_tenant` tuviera ese permiso, así que el administrador de la empresa no podía ver su propio plan). `suscripcion.gestionar` sigue siendo del administrador de la plataforma.
+
+---
+
+## Operación — Cambio de clave de cifrado (2026-09-16)
+
+- **Nuevo `bin/recifrar-datos.php --dry-run|--apply`:** pasa a la `ENCRYPTION_KEY` actual todo lo cifrado con `ENCRYPTION_KEY_ANTERIOR`.
+  - **Columnas:** cédula y cuenta bancaria de fichas, cédula de familiares, cédula y MFA de usuarios, staging GEMESEG (clave por tenant + AAD).
+  - Recalcula `cedula_hash` al recifrar.
+  - Lo que ya descifra con la clave actual no se toca; lo que no descifra con ninguna se reporta.
+- Sirve para rotar la clave o para una base copiada entre entornos con claves distintas. Procedimiento en `docs/PRODUCTION_DEPLOY.md`.
 
 ---
 
