@@ -177,7 +177,7 @@ $estadoTone = [
     </div>
 </div>
 
-<div class="ds-card ds-history-filter">
+<div class="ds-card ds-history-filter" data-collapsible-mobile>
     <div class="ds-card-header tone-success">
         <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
         <div>

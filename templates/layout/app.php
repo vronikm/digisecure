@@ -165,11 +165,9 @@ $normalizeMenuSearch = static function (array $parts): string {
     <meta name="csrf-token" content="<?= $e($csrfToken) ?>">
     <title><?= $e($pageTitle) ?></title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/1p8Rbdc5E3QYkQ5jU3TmgE7pC7dMf1" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=20.9">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=21.0">
     <style>
         @keyframes dsMenuActivePulse {
             0% {
@@ -237,7 +235,7 @@ $normalizeMenuSearch = static function (array $parts): string {
 </div>
 <?php endif; ?>
 <nav class="ds-topbar">
-    <button class="btn btn-link text-white p-0 ds-sidebar-toggle-btn" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
+    <button class="ds-sidebar-toggle-btn" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
         <i class="bi bi-list fs-3"></i>
     </button>
 
@@ -474,7 +472,7 @@ $normalizeMenuSearch = static function (array $parts): string {
 
         <div class="ds-sidebar-footer">
             <strong><i class="bi bi-shield-check me-2"></i>DigiSecure v0.9</strong>
-            <span><?= count($user->permisos) ?> permisos activos para esta empresa</span>
+            <span><?= $e($user->tenantNombre) ?> &middot; <?= $e($rolPrincipal) ?></span>
         </div>
     </div>
 </aside>
@@ -491,6 +489,26 @@ $normalizeMenuSearch = static function (array $parts): string {
 
     <div class="ds-shell">
         <div class="ds-content-wrap">
+            <?php $avisoSuscripcion = $alertas['aviso_suscripcion'] ?? null; ?>
+            <?php if (is_array($avisoSuscripcion) && !str_starts_with($currentPath, '/suscripcion')):
+                $diasSuscripcion = (int) $avisoSuscripcion['dias']; ?>
+                <div class="ds-callout <?= $diasSuscripcion < 0 ? 'tone-danger' : 'tone-warning' ?>" role="alert">
+                    <i class="bi bi-gem"></i>
+                    <div>
+                        <strong>
+                            <?php if ($diasSuscripcion < 0): ?>
+                                La suscripción de <?= $e($user->tenantNombre) ?> venció hace <?= -$diasSuscripcion ?> día<?= $diasSuscripcion === -1 ? '' : 's' ?>
+                            <?php elseif ($diasSuscripcion === 0): ?>
+                                La suscripción de <?= $e($user->tenantNombre) ?> vence hoy
+                            <?php else: ?>
+                                La suscripción de <?= $e($user->tenantNombre) ?> vence en <?= $diasSuscripcion ?> día<?= $diasSuscripcion === 1 ? '' : 's' ?>
+                            <?php endif ?>
+                        </strong>
+                        Renuévala para evitar la suspensión del servicio.
+                        <a href="<?= $view->url('/suscripcion') ?>">Ver suscripción</a>
+                    </div>
+                </div>
+            <?php endif ?>
             <?= $view->yieldSection('content') ?>
         </div>
 
@@ -826,6 +844,31 @@ $normalizeMenuSearch = static function (array $parts): string {
     }
 
     window.addEventListener('beforeunload', saveMenuScroll);
+
+    // Tarjetas de filtros plegadas en móvil: en pantallas pequeñas ocupaban
+    // toda la primera vista y empujaban la tabla fuera de pantalla.
+    document.querySelectorAll('[data-collapsible-mobile]').forEach((card) => {
+        const header = card.querySelector('.ds-card-header');
+        const body = card.querySelector('.ds-card-body');
+        if (!header || !body) return;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ds-card-collapse-btn';
+        btn.innerHTML = '<i class="bi bi-chevron-down"></i>';
+        header.appendChild(btn);
+
+        // Con filtros aplicados se deja abierta para que se vean cuáles son.
+        const conFiltros = card.querySelector('.ds-btn-ghost') !== null;
+        const sync = (colapsada) => {
+            card.classList.toggle('is-mobile-collapsed', colapsada);
+            btn.querySelector('i').className = colapsada ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+            btn.setAttribute('aria-expanded', String(!colapsada));
+            btn.setAttribute('aria-label', colapsada ? 'Mostrar filtros' : 'Ocultar filtros');
+        };
+        sync(!conFiltros);
+        btn.addEventListener('click', () => sync(!card.classList.contains('is-mobile-collapsed')));
+    });
 
     restoreMenuScroll();
     const activeNode = revealActiveMenuItem();

@@ -96,7 +96,7 @@ $hasFilters = !empty($filters['estado'] ?? null)
     </div>
 </div>
 
-<div class="ds-card ds-op-filter">
+<div class="ds-card ds-op-filter" data-collapsible-mobile>
     <div class="ds-card-header tone-success">
         <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
         <div>

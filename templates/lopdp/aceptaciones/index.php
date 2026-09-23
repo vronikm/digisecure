@@ -128,7 +128,7 @@ $formatDateTime = static function ($value): string {
     </div>
 </div>
 
-<div class="ds-card ds-lopdp-filter">
+<div class="ds-card ds-lopdp-filter" data-collapsible-mobile>
     <div class="ds-card-header tone-info">
         <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
         <div>
