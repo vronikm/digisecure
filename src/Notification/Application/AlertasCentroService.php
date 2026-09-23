@@ -22,7 +22,7 @@ final class AlertasCentroService
     }
 
     /**
-     * @return array{items: list<array<string, mixed>>, total: int, criticas: int}
+     * @return array{items: list<array<string, mixed>>, total: int, criticas: int, aviso_suscripcion?: array{dias: int}}
      */
     public function listarPara(AuthenticatedUser $user): array
     {
@@ -34,7 +34,7 @@ final class AlertasCentroService
     }
 
     /**
-     * @return array{items: list<array<string, mixed>>, total: int, criticas: int}
+     * @return array{items: list<array<string, mixed>>, total: int, criticas: int, aviso_suscripcion?: array{dias: int}}
      */
     private function alertasTenant(AuthenticatedUser $user): array
     {
@@ -114,27 +114,38 @@ final class AlertasCentroService
             }
         }
 
+        $aviso = null;
         if ($user->tienePermiso('suscripcion.ver')) {
             $diasRestantes = $this->diasParaVencimientoSuscripcion($tid);
             if ($diasRestantes !== null && $diasRestantes <= 15) {
-                $sev = $diasRestantes <= 3 ? 'critica' : 'alta';
-                $color = $diasRestantes <= 3 ? 'danger' : 'warning';
-                $detalle = $diasRestantes <= 0
-                    ? 'La suscripcion esta vencida'
-                    : "La suscripcion vence en {$diasRestantes} dia(s)";
+                $vencida = $diasRestantes < 0;
+                $critica = $diasRestantes <= 3;
                 $items[] = [
-                    'severidad' => $sev,
+                    'severidad' => $critica ? 'critica' : 'alta',
                     'icon' => 'bi-gem',
-                    'color' => $color,
-                    'titulo' => 'Suscripcion por vencer',
-                    'detalle' => $detalle,
-                    'cantidad' => max(1, $diasRestantes),
+                    'color' => $critica ? 'danger' : 'warning',
+                    'titulo' => $vencida ? 'Suscripcion vencida' : 'Suscripcion por vencer',
+                    'detalle' => match (true) {
+                        $vencida => sprintf('Vencio hace %d dia(s)', -$diasRestantes),
+                        $diasRestantes === 0 => 'Vence hoy',
+                        default => "Vence en {$diasRestantes} dia(s)",
+                    },
+                    'cantidad' => max(1, abs($diasRestantes)),
                     'url' => '/suscripcion',
                 ];
+                // Aviso fijo en el layout: la campana sola pasa desapercibida.
+                if ($critica) {
+                    $aviso = ['dias' => $diasRestantes];
+                }
             }
         }
 
-        return $this->empaquetar($items);
+        $bundle = $this->empaquetar($items);
+        if ($aviso !== null) {
+            $bundle['aviso_suscripcion'] = $aviso;
+        }
+
+        return $bundle;
     }
 
     /**
@@ -187,6 +198,24 @@ final class AlertasCentroService
                 'detalle' => "{$suspendidos} empresa(s) suspendida(s)",
                 'cantidad' => $suspendidos,
                 'url' => '/admin/tenants?estado=suspendido',
+            ];
+        }
+
+        // Empresas operando con el plan vencido: no se bloquean solas, el
+        // superadmin decide si renueva, extiende o suspende.
+        $vencidos = (int) $this->db->fetchScalar(
+            "SELECT COUNT(*) FROM tenants
+             WHERE estado = 'activo' AND plan_vencimiento IS NOT NULL AND plan_vencimiento < CURDATE()",
+        );
+        if ($vencidos > 0) {
+            $items[] = [
+                'severidad' => 'alta',
+                'icon' => 'bi-gem',
+                'color' => 'danger',
+                'titulo' => 'Suscripciones vencidas',
+                'detalle' => "{$vencidos} empresa(s) activa(s) con el plan vencido",
+                'cantidad' => $vencidos,
+                'url' => '/admin/tenants?estado=activo',
             ];
         }
 

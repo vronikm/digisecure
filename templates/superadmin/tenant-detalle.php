@@ -21,8 +21,8 @@ $storageMb = round(((int) ($uso['storage_bytes'] ?? 0)) / (1024 * 1024), 1);
 $maxStorage = (int) ($t['max_storage_mb'] ?? 0);
 $maxUsuarios = (int) ($t['max_usuarios'] ?? 0);
 $maxGuardias = (int) ($t['max_guardias'] ?? 0);
-$usrAct = (int) ($uso['usuarios_activos'] ?? 0);
-$fichas = (int) ($uso['total_fichas'] ?? 0);
+$usrAct = (int) ($uso['usuarios_cupo'] ?? 0);
+$fichas = (int) ($uso['guardias_cupo'] ?? 0);
 
 $estadoTone = [
     'activo'                 => 'tone-success',
@@ -259,7 +259,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
             <div class="ds-card-body">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Usuarios activos</div>
+                        <div style="<?= $ds_dt ?>">Usuarios (cupo del plan)</div>
                         <div style="<?= $ds_dd ?>; font-size: 1.05rem;"><?= $usrAct ?> <span style="color: var(--ds-text-soft); font-weight: 500; font-size: .85rem;">/ <?= $maxUsuarios ?: 'Ilim.' ?></span></div>
                         <?php if ($maxUsuarios > 0): ?>
                             <div class="ds-progress" style="margin-top: .35rem;">
@@ -269,7 +269,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                         <?php endif ?>
                     </div>
                     <div class="col-md-4">
-                        <div style="<?= $ds_dt ?>">Fichas de guardias</div>
+                        <div style="<?= $ds_dt ?>">Guardias (cupo del plan)</div>
                         <div style="<?= $ds_dd ?>; font-size: 1.05rem;"><?= $fichas ?> <span style="color: var(--ds-text-soft); font-weight: 500; font-size: .85rem;">/ <?= $maxGuardias ?: 'Ilim.' ?></span></div>
                         <?php if ($maxGuardias > 0): ?>
                             <div class="ds-progress" style="margin-top: .35rem;">

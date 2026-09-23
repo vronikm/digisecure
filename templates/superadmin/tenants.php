@@ -70,7 +70,7 @@ $baseParams = array_filter([
     </div>
 </div>
 
-<div class="ds-card ds-op-filter">
+<div class="ds-card ds-op-filter" data-collapsible-mobile>
     <div class="ds-card-header tone-success">
         <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
         <div>
@@ -157,8 +157,8 @@ $baseParams = array_filter([
                     <th>Empresa</th>
                     <th>RUC</th>
                     <th>Plan</th>
-                    <th class="ds-cell-end">Usuarios</th>
-                    <th class="ds-cell-end">Fichas</th>
+                    <th class="ds-cell-end" title="Usuarios activos con rol operativo (sin aspirantes)">Usuarios</th>
+                    <th class="ds-cell-end" title="Personas con ficha vigente (sin aspirantes ni bajas)">Guardias</th>
                     <th>Vencimiento</th>
                     <th>Estado</th>
                     <th>Alta</th>
@@ -188,15 +188,15 @@ $baseParams = array_filter([
                     <td><span class="ds-cell-mono"><?= $e((string) $t['ruc']) ?></span></td>
                     <td><span class="ds-chip"><i class="bi bi-gem"></i><?= $e((string) $t['plan_codigo']) ?></span></td>
                     <td class="ds-cell-end">
-                        <span class="ds-cell-sub"><?= (int) ($t['usuarios_activos'] ?? 0) ?> / <?= (int) ($t['max_usuarios'] ?? 0) ?></span>
+                        <span class="ds-cell-sub"><?= (int) ($t['usuarios_cupo'] ?? 0) ?> / <?= (int) ($t['max_usuarios'] ?? 0) ?></span>
                     </td>
                     <td class="ds-cell-end">
-                        <span class="ds-cell-sub"><?= (int) ($t['total_fichas'] ?? 0) ?> / <?= (int) ($t['max_guardias'] ?? 0) ?></span>
+                        <span class="ds-cell-sub"><?= (int) ($t['guardias_cupo'] ?? 0) ?> / <?= (int) ($t['max_guardias'] ?? 0) ?></span>
                     </td>
                     <td>
                         <?php if ($venc): ?>
                             <?php if ($vencCls !== ''): ?>
-                                <span class="ds-badge <?= $vencCls ?> no-dot"><?= $e(substr($venc, 0, 10)) ?></span>
+                                <span class="ds-badge <?= $vencCls ?> no-dot"><?= $e(substr($venc, 0, 10)) ?><?= $diasRest < 0 ? ' · vencido' : '' ?></span>
                             <?php else: ?>
                                 <span class="ds-cell-mono"><?= $e(substr($venc, 0, 10)) ?></span>
                             <?php endif ?>

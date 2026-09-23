@@ -6,6 +6,7 @@ namespace DigiSecure\Superadmin\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Shared\Infrastructure\Clock;
+use DigiSecure\Subscription\Infrastructure\CriteriosCupo;
 
 /**
  * Repositorio global (sin filtro de tenant) para el panel superadmin.
@@ -142,7 +143,13 @@ final class SuperadminRepository
                         AND u.estado = 'activo') AS usuarios_activos,
                     (SELECT COUNT(*)
                        FROM fichas f
-                      WHERE f.tenant_id COLLATE utf8mb4_unicode_ci = t.id COLLATE utf8mb4_unicode_ci) AS total_fichas
+                      WHERE f.tenant_id COLLATE utf8mb4_unicode_ci = t.id COLLATE utf8mb4_unicode_ci) AS total_fichas,
+                    (SELECT COUNT(*)
+                       FROM usuarios uc
+                      WHERE uc.tenant_id = t.id AND " . CriteriosCupo::usuario('uc') . ") AS usuarios_cupo,
+                    (SELECT COUNT(DISTINCT " . CriteriosCupo::personaGuardia('fc') . ")
+                       FROM fichas fc
+                      WHERE fc.tenant_id = t.id AND " . CriteriosCupo::guardia('fc') . ") AS guardias_cupo
                FROM tenants t
                {$whereClause}
               ORDER BY t.created_at DESC
@@ -184,8 +191,11 @@ final class SuperadminRepository
                 (SELECT COUNT(*) FROM fichas WHERE tenant_id = :t3) AS total_fichas,
                 (SELECT COALESCE(SUM(archivo_tamano_bytes), 0) FROM expediente_documentos ed
                    JOIN expedientes e ON e.id = ed.expediente_id
-                  WHERE e.tenant_id = :t4) AS storage_bytes",
-            ['t1' => $tenantId, 't2' => $tenantId, 't3' => $tenantId, 't4' => $tenantId],
+                  WHERE e.tenant_id = :t4) AS storage_bytes,
+                (SELECT COUNT(*) FROM usuarios uc WHERE uc.tenant_id = :t5 AND " . CriteriosCupo::usuario('uc') . ") AS usuarios_cupo,
+                (SELECT COUNT(DISTINCT " . CriteriosCupo::personaGuardia('fc') . ")
+                   FROM fichas fc WHERE fc.tenant_id = :t6 AND " . CriteriosCupo::guardia('fc') . ") AS guardias_cupo",
+            ['t1' => $tenantId, 't2' => $tenantId, 't3' => $tenantId, 't4' => $tenantId, 't5' => $tenantId, 't6' => $tenantId],
         ) ?? [];
 
         return array_map('intval', $row);
