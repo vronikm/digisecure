@@ -985,6 +985,7 @@ body.gemeseg-login {
     gap: .35rem 1rem;
 }
 .ds-modal .login-field { margin-bottom: .85rem; }
+.ds-field-grid > .is-full { grid-column: 1 / -1; }
 body.ds-modal-open { overflow: hidden; }
 
 /* Errores de validacion en cliente + widget reCAPTCHA del modal */

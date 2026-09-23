@@ -46,6 +46,7 @@ final class AspiranteController
             'nombres'          => (string) $request->post('nombres', ''),
             'celular'          => (string) $request->post('celular', ''),
             'correo'           => (string) $request->post('correo', ''),
+            'correo_confirmacion' => (string) $request->post('correo_confirmacion', ''),
             'estatura'         => (string) $request->post('estatura', ''),
             'fecha_nacimiento' => (string) $request->post('fecha_nacimiento', ''),
             'password'              => (string) $request->post('password', ''),

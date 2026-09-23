@@ -6,6 +6,7 @@
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
+use DigiSecure\Shared\Domain\EcuadorGeo;
 
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
@@ -151,16 +152,26 @@ $canEditSensitive = (bool) ($canEditSensitive ?? false);
                 </div>
                 <div class="col-md-3">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Ciudad</label>
-                        <input type="text" name="ciudad" class="form-control" maxlength="100"
-                               value="<?= $e((string) ($tenant['ciudad'] ?? '')) ?>">
+                        <label class="ds-form-label">Provincia</label>
+                        <?php $provActual = (string) ($tenant['provincia'] ?? ''); ?>
+                        <select name="provincia" id="emp-provincia" class="form-select">
+                            <option value="">— Selecciona —</option>
+                            <?php foreach (EcuadorGeo::provincias() as $p): ?>
+                            <option value="<?= $e($p) ?>" <?= $provActual === $p ? 'selected' : '' ?>><?= $e($p) ?></option>
+                            <?php endforeach ?>
+                            <?php if ($provActual !== '' && !in_array($provActual, EcuadorGeo::provincias(), true)): ?>
+                            <option value="<?= $e($provActual) ?>" selected><?= $e($provActual) ?> (actual)</option>
+                            <?php endif ?>
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Provincia</label>
-                        <input type="text" name="provincia" class="form-control" maxlength="100"
-                               value="<?= $e((string) ($tenant['provincia'] ?? '')) ?>">
+                        <label class="ds-form-label">Ciudad</label>
+                        <select name="ciudad" id="emp-ciudad" class="form-select"
+                                data-selected="<?= $e((string) ($tenant['ciudad'] ?? '')) ?>">
+                            <option value="">— Selecciona provincia primero —</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -173,4 +184,5 @@ $canEditSensitive = (bool) ($canEditSensitive ?? false);
         </button>
     </div>
 </form>
+<?= $view->include('clientes/_geo-script', ['provinciaId' => 'emp-provincia', 'ciudadId' => 'emp-ciudad']) ?>
 <?php $view->endSection() ?>

@@ -38,7 +38,7 @@ final class RegistrarAspiranteServiceTest extends TestCase
      */
     private function entradaValida(array $overrides = []): array
     {
-        return array_merge([
+        $datos = array_merge([
             'tipo_documento'   => 'cedula',
             'documento'        => '1710034065', // cédula ecuatoriana válida (mód. 10)
             'apellidos'        => 'Pérez Gómez',
@@ -51,6 +51,34 @@ final class RegistrarAspiranteServiceTest extends TestCase
             'password_confirmacion' => 'Segura123',
             'acepta_politicas' => true,
         ], $overrides);
+        // Por defecto la confirmación acompaña al correo (también si se sobrescribe).
+        $datos['correo_confirmacion'] ??= $datos['correo'];
+
+        return $datos;
+    }
+
+    #[Test]
+    public function rechaza_correo_de_confirmacion_distinto(): void
+    {
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('ambos campos deben coincidir');
+        $this->service->execute(
+            $this->entradaValida(['correo_confirmacion' => 'jaun@example.com']),
+            '200.1.2.3',
+            'PHPUnit',
+        );
+    }
+
+    #[Test]
+    public function acepta_confirmacion_con_mayusculas_y_espacios(): void
+    {
+        $this->service->execute(
+            $this->entradaValida(['correo_confirmacion' => '  Juan@Example.com ']),
+            '200.1.2.3',
+            'PHPUnit',
+        );
+
+        self::assertCount(1, $this->repo->creados);
     }
 
     #[Test]

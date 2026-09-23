@@ -14,6 +14,7 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
 $hasFilters = !empty($filters['q']) || !empty($filters['estado']) || !empty($filters['cliente_id']);
+$bloqueoCreacion = $bloqueoCreacion ?? null;
 
 $qs = http_build_query(array_filter([
     'q' => $filters['q'] ?? '',
@@ -58,12 +59,27 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
             <small><?= (int) $kpis['plazas_cubiertas'] ?> de <?= (int) $kpis['plazas_total'] ?> plazas cubiertas (<?= $cobertura ?>%)</small>
         </div>
     </div>
-    <?php if ($user->tienePermiso('asignaciones.crear')): ?>
+    <?php if ($user->tienePermiso('asignaciones.crear') && $bloqueoCreacion === null): ?>
     <a href="<?= $view->url('/asignaciones/crear') ?>" class="ds-btn ds-btn-primary">
-        <i class="bi bi-plus-lg"></i>Nueva asignacion
+        <i class="bi bi-plus-lg"></i>Nueva asignación
     </a>
+    <?php elseif ($bloqueoCreacion !== null): ?>
+    <button type="button" class="ds-btn ds-btn-primary" disabled title="<?= $e($bloqueoCreacion['mensaje']) ?>">
+        <i class="bi bi-plus-lg"></i>Nueva asignación
+    </button>
     <?php endif ?>
 </div>
+
+<?php if ($bloqueoCreacion !== null): ?>
+<div class="ds-callout tone-info" role="status">
+    <i class="bi bi-info-circle"></i>
+    <div>
+        <strong>Aún no se pueden crear asignaciones</strong>
+        <?= $e($bloqueoCreacion['mensaje']) ?>
+        <a href="<?= $view->url($bloqueoCreacion['url']) ?>"><?= $e($bloqueoCreacion['accion']) ?></a>
+    </div>
+</div>
+<?php endif ?>
 
 <!-- KPIs -->
 <div class="ds-kpi-grid ds-kpi-grid-solid">
@@ -171,7 +187,7 @@ $coberturaTone = $cobertura >= 90 ? 'tone-success' : ($cobertura >= 60 ? 'tone-w
                     Crea la primera asignacion vinculando un guardia (ficha COMPLETA) a un puesto activo.
                 <?php endif ?>
             </p>
-            <?php if ($user->tienePermiso('asignaciones.crear') && !$hasFilters): ?>
+            <?php if ($user->tienePermiso('asignaciones.crear') && !$hasFilters && $bloqueoCreacion === null): ?>
             <a href="<?= $view->url('/asignaciones/crear') ?>" class="ds-btn ds-btn-primary">
                 <i class="bi bi-plus-lg"></i>Crear primera asignacion
             </a>

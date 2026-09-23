@@ -172,9 +172,15 @@ $tenantSel = (string) ($input['tenant_id'] ?? '');
                 <div class="ds-col-12 ds-col-md-6 ds-col-lg-5">
                     <div class="ds-form-field">
                         <label class="ds-form-label">Contraseña inicial <span class="ds-required">*</span></label>
-                        <input type="text" name="password" class="form-control" required minlength="8"
-                               value="<?= $e($input['password'] ?? '') ?>">
-                        <span class="ds-form-help">Minimo 8 caracteres. El usuario debera cambiarla en su proximo login.</span>
+                        <div class="d-flex gap-2">
+                            <input type="password" name="password" id="password-inicial" class="form-control" required minlength="8"
+                                   autocomplete="new-password">
+                            <button type="button" class="ds-btn ds-btn-ghost" data-toggle-password="password-inicial"
+                                    aria-label="Mostrar contraseña" title="Mostrar u ocultar">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <span class="ds-form-help">Mínimo 8 caracteres. El usuario deberá cambiarla en su próximo inicio de sesión.</span>
                     </div>
                 </div>
             </div>
@@ -209,4 +215,16 @@ $tenantSel = (string) ($input['tenant_id'] ?? '');
 })();
 </script>
 <?php endif; ?>
+<script>
+document.querySelectorAll('[data-toggle-password]').forEach((btn) => {
+    const input = document.getElementById(btn.dataset.togglePassword);
+    if (!input) return;
+    btn.addEventListener('click', () => {
+        const visible = input.type === 'text';
+        input.type = visible ? 'password' : 'text';
+        btn.querySelector('i').className = visible ? 'bi bi-eye' : 'bi bi-eye-slash';
+        btn.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    });
+});
+</script>
 <?php $view->endSection() ?>

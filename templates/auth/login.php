@@ -36,7 +36,7 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
     <meta name="robots" content="noindex, nofollow">
     <title>Iniciar sesion - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260722-logo-small">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260922-correo2">
 </head>
 <body class="gemeseg-login">
     <div class="login-shell">
@@ -93,7 +93,7 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
                     </button>
                     <button type="button" class="login-register-btn" id="btn-open-registro"
                             aria-haspopup="dialog" aria-controls="registro-modal">
-                        <i class="bi bi-person-plus"></i>Registro
+                        <i class="bi bi-person-plus"></i>Postúlate como guardia
                     </button>
                 </div>
 
@@ -189,6 +189,19 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
                         </div>
 
                         <div class="login-field">
+                            <label for="reg_correo">Correo electrónico</label>
+                            <input type="email" class="login-input no-icon" id="reg_correo" name="correo"
+                                   maxlength="190" value="<?= $e($rv('correo')) ?>"
+                                   placeholder="tucorreo@ejemplo.com" required autocomplete="email">
+                        </div>
+                        <div class="login-field">
+                            <label for="reg_correo_confirmacion">Confirmar correo electrónico</label>
+                            <input type="email" class="login-input no-icon" id="reg_correo_confirmacion" name="correo_confirmacion"
+                                   maxlength="190" value="<?= $e($rv('correo_confirmacion')) ?>"
+                                   placeholder="Escríbelo de nuevo" required autocomplete="off">
+                        </div>
+
+                        <div class="login-field">
                             <label for="reg_celular">Número de celular</label>
                             <input type="tel" class="login-input no-icon" id="reg_celular" name="celular"
                                    inputmode="numeric" maxlength="10" pattern="\d{10}"
@@ -196,19 +209,13 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
                                    placeholder="0991234567" required autocomplete="tel">
                         </div>
                         <div class="login-field">
-                            <label for="reg_correo">Correo electrónico</label>
-                            <input type="email" class="login-input no-icon" id="reg_correo" name="correo"
-                                   maxlength="190" value="<?= $e($rv('correo')) ?>"
-                                   placeholder="tucorreo@ejemplo.com" required autocomplete="email">
-                        </div>
-
-                        <div class="login-field">
                             <label for="reg_estatura">Estatura (m)</label>
                             <input type="number" class="login-input no-icon" id="reg_estatura" name="estatura"
                                    step="0.01" min="1.20" max="2.50" value="<?= $e($rv('estatura')) ?>"
                                    placeholder="1.75" required>
                         </div>
-                        <div class="login-field">
+
+                        <div class="login-field is-full">
                             <label for="reg_fecha_nacimiento">Fecha de nacimiento</label>
                             <input type="date" class="login-input no-icon" id="reg_fecha_nacimiento" name="fecha_nacimiento"
                                    value="<?= $e($rv('fecha_nacimiento')) ?>"
@@ -313,6 +320,7 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
                     if (!val('reg_nombres')) { errors.push('Ingresa tus nombres.'); }
                     if (!/^\d{10}$/.test(val('reg_celular'))) { errors.push('El celular debe tener exactamente 10 dígitos.'); }
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('reg_correo'))) { errors.push('Ingresa un correo electrónico válido.'); }
+                    else if (val('reg_correo').toLowerCase() !== val('reg_correo_confirmacion').toLowerCase()) { errors.push('Los correos no coinciden: revisa que esté bien escrito.'); }
                     if (!val('reg_estatura')) { errors.push('Ingresa tu estatura.'); }
                     if (!val('reg_fecha_nacimiento')) { errors.push('Ingresa tu fecha de nacimiento.'); }
                     if (pwd.length < 8 || !/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/\d/.test(pwd)) {

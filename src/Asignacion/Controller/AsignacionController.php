@@ -61,7 +61,27 @@ final class AsignacionController
         $kpis = $this->repo->kpis();
         $clientes = $this->clienteRepo->listar(['estado' => 'activo'], 500, 0);
 
+        // Mismas condiciones que create(): se avisan aquí para no ofrecer un
+        // botón que solo redirige con un mensaje.
+        $bloqueoCreacion = null;
+        if ($user->tienePermiso('asignaciones.crear')) {
+            if ($this->repo->fichasCompletasParaSelect() === []) {
+                $bloqueoCreacion = [
+                    'mensaje' => 'Para asignar se necesita al menos un guardia con ficha COMPLETA.',
+                    'url' => '/guardias',
+                    'accion' => 'Ir a Guardias',
+                ];
+            } elseif ($this->repo->puestosActivosParaSelect() === []) {
+                $bloqueoCreacion = [
+                    'mensaje' => 'Para asignar se necesita al menos un puesto activo.',
+                    'url' => '/puestos/crear',
+                    'accion' => 'Registrar un puesto',
+                ];
+            }
+        }
+
         return $this->view->response('asignaciones/index', [
+            'bloqueoCreacion' => $bloqueoCreacion,
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,

@@ -63,6 +63,12 @@ final class RegistrarAspiranteService
         if (empty($input['acepta_politicas'])) {
             throw new DomainException('Debes aceptar las Políticas de Privacidad y Tratamiento de Datos Personales para registrarte.');
         }
+        // Un correo mal escrito deja al aspirante sin poder verificar su cuenta.
+        $confirmacion = $input['correo_confirmacion'] ?? null;
+        $confirmacionNorm = is_scalar($confirmacion) ? mb_strtolower(trim((string) $confirmacion), 'UTF-8') : '';
+        if ($confirmacionNorm !== $datos['correo_normalizado']) {
+            throw new DomainException('Confirma tu correo electrónico: ambos campos deben coincidir.');
+        }
 
         $password        = (string) ($input['password'] ?? '');
         $passwordConfirm = (string) ($input['password_confirmacion'] ?? '');
