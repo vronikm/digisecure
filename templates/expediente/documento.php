@@ -2,7 +2,7 @@
 /**
  * Detalle de un documento del expediente + formulario de revision.
  *
- * Variables: $user, $csrfToken, $currentPath, $doc, $expediente, $ficha
+ * Variables: $user, $csrfToken, $currentPath, $doc, $expediente, $ficha, $nombresUsuarios
  * Opcionales: $error (string)
  */
 
@@ -12,6 +12,8 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
+$nombresUsuarios = $nombresUsuarios ?? [];
+$nombreUsuario = static fn(?string $id): string => $id === null || $id === '' ? '-' : ($nombresUsuarios[$id] ?? 'Usuario no disponible');
 
 $fichaId = $ficha['id'];
 $docEstado = EstadoDocumento::from($doc['estado']);
@@ -108,7 +110,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                     <div class="ds-cell-mono"><?= $e($doc['archivo_mime'] ?? '-') ?></div>
                     </div>
                     <div class="col-md-6">
-                        <div style="<?= $ds_dt ?>">Tamano</div>
+                        <div style="<?= $ds_dt ?>">Tamaño</div>
                         <div class="ds-cell-mono">
                             <?php if (!empty($doc['archivo_tamano_bytes'])): ?>
                                 <?= number_format($doc['archivo_tamano_bytes'] / 1024, 1) ?> KB
@@ -117,7 +119,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Subido por</div>
-                    <div style="<?= $ds_dd ?>"><?= $e($doc['subido_por'] ?? '-') ?></div>
+                    <div style="<?= $ds_dd ?>"><?= $e($nombreUsuario($doc['subido_por'] ?? null)) ?></div>
                     </div>
                     <div class="col-md-6">
                         <div style="<?= $ds_dt ?>">Fecha subida</div>
@@ -259,7 +261,7 @@ $ds_dd = 'font-size: .9rem; color: var(--ds-text); font-weight: 600;';
                     </div>
                     <div class="ds-cell-sub" style="margin-bottom: .35rem;">
                         <span class="ds-cell-mono"><?= $doc['revisado_at'] ? date('d/m/Y H:i', strtotime($doc['revisado_at'])) : '' ?></span>
-                        por <strong style="color: var(--ds-text);"><?= $e($doc['revisado_por']) ?></strong>
+                        por <strong style="color: var(--ds-text);"><?= $e($nombreUsuario($doc['revisado_por'])) ?></strong>
                     </div>
                     <?php if (!empty($doc['observacion_revisor'])): ?>
                     <div style="font-style: italic; color: var(--ds-text); font-size: .9rem; padding: .55rem .75rem; background: #fff; border-radius: 8px; margin-top: .5rem;">

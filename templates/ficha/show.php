@@ -235,7 +235,7 @@ $pair = static fn(string $label, ?string $value, bool $mono = false) =>
                 <div class="ds-personal-grid">
                     <div class="ds-personal-item span-4">
                         <div class="ds-personal-label">Cedula</div>
-                        <div class="ds-cell-mono" style="font-weight: 700;"><?= $e($ficha['cedula_display'] ?? '[cifrado]') ?></div>
+                        <div class="ds-cell-mono" style="font-weight: 700;"><?= $e($ficha['cedula_display'] ?? 'No disponible') ?></div>
                     </div>
                     <div class="ds-personal-item span-4">
                         <div class="ds-personal-label">Genero</div>

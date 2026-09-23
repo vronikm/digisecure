@@ -132,7 +132,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
 </div>
 
 <!-- Filtros -->
-<div class="ds-card ds-reclutamiento-filter">
+<div class="ds-card ds-reclutamiento-filter" data-collapsible-mobile>
     <div class="ds-card-header tone-success">
         <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
         <div>
@@ -224,7 +224,7 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
                     </td>
                     <td>
                         <span class="ds-chip"><i class="bi bi-tag"></i><?= $e($tipoLabel[$a['tipo_documento']] ?? (string) $a['tipo_documento']) ?></span>
-                        <div class="ds-cell-mono" style="margin-top: .15rem;"><?= $e((string) $a['documento']) ?></div>
+                        <div class="ds-cell-mono" style="margin-top: .15rem;"><?= $e(preg_match('/^\d{10}$/', (string) $a['documento']) === 1 ? '******' . substr((string) $a['documento'], -4) : (string) $a['documento']) ?></div>
                     </td>
                     <td>
                         <div class="ds-cell-mono"><?= $e((string) $a['correo']) ?></div>

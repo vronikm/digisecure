@@ -155,7 +155,18 @@ $pageSubtitle = $aspiranteMode
                 ?>
                 <tr class="js-row-link" data-href="<?= $rowUrl ?>" style="cursor:pointer;">
                     <td><span class="ds-cell-mono"><?= $e((string) ($g['cedula_display'] ?? '-')) ?></span></td>
-                    <td><div class="ds-cell-name"><?= $e((string) ($g['apellidos'] ?? '')) ?></div></td>
+                    <td>
+                        <div class="ds-cell-name"><?= $e((string) ($g['apellidos'] ?? '')) ?></div>
+                        <?php if (!$aspiranteMode): ?>
+                            <?php if (!empty($g['fecha_baja'])): ?>
+                            <span class="ds-badge tone-muted no-dot" style="font-size:.62rem;">De baja</span>
+                            <?php elseif (!empty($g['es_aspirante'])): ?>
+                            <span class="ds-badge tone-info no-dot" style="font-size:.62rem;" title="Ficha registrada por el aspirante; aún no contratado">Aspirante</span>
+                            <?php else: ?>
+                            <span class="ds-badge tone-success no-dot" style="font-size:.62rem;">Empleado</span>
+                            <?php endif ?>
+                        <?php endif ?>
+                    </td>
                     <td><div class="ds-cell-name"><?= $e((string) ($g['nombres'] ?? '')) ?></div></td>
                     <td>
                         <?php if (!empty($g['fecha_nacimiento'])): ?>

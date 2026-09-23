@@ -240,7 +240,10 @@ final class FichaRepository extends BaseRepository
                     r.celular,
                     r.email,
                     r.ultima_ficha_at,
-                    r.total_fichas
+                    r.total_fichas,
+                    r.estado,
+                    r.fecha_baja,
+                    r.es_aspirante
                 FROM (
                     SELECT
                         f.id AS ficha_id,
@@ -251,6 +254,13 @@ final class FichaRepository extends BaseRepository
                         f.fecha_nacimiento,
                         f.celular,
                         f.email,
+                        f.estado,
+                        f.fecha_baja,
+                        EXISTS (
+                            SELECT 1 FROM usuarios_roles ur_asp
+                              JOIN roles r_asp ON r_asp.id = ur_asp.role_id
+                             WHERE ur_asp.usuario_id = f.created_by AND r_asp.codigo = 'aspirante'
+                        ) AS es_aspirante,
                         MAX(f.created_at) OVER (PARTITION BY {$personaKey}) AS ultima_ficha_at,
                         COUNT(*) OVER (PARTITION BY {$personaKey}) AS total_fichas,
                         ROW_NUMBER() OVER (

@@ -121,15 +121,14 @@ final class CompletarFichaService
             $incumplimientos[] = 'Estatura no registrada.';
         }
 
-        // 3. Instrucción mínima: Bachiller
-        if (empty($ficha['instruccion_secundaria'])) {
-            $incumplimientos[] = 'Instrucción secundaria (bachillerato) no registrada.';
-        }
-
-        // 4. Experiencia ≥ 1 trabajo anterior
-        $trabajos = $this->fichaRepo->getTrabajosAnteriores($fichaId);
-        if ($trabajos === []) {
-            $incumplimientos[] = 'No se registró ningún trabajo anterior (mínimo 1 año de experiencia).';
+        // 3. Instrucción O experiencia (decisión vinculante #10): basta con
+        //    bachillerato (o instrucción superior, que lo implica) o con al
+        //    menos un trabajo anterior. El tiempo del trabajo es texto libre:
+        //    el revisor verifica el año de experiencia en el expediente.
+        $tieneBachillerato = trim((string) ($ficha['instruccion_secundaria'] ?? '')) !== ''
+            || trim((string) ($ficha['instruccion_superior'] ?? '')) !== '';
+        if (!$tieneBachillerato && $this->fichaRepo->getTrabajosAnteriores($fichaId) === []) {
+            $incumplimientos[] = 'Registra la instrucción secundaria (bachillerato) o al menos un trabajo anterior (mínimo 1 año de experiencia).';
         }
 
         // 5. Consentimiento LOPDP vigente o autorizacion firmada en expediente.

@@ -45,6 +45,9 @@ use DigiSecure\Subscription\Application\VerificarLimiteService;
  */
 final class FichaController
 {
+    /** Valor visible cuando un dato cifrado no se puede descifrar (p. ej. clave rotada). */
+    private const NO_DISPONIBLE = 'No disponible';
+
     private bool $cryptoIssueReported = false;
 
     public function __construct(
@@ -101,7 +104,12 @@ final class FichaController
             $offset = ($page - 1) * $limit;
             $guardias = $this->fichaRepo->listGuardias($limit, $offset, $filters);
             foreach ($guardias as &$guardia) {
-                $guardia['cedula_display'] = $this->decryptSafe($guardia['cedula_cifrada'] ?? null);
+                // Minimización (LOPDP): el listado muestra solo los últimos 4
+                // dígitos; la cédula completa queda en el detalle de la ficha.
+                $cedula = $this->decryptSafe($guardia['cedula_cifrada'] ?? null);
+                $guardia['cedula_display'] = preg_match('/^\d{10}$/', $cedula) === 1
+                    ? '******' . substr($cedula, -4)
+                    : $cedula;
             }
             unset($guardia);
         } catch (\Throwable $e) {
@@ -388,8 +396,8 @@ final class FichaController
         // Descifrar datos sensibles para display
         $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada']);
         $cuentaBancaria = $this->decryptSafe($ficha['cuenta_bancaria_cifrada']);
-        $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === '[cifrado]';
-        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
+        $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === self::NO_DISPONIBLE;
+        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === self::NO_DISPONIBLE ? '' : $cuentaBancaria;
         $ficha = $this->withImageAvailability($ficha);
 
         // Cargar relaciones
@@ -530,8 +538,8 @@ final class FichaController
 
         $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada']);
         $cuentaBancaria = $this->decryptSafe($ficha['cuenta_bancaria_cifrada']);
-        $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === '[cifrado]';
-        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
+        $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === self::NO_DISPONIBLE;
+        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === self::NO_DISPONIBLE ? '' : $cuentaBancaria;
         $ficha = $this->withImageAvailability($ficha);
 
         $trabajos = $this->fichaRepo->getTrabajosAnteriores($id);
@@ -683,8 +691,8 @@ final class FichaController
                 $ficha = $this->fichaRepo->findFichaById($id);
                 $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada'] ?? '');
                 $cuentaBancaria = $this->decryptSafe($ficha['cuenta_bancaria_cifrada'] ?? '');
-                $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === '[cifrado]';
-                $ficha['cuenta_bancaria_display'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
+                $ficha['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === self::NO_DISPONIBLE;
+                $ficha['cuenta_bancaria_display'] = $cuentaBancaria === self::NO_DISPONIBLE ? '' : $cuentaBancaria;
                 $ficha = $this->withImageAvailability($ficha);
 
                 return $this->view->response('ficha/show', [
@@ -1075,8 +1083,8 @@ final class FichaController
 
         $input['cedula'] = $this->decryptSafe($sourceFicha['cedula_cifrada'] ?? null);
         $cuentaBancaria = $this->decryptSafe($sourceFicha['cuenta_bancaria_cifrada'] ?? null);
-        $input['cuenta_bancaria'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
-        $input['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === '[cifrado]';
+        $input['cuenta_bancaria'] = $cuentaBancaria === self::NO_DISPONIBLE ? '' : $cuentaBancaria;
+        $input['cuenta_bancaria_requiere_actualizacion'] = $cuentaBancaria === self::NO_DISPONIBLE;
 
         $sourceId = (string) ($sourceFicha['id'] ?? '');
         if ($sourceId === '') {
@@ -1275,7 +1283,7 @@ final class FichaController
                 $this->errorHandler->report($e);
                 $this->cryptoIssueReported = true;
             }
-            return '[cifrado]';
+            return self::NO_DISPONIBLE;
         }
     }
 

@@ -184,7 +184,9 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formC
     }
     .ds-step-list {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        /* auto-fit: el nombre del paso no se corta cuando el formulario
+           comparte ancho con la columna del resumen. */
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
         gap: .75rem;
     }
     @media (max-width: 991.98px) {
@@ -243,9 +245,6 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formC
     .ds-step-copy strong {
         font-size: .88rem;
         line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
     .ds-step-copy span {
         color: #607489;
@@ -1476,7 +1475,8 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formC
             </div>
             <div id="trabajos-container">
                 <p class="text-muted small mb-0" id="trabajos-empty">
-                    <i class="bi bi-info-circle me-1"></i>Opcional: agregue los trabajos anteriores del aspirante si los tiene.
+                    <i class="bi bi-info-circle me-1"></i>Requisito de contratación: bachillerato (Instrucción Secundaria, en la fase Cursos)
+                    <strong>o</strong> al menos un trabajo anterior con un año de experiencia. Si no tiene bachillerato, registre aquí su experiencia.
                 </p>
             </div>
 
@@ -1622,7 +1622,7 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formC
             <button type="button" class="btn btn-primary" data-step-next>
                 Siguiente<i class="bi bi-arrow-right ms-1"></i>
             </button>
-            <button type="submit" class="btn btn-primary d-none" data-step-submit>
+            <button type="submit" class="btn btn-primary" data-step-submit>
                 <i class="<?= $e($formSubmitIcon) ?> me-1"></i><?= $e($formSubmitLabel) ?>
             </button>
         </div>
@@ -1642,9 +1642,29 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formC
                     <div class="progress">
                         <div class="progress-bar" id="requiredProgressBar" style="width:0%"></div>
                     </div>
+                    <p class="small text-muted mb-0 mt-2">
+                        Mide solo los campos del formulario. Edad, estatura, bachillerato o experiencia y la autorización LOPDP
+                        se verifican al marcar la ficha como completa.
+                    </p>
 
                 </div>
             </div>
+
+            <?php if ($expUrl !== ''): ?>
+            <div class="card ds-summary-card mb-4">
+                <div class="card-body">
+                    <div class="fw-bold mb-1"><i class="bi bi-folder2-open me-1"></i>Expediente documental</div>
+                    <p class="small text-muted mb-2">
+                        <?= $formIsAspirante
+                            ? 'Sube tus documentos (cédula, certificados, fotografías…) para avanzar en el proceso.'
+                            : 'Carga, revisa y reemplaza los documentos digitales del guardia.' ?>
+                    </p>
+                    <a href="<?= $view->url($expUrl) ?>" class="ds-btn ds-btn-primary ds-btn-sm w-100 justify-content-center">
+                        <i class="bi bi-folder2-open"></i>Ir al expediente
+                    </a>
+                </div>
+            </div>
+            <?php endif ?>
         </aside>
     </div>
 </div>
@@ -1706,12 +1726,23 @@ function refreshSummary() {
     let requiredValid = 0;
     STEP_ORDER.forEach(step => {
         const fields = getStepFields(step).filter(field => field.required);
-        const validCount = fields.filter(field => field.checkValidity()).length;
-        requiredTotal += fields.length;
+        let total = fields.length;
+        let validCount = fields.filter(field => field.checkValidity()).length;
+        // Las 2 referencias personales son obligatorias pero no son un input
+        // 'required': sin contarlas, el progreso llegaba al 100% sin poder guardar.
+        if (step === 'historial') {
+            total += 1;
+            if (referenciasCount() >= 2) validCount += 1;
+        }
+        requiredTotal += total;
         requiredValid += validCount;
         document.querySelectorAll(`[data-step-status="${step}"], [data-summary-status="${step}"]`).forEach(badge => {
-            badge.textContent = `${validCount}/${fields.length}`;
-            badge.className = `badge ${fields.length > 0 && validCount === fields.length ? 'text-bg-success' : 'text-bg-light'}`;
+            // Sin obligatorios en la fase: el "0/0" no aporta, se oculta.
+            badge.classList.toggle('d-none', total === 0);
+            badge.textContent = `${validCount}/${total}`;
+            const completa = total > 0 && validCount === total;
+            badge.classList.toggle('text-bg-success', completa);
+            badge.classList.toggle('text-bg-light', !completa);
         });
     });
     const percent = requiredTotal > 0 ? Math.round((requiredValid / requiredTotal) * 100) : 0;
@@ -1734,9 +1765,10 @@ function showStep(index) {
     });
     const isLastStep = currentStepIndex === STEP_ORDER.length - 1;
     document.querySelectorAll('[data-step-prev]').forEach(el => el.toggleAttribute('disabled', currentStepIndex === 0));
-    // En la última etapa (4/4) NO se muestra "Siguiente": solo queda "Crear Ficha".
+    // En la última etapa NO se muestra "Siguiente". El botón de guardar está
+    // disponible en todos los pasos: si falta algo, el submit lleva al paso del
+    // primer campo incompleto en vez de obligar a recorrerlos todos.
     document.querySelectorAll('[data-step-next]').forEach(el => el.classList.toggle('d-none', isLastStep));
-    document.querySelectorAll('[data-step-submit]').forEach(el => el.classList.toggle('d-none', !isLastStep));
     // Al cambiar de paso (Siguiente/Anterior/atajo), reubicar al inicio de la pantalla.
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2385,7 +2417,9 @@ if (fichaForm) {
 
         if (!this.checkValidity()) {
             event.preventDefault();
-            const firstInvalid = this.querySelector(':invalid');
+            // Solo controles: ':invalid' a secas puede devolver un contenedor,
+            // y reportValidity() sobre él no muestra nada.
+            const firstInvalid = this.querySelector('input:invalid, select:invalid, textarea:invalid');
             if (!firstInvalid) return;
             const targetPanel = firstInvalid.closest('[data-step-panel]');
             if (targetPanel) {

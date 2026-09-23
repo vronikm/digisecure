@@ -86,15 +86,19 @@ final class SubirDocumentoService
         // 4. Validar archivo
         $this->validateFile($file, $tipo);
 
-        // 5. Mover archivo a storage
-        $storageFilename = $this->storeFile($file);
-
-        // 6. Calcular vencimiento
+        // 5. Calcular vencimiento (antes de guardar el archivo: si las fechas
+        //    son inválidas no debe quedar un archivo huérfano en storage)
         $fechaEmision = !empty($input['fecha_emision_documento'])
             ? $this->normalizarFecha((string) $input['fecha_emision_documento'], 'Fecha de emision no valida.')
             : null;
         $fechaVencimiento = $this->calcularVencimiento($tipo, $fechaEmision, $input['fecha_vencimiento'] ?? null);
+        if ($fechaEmision !== null && $fechaVencimiento !== null && $fechaVencimiento <= $fechaEmision) {
+            throw new DomainException('La fecha de vencimiento debe ser posterior a la fecha de emisión.');
+        }
         $fechaObjetivoActualizacion = $this->calcularObjetivoActualizacion($fechaVencimiento, $fechaEmision);
+
+        // 6. Mover archivo a storage
+        $storageFilename = $this->storeFile($file);
 
         // 7. Crear o actualizar documento
         $now = date('Y-m-d H:i:s.u');

@@ -148,11 +148,11 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
                     </li>
                     <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
                         <i class="bi bi-files" style="width: 1rem;"></i>
-                        Numero de archivos: <strong style="color: var(--ds-text);"><?= (int) $numeroDocumentos ?></strong>
+                        Número de archivos: <strong style="color: var(--ds-text);"><?= (int) $numeroDocumentos ?></strong>
                     </li>
                     <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
                         <i class="bi bi-hdd" style="width: 1rem;"></i>
-                        Tamano max: <strong style="color: var(--ds-text);"><?= $tipo['tamano_maximo_mb'] ?> MB</strong>
+                        Tamaño máx.: <strong style="color: var(--ds-text);"><?= $tipo['tamano_maximo_mb'] ?> MB</strong>
                     </li>
                     <?php if ($tieneVencimiento): ?>
                     <li style="padding: .35rem 0; color: var(--ds-text-soft); display: flex; gap: .45rem;">
@@ -302,4 +302,26 @@ $autoAceptaBloqueB = $esBloqueB && !$isAspirante;
         <?php endif ?>
     </div>
 </form>
+<?php $view->endSection() ?>
+
+<?php $view->section('scripts') ?>
+<script>
+// El vencimiento debe ser posterior a la emisión (el servidor también lo valida).
+(() => {
+    const emision = document.querySelector('input[name="fecha_emision_documento"]');
+    const vence = document.querySelector('input[name="fecha_vencimiento"]');
+    if (!emision || !vence) return;
+    const sync = () => {
+        if (!emision.value) { vence.removeAttribute('min'); vence.setCustomValidity(''); return; }
+        const d = new Date(emision.value + 'T00:00:00');
+        d.setDate(d.getDate() + 1);
+        vence.min = d.toISOString().slice(0, 10);
+        vence.setCustomValidity(vence.value && vence.value <= emision.value
+            ? 'La fecha de vencimiento debe ser posterior a la fecha de emisión.' : '');
+    };
+    emision.addEventListener('change', sync);
+    vence.addEventListener('change', sync);
+    sync();
+})();
+</script>
 <?php $view->endSection() ?>

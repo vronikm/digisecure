@@ -315,6 +315,40 @@ final class ExpedienteRepository extends BaseRepository
     /**
      * @return array<string, mixed>|null
      */
+    /**
+     * Nombres visibles de usuarios del tenant (subido_por, revisado_por...).
+     * Consulta aparte en vez de JOIN para no depender de que las columnas
+     * de ID compartan collation entre tablas.
+     *
+     * @param list<string> $ids
+     * @return array<string, string> id => "Nombres Apellidos"
+     */
+    public function nombresUsuarios(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter($ids, static fn(string $id): bool => $id !== '')));
+        if ($ids === []) {
+            return [];
+        }
+
+        $params = ['tid' => $this->tenantContext->requireTenantId()];
+        $marcadores = [];
+        foreach ($ids as $i => $id) {
+            $marcadores[] = ":id{$i}";
+            $params["id{$i}"] = $id;
+        }
+
+        $nombres = [];
+        foreach ($this->db->fetchAll(
+            'SELECT id, nombres, apellidos FROM usuarios
+             WHERE tenant_id = :tid AND id IN (' . implode(', ', $marcadores) . ')',
+            $params,
+        ) as $row) {
+            $nombres[(string) $row['id']] = trim($row['nombres'] . ' ' . $row['apellidos']);
+        }
+
+        return $nombres;
+    }
+
     public function findDocumentoById(string $id): ?array
     {
         $tenantId = $this->tenantContext->requireTenantId();

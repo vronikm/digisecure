@@ -235,8 +235,8 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                 <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
                 <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
                     <div>
-                        <div class="ds-card-title">Documentos de &middot; Admisibilidad</div>
-                        <div class="ds-card-subtitle">26 documentos</div>
+                        <div class="ds-card-title">Documentos de admisibilidad</div>
+                        <div class="ds-card-subtitle"><?= $totalA ?> documento<?= $totalA === 1 ? "" : "s" ?> requerido<?= $totalA === 1 ? "" : "s" ?></div>
                     </div>
                     <span class="ds-badge <?= $pctA === 100 ? 'tone-success' : 'tone-info' ?> no-dot"><?= $aceptA ?>/<?= $totalA ?></span>
                 </div>
@@ -261,7 +261,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                 </span>
                 <div style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
                     <div>
-                        <div class="ds-card-title">Bloque B &middot; Vinculacion laboral</div>
+                        <div class="ds-card-title">Bloque B &middot; Vinculación laboral</div>
                         <div class="ds-card-subtitle"><?= $bloqueado ? 'Bloqueado &mdash; pendiente Bloque A' : 'Carga administrativa, aceptacion automatica' ?></div>
                     </div>
                     <?php if (!$bloqueado): ?>
@@ -295,7 +295,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
     <div class="ds-card-header">
         <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
         <div>
-            <div class="ds-card-title">Carga de &middot; Documentos de admisibilidad</div>
+            <div class="ds-card-title">Carga de documentos de admisibilidad</div>
             <div class="ds-card-subtitle">Carga obligatoria antes de la vinculacion</div>
         </div>
     </div>
@@ -311,7 +311,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($tiposA as $tipo):
+                <?php $numFila = 0; foreach ($tiposA as $tipo): $numFila++;
                     $docs = $docsForTipo($tipo);
                     $resDoc = $docEstadoResumen($tipo, $docs);
                     $numeroDocs = $docSlotCount($tipo);
@@ -320,7 +320,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                     $vence = $docFechaVencimiento($docs);
                 ?>
                 <tr>
-                    <td><span class="ds-cell-sub"><?= (int) $tipo['orden'] ?></span></td>
+                    <td><span class="ds-cell-sub"><?= $numFila ?></span></td>
                     <td>
                         <div class="ds-cell-name"><?= $e($tipo['nombre']) ?></div>
                         <div class="ds-cell-sub" style="display: flex; flex-wrap: wrap; gap: .45rem;">
@@ -330,13 +330,14 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                                 <span>Opcional</span>
                             <?php endif ?>
                             <?php if ($tipo['requiere_validacion_externa']): ?>
-                                <span><i class="bi bi-globe"></i> Validacion externa</span>
+                                <span><i class="bi bi-globe"></i> Validación externa</span>
                             <?php endif ?>
                             <?php if ($tipo['tiene_vencimiento']): ?>
                                 <span><i class="bi bi-calendar-event"></i> <?= $tipo['dias_vigencia'] ?>d vigencia</span>
                             <?php endif ?>
                             <span><i class="bi bi-files"></i> <?= (int) $resDoc['subidos'] ?>/<?= (int) $numeroDocs ?> archivo(s)</span>
                         </div>
+                        <?php if ($numeroDocs > 1): /* con un solo archivo repetiría la columna Estado */ ?>
                         <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem;">
                             <?php foreach ($slots as $slot):
                                 $slotEstado = $slot['estado'];
@@ -349,6 +350,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                             </span>
                             <?php endforeach ?>
                         </div>
+                        <?php endif ?>
                     </td>
                     <td>
                         <span class="ds-badge <?= $e((string) $resDoc['tone']) ?>"><i class="bi <?= $e((string) $resDoc['icon']) ?>"></i><?= $e((string) $resDoc['label']) ?></span>
@@ -406,7 +408,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
             <i class="bi <?= $bloqueado ? 'bi-lock' : 'bi-unlock-fill' ?>"></i>
         </span>
         <div>
-            <div class="ds-card-title">Bloque B &middot; Documentos de vinculacion laboral</div>
+            <div class="ds-card-title">Bloque B &middot; Documentos de vinculación laboral</div>
             <div class="ds-card-subtitle">Post-contratacion &mdash; <?= $bloqueado ? 'pendiente desbloqueo' : 'carga administrativa con aceptacion automatica' ?></div>
         </div>
     </div>
@@ -431,7 +433,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($tiposB as $tipo):
+                <?php $numFila = 0; foreach ($tiposB as $tipo): $numFila++;
                     $docs = $docsForTipo($tipo);
                     $resDoc = $docEstadoResumen($tipo, $docs);
                     $numeroDocs = $docSlotCount($tipo);
@@ -439,7 +441,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                     $puedeEditarRanuras = $docTieneRanurasEditables($tipo, $docs);
                 ?>
                 <tr>
-                    <td><span class="ds-cell-sub"><?= (int) $tipo['orden'] ?></span></td>
+                    <td><span class="ds-cell-sub"><?= $numFila ?></span></td>
                     <td>
                         <div class="ds-cell-name"><?= $e($tipo['nombre']) ?></div>
                         <div class="ds-cell-sub">
@@ -450,6 +452,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                             <?php endif ?>
                             <span style="margin-left:.45rem;"><i class="bi bi-files"></i> <?= (int) $resDoc['subidos'] ?>/<?= (int) $numeroDocs ?> archivo(s)</span>
                         </div>
+                        <?php if ($numeroDocs > 1): /* con un solo archivo repetiría la columna Estado */ ?>
                         <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem;">
                             <?php foreach ($slots as $slot):
                                 $slotEstado = $slot['estado'];
@@ -462,6 +465,7 @@ $docFechaVencimiento = static function (array $docs): ?DateTimeImmutable {
                             </span>
                             <?php endforeach ?>
                         </div>
+                        <?php endif ?>
                     </td>
                     <td>
                         <span class="ds-badge <?= $e((string) $resDoc['tone']) ?>"><i class="bi <?= $e((string) $resDoc['icon']) ?>"></i><?= $e((string) $resDoc['label']) ?></span>

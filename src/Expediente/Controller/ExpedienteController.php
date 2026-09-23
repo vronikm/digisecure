@@ -426,6 +426,10 @@ final class ExpedienteController
             'doc' => $doc,
             'expediente' => $expediente,
             'ficha' => $ficha,
+            'nombresUsuarios' => $this->expRepo->nombresUsuarios([
+                (string) ($doc['subido_por'] ?? ''),
+                (string) ($doc['revisado_por'] ?? ''),
+            ]),
         ]);
     }
 

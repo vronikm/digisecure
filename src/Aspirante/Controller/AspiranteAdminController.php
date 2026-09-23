@@ -35,6 +35,9 @@ use DigiSecure\Shared\Domain\DomainException;
  */
 final class AspiranteAdminController
 {
+    /** Valor visible cuando un dato cifrado no se puede descifrar (p. ej. clave rotada). */
+    private const NO_DISPONIBLE = 'No disponible';
+
     /** Campos del formulario de correccion. */
     private const CAMPOS_EDICION = [
         'tipo_documento', 'documento', 'apellidos', 'nombres', 'celular',
@@ -280,7 +283,7 @@ final class AspiranteAdminController
 
         $ficha['cedula_display'] = $this->decryptSafe($ficha['cedula_cifrada'] ?? null);
         $cuentaBancaria = $this->decryptSafe($ficha['cuenta_bancaria_cifrada'] ?? null);
-        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === '[cifrado]' ? '' : $cuentaBancaria;
+        $ficha['cuenta_bancaria_display'] = $cuentaBancaria === self::NO_DISPONIBLE ? '' : $cuentaBancaria;
         $ficha['foto_data_uri']           = $this->imagenDataUri($ficha['foto_archivo_id'] ?? null);
         $ficha['croquis_data_uri']        = $this->imagenDataUri($ficha['croquis_archivo_id'] ?? null);
         $ficha['trabajos']                = $this->repo->fichaTrabajos($fichaId);
@@ -300,7 +303,7 @@ final class AspiranteAdminController
         try {
             return $this->encryption->decrypt($ciphertext);
         } catch (\Throwable) {
-            return '[cifrado]';
+            return self::NO_DISPONIBLE;
         }
     }
 
