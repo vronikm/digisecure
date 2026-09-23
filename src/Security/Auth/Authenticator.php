@@ -16,7 +16,7 @@ use DigiSecure\Tenant\Domain\TenantContext;
  *
  * Responsabilidades:
  *  1. Validar credenciales (email + password)
- *  2. Rate limiting por IP+email (tabla intentos_login)
+ *  2. Rate limiting por cuenta y por IP (tabla intentos_login)
  *  3. Resolver el tenant del usuario
  *  4. Cargar permisos y roles del usuario
  *  5. Establecer sesión con datos del usuario autenticado
@@ -32,6 +32,7 @@ final class Authenticator
     private const SESSION_USER_SYNC_AT_KEY = '_digisecure.auth_user_sync_at';
     private const SESSION_USER_SYNC_INTERVAL_SECONDS = 120;
     private const MAX_ATTEMPTS = 5;
+    private const MAX_ATTEMPTS_POR_IP = 30;
     private const LOCKOUT_MINUTES = 15;
 
     public function __construct(
@@ -48,7 +49,7 @@ final class Authenticator
      *
      * Flujo:
      *  1. Normalizar email
-     *  2. Verificar rate limit (IP + email)
+     *  2. Verificar rate limit (cuenta e IP)
      *  3. Buscar usuario por email normalizado
      *  4. Verificar password con password_verify (timing-safe)
      *  5. Verificar estado del usuario y del tenant
@@ -304,27 +305,36 @@ final class Authenticator
     }
 
     /**
-     * Verifica rate limit: máximo N intentos fallidos en los últimos M minutos.
+     * Verifica rate limit en la ventana de LOCKOUT_MINUTES, con dos umbrales:
+     *  - por cuenta (MAX_ATTEMPTS): frena la fuerza bruta sobre un correo;
+     *  - por IP (MAX_ATTEMPTS_POR_IP, mas alto): frena el barrido de muchas
+     *    cuentas sin bloquear a toda una oficina detras de la misma IP (NAT)
+     *    porque una persona se equivoco 5 veces.
      */
     private function checkRateLimit(string $emailNorm, string $ip): void
     {
         $since = Clock::now()->modify(sprintf('-%d minutes', self::LOCKOUT_MINUTES))->format('Y-m-d H:i:s.u');
-        $ipBinary = inet_pton($ip) ?: '';
 
-        // Contar intentos fallidos por email O por IP en la ventana
-        $count = (int)$this->db->fetchScalar(
+        // Consultas separadas: cada una usa su indice (email|ip, created_at).
+        $porCuenta = (int) $this->db->fetchScalar(
             'SELECT COUNT(*) FROM intentos_login
-             WHERE exitoso = 0
-               AND created_at >= :since
-               AND (email_normalizado = :email OR ip = :ip)',
-            [
-                'since' => $since,
-                'email' => $emailNorm,
-                'ip' => $ipBinary,
-            ],
+             WHERE email_normalizado = :email AND created_at >= :since AND exitoso = 0',
+            ['email' => $emailNorm, 'since' => $since],
         );
+        if ($porCuenta >= self::MAX_ATTEMPTS) {
+            throw new AuthenticationException(AuthenticationException::RATE_LIMITED);
+        }
 
-        if ($count >= self::MAX_ATTEMPTS) {
+        $ipBinary = inet_pton($ip);
+        if ($ipBinary === false) {
+            return;
+        }
+        $porIp = (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM intentos_login
+             WHERE ip = :ip AND created_at >= :since AND exitoso = 0',
+            ['ip' => $ipBinary, 'since' => $since],
+        );
+        if ($porIp >= self::MAX_ATTEMPTS_POR_IP) {
             throw new AuthenticationException(AuthenticationException::RATE_LIMITED);
         }
     }

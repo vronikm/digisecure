@@ -14,9 +14,15 @@ use DigiSecure\Security\Csrf\CsrfGuard;
 
 /**
  * Dashboard principal con KPIs reales.
+ *
+ * La ruta es la portada tras el login, así que no exige un permiso concreto,
+ * pero los KPIs (guardias, expedientes, actividad) solo se muestran a quien
+ * puede ver alguno de esos módulos. El resto ve una bienvenida sin datos.
  */
 final class DashboardController
 {
+    private const PERMISOS_KPIS = ['guardias.ver', 'expedientes.ver', 'reportes.ver'];
+
     public function __construct(
         private readonly ViewRenderer $viewRenderer,
         private readonly DashboardStatsService $statsService,
@@ -28,6 +34,14 @@ final class DashboardController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
+
+        if (!$user->tieneAlgunPermiso(...self::PERMISOS_KPIS)) {
+            return $this->viewRenderer->response('dashboard/bienvenida', [
+                'user' => $user,
+                'csrfToken' => $csrf->token(),
+                'currentPath' => $request->path,
+            ]);
+        }
 
         $statsError = false;
         try {
