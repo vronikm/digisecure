@@ -93,7 +93,7 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
                     </button>
                     <button type="button" class="login-register-btn" id="btn-open-registro"
                             aria-haspopup="dialog" aria-controls="registro-modal">
-                        <i class="bi bi-person-plus"></i>Postúlate como guardia
+                        <i class="bi bi-person-plus"></i>Regístrate aquí
                     </button>
                 </div>
 
