@@ -82,6 +82,12 @@ tmp_*.txt
 *.sql.zip
 *_dump.sql
 *_backup.sql
+
+# --- Scripts SQL de base de datos: NUNCA versionar ---
+# Solo las migraciones viajan en git (bin/migrate.php las necesita en el
+# servidor). Scripts para phpMyAdmin, respaldos y diagnosticos quedan locales.
+*.sql
+!/migrations/*.sql
 secrets/
 private/
 
