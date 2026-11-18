@@ -229,7 +229,7 @@ final class ExportarReporteService
 
         // BOM UTF-8 para Excel
         fwrite($handle, "\xEF\xBB\xBF");
-        fputcsv($handle, $headers, ';');
+        fputcsv($handle, $headers, ';', escape: '');
 
         foreach ($rows as $row) {
             $line = [];
@@ -242,7 +242,7 @@ final class ExportarReporteService
                 }
                 $line[] = (string) $value;
             }
-            fputcsv($handle, $line, ';');
+            fputcsv($handle, $line, ';', escape: '');
         }
 
         rewind($handle);

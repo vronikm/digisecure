@@ -1,8 +1,25 @@
 # DigiSecure — Changelog
 
-Estado actual: **Phase 18.1** · 36 migraciones · 122/122 tests verdes.
+Estado actual: **Phase 18.1** · 36 migraciones · 124/124 tests verdes (PHP 8.3 y 8.5).
 
-Stack: PHP 8.3 / MySQL 8 / Chart.js 4.4 + sistema de diseño propio `ds-system` (iconos Bootstrap; la hoja CSS de Bootstrap ya no se carga).
+Stack: PHP 8.3–8.5 / MySQL 8 / Chart.js 4.4 + sistema de diseño propio `ds-system` (iconos Bootstrap; la hoja CSS de Bootstrap ya no se carga).
+
+---
+
+## Incidente — Error 500 en todo el sitio tras actualizar PHP (2026-11-17)
+
+**Síntoma:** desde el 23-oct-2026 producción devolvía 500 en todas las rutas (`/login`, `/healthcheck`…); los archivos estáticos sí cargaban. La base no tenía nada que ver: restaurada en local, funcionaba con PHP 8.3.
+
+**Causa:** el hosting pasó a PHP 8.4 o superior. `ErrorHandler` convertía **cualquier** aviso en excepción, incluidos los `E_DEPRECATED`, y `SessionManager` fijaba en cada petición dos directivas obsoletas desde 8.4 (`session.sid_length` y `session.sid_bits_per_character`). Reproducido con PHP 8.4.15 y 8.5.0.
+
+**Corrección:**
+
+- `SessionManager`: esas dos directivas solo se fijan en PHP < 8.4. Desde 8.4 se usa el valor por defecto (128 bits de entropía).
+- `PdoConnection`: `Pdo\Mysql::ATTR_INIT_COMMAND` cuando existe. En PHP 8.5 `PDO::MYSQL_ATTR_INIT_COMMAND` es obsoleta y rompía el login.
+- `fputcsv()` con `escape: ''` explícito (exportes de reportes, auditoría y fichas), obligatorio desde 8.4.
+- **Red de seguridad:** `ErrorHandler` registra los `E_DEPRECATED`/`E_USER_DEPRECATED` en el log (`DEPRECATED: …`, una vez por petición) y deja seguir la petición. Los warnings y notices siguen fallando. Test: `tests/Unit/Kernel/ErrorHandlerTest.php`.
+
+**Verificado:** sobre una copia de la base de producción, 396 páginas recorridas con superadmin y admin de empresa, en PHP 8.4 y 8.5, sin 500 ni avisos. Lint con PHP 8.5 de `src/`, `bin/`, `templates/` y `vendor/` sin obsolescencias de compilación.
 
 ---
 

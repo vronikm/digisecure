@@ -61,7 +61,31 @@ final class ErrorHandler
         if (!(error_reporting() & $severity)) {
             return false;
         }
+        // Un aviso de obsolescencia no es un fallo: se registra y se sigue.
+        // Convertirlo en excepcion hizo que la actualizacion de PHP del hosting
+        // (8.3 -> 8.4/8.5) tumbara TODAS las rutas con un 500 (nov-2026).
+        if (($severity & (E_DEPRECATED | E_USER_DEPRECATED)) !== 0) {
+            $this->logDeprecation($message, $file, $line);
+            return true;
+        }
         throw new \ErrorException($message, 0, $severity, $file, $line);
+    }
+
+    /** @var array<string, true> avisos ya registrados en esta peticion */
+    private array $deprecacionesRegistradas = [];
+
+    private function logDeprecation(string $message, string $file, int $line): void
+    {
+        $clave = "{$file}:{$line}:{$message}";
+        if (isset($this->deprecacionesRegistradas[$clave])) {
+            return;
+        }
+        $this->deprecacionesRegistradas[$clave] = true;
+        @error_log(
+            sprintf("[%s] request_id=%s DEPRECATED: %s in %s:%d\n", date('Y-m-d H:i:s'), $this->requestId, $message, $file, $line),
+            3,
+            $this->logPath,
+        );
     }
 
     public function handleUncaughtException(\Throwable $e): void

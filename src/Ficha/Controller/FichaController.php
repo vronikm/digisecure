@@ -1223,7 +1223,7 @@ final class FichaController
             'Fecha revision',
             'Creada',
             'Actualizada',
-        ], ';');
+        ], ';', escape: '');
 
         foreach ($fichas as $ficha) {
             $tipo = (string) ($ficha['tipo_ficha'] ?? '');
@@ -1261,7 +1261,7 @@ final class FichaController
                 (string) ($ficha['fecha_revision'] ?? ''),
                 (string) ($ficha['created_at'] ?? ''),
                 (string) ($ficha['updated_at'] ?? ''),
-            ], ';');
+            ], ';', escape: '');
         }
 
         rewind($stream);

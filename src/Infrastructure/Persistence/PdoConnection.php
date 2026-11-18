@@ -108,7 +108,7 @@ final class PdoConnection
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
             PDO::ATTR_STRINGIFY_FETCHES => false,
-            PDO::MYSQL_ATTR_INIT_COMMAND => \sprintf(
+            self::mysqlInitCommandAttr() => \sprintf(
                 "SET NAMES %s COLLATE %s, "
                 . "sql_mode='STRICT_ALL_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO', "
                 . "time_zone='%s'",
@@ -117,6 +117,18 @@ final class PdoConnection
                 $this->sessionTimeZone(),
             ),
         ];
+    }
+
+    /**
+     * PHP 8.5 depreca PDO::MYSQL_ATTR_INIT_COMMAND en favor de
+     * Pdo\Mysql::ATTR_INIT_COMMAND (existe desde 8.4). Usar la nueva cuando
+     * exista evita el E_DEPRECATED sin romper PHP 8.2/8.3.
+     */
+    private static function mysqlInitCommandAttr(): int
+    {
+        return \class_exists(\Pdo\Mysql::class)
+            ? \Pdo\Mysql::ATTR_INIT_COMMAND
+            : PDO::MYSQL_ATTR_INIT_COMMAND;
     }
 
     /**

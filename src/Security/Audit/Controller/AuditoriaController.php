@@ -107,7 +107,7 @@ final class AuditoriaController
         fputcsv($handle, [
             'Fecha', 'Nivel', 'Evento', 'Usuario', 'Email',
             'Entidad tipo', 'Entidad ID', 'IP', 'Detalles',
-        ]);
+        ], escape: '');
 
         foreach ($rows as $row) {
             $usuario = trim(($row['usuario_apellidos'] ?? '') . ' ' . ($row['usuario_nombres'] ?? ''));
@@ -121,7 +121,7 @@ final class AuditoriaController
                 $row['entidad_id'] ?? '',
                 $row['ip_text'] ?? '',
                 $row['detalles_json'] ?? '',
-            ]);
+            ], escape: '');
         }
 
         rewind($handle);

@@ -102,9 +102,14 @@ final class SessionManager
         \ini_set('session.use_trans_sid', '0');
         \ini_set('session.cookie_path', $cookiePath);
         \ini_set('session.cookie_samesite', $this->cookieSameSite);
-        \ini_set('session.sid_length', '48');
-        // 5 bits evita caracteres especiales (como coma) en el identificador.
-        \ini_set('session.sid_bits_per_character', '5');
+        // PHP 8.4 depreco estas dos directivas (fijarlas emite E_DEPRECATED, que
+        // el ErrorHandler convertia en 500 en TODAS las rutas). Desde 8.4 se usa
+        // el valor por defecto: 32 caracteres de 4 bits = 128 bits de entropia.
+        if (\PHP_VERSION_ID < 80400) {
+            \ini_set('session.sid_length', '48');
+            // 5 bits evita caracteres especiales (como coma) en el identificador.
+            \ini_set('session.sid_bits_per_character', '5');
+        }
         \ini_set('session.gc_maxlifetime', (string)$this->lifetimeSeconds);
 
         if (!\session_start()) {
