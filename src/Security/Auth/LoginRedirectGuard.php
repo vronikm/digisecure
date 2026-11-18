@@ -49,10 +49,6 @@ final class LoginRedirectGuard
             return $default;
         }
 
-        if (str_starts_with($candidate, '/admin') && !$user->tienePermiso('superadmin.panel')) {
-            return $default;
-        }
-
         if ($user->esAspiranteGuardia() && !str_starts_with($candidate, '/guardias') && !str_starts_with($candidate, '/expedientes/documento/')) {
             return $default;
         }

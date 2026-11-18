@@ -127,7 +127,7 @@ final class Authenticator
         // 6. Verificar estado del tenant.
         //    Excepción: el superadmin de sistema puede ingresar aunque su tenant
         //    esté suspendido/cancelado para no perder control operativo global.
-        $isSystemSuperadmin = $this->userHasSystemSuperadminRole((string) $usuario['id']);
+        $isSystemSuperadmin = $this->authorizer->esSuperadminDeSistema((string) $usuario['id']);
         if ($usuario['tenant_estado'] !== 'activo' && !$isSystemSuperadmin) {
             $this->registrarIntentoFallido($emailNorm, $ip, $userAgent, $usuario['id'], $usuario['tenant_id']);
             throw new AuthenticationException(AuthenticationException::TENANT_SUSPENDED);
@@ -242,31 +242,9 @@ final class Authenticator
             ],
         );
 
-        $permisos = array_column($this->db->fetchAll(
-            'SELECT DISTINCT p.codigo
-               FROM usuarios_roles ur
-               INNER JOIN roles r ON r.id = ur.role_id
-               INNER JOIN roles_permisos rp ON rp.role_id = r.id
-               INNER JOIN permisos p ON p.id = rp.permiso_id
-              WHERE ur.usuario_id = :usuario_id
-                AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
-            [
-                'usuario_id' => $user->id,
-                'tenant_id' => $user->tenantId,
-            ],
-        ), 'codigo');
-
-        $roles = $this->db->fetchAll(
-            'SELECT r.codigo, r.nombre
-               FROM usuarios_roles ur
-               INNER JOIN roles r ON r.id = ur.role_id
-              WHERE ur.usuario_id = :usuario_id
-                AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
-            [
-                'usuario_id' => $user->id,
-                'tenant_id' => $user->tenantId,
-            ],
-        );
+        // Misma fuente que el login (Authorizer): el superadmin recibe todo el catalogo.
+        $permisos = $this->authorizer->loadPermisosUsuario($user->id, $user->tenantId);
+        $roles = $this->authorizer->loadRolesUsuario($user->id, $user->tenantId);
 
         $this->session->set(self::SESSION_USER_SYNC_AT_KEY, $now);
 
@@ -425,20 +403,5 @@ final class Authenticator
     private function normalizeEmail(string $email): string
     {
         return mb_strtolower(trim($email), 'UTF-8');
-    }
-
-    private function userHasSystemSuperadminRole(string $userId): bool
-    {
-        $count = (int) $this->db->fetchScalar(
-            "SELECT COUNT(*)
-               FROM usuarios_roles ur
-               INNER JOIN roles r ON r.id = ur.role_id
-              WHERE ur.usuario_id = :uid
-                AND r.codigo = 'superadmin'
-                AND r.tenant_id IS NULL",
-            ['uid' => $userId],
-        );
-
-        return $count > 0;
     }
 }

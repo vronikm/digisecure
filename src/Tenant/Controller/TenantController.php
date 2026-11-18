@@ -86,9 +86,9 @@ final class TenantController
         }
     }
 
+    /** El RUC (dato sensible de la empresa) solo lo cambia el superadministrador. */
     private function canEditSensitive(AuthenticatedUser $user): bool
     {
-        return $user->tienePermiso('superadmin.panel')
-            || $user->tienePermiso('superadmin.tenants.gestionar');
+        return $user->esSuperAdmin();
     }
 }

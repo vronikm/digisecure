@@ -489,26 +489,6 @@ $normalizeMenuSearch = static function (array $parts): string {
 
     <div class="ds-shell">
         <div class="ds-content-wrap">
-            <?php $avisoSuscripcion = $alertas['aviso_suscripcion'] ?? null; ?>
-            <?php if (is_array($avisoSuscripcion) && !str_starts_with($currentPath, '/suscripcion')):
-                $diasSuscripcion = (int) $avisoSuscripcion['dias']; ?>
-                <div class="ds-callout <?= $diasSuscripcion < 0 ? 'tone-danger' : 'tone-warning' ?>" role="alert">
-                    <i class="bi bi-gem"></i>
-                    <div>
-                        <strong>
-                            <?php if ($diasSuscripcion < 0): ?>
-                                La suscripción de <?= $e($user->tenantNombre) ?> venció hace <?= -$diasSuscripcion ?> día<?= $diasSuscripcion === -1 ? '' : 's' ?>
-                            <?php elseif ($diasSuscripcion === 0): ?>
-                                La suscripción de <?= $e($user->tenantNombre) ?> vence hoy
-                            <?php else: ?>
-                                La suscripción de <?= $e($user->tenantNombre) ?> vence en <?= $diasSuscripcion ?> día<?= $diasSuscripcion === 1 ? '' : 's' ?>
-                            <?php endif ?>
-                        </strong>
-                        Renuévala para evitar la suspensión del servicio.
-                        <a href="<?= $view->url('/suscripcion') ?>">Ver suscripción</a>
-                    </div>
-                </div>
-            <?php endif ?>
             <?= $view->yieldSection('content') ?>
         </div>
 

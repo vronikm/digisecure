@@ -3,7 +3,6 @@
  * Listado de usuarios.
  *
  * Variables: $user, $csrfToken, $currentPath, $usuarios, $rolesByUser, $total, $page, $totalPages, $filters
- * Opcional: $esSuperAdmin
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -11,7 +10,6 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
-$esSuperAdmin = (bool) ($esSuperAdmin ?? false);
 
 $badgeMap = [
     'activo' => 'tone-success',
@@ -22,7 +20,6 @@ $badgeMap = [
 
 $qs = http_build_query(array_filter(['estado' => $filters['estado'] ?? '']));
 $qsPrefix = $qs !== '' ? "&{$qs}" : '';
-$tableColumns = $esSuperAdmin ? 7 : 6;
 $hasFilters = !empty($filters['estado'] ?? null);
 ?>
 
@@ -137,9 +134,6 @@ $hasFilters = !empty($filters['estado'] ?? null);
                 <tr>
                     <th>Usuario</th>
                     <th>Email</th>
-                    <?php if ($esSuperAdmin): ?>
-                    <th>Empresa</th>
-                    <?php endif ?>
                     <th>Roles</th>
                     <th>Estado</th>
                     <th>Ultimo login</th>
@@ -147,21 +141,10 @@ $hasFilters = !empty($filters['estado'] ?? null);
                 </tr>
             </thead>
             <tbody>
-                <?php $lastTenantGroup = null; ?>
                 <?php foreach ($usuarios as $u):
                     $estado = $u['estado'];
                     $tone = $badgeMap[$estado] ?? 'tone-muted';
-                    $tenantId = (string) ($u['tenant_id'] ?? '');
-                    $tenantNombre = (string) ($u['tenant_nombre'] ?? 'Sin empresa');
                 ?>
-                <?php if ($esSuperAdmin && $tenantId !== $lastTenantGroup): ?>
-                <tr class="ds-table-group-row">
-                    <td colspan="<?= $tableColumns ?>">
-                        <div class="ds-group-title"><?= $e($tenantNombre !== '' ? $tenantNombre : 'Sin empresa') ?></div>
-                    </td>
-                </tr>
-                <?php $lastTenantGroup = $tenantId; ?>
-                <?php endif ?>
                 <tr>
                     <td>
                         <div class="ds-cell-name"><?= $e($u['apellidos']) ?> <?= $e($u['nombres']) ?></div>
@@ -170,11 +153,6 @@ $hasFilters = !empty($filters['estado'] ?? null);
                         <?php endif ?>
                     </td>
                     <td class="ds-cell-mono"><?= $e($u['email']) ?></td>
-                    <?php if ($esSuperAdmin): ?>
-                    <td>
-                        <div class="ds-cell-name"><?= $e($tenantNombre) ?></div>
-                    </td>
-                    <?php endif ?>
                     <td>
                         <?php foreach ($rolesByUser[$u['id']] ?? [] as $r): ?>
                         <span class="ds-chip"><i class="bi bi-shield-check"></i><?= $e($r['nombre']) ?></span>

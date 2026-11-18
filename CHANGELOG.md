@@ -1,6 +1,32 @@
 # DigiSecure — Changelog
 
-Estado actual: **Phase 18.1** · 36 migraciones · 124/124 tests verdes (PHP 8.3 y 8.5).
+Estado actual: **Phase 18.1** · 37 migraciones · 122/122 tests verdes (PHP 8.3 y 8.5).
+
+---
+
+## Sistema a la medida de GEMESEG (2026-11-17)
+
+El sistema deja de ser un SaaS multiempresa con planes. Es a la medida de GEMESEG: no hay planes, suscripciones ni alta de empresas, y `superadmin@digisecure.ec` tiene acceso total. Las demás cuentas no cambian.
+
+**Superadministrador**
+
+- **Opera dentro de GEMESEG** (migración 037). Antes estaba en la empresa de plataforma "DigiSecure", que no tiene datos, y no veía guardias, expedientes, clientes ni aspirantes. Conserva su rol global.
+- **Acceso total:** `Authorizer` le carga todo el catálogo de permisos, incluidos los que se agreguen en el futuro. Menú, rutas y vistas lo respetan sin excepciones sueltas. `Authenticator` usa la misma fuente al resincronizar la sesión.
+- **Su cuenta queda protegida:** las consultas de usuarios por empresa (`UserRepository::SIN_SUPERADMIN`) la excluyen, así que un admin de GEMESEG no puede verla, editarla, bloquearla ni resetear su clave.
+- Recibe las alertas operativas de GEMESEG (documentos vencidos o por validar, fichas en borrador, ARCO-P) en lugar de las del panel de empresas.
+- Solo él puede cambiar el RUC de la empresa. Antes lo controlaba el permiso `superadmin.panel`.
+- `bin/create-superadmin.php` lo crea o actualiza en GEMESEG. Antes lo devolvía a la empresa de plataforma.
+
+**Se retira lo comercial y multiempresa**
+
+- Módulos `Subscription` (planes, ciclos, cupos) y `Superadmin` (dashboard global, empresas, planes, log de registros), autorregistro público de empresas (`/registro`, `/activar`) y sus vistas.
+- Cupos del plan: crear guardias o usuarios ya no se bloquea por límites.
+- Aviso de suscripción vencida del layout, ítem "Suscripción" y sección "Plataforma" del menú.
+- Usuarios: sin ámbito "Sistema/Empresa" ni selector de empresa. Todos gestionan las cuentas de GEMESEG.
+- Mi empresa: la tarjeta "Plan y límites" pasa a "Estado de la empresa".
+- Migración 037: retira 8 permisos sin uso (`superadmin.*`, `suscripcion.*`) y da los 42 restantes al rol superadmin. Tiene `@down`.
+
+Las tablas `planes`, `suscripcion_ciclos` y `registros_empresa`, y las empresas "DigiSecure" y SEG-SUR, se conservan intactas en la base.
 
 Stack: PHP 8.3–8.5 / MySQL 8 / Chart.js 4.4 + sistema de diseño propio `ds-system` (iconos Bootstrap; la hoja CSS de Bootstrap ya no se carga).
 

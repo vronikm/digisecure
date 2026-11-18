@@ -274,6 +274,25 @@ function resolveTenantForSuperadmin(PdoConnection $db, ?string $tenantIdOpt, str
         ];
     }
 
+    // Sistema a la medida de GEMESEG: el superadmin opera dentro de la empresa
+    // (migracion 037). Si existe, se usa siempre; no se mueve la marca de
+    // plataforma. Sin esto, re-ejecutar el script devolveria al superadmin a
+    // la empresa de plataforma y dejaria de ver los datos de GEMESEG.
+    $tenant = $db->fetchOne(
+        "SELECT id, razon_social
+           FROM tenants
+          WHERE UPPER(razon_social) LIKE '%GEMESEG%'
+             OR UPPER(COALESCE(nombre_comercial, '')) LIKE '%GEMESEG%'
+          ORDER BY created_at ASC
+          LIMIT 1"
+    );
+    if ($tenant !== null) {
+        return [
+            'id' => (string)$tenant['id'],
+            'razon_social' => (string)$tenant['razon_social'],
+        ];
+    }
+
     $tenant = $db->fetchOne(
         "SELECT id, razon_social
            FROM tenants

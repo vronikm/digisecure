@@ -19,6 +19,21 @@ use DigiSecure\Tenant\Domain\TenantContext;
  */
 final class UserRepository extends BaseRepository
 {
+    /**
+     * Excluye a los superadministradores del sistema (rol global 'superadmin')
+     * de las consultas por empresa: la cuenta superadmin vive dentro del tenant
+     * operativo (GEMESEG) y un administrador de la empresa no debe verla,
+     * editarla, bloquearla ni resetear su clave. El superadmin usa las
+     * consultas globales (listGlobalOrderedByTenant, countGlobal).
+     */
+    private const SIN_SUPERADMIN = "NOT EXISTS (
+            SELECT 1 FROM usuarios_roles ur_sa
+            INNER JOIN roles r_sa ON r_sa.id = ur_sa.role_id
+            WHERE ur_sa.usuario_id = usuarios.id
+              AND r_sa.codigo = 'superadmin'
+              AND r_sa.tenant_id IS NULL
+        )";
+
     public function __construct(PdoConnection $db, TenantContext $tenantContext)
     {
         parent::__construct($db, $tenantContext);
@@ -36,7 +51,10 @@ final class UserRepository extends BaseRepository
      */
     public function findUserById(string $id): ?array
     {
-        return $this->findById($id);
+        return $this->tenantQueryOne(
+            'SELECT * FROM usuarios WHERE id = :id AND ' . self::SIN_SUPERADMIN,
+            ['id' => $id],
+        );
     }
 
     /**
@@ -78,19 +96,17 @@ final class UserRepository extends BaseRepository
      */
     public function listByTenant(int $limit = 50, int $offset = 0, ?string $estado = null): array
     {
-        $where = '';
+        $where = self::SIN_SUPERADMIN;
         $bindings = [];
 
         if ($estado !== null) {
-            $where = 'estado = :estado';
+            $where .= ' AND estado = :estado';
             $bindings['estado'] = $estado;
         }
 
-        $sql = 'SELECT id, email, nombres, apellidos, cargo, estado, ultimo_login_at, created_at
-                FROM usuarios';
-        if ($where !== '') {
-            $sql .= " WHERE {$where}";
-        }
+        $sql = "SELECT id, email, nombres, apellidos, cargo, estado, ultimo_login_at, created_at
+                FROM usuarios
+                WHERE {$where}";
         $sql .= ' ORDER BY apellidos, nombres LIMIT :limit OFFSET :offset';
         $bindings['limit'] = $limit;
         $bindings['offset'] = $offset;
@@ -131,10 +147,10 @@ final class UserRepository extends BaseRepository
      */
     public function countByTenant(?string $estado = null): int
     {
-        $where = '';
+        $where = self::SIN_SUPERADMIN;
         $bindings = [];
         if ($estado !== null) {
-            $where = 'estado = :estado';
+            $where .= ' AND estado = :estado';
             $bindings['estado'] = $estado;
         }
         return $this->tenantCount($where, $bindings);

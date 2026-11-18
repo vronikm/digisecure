@@ -198,16 +198,6 @@ final class MenuBuilder
             [
                 'type' => 'item',
                 'item' => new MenuItem(
-                    label: 'Suscripcion',
-                    icon: 'bi-gem',
-                    url: '/suscripcion',
-                    permisos: ['suscripcion.ver'],
-                    description: 'Plan contratado, uso y renovaciones',
-                ),
-            ],
-            [
-                'type' => 'item',
-                'item' => new MenuItem(
                     label: 'Tipos de documento',
                     icon: 'bi-file-earmark-ruled',
                     url: '/configuracion/documentos',
@@ -265,48 +255,6 @@ final class MenuBuilder
                             permisos: ['lopdp.gestionar'],
                             description: 'Trazabilidad de la politica LOPDP aceptada',
                             activeWhenPrefixes: ['/lopdp/aceptaciones'],
-                        ),
-                    ],
-                ),
-            ],
-
-            ['type' => 'header', 'label' => 'Plataforma'],
-            [
-                'type' => 'item',
-                'item' => new MenuItem(
-                    label: 'Panel Superadmin',
-                    icon: 'bi-grid-1x2-fill',
-                    permisos: ['superadmin.panel'],
-                    description: 'Gestion global de la plataforma',
-                    children: [
-                        new MenuItem(
-                            label: 'Dashboard global',
-                            icon: 'bi-speedometer',
-                            url: '/admin',
-                            permisos: ['superadmin.panel'],
-                            description: 'Metricas y KPIs del operador',
-                        ),
-                        new MenuItem(
-                            label: 'Planes',
-                            icon: 'bi-gem',
-                            url: '/admin/planes',
-                            permisos: ['superadmin.planes.ver'],
-                            description: 'Catalogo y configuracion de planes SaaS',
-                        ),
-                        new MenuItem(
-                            label: 'Empresas',
-                            icon: 'bi-buildings',
-                            url: '/admin/tenants',
-                            permisos: ['superadmin.tenants.ver'],
-                            description: 'Listado y gestion de tenants',
-                            activeWhenPrefixes: ['/admin/tenants/'],
-                        ),
-                        new MenuItem(
-                            label: 'Log de registros',
-                            icon: 'bi-journal-text',
-                            url: '/admin/registros',
-                            permisos: ['superadmin.registros.ver'],
-                            description: 'Intentos de auto-registro',
                         ),
                     ],
                 ),

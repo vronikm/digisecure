@@ -86,10 +86,22 @@ final class Authorizer
      *
      * Incluye tanto roles del tenant del usuario como roles de sistema (tenant_id IS NULL).
      *
+     * El superadministrador del sistema (rol global 'superadmin') recibe TODOS
+     * los permisos del catalogo: acceso total a vistas y funciones, incluidos
+     * los permisos que se agreguen en el futuro, sin depender de roles_permisos.
+     *
+     * @param string|null $tenantId Tenant del usuario; por defecto, el del contexto actual.
      * @return list<string> Lista de códigos de permiso ("recurso.accion")
      */
-    public function loadPermisosUsuario(string $usuarioId): array
+    public function loadPermisosUsuario(string $usuarioId, ?string $tenantId = null): array
     {
+        if ($this->esSuperadminDeSistema($usuarioId)) {
+            return array_column(
+                $this->db->fetchAll('SELECT codigo FROM permisos ORDER BY codigo'),
+                'codigo',
+            );
+        }
+
         $rows = $this->db->fetchAll(
             'SELECT DISTINCT p.codigo
              FROM usuarios_roles ur
@@ -97,10 +109,11 @@ final class Authorizer
              INNER JOIN roles_permisos rp ON rp.role_id = r.id
              INNER JOIN permisos p ON p.id = rp.permiso_id
              WHERE ur.usuario_id = :usuario_id
-               AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
+               AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)
+             ORDER BY p.codigo',
             [
                 'usuario_id' => $usuarioId,
-                'tenant_id' => $this->tenantContext->currentTenantId(),
+                'tenant_id' => $tenantId ?? $this->tenantContext->currentTenantId(),
             ],
         );
 
@@ -110,9 +123,10 @@ final class Authorizer
     /**
      * Carga los roles asignados al usuario.
      *
+     * @param string|null $tenantId Tenant del usuario; por defecto, el del contexto actual.
      * @return list<array{codigo: string, nombre: string}>
      */
-    public function loadRolesUsuario(string $usuarioId): array
+    public function loadRolesUsuario(string $usuarioId, ?string $tenantId = null): array
     {
         return $this->db->fetchAll(
             'SELECT r.codigo, r.nombre
@@ -122,8 +136,25 @@ final class Authorizer
                AND (r.tenant_id = :tenant_id OR r.tenant_id IS NULL)',
             [
                 'usuario_id' => $usuarioId,
-                'tenant_id' => $this->tenantContext->currentTenantId(),
+                'tenant_id' => $tenantId ?? $this->tenantContext->currentTenantId(),
             ],
         );
+    }
+
+    /**
+     * ¿El usuario tiene el rol global 'superadmin' (roles.tenant_id IS NULL)?
+     * Un rol 'superadmin' creado dentro de una empresa NO cuenta.
+     */
+    public function esSuperadminDeSistema(string $usuarioId): bool
+    {
+        return (int) $this->db->fetchScalar(
+            "SELECT COUNT(*)
+               FROM usuarios_roles ur
+               INNER JOIN roles r ON r.id = ur.role_id
+              WHERE ur.usuario_id = :usuario_id
+                AND r.codigo = 'superadmin'
+                AND r.tenant_id IS NULL",
+            ['usuario_id' => $usuarioId],
+        ) > 0;
     }
 }

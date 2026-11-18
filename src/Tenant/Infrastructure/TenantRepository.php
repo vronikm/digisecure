@@ -32,8 +32,7 @@ final class TenantRepository
         return $this->db->fetchOne(
             'SELECT id, razon_social, ruc, nombre_comercial, email_contacto,
                     telefono, direccion, ciudad, provincia, pais,
-                    estado, plan_codigo, plan_inicio, plan_vencimiento,
-                    max_usuarios, max_guardias, max_storage_mb,
+                    estado,
                     timezone, locale, notas, created_at, updated_at
              FROM tenants WHERE id = :id',
             ['id' => $tenantId],

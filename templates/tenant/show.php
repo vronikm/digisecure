@@ -164,41 +164,25 @@ $estadoTone = static fn(string $estado) => match ($estado) {
     <div class="col-lg-5">
         <div class="ds-card" style="margin-bottom: 0; height: 100%;">
             <div class="ds-card-header tone-purple">
-                <span class="ds-card-mark"><i class="bi bi-gem"></i></span>
+                <span class="ds-card-mark"><i class="bi bi-shield-check"></i></span>
                 <div>
-                    <div class="ds-card-title">Plan y limites</div>
-                    <div class="ds-card-subtitle">Cuotas contratadas</div>
+                    <div class="ds-card-title">Estado de la empresa</div>
+                    <div class="ds-card-subtitle">Situacion de la cuenta en el sistema</div>
                 </div>
             </div>
             <div class="ds-card-body">
                 <div class="ds-company-grid">
-                    <div class="ds-company-item span-6">
-                        <div class="ds-company-label">Plan</div>
-                        <div class="ds-company-value"><?= $e((string) ($tenant['plan_codigo'] ?? '-')) ?></div>
-                    </div>
-                    <div class="ds-company-item span-6">
+                    <div class="ds-company-item span-12">
                         <div class="ds-company-label">Estado</div>
                         <div><span class="ds-badge <?= $estadoTone((string) ($tenant['estado'] ?? '')) ?>"><?= $e(ucfirst((string) ($tenant['estado'] ?? ''))) ?></span></div>
                     </div>
                     <div class="ds-company-item span-6">
-                        <div class="ds-company-label">Inicio</div>
-                        <div class="ds-cell-mono"><?= $e((string) ($tenant['plan_inicio'] ?? '-')) ?></div>
+                        <div class="ds-company-label">Registrada</div>
+                        <div class="ds-cell-mono"><?= $e(substr((string) ($tenant['created_at'] ?? '-'), 0, 10)) ?></div>
                     </div>
                     <div class="ds-company-item span-6">
-                        <div class="ds-company-label">Vencimiento</div>
-                        <div class="ds-cell-mono"><?= $e((string) ($tenant['plan_vencimiento'] ?? '-')) ?></div>
-                    </div>
-                    <div class="ds-company-item span-4">
-                        <div class="ds-company-label">Max. usuarios</div>
-                        <div class="ds-company-value"><?= (int) ($tenant['max_usuarios'] ?? 0) ?></div>
-                    </div>
-                    <div class="ds-company-item span-4">
-                        <div class="ds-company-label">Max. guardias</div>
-                        <div class="ds-company-value"><?= (int) ($tenant['max_guardias'] ?? 0) ?></div>
-                    </div>
-                    <div class="ds-company-item span-4">
-                        <div class="ds-company-label">Almacenamiento</div>
-                        <div class="ds-company-value"><?= (int) ($tenant['max_storage_mb'] ?? 0) ?> MB</div>
+                        <div class="ds-company-label">Ultima actualizacion</div>
+                        <div class="ds-cell-mono"><?= $e(substr((string) ($tenant['updated_at'] ?? '-'), 0, 10)) ?></div>
                     </div>
                 </div>
             </div>

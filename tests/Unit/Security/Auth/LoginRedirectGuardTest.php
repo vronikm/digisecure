@@ -25,24 +25,6 @@ final class LoginRedirectGuardTest extends TestCase
     }
 
     #[Test]
-    public function rechaza_admin_routes_para_usuarios_sin_permiso_superadmin(): void
-    {
-        $guard = new LoginRedirectGuard();
-        $user = $this->user();
-
-        self::assertSame('/dashboard', $guard->resolve('/admin/tenants', $user));
-    }
-
-    #[Test]
-    public function permite_admin_routes_para_superadmin(): void
-    {
-        $guard = new LoginRedirectGuard();
-        $user = $this->superadminUser();
-
-        self::assertSame('/admin/tenants', $guard->resolve('/admin/tenants', $user));
-    }
-
-    #[Test]
     public function conserva_rutas_internas_relativas_validas(): void
     {
         $guard = new LoginRedirectGuard();
@@ -66,23 +48,6 @@ final class LoginRedirectGuardTest extends TestCase
             tenantEstado: 'activo',
             permisos: ['usuarios.read'],
             roles: [['codigo' => 'operador', 'nombre' => 'Operador']],
-        );
-    }
-
-    private function superadminUser(): AuthenticatedUser
-    {
-        return new AuthenticatedUser(
-            id: 'user-2',
-            tenantId: 'tenant-1',
-            email: 'superadmin@gemeseg.com',
-            nombres: 'Sofía',
-            apellidos: 'Guerrero',
-            cargo: 'Administrador',
-            estado: 'activo',
-            tenantNombre: 'GEMESEG',
-            tenantEstado: 'activo',
-            permisos: ['usuarios.read', 'superadmin.panel'],
-            roles: [['codigo' => 'superadmin', 'nombre' => 'Superadmin']],
         );
     }
 }

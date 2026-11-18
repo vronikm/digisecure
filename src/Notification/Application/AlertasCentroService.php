@@ -22,21 +22,12 @@ final class AlertasCentroService
     }
 
     /**
-     * @return array{items: list<array<string, mixed>>, total: int, criticas: int, aviso_suscripcion?: array{dias: int}}
+     * Cada alerta depende del permiso del modulo que la origina; el
+     * superadministrador tiene todos los permisos y por eso las ve todas.
+     *
+     * @return array{items: list<array<string, mixed>>, total: int, criticas: int}
      */
     public function listarPara(AuthenticatedUser $user): array
-    {
-        if ($user->esSuperAdmin()) {
-            return $this->alertasSuperadmin();
-        }
-
-        return $this->alertasTenant($user);
-    }
-
-    /**
-     * @return array{items: list<array<string, mixed>>, total: int, criticas: int, aviso_suscripcion?: array{dias: int}}
-     */
-    private function alertasTenant(AuthenticatedUser $user): array
     {
         $tid = $user->tenantId;
         $items = [];
@@ -114,129 +105,6 @@ final class AlertasCentroService
             }
         }
 
-        $aviso = null;
-        if ($user->tienePermiso('suscripcion.ver')) {
-            $diasRestantes = $this->diasParaVencimientoSuscripcion($tid);
-            if ($diasRestantes !== null && $diasRestantes <= 15) {
-                $vencida = $diasRestantes < 0;
-                $critica = $diasRestantes <= 3;
-                $items[] = [
-                    'severidad' => $critica ? 'critica' : 'alta',
-                    'icon' => 'bi-gem',
-                    'color' => $critica ? 'danger' : 'warning',
-                    'titulo' => $vencida ? 'Suscripcion vencida' : 'Suscripcion por vencer',
-                    'detalle' => match (true) {
-                        $vencida => sprintf('Vencio hace %d dia(s)', -$diasRestantes),
-                        $diasRestantes === 0 => 'Vence hoy',
-                        default => "Vence en {$diasRestantes} dia(s)",
-                    },
-                    'cantidad' => max(1, abs($diasRestantes)),
-                    'url' => '/suscripcion',
-                ];
-                // Aviso fijo en el layout: la campana sola pasa desapercibida.
-                if ($critica) {
-                    $aviso = ['dias' => $diasRestantes];
-                }
-            }
-        }
-
-        $bundle = $this->empaquetar($items);
-        if ($aviso !== null) {
-            $bundle['aviso_suscripcion'] = $aviso;
-        }
-
-        return $bundle;
-    }
-
-    /**
-     * @return array{items: list<array<string, mixed>>, total: int, criticas: int}
-     */
-    private function alertasSuperadmin(): array
-    {
-        $items = [];
-
-        $pendientes = (int) $this->db->fetchScalar(
-            "SELECT COUNT(*) FROM tenants WHERE estado = 'pendiente'",
-        );
-        if ($pendientes > 0) {
-            $items[] = [
-                'severidad' => 'alta',
-                'icon' => 'bi-hourglass-split',
-                'color' => 'warning',
-                'titulo' => 'Tenants pendientes',
-                'detalle' => "{$pendientes} empresa(s) sin activar",
-                'cantidad' => $pendientes,
-                'url' => '/admin/tenants?estado=pendiente',
-            ];
-        }
-
-        $fallos = (int) $this->db->fetchScalar(
-            "SELECT COUNT(*) FROM registros_empresa
-             WHERE evento = 'fallo' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
-        );
-        if ($fallos > 0) {
-            $items[] = [
-                'severidad' => 'media',
-                'icon' => 'bi-bug',
-                'color' => 'secondary',
-                'titulo' => 'Registros fallidos',
-                'detalle' => "{$fallos} intento(s) fallido(s) en los ultimos 7 dias",
-                'cantidad' => $fallos,
-                'url' => '/admin/registros',
-            ];
-        }
-
-        $suspendidos = (int) $this->db->fetchScalar(
-            "SELECT COUNT(*) FROM tenants WHERE estado = 'suspendido'",
-        );
-        if ($suspendidos > 0) {
-            $items[] = [
-                'severidad' => 'media',
-                'icon' => 'bi-slash-circle',
-                'color' => 'danger',
-                'titulo' => 'Tenants suspendidos',
-                'detalle' => "{$suspendidos} empresa(s) suspendida(s)",
-                'cantidad' => $suspendidos,
-                'url' => '/admin/tenants?estado=suspendido',
-            ];
-        }
-
-        // Empresas operando con el plan vencido: no se bloquean solas, el
-        // superadmin decide si renueva, extiende o suspende.
-        $vencidos = (int) $this->db->fetchScalar(
-            "SELECT COUNT(*) FROM tenants
-             WHERE estado = 'activo' AND plan_vencimiento IS NOT NULL AND plan_vencimiento < CURDATE()",
-        );
-        if ($vencidos > 0) {
-            $items[] = [
-                'severidad' => 'alta',
-                'icon' => 'bi-gem',
-                'color' => 'danger',
-                'titulo' => 'Suscripciones vencidas',
-                'detalle' => "{$vencidos} empresa(s) activa(s) con el plan vencido",
-                'cantidad' => $vencidos,
-                'url' => '/admin/tenants?estado=activo',
-            ];
-        }
-
-        $venciendo = (int) $this->db->fetchScalar(
-            "SELECT COUNT(*) FROM tenants
-             WHERE estado = 'activo'
-               AND plan_vencimiento IS NOT NULL
-               AND plan_vencimiento BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY)",
-        );
-        if ($venciendo > 0) {
-            $items[] = [
-                'severidad' => 'alta',
-                'icon' => 'bi-gem',
-                'color' => 'info',
-                'titulo' => 'Suscripciones por vencer',
-                'detalle' => "{$venciendo} tenant(s) vencen en 15 dias",
-                'cantidad' => $venciendo,
-                'url' => '/admin/tenants',
-            ];
-        }
-
         return $this->empaquetar($items);
     }
 
@@ -311,18 +179,5 @@ final class AlertasCentroService
              WHERE tenant_id = :tid AND estado IN ('RECIBIDA','EN_PROCESO')",
             ['tid' => $tid],
         );
-    }
-
-    private function diasParaVencimientoSuscripcion(string $tid): ?int
-    {
-        $row = $this->db->fetchOne(
-            'SELECT DATEDIFF(plan_vencimiento, CURDATE()) AS dias
-             FROM tenants WHERE id = :tid AND plan_vencimiento IS NOT NULL',
-            ['tid' => $tid],
-        );
-        if ($row === null || $row['dias'] === null) {
-            return null;
-        }
-        return (int) $row['dias'];
     }
 }

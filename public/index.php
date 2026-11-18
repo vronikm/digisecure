@@ -29,7 +29,6 @@ $loader = require $autoloadPath;
 
 // Fallback de namespaces de módulos (hasta regenerar autoload con Composer).
 if ($loader instanceof \Composer\Autoload\ClassLoader) {
-    $loader->addPsr4('DigiSecure\\Superadmin\\', DIGISECURE_ROOT . '/src/Superadmin');
     $loader->addPsr4('DigiSecure\\Cliente\\', DIGISECURE_ROOT . '/src/Cliente');
     $loader->addPsr4('DigiSecure\\Puesto\\', DIGISECURE_ROOT . '/src/Puesto');
     $loader->addPsr4('DigiSecure\\Asignacion\\', DIGISECURE_ROOT . '/src/Asignacion');

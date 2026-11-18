@@ -29,7 +29,6 @@ use DigiSecure\Security\Crypto\BlindIndex;
 use DigiSecure\Security\Crypto\Encryption;
 use DigiSecure\Security\Csrf\CsrfGuard;
 use DigiSecure\Shared\Domain\DomainException;
-use DigiSecure\Subscription\Application\VerificarLimiteService;
 
 /**
  * Controller CRUD de Fichas del Guardia.
@@ -56,7 +55,6 @@ final class FichaController
         private readonly Container $container,
         private readonly ErrorHandler $errorHandler,
         private readonly PdoConnection $db,
-        private readonly VerificarLimiteService $verificarLimite,
         private readonly FlashBag $flash,
         private readonly BlindIndex $blindIndex,
     ) {
@@ -333,7 +331,6 @@ final class FichaController
         }
 
         try {
-            $this->verificarLimiteCrearGuardia();
             $result = $this->crearFichaService()->execute($input, $user->id, $request->clientIp());
             $isAspirante = $user->esAspiranteGuardia();
             $this->flash->success($isAspirante
@@ -799,17 +796,6 @@ final class FichaController
     }
 
     // ======================== HELPERS ========================
-
-    private function verificarLimiteCrearGuardia(): void
-    {
-        try {
-            $this->verificarLimite->verificarCrearGuardia();
-        } catch (DomainException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            $this->errorHandler->report($e);
-        }
-    }
 
     /**
      * @return list<array<string, mixed>>

@@ -3,7 +3,6 @@
  * Formulario de creacion de usuario.
  *
  * Variables: $user, $csrfToken, $currentPath, $roles, $input
- * Opcionales: $esSuperAdmin, $tenants, $systemTenantId
  * Opcionales: $error
  */
 
@@ -12,11 +11,6 @@ use DigiSecure\Kernel\View\ViewRenderer;
 /** @var \DigiSecure\Kernel\View\ViewRenderer $view */
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
-$esSuperAdmin = (bool) ($esSuperAdmin ?? false);
-$tenants = is_array($tenants ?? null) ? $tenants : [];
-$systemTenantId = (string) ($systemTenantId ?? $user->tenantId);
-$scopeSel = (string) ($input['user_scope'] ?? 'empresa');
-$tenantSel = (string) ($input['tenant_id'] ?? '');
 ?>
 
 <?php $view->section('title') ?>Nuevo usuario - DigiSecure<?php $view->endSection() ?>
@@ -66,31 +60,6 @@ $tenantSel = (string) ($input['tenant_id'] ?? '');
         </div>
         <div class="ds-card-body">
             <div class="ds-user-grid">
-                <?php if ($esSuperAdmin): ?>
-                <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Ambito <span class="ds-required">*</span></label>
-                        <select name="user_scope" id="user_scope" class="form-select" required>
-                            <option value="empresa" <?= $scopeSel === 'empresa' ? 'selected' : '' ?>>Empresa (Tenant)</option>
-                            <option value="sistema" <?= $scopeSel === 'sistema' ? 'selected' : '' ?>>Sistema</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="ds-col-12 ds-col-md-6 ds-col-lg-8" id="tenant_scope_wrap">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Tenant (Empresa) <span class="ds-required">*</span></label>
-                        <select name="tenant_id" id="tenant_id" class="form-select">
-                            <option value="">- Seleccione empresa -</option>
-                            <?php foreach ($tenants as $t): ?>
-                            <option value="<?= $e((string) $t['id']) ?>" <?= $tenantSel === (string) $t['id'] ? 'selected' : '' ?>>
-                                <?= $e((string) $t['razon_social']) ?> · RUC <?= $e((string) $t['ruc']) ?>
-                            </option>
-                            <?php endforeach ?>
-                        </select>
-                        <span class="ds-form-help">Para "Sistema" se usa automaticamente la empresa de plataforma marcada en el sistema.</span>
-                    </div>
-                </div>
-                <?php endif; ?>
 
                 <div class="ds-col-12 ds-col-md-6 ds-col-lg-4">
                     <div class="ds-form-field">
@@ -196,25 +165,6 @@ $tenantSel = (string) ($input['tenant_id'] ?? '');
 </form>
 </div>
 
-<?php if ($esSuperAdmin): ?>
-<script>
-(() => {
-    const scope = document.getElementById('user_scope');
-    const tenantWrap = document.getElementById('tenant_scope_wrap');
-    const tenantInput = document.getElementById('tenant_id');
-    if (!scope || !tenantWrap || !tenantInput) return;
-
-    const refresh = () => {
-        const isSistema = scope.value === 'sistema';
-        tenantWrap.style.display = isSistema ? 'none' : '';
-        tenantInput.required = !isSistema;
-    };
-
-    scope.addEventListener('change', refresh);
-    refresh();
-})();
-</script>
-<?php endif; ?>
 <script>
 document.querySelectorAll('[data-toggle-password]').forEach((btn) => {
     const input = document.getElementById(btn.dataset.togglePassword);
