@@ -192,8 +192,34 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formC
     @media (max-width: 991.98px) {
         .ds-step-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+    /* Celular: los 5 pasos en una fila deslizable y compacta, para que el
+       formulario quede a la vista en vez de una pantalla entera de pasos. */
     @media (max-width: 575.98px) {
-        .ds-step-list { grid-template-columns: 1fr; }
+        .ds-step-nav-card .card-body { padding: .55rem; }
+        .ds-step-list {
+            position: relative;
+            display: flex;
+            gap: .45rem;
+            overflow-x: auto;
+            scroll-snap-type: x proximity;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .ds-step-list::-webkit-scrollbar { display: none; }
+        .ds-step-list .ds-step-link {
+            flex: 0 0 auto;
+            width: auto;
+            max-width: 72vw;
+            padding: .5rem .6rem;
+            gap: .45rem;
+            border-radius: 12px;
+            scroll-snap-align: center;
+            transform: none;
+        }
+        .ds-step-list .ds-step-index { width: 26px; height: 26px; font-size: .8rem; border-radius: 8px; }
+        .ds-step-list .ds-step-copy strong { font-size: .8rem; white-space: nowrap; }
+        .ds-step-list .ds-step-copy span { display: none; }
+        .ds-step-list .ds-step-status { font-size: .65rem; }
     }
     .ds-step-link {
         display: flex;
@@ -309,7 +335,9 @@ $croquisImagenUrl = $currentFichaId !== '' && $croquisArchivoId !== '' && $formC
         flex-direction: column;
         gap: .4rem;
     }
-    .ff-foto-col { flex: 0 0 auto; }
+    /* Ancho acotado: sin max-width, el aviso "La foto anterior no esta..." (una
+       sola linea) estiraba la columna a ~560px y en celular se cortaba. */
+    .ff-foto-col { flex: 0 1 auto; min-width: 0; max-width: min(280px, 100%); }
     .ff-foto-col .ff-foto-wrap { margin-bottom: 0; }
     .ff-tipo-display {
         display: inline-flex;
@@ -1763,6 +1791,15 @@ function showStep(index) {
         document.querySelector(`[data-step-target="${step}"]`)?.classList.toggle('active', active);
         document.querySelector(`[data-summary-step="${step}"]`)?.classList.toggle('active', active);
     });
+    // En celular la lista de pasos se desliza: dejar el paso activo a la vista.
+    const activeLink = document.querySelector(`[data-step-target="${activeStep}"]`);
+    const stepList = activeLink?.closest('.ds-step-list');
+    if (activeLink && stepList && stepList.scrollWidth > stepList.clientWidth) {
+        stepList.scrollTo({
+            left: activeLink.offsetLeft - (stepList.clientWidth - activeLink.offsetWidth) / 2,
+            behavior: 'smooth',
+        });
+    }
     const isLastStep = currentStepIndex === STEP_ORDER.length - 1;
     document.querySelectorAll('[data-step-prev]').forEach(el => el.toggleAttribute('disabled', currentStepIndex === 0));
     // En la última etapa NO se muestra "Siguiente". El botón de guardar está

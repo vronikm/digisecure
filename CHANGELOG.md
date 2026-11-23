@@ -4,6 +4,22 @@ Estado actual: **Phase 18.1** · 37 migraciones · 122/122 tests verdes (PHP 8.3
 
 ---
 
+## Interfaz optimizada para celular (2026-11-23)
+
+Se revisaron 44 vistas a 390 px de ancho (superadmin y aspirante). Al terminar, ninguna desborda ni recorta contenido, y la consola queda sin errores.
+
+- **Tablas como tarjetas.** Con menos de 576 px, cada fila de `.ds-table` se muestra como una tarjeta "Etiqueta  valor". El título de la tarjeta es la primera columna con nombre real (no "#") y las acciones van al pie. Antes, estado y botones quedaban ocultos a la derecha de una tabla que había que deslizar. `public/assets/js/ds-tablas-moviles.js` copia el título de cada columna a `data-label`; las 26 plantillas con tablas no cambian. Para excluir una tabla: `data-no-stack`.
+- **Un solo margen.** El panel y las tarjetas ya no suman rellenos. Los botones de cabecera ocupan todo el ancho y los botones tienen 40 px de alto mínimo para el dedo.
+- **Ficha del guardia.** Los 5 pasos van en una fila deslizable que centra el paso activo; antes ocupaban una pantalla entera antes del formulario. La columna de la foto ya no se estira a ~560 px por el aviso de "foto anterior", que se cortaba.
+- **Encabezados de tarjeta** con botones (p. ej. "Marcar todos / Desmarcar" en roles): bajan de línea en vez de salirse de la tarjeta (13 encabezados de 9 vistas).
+- **Avisos `login-info`, `login-error` y `login-success`** (38 usos en vistas internas): solo tenían estilo en la pantalla de login y dentro de la app salían sin formato, también en escritorio. Ahora se ven como `.ds-callout`.
+- **Ícono de la app** (favicon y "agregar a pantalla de inicio") y `theme-color` para la barra del navegador. Se elimina el 404 de `/favicon.ico`.
+- Editar empresa: se quita la referencia al "panel global", que ya no existe.
+
+Escritorio (1366 px) y tablet (768 px) sin cambios: todo lo anterior vive en `@media (max-width: 575.98px)`, salvo los avisos y el ancho de la foto.
+
+---
+
 ## Sistema a la medida de GEMESEG (2026-11-17)
 
 El sistema deja de ser un SaaS multiempresa con planes. Es a la medida de GEMESEG: no hay planes, suscripciones ni alta de empresas, y `superadmin@digisecure.ec` tiene acceso total. Las demás cuentas no cambian.

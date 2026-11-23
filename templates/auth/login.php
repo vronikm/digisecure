@@ -34,6 +34,9 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0d1f36">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= $view->url('/assets/img/favicon-32.png') ?>">
+    <link rel="apple-touch-icon" href="<?= $view->url('/assets/img/apple-touch-icon.png') ?>">
     <title>Iniciar sesion - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260922-correo2">

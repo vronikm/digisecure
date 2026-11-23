@@ -52,10 +52,10 @@ $canEditSensitive = (bool) ($canEditSensitive ?? false);
     <div>
         <?php if ($canEditSensitive): ?>
         <strong>Modo superadmin</strong>
-        Puedes actualizar el RUC desde esta vista. El resto de campos sensibles se gestionan desde el panel global.
+        Puedes actualizar todos los datos de la empresa, incluido el RUC.
         <?php else: ?>
         <strong>Campos protegidos</strong>
-        El RUC, estado, plan y limites solo pueden ser modificados por el administrador de la plataforma.
+        El RUC de la empresa solo lo puede cambiar el superadministrador.
         <?php endif; ?>
     </div>
 </div>

@@ -1477,6 +1477,41 @@ body.ds-menu-hidden .ds-brand-logo {
 .ds-callout.tone-danger > i  { color: #b91c1c; }
 .ds-callout.tone-danger strong { color: #991b1b; }
 
+/* Avisos login-info / login-error / login-success: 38 usos en vistas internas
+ * cuyos estilos solo estaban en ds-auth.css (pantalla de login), asi que dentro
+ * de la app salian sin formato (icono en una linea, texto en otra). Mismo
+ * aspecto que .ds-callout. */
+.ds-main .login-info,
+.ds-main .login-error,
+.ds-main .login-success {
+    display: flex;
+    gap: .7rem;
+    align-items: flex-start;
+    padding: .85rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--ds-border);
+    border-left: 4px solid var(--ds-text-soft);
+    border-radius: 12px;
+    font-size: .86rem;
+    line-height: 1.45;
+    color: var(--ds-text);
+}
+.ds-main .login-info > i,
+.ds-main .login-error > i,
+.ds-main .login-success > i { font-size: 1.15rem; line-height: 1.2; flex-shrink: 0; }
+.ds-main .login-info strong,
+.ds-main .login-error strong,
+.ds-main .login-success strong { display: block; font-weight: 700; margin-bottom: .1rem; }
+.ds-main .login-info    { background: rgba(37,99,235,.06); border-color: rgba(37,99,235,.18); border-left-color: #2563eb; }
+.ds-main .login-info > i    { color: #1d4ed8; }
+.ds-main .login-error   { background: rgba(220,38,38,.06); border-color: rgba(220,38,38,.18); border-left-color: #dc2626; }
+.ds-main .login-error > i   { color: #b91c1c; }
+.ds-main .login-success { background: rgba(5,150,105,.06); border-color: rgba(5,150,105,.2);  border-left-color: #059669; }
+.ds-main .login-success > i { color: #047857; }
+.ds-main .login-info[hidden],
+.ds-main .login-error[hidden],
+.ds-main .login-success[hidden] { display: none; }
+
 /* Empty state con ilustracion */
 .ds-empty-state {
     padding: 3rem 2rem;
@@ -1927,6 +1962,106 @@ a.ds-kpi-card:hover, a.ds-kpi-card:focus {
     .ds-kpi-grid .ds-kpi-card .ds-kpi-icon { display: none; }
     .ds-kpi-grid .ds-kpi-card .ds-kpi-value { font-size: 1.35rem; }
     .ds-kpi-grid .ds-kpi-card .ds-kpi-label { font-size: .6rem; letter-spacing: .04em; }
+}
+
+/* ---------- Celular (< 576px) ----------
+ * 1. Un solo margen: el panel .ds-shell y las tarjetas comparten el ancho
+ *    en vez de sumar rellenos (antes quedaban ~70px de los 390px en bordes).
+ * 2. Tablas .ds-table como tarjetas: ds-tablas-moviles.js copia el titulo de
+ *    cada columna a data-label; cada fila es una tarjeta "Etiqueta  valor",
+ *    con la primera celda como titulo y las acciones al pie. Asi el estado y
+ *    los botones dejan de quedar ocultos a la derecha.
+ * 3. Botones de cabecera a todo el ancho y objetivos tactiles de 40px. */
+@media (max-width: 575.98px) {
+    .ds-main { padding: .7rem .55rem 1rem; }
+    .ds-shell { padding: .9rem .7rem 1rem; border-radius: 18px; }
+    .ds-breadcrumb-outer { margin-bottom: .5rem; }
+
+    /* Los botones del encabezado (p. ej. "Marcar todos / Desmarcar") bajan
+       a otra linea en vez de salirse de la tarjeta. */
+    .ds-card-header { padding: .85rem .9rem; flex-wrap: wrap; row-gap: .6rem; }
+    .ds-card-header > * { min-width: 0; }
+    /* 13 encabezados de 9 vistas usan un div con flex en linea (titulo a la
+       izquierda, botones o contador a la derecha) sin flex-wrap. */
+    .ds-card-header div[style*="display: flex"],
+    .ds-card-header div[style*="display:flex"] { flex-wrap: wrap; row-gap: .5rem; }
+    .ds-card-body { padding: 1rem .9rem 1.1rem; }
+
+    .ds-page-header { gap: .75rem; margin-bottom: 1rem; }
+    .ds-page-header > :not(.ds-page-title) { width: 100%; }
+    .ds-page-header > :not(.ds-page-title) > .ds-btn,
+    .ds-page-header > .ds-btn { width: 100%; justify-content: center; }
+    .ds-page-title h1 { font-size: 1.2rem; }
+    .ds-page-title .ds-page-mark { width: 38px; height: 38px; font-size: 1.05rem; border-radius: 12px; }
+
+    .ds-btn, .btn { min-height: 40px; }
+    .ds-table .ds-row-actions .ds-btn,
+    .ds-table .ds-row-actions .btn { min-height: 36px; min-width: 36px; }
+
+    /* Tablas como tarjetas */
+    .table-responsive:has(> .ds-table-stack) { overflow-x: visible; }
+    .ds-table.ds-table-stack,
+    .ds-table.ds-table-stack tbody,
+    .ds-table.ds-table-stack tr,
+    .ds-table.ds-table-stack td { display: block; width: 100%; }
+    .ds-table.ds-table-stack thead { display: none; }
+    .ds-table.ds-table-stack tbody tr {
+        padding: .8rem .95rem .7rem;
+        border-bottom: 1px solid #e9eef5;
+    }
+    .ds-table.ds-table-stack tbody tr:last-child { border-bottom: 0; }
+    .ds-table.ds-table-stack tbody tr:nth-child(even):not(.ds-row-full) { background: #fbfcfe; }
+    /* Etiqueta en una columna fija de 7.6rem: flota en el relleno izquierdo
+       (margen negativo) y la celda es flow-root, asi la fila crece si la
+       etiqueta ocupa dos lineas y el valor nunca pasa por debajo de ella. */
+    .ds-table.ds-table-stack tbody td {
+        display: flow-root;
+        padding: .3rem 0 .3rem 8.1rem;
+        border: 0;
+        text-align: left;
+        overflow-wrap: anywhere;
+    }
+    .ds-table.ds-table-stack tbody td::before {
+        content: attr(data-label);
+        float: left;
+        width: 7.6rem;
+        margin-left: -8.1rem;
+        padding-top: .12rem;
+        font-size: .66rem;
+        font-weight: 700;
+        line-height: 1.25;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: var(--ds-text-soft);
+    }
+    .ds-table.ds-table-stack tbody td[data-label=""] { padding-left: 0; }
+    .ds-table.ds-table-stack tbody td[data-label=""]::before { content: none; }
+
+    /* Celda titulo de la tarjeta (la marca ds-tablas-moviles.js). La fila es
+       flex en columna para que el titulo vaya primero aunque no sea la primera
+       celda (p. ej. "# | Documento": el numero queda debajo del nombre). */
+    .ds-table.ds-table-stack tbody tr:not(.ds-row-full) { display: flex; flex-direction: column; }
+    .ds-table.ds-table-stack tbody tr:not(.ds-row-full) > td.ds-cell-title {
+        order: -1;
+        padding: 0 0 .45rem;
+        font-size: .92rem;
+    }
+    .ds-table.ds-table-stack tbody tr:not(.ds-row-full) > td.ds-cell-title::before { content: none; }
+    .ds-table.ds-table-stack tbody td.ds-cell-end { text-align: left; }
+
+    /* Ultima celda con botones: acciones al pie de la tarjeta. Solo la ultima:
+       ds-cell-end tambien alinea columnas de datos (Bloque, Docs, Dias...). */
+    .ds-table.ds-table-stack tbody tr:not(.ds-row-full) > td:last-child:not(.ds-cell-title):has(.ds-row-actions, .ds-btn, .btn, form) {
+        margin-top: .4rem;
+        padding: .6rem 0 0;
+        border-top: 1px dashed #e3e9f1;
+    }
+    .ds-table.ds-table-stack tbody tr:not(.ds-row-full) > td:last-child:not(.ds-cell-title):has(.ds-row-actions, .ds-btn, .btn, form)::before { content: none; }
+    .ds-table.ds-table-stack .ds-row-actions { justify-content: flex-start; }
+
+    /* Filas de grupo y de "sin resultados" */
+    .ds-table.ds-table-stack tbody tr.ds-row-full > td { padding: .2rem 0; }
+    .ds-table.ds-table-stack tbody tr.ds-row-full > td::before { content: none; }
 }
 
 /* Pantallas bajas (móvil, portátiles pequeños): más espacio para el menú. */
