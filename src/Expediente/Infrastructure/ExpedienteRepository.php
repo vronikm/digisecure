@@ -6,6 +6,7 @@ namespace DigiSecure\Expediente\Infrastructure;
 
 use DigiSecure\Expediente\Domain\Enum\EstadoExpediente;
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Shared\Infrastructure\Clock;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
@@ -119,12 +120,14 @@ final class ExpedienteRepository extends BaseRepository
             $conditions[] = 'e.estado = :estado';
             $bindings['estado'] = $filters['estado'];
         }
-        if (!empty($filters['busqueda'])) {
-            $conditions[] = '(f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.correlativo LIKE :busq3)';
-            $busq = '%' . $filters['busqueda'] . '%';
-            $bindings['busq'] = $busq;
-            $bindings['busq2'] = $busq;
-            $bindings['busq3'] = $busq;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            (string) ($filters['busqueda'] ?? ''),
+            ['f.apellidos', 'f.nombres', 'f.correlativo', 'f.email', 'f.celular'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $conditions[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         if ($conditions !== []) {
@@ -156,12 +159,14 @@ final class ExpedienteRepository extends BaseRepository
             $conditions[] = 'e.estado = :estado';
             $bindings['estado'] = $filters['estado'];
         }
-        if (!empty($filters['busqueda'])) {
-            $conditions[] = '(f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.correlativo LIKE :busq3)';
-            $busq = '%' . $filters['busqueda'] . '%';
-            $bindings['busq'] = $busq;
-            $bindings['busq2'] = $busq;
-            $bindings['busq3'] = $busq;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            (string) ($filters['busqueda'] ?? ''),
+            ['f.apellidos', 'f.nombres', 'f.correlativo', 'f.email', 'f.celular'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $conditions[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         $where = $conditions !== [] ? 'AND ' . implode(' AND ', $conditions) : '';

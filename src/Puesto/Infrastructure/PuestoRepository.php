@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\Puesto\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 
 /**
  * Repositorio de la tabla `puestos` (tenant-aware).
@@ -12,6 +13,12 @@ use DigiSecure\Infrastructure\Persistence\BaseRepository;
  */
 final class PuestoRepository extends BaseRepository
 {
+    /** Columnas donde busca el listado (cada palabra debe aparecer en alguna). */
+    private const COLUMNAS_BUSQUEDA = [
+        'p.nombre', 'p.codigo', 'c.razon_social', 'c.nombre_comercial',
+        'p.direccion', 'p.ciudad', 'p.tipo', 'p.modalidad',
+    ];
+
     protected function tableName(): string
     {
         return 'puestos';
@@ -63,13 +70,10 @@ final class PuestoRepository extends BaseRepository
             $bindings['cliente_id'] = (string) $filters['cliente_id'];
         }
 
-        if (!empty($filters['q'])) {
-            $where[] = '(p.nombre LIKE :q_nombre OR p.codigo LIKE :q_codigo OR c.razon_social LIKE :q_cliente OR p.direccion LIKE :q_direccion)';
-            $q = '%' . (string) $filters['q'] . '%';
-            $bindings['q_nombre'] = $q;
-            $bindings['q_codigo'] = $q;
-            $bindings['q_cliente'] = $q;
-            $bindings['q_direccion'] = $q;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion((string) ($filters['q'] ?? ''), self::COLUMNAS_BUSQUEDA, 'q');
+        if ($busquedaSql !== null) {
+            $where[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         $sql = 'SELECT p.id, p.codigo, p.nombre, p.tipo, p.modalidad,
@@ -112,13 +116,10 @@ final class PuestoRepository extends BaseRepository
             $where[] = 'p.cliente_id = :cliente_id';
             $bindings['cliente_id'] = (string) $filters['cliente_id'];
         }
-        if (!empty($filters['q'])) {
-            $where[] = '(p.nombre LIKE :q_nombre OR p.codigo LIKE :q_codigo OR c.razon_social LIKE :q_cliente OR p.direccion LIKE :q_direccion)';
-            $q = '%' . (string) $filters['q'] . '%';
-            $bindings['q_nombre'] = $q;
-            $bindings['q_codigo'] = $q;
-            $bindings['q_cliente'] = $q;
-            $bindings['q_direccion'] = $q;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion((string) ($filters['q'] ?? ''), self::COLUMNAS_BUSQUEDA, 'q');
+        if ($busquedaSql !== null) {
+            $where[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         $sql = 'SELECT COUNT(*) FROM puestos p

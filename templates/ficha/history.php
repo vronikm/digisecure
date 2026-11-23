@@ -244,6 +244,14 @@ $estadoTone = [
             <div class="ds-card-title">Historial de fichas</div>
             <div class="ds-card-subtitle">Linea temporal del guardia (ingreso, reingreso y actualizaciones)</div>
         </div>
+        <?php if ($fichas !== []): ?>
+        <?= $view->include('partials/filtro-local', [
+            'id' => 'filtroHistorial',
+            'tabla' => '#tablaHistorial',
+            'placeholder' => 'Buscar en el historial...',
+            'ayuda' => 'Buscar fichas del historial por correlativo, tipo, estado o fecha',
+        ]) ?>
+        <?php endif ?>
     </div>
     <?php if ($fichas === []): ?>
     <div class="ds-card-body">
@@ -261,7 +269,7 @@ $estadoTone = [
     </div>
     <?php else: ?>
     <div class="table-responsive">
-        <table class="ds-table">
+        <table class="ds-table" id="tablaHistorial">
             <thead>
                 <tr>
                     <th>Correlativo</th>

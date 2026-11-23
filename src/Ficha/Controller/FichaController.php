@@ -21,6 +21,7 @@ use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Container\Container;
 use DigiSecure\Kernel\Error\ErrorHandler;
 use DigiSecure\Kernel\Http\FlashBag;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -67,9 +68,8 @@ final class FichaController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int)$request->query('page', 1));
-        $limit = 25;
-        $busqueda = trim((string) $request->query('q', ''));
+        $paginacion = Paginacion::desdeRequest($request);
+        $busqueda = mb_substr(trim((string) $request->query('q', '')), 0, 120);
         $filters = [];
 
         if ($user->esAspiranteGuardia()) {
@@ -93,14 +93,8 @@ final class FichaController
 
         $listError = false;
         try {
-            $total = $this->fichaRepo->countGuardias($filters);
-            $totalPages = max(1, (int)ceil($total / $limit));
-            if ($page > $totalPages) {
-                $page = $totalPages;
-            }
-
-            $offset = ($page - 1) * $limit;
-            $guardias = $this->fichaRepo->listGuardias($limit, $offset, $filters);
+            $paginacion = $paginacion->conTotal($this->fichaRepo->countGuardias($filters));
+            $guardias = $this->fichaRepo->listGuardias($paginacion->limite(), $paginacion->offset(), $filters);
             foreach ($guardias as &$guardia) {
                 // Minimización (LOPDP): el listado muestra solo los últimos 4
                 // dígitos; la cédula completa queda en el detalle de la ficha.
@@ -113,23 +107,27 @@ final class FichaController
         } catch (\Throwable $e) {
             $this->errorHandler->report($e);
             $listError = true;
-            $total = 0;
-            $totalPages = 1;
-            $page = 1;
+            $paginacion = $paginacion->conTotal(0);
             $guardias = [];
         }
 
-        return $this->view->response('ficha/index', [
+        $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
             'guardias' => $guardias,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'paginacion' => $paginacion,
             'filters' => ['busqueda' => $busqueda],
             'listError' => $listError,
-        ]);
+        ];
+
+        // Busqueda y paginacion en vivo (ds-tabla-remota.js): solo la tabla,
+        // sin layout. SecurityHeadersMiddleware ya marca la respuesta no-store.
+        if ($request->header('X-Partial') === 'guardias') {
+            return Response::html($this->view->render('ficha/_listado', $data));
+        }
+
+        return $this->view->response('ficha/index', $data);
     }
 
     public function historial(Request $request, CsrfGuard $csrf, string $id): Response

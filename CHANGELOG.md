@@ -4,6 +4,58 @@ Estado actual: **Phase 18.1** · 37 migraciones · 122/122 tests verdes (PHP 8.3
 
 ---
 
+## Listados: búsqueda en todas las páginas, "Mostrar … / Todos" y paginación en vivo en todas las tablas (2026-11-23)
+
+Lo que se hizo en Guardias se extiende a los 12 listados paginados: Guardias, Clientes, Puestos, Asignaciones, Reclutamiento, Expedientes (y Pendientes), Usuarios, Auditoría, Notificaciones y LOPDP (Solicitudes, Aceptaciones y Consentimientos).
+
+- **Encabezado de cada listado:** buscador que consulta al servidor mientras se escribe, así que encuentra en **todas** las páginas, y selector **Mostrar 10 / 25 / 50 / 100 / Todos**. "Todos" tiene un tope de seguridad de 5000 filas. Si se supera, el rango lo indica ("Mostrando 1–5000 de 7000") y aparece otra página. Auditoría probó "Todos" con 2491 eventos.
+- **Los filtros propios** (estado, cliente, tipo, fechas…) siguen en su tarjeta, se aplican al cambiar sin pulsar "Buscar" y se combinan con la búsqueda. "Limpiar" restablece todo sin recargar. La URL refleja búsqueda, filtros, cantidad y página: recargar, compartir y Atrás funcionan.
+- **Pie común:** "Mostrando 11–20 de 50" y paginación compacta (1 … 4 5 6 … 12) con botones de 40 px en el celular.
+- **Búsqueda por palabras en todos los repositorios** (`Persistence\BusquedaTexto`): cada palabra debe aparecer en alguna columna, sin distinguir tildes ni mayúsculas, y los `%`/`_` se buscan literalmente. **Auditoría, Notificaciones, Consentimientos y Usuarios no tenían búsqueda de texto**; ahora la tienen, y Usuarios además pasa a estar paginado. Varios listados buscan en más columnas que antes: ciudad y sector en Clientes, celular en Reclutamiento, código del puesto en Asignaciones, etc.
+- **Piezas reutilizables:** `Kernel\Http\Paginacion` (con tests), `partials/tabla-toolbar.php`, `partials/paginacion.php`, `partials/sin-resultados.php` y `partials/filtro-local.php`. `ds-tabla-remota.js` ahora combina el buscador con los filtros de la tarjeta (`data-tabla-filtros`) y mantiene al día los enlaces de exportación (`data-exportar-de`): el CSV de Auditoría exporta lo que se está viendo. Cada controlador devuelve solo `<modulo>/_listado.php` cuando recibe `X-Partial`.
+- **Catálogos sin paginar** (Tipos de documento, Instituciones financieras, Roles e Historial de fichas): buscador instantáneo en el encabezado. Instituciones pierde su tarjeta "Buscar", que hacía lo mismo recargando la página.
+- **Celular:** el campo de búsqueda solo reserva espacio para la X y el contador cuando se muestran, así el texto de ayuda cabe completo en los 14 listados. La columna "Orden" ya no se usa como título de la tarjeta.
+- **Arreglos encontrados de paso:**
+  - Consentimientos: el diálogo de revocar insertaba el titular y el propósito como HTML sin escapar (riesgo XSS). Ahora se escapan y el envío funciona también en filas cargadas al buscar.
+  - El bloque "Política de Privacidad" se desbordaba en el celular.
+  - Expedientes y Pendientes duplicaban el mismo listado en el controlador; ahora lo comparten.
+  - `UserRepository` pierde `listGlobalOrderedByTenant`/`countGlobal`, que no se usaban desde "solo GEMESEG".
+- Tests: 133 (11 nuevos para `Paginacion` y `BusquedaTexto`).
+
+---
+
+## Guardias: búsqueda en vivo en todas las páginas y registros por página (2026-11-23)
+
+- **Busca en todos los guardias**, no solo en la página visible. Al escribir (300 ms sin teclear) se consulta al servidor y la tabla se reemplaza sin recargar. El subtítulo ("3 guardias encontrados") y el contador del buscador se actualizan.
+- **Selector "Mostrar 10 / 25 / 50 / 100"** en el encabezado, junto al buscador. El servidor valida `por_pagina` (valor inválido → 25).
+- **Búsqueda por palabras:** cada palabra debe aparecer en apellidos, nombres, correo o celular, así "paladines nixon" (apellido + nombre) encuentra a la persona; antes daba 0. Los `%` y `_` escritos se buscan literalmente. La cédula se busca completa por su índice ciego. La condición vive en `FichaRepository::filtroGuardias()`, que comparten el listado y el conteo; antes estaba duplicada.
+- **Paginación** con ventana compacta (1 … 3 4 5 … 12), "Mostrando 11–20 de 37", botones de 40 px en el celular y sin recargar.
+- **URL compartible:** la dirección refleja búsqueda, cantidad y página. Recargar, compartir y el botón Atrás funcionan.
+- **Componente reutilizable:** `public/assets/js/ds-tabla-remota.js` + `<form data-tabla-remota="#destino" data-parcial="...">`. El controlador devuelve solo `ficha/_listado.php` (≈3 KB en vez de 68 KB) cuando recibe `X-Partial: guardias`. Descarta respuestas viejas al escribir rápido y, si la sesión vence o hay un error, navega normal. Sin JavaScript funciona como formulario GET.
+- Se quita la tarjeta "Buscar" que estaba sobre la tabla: el buscador del encabezado la reemplaza. También salen de `ficha/index.php` las ramas de "modo aspirante", que no se usaban porque el controlador redirige al aspirante a su ficha.
+
+---
+
+## Clientes: buscador dinámico en el listado (2026-11-23)
+
+- En el encabezado "Listado de clientes", a la derecha, hay un buscador que filtra la tabla mientras se escribe, sin recargar. Ignora tildes y mayúsculas ("fundacion" encuentra "FUNDACIÓN") y exige todas las palabras ("coordinacion riesgos"). No busca en los botones, así que "ver" no coincide con todas las filas. Muestra el conteo "1 de 8", un mensaje cuando no hay coincidencias y se limpia con la X o con Esc.
+- Es un componente reutilizable, `public/assets/js/ds-filtro-tabla.js`, que se activa con `<input data-filtro-tabla="#idTabla" data-filtro-contador="#idConteo">`. Lo carga el layout, así que llevarlo a otro listado no necesita más JS.
+- Filtra solo las filas cargadas. Con más de una página (25 clientes), el texto de ayuda dice "Buscar en esta página...". La búsqueda del servidor sigue en "Filtros".
+- En el celular, el buscador ocupa todo el ancho bajo el título, con letra de 16 px para que iOS no acerque la pantalla al enfocar. Los títulos de tarjeta ya no se separan de su ícono.
+- **Puestos** usa el mismo buscador ("Listado de puestos"): busca por nombre, código, ciudad, cliente, tipo, modalidad y estado. Sus botones "Ver" y "Editar" llevan ícono en el celular, igual que en Clientes.
+- **Guardias** ("Listado de guardias") también lo tiene, salvo en modo aspirante. Son 37 guardias en 2 páginas, así que el componente admite `data-filtro-servidor="/guardias?q="`: al escribir filtra la página al instante, **Enter** busca en todos los guardias y, si en la página no hay coincidencias, el aviso ofrece *Buscar "…" en todos los registros*. "Ver fichas" lleva ícono en el celular.
+
+---
+
+## Acciones de los listados en una sola fila (2026-11-23)
+
+- **Escritorio:** en Clientes, "Ver" y "Editar" se apilaban en dos filas porque `.ds-row-actions` permitía saltos de línea y la columna quedaba angosta. Ahora las acciones nunca se apilan y la columna se ajusta al ancho de sus botones. Aplica a los 20 listados.
+- **Acciones siempre a la vista:** en tablet y escritorio, la columna de acciones queda fija a la derecha (`position: sticky`). En una laptop de 1366 px, Guardias, Reclutamiento, Usuarios y Tipos de documento son más anchos que su tarjeta y antes escondían los botones detrás del desplazamiento horizontal.
+- **Celular:** las acciones ocupan todo el ancho de la tarjeta en una fila, con 40 px de alto, y cada botón crece según su texto. Los íconos solo se muestran en el celular. Con 3 o más acciones se ocultan los íconos y se reduce la letra, para que "Validar documentos" o "Sin expediente" no se corten.
+- Clientes: íconos de ver y editar, y `aria-label` con el nombre del cliente.
+
+---
+
 ## Interfaz optimizada para celular (2026-11-23)
 
 Se revisaron 44 vistas a 390 px de ancho (superadmin y aspirante). Al terminar, ninguna desborda ni recorta contenido, y la consola queda sin errores.

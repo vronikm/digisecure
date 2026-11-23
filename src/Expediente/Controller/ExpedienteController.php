@@ -12,6 +12,7 @@ use DigiSecure\Expediente\Domain\Enum\EstadoExpediente;
 use DigiSecure\Expediente\Infrastructure\ExpedienteRepository;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Kernel\Http\FlashBag;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -119,65 +120,55 @@ final class ExpedienteController
 
     public function index(Request $request, CsrfGuard $csrf): Response
     {
-        /** @var AuthenticatedUser $user */
-        $user = $request->attribute('auth_user');
-
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
-        $offset = ($page - 1) * $limit;
-
         $filters = array_filter([
             'estado' => $request->query('estado'),
-            'busqueda' => $request->query('q'),
+            'busqueda' => trim((string) $request->query('q', '')),
         ]);
 
-        $expedientes = $this->expRepo->listExpedientes($limit, $offset, $filters);
-        $total = $this->expRepo->countExpedientes($filters);
-        $totalPages = (int) ceil($total / $limit);
-
-        return $this->view->response('expediente/index', [
-            'user' => $user,
-            'csrfToken' => $csrf->token(),
-            'currentPath' => $request->path,
-            'expedientes' => $expedientes,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'filters' => $filters,
-            'mostrarBloqueB' => $this->puedeVerBloqueB($user),
-        ]);
+        return $this->listado($request, $csrf, $filters, '/expedientes', null);
     }
 
     public function pendientes(Request $request, CsrfGuard $csrf): Response
     {
+        $filters = array_filter([
+            'estado' => EstadoExpediente::INCOMPLETO->value,
+            'busqueda' => trim((string) $request->query('q', '')),
+        ]);
+
+        return $this->listado($request, $csrf, $filters, '/expedientes/pendientes', 'Expedientes Pendientes');
+    }
+
+    /**
+     * Listado comun de /expedientes y /expedientes/pendientes, con busqueda,
+     * filtros y paginacion en vivo (ds-tabla-remota.js).
+     *
+     * @param array<string, mixed> $filters
+     */
+    private function listado(Request $request, CsrfGuard $csrf, array $filters, string $ruta, ?string $titulo): Response
+    {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
-        $offset = ($page - 1) * $limit;
-
-        $filters = ['estado' => EstadoExpediente::INCOMPLETO->value];
-        if ($request->query('q')) {
-            $filters['busqueda'] = $request->query('q');
-        }
-
-        $expedientes = $this->expRepo->listExpedientes($limit, $offset, $filters);
-        $total = $this->expRepo->countExpedientes($filters);
-        $totalPages = (int) ceil($total / $limit);
-
-        return $this->view->response('expediente/index', [
+        $paginacion = Paginacion::desdeRequest($request)->conTotal($this->expRepo->countExpedientes($filters));
+        $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
-            'expedientes' => $expedientes,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'ruta' => $ruta,
+            'expedientes' => $this->expRepo->listExpedientes($paginacion->limite(), $paginacion->offset(), $filters),
+            'paginacion' => $paginacion,
             'filters' => $filters,
-            'titulo' => 'Expedientes Pendientes',
             'mostrarBloqueB' => $this->puedeVerBloqueB($user),
-        ]);
+        ];
+        if ($titulo !== null) {
+            $data['titulo'] = $titulo;
+        }
+
+        if ($request->header('X-Partial') === 'expedientes') {
+            return Response::html($this->view->render('expediente/_listado', $data));
+        }
+
+        return $this->view->response('expediente/index', $data);
     }
 
     // ======================== DASHBOARD EXPEDIENTE ========================

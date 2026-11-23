@@ -125,6 +125,14 @@ $e = ViewRenderer::e(...);
             <div class="ds-card-title">Listado de tipos de documento</div>
             <div class="ds-card-subtitle">Configuracion documental por bloque, vigencia y estado</div>
         </div>
+        <?php if (!empty($tipos)): ?>
+        <?= $view->include('partials/filtro-local', [
+            'id' => 'filtroTiposDocumento',
+            'tabla' => '#tablaTiposDocumento',
+            'placeholder' => 'Buscar documento...',
+            'ayuda' => 'Buscar tipos de documento por codigo, nombre, bloque u origen',
+        ]) ?>
+        <?php endif ?>
     </div>
 
     <?php if (empty($tipos)): ?>
@@ -137,7 +145,7 @@ $e = ViewRenderer::e(...);
     </div>
     <?php else: ?>
     <div class="table-responsive">
-        <table class="ds-table">
+        <table class="ds-table" id="tablaTiposDocumento">
             <thead>
                 <tr>
                     <th style="width:50px">#</th>

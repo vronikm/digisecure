@@ -6,6 +6,7 @@ namespace DigiSecure\User\Controller;
 
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Kernel\Http\FlashBag;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -52,22 +53,28 @@ final class UserController
 
         $estado = $request->query('estado');
         $estadoFiltro = is_string($estado) && $estado !== '' ? $estado : null;
+        $busqueda = trim((string) $request->query('q', ''));
 
-        $total = $this->repo->countByTenant($estadoFiltro);
-        $usuarios = $this->repo->listByTenant(max(1, $total), 0, $estadoFiltro);
-        $rolesByUser = $this->loadRolesByUserIds(array_column($usuarios, 'id'));
+        $paginacion = Paginacion::desdeRequest($request)
+            ->conTotal($this->repo->countByTenant($estadoFiltro, $busqueda));
+        $usuarios = $this->repo->listByTenant($paginacion->limite(), $paginacion->offset(), $estadoFiltro, $busqueda);
 
-        return $this->view->response('user/index', [
+        $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
             'usuarios' => $usuarios,
-            'rolesByUser' => $rolesByUser,
-            'total' => $total,
-            'page' => 1,
-            'totalPages' => 1,
-            'filters' => ['estado' => $estadoFiltro],
-        ]);
+            'rolesByUser' => $this->loadRolesByUserIds(array_column($usuarios, 'id')),
+            'paginacion' => $paginacion,
+            'filters' => ['estado' => $estadoFiltro, 'q' => $busqueda],
+        ];
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'usuarios') {
+            return Response::html($this->view->render('user/_listado', $data));
+        }
+
+        return $this->view->response('user/index', $data);
     }
 
     public function create(Request $request, CsrfGuard $csrf): Response

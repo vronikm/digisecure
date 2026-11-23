@@ -8,6 +8,7 @@ use DigiSecure\Cliente\Application\GestionarClientesService;
 use DigiSecure\Cliente\Infrastructure\ClienteRepository;
 use DigiSecure\Kernel\Http\FlashBag;
 use DigiSecure\Puesto\Infrastructure\PuestoRepository;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -43,31 +44,28 @@ final class ClienteController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
-        $offset = ($page - 1) * $limit;
-
         $filters = [
-            'q' => $request->query('q'),
+            'q' => trim((string) $request->query('q', '')),
             'estado' => $request->query('estado'),
         ];
 
-        $clientes = $this->repo->listar($filters, $limit, $offset);
-        $total = $this->repo->contar($filters);
-        $totalPages = max(1, (int) ceil($total / $limit));
-        $kpis = $this->repo->kpis();
-
-        return $this->view->response('clientes/index', [
+        $paginacion = Paginacion::desdeRequest($request)->conTotal($this->repo->contar($filters));
+        $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
-            'clientes' => $clientes,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'clientes' => $this->repo->listar($filters, $paginacion->limite(), $paginacion->offset()),
+            'paginacion' => $paginacion,
             'filters' => $filters,
-            'kpis' => $kpis,
-        ]);
+        ];
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'clientes') {
+            return Response::html($this->view->render('clientes/_listado', $data));
+        }
+
+        $data['kpis'] = $this->repo->kpis();
+        return $this->view->response('clientes/index', $data);
     }
 
     public function create(Request $request, CsrfGuard $csrf): Response

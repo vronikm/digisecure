@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Security\Audit\Controller;
 
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -30,32 +31,23 @@ final class AuditoriaController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 50;
-        $offset = ($page - 1) * $limit;
-
-        $filters = array_filter([
-            'evento' => $request->query('evento'),
-            'nivel' => $request->query('nivel'),
-            'usuario_id' => $request->query('usuario_id'),
-            'entidad_tipo' => $request->query('entidad_tipo'),
-            'desde' => $request->query('desde'),
-            'hasta' => $request->query('hasta'),
-        ], static fn($v) => $v !== null && $v !== '');
-
-        $eventos = $this->repo->listByTenant($filters, $limit, $offset);
-        $total = $this->repo->countByTenant($filters);
-        $totalPages = max(1, (int) ceil($total / $limit));
-
-        return $this->view->response('auditoria/index', [
+        $filters = $this->filtros($request);
+        $paginacion = Paginacion::desdeRequest($request, 50)->conTotal($this->repo->countByTenant($filters));
+        $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
-            'eventos' => $eventos,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'eventos' => $this->repo->listByTenant($filters, $paginacion->limite(), $paginacion->offset()),
+            'paginacion' => $paginacion,
             'filters' => $filters,
+        ];
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'auditoria') {
+            return Response::html($this->view->render('auditoria/_listado', $data));
+        }
+
+        return $this->view->response('auditoria/index', $data + [
             'eventosDisponibles' => $this->repo->distinctEventos(),
         ]);
     }
@@ -65,15 +57,7 @@ final class AuditoriaController
      */
     public function exportar(Request $request): Response
     {
-        $filters = array_filter([
-            'evento' => $request->query('evento'),
-            'nivel' => $request->query('nivel'),
-            'usuario_id' => $request->query('usuario_id'),
-            'entidad_tipo' => $request->query('entidad_tipo'),
-            'desde' => $request->query('desde'),
-            'hasta' => $request->query('hasta'),
-        ], static fn($v) => $v !== null && $v !== '');
-
+        $filters = $this->filtros($request);
         $rows = $this->repo->exportByTenant($filters);
 
         $csv = $this->buildCsv($rows);
@@ -88,6 +72,24 @@ final class AuditoriaController
                 'Cache-Control' => 'no-store',
             ],
         );
+    }
+
+    /**
+     * Filtros comunes del listado y del CSV (asi la exportacion respeta la busqueda).
+     *
+     * @return array<string, string>
+     */
+    private function filtros(Request $request): array
+    {
+        return array_filter([
+            'q' => trim((string) $request->query('q', '')),
+            'evento' => (string) $request->query('evento', ''),
+            'nivel' => (string) $request->query('nivel', ''),
+            'usuario_id' => (string) $request->query('usuario_id', ''),
+            'entidad_tipo' => (string) $request->query('entidad_tipo', ''),
+            'desde' => (string) $request->query('desde', ''),
+            'hasta' => (string) $request->query('hasta', ''),
+        ], static fn(string $v): bool => $v !== '');
     }
 
     /**

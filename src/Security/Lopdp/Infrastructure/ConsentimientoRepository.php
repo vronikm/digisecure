@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\Security\Lopdp\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Shared\Infrastructure\Clock;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
@@ -154,7 +155,7 @@ final class ConsentimientoRepository extends BaseRepository
      *  - desde: YYYY-MM-DD (fecha aceptación)
      *  - hasta: YYYY-MM-DD (fecha aceptación)
      *
-     * @param array{estado?: string, desde?: string, hasta?: string} $filters
+     * @param array{q?: string, estado?: string, desde?: string, hasta?: string} $filters
      * @return list<array<string, mixed>>
      */
     public function listarFiltrados(int $limit = 25, int $offset = 0, array $filters = []): array
@@ -178,7 +179,7 @@ final class ConsentimientoRepository extends BaseRepository
     /**
      * Cuenta consentimientos con filtros opcionales.
      *
-     * @param array{estado?: string, desde?: string, hasta?: string} $filters
+     * @param array{q?: string, estado?: string, desde?: string, hasta?: string} $filters
      */
     public function contarFiltrados(array $filters = []): int
     {
@@ -189,7 +190,7 @@ final class ConsentimientoRepository extends BaseRepository
     }
 
     /**
-     * @param array{estado?: string, desde?: string, hasta?: string} $filters
+     * @param array{q?: string, estado?: string, desde?: string, hasta?: string} $filters
      * @param array<string, scalar|null> $bindings
      */
     private function buildFilteredWhere(array $filters, array &$bindings): string
@@ -215,6 +216,16 @@ final class ConsentimientoRepository extends BaseRepository
         if ($hasta !== '') {
             $conditions[] = 'DATE(aceptado_at) <= :hasta';
             $bindings['hasta'] = $hasta;
+        }
+
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            (string) ($filters['q'] ?? ''),
+            ['proposito', 'titular_tipo', 'titular_id'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $conditions[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         return implode(' AND ', $conditions);

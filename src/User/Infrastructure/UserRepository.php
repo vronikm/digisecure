@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\User\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Shared\Infrastructure\Clock;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
@@ -23,8 +24,7 @@ final class UserRepository extends BaseRepository
      * Excluye a los superadministradores del sistema (rol global 'superadmin')
      * de las consultas por empresa: la cuenta superadmin vive dentro del tenant
      * operativo (GEMESEG) y un administrador de la empresa no debe verla,
-     * editarla, bloquearla ni resetear su clave. El superadmin usa las
-     * consultas globales (listGlobalOrderedByTenant, countGlobal).
+     * editarla, bloquearla ni resetear su clave.
      */
     private const SIN_SUPERADMIN = "NOT EXISTS (
             SELECT 1 FROM usuarios_roles ur_sa
@@ -90,24 +90,18 @@ final class UserRepository extends BaseRepository
     }
 
     /**
-     * Lista usuarios del tenant con paginación.
+     * Lista usuarios del tenant con paginacion, filtro de estado y busqueda.
      *
      * @return list<array<string, mixed>>
      */
-    public function listByTenant(int $limit = 50, int $offset = 0, ?string $estado = null): array
+    public function listByTenant(int $limit = 50, int $offset = 0, ?string $estado = null, ?string $busqueda = null): array
     {
-        $where = self::SIN_SUPERADMIN;
-        $bindings = [];
-
-        if ($estado !== null) {
-            $where .= ' AND estado = :estado';
-            $bindings['estado'] = $estado;
-        }
+        [$where, $bindings] = $this->filtroListado($estado, $busqueda);
 
         $sql = "SELECT id, email, nombres, apellidos, cargo, estado, ultimo_login_at, created_at
                 FROM usuarios
-                WHERE {$where}";
-        $sql .= ' ORDER BY apellidos, nombres LIMIT :limit OFFSET :offset';
+                WHERE {$where}
+                ORDER BY apellidos, nombres LIMIT :limit OFFSET :offset";
         $bindings['limit'] = $limit;
         $bindings['offset'] = $offset;
 
@@ -115,61 +109,38 @@ final class UserRepository extends BaseRepository
     }
 
     /**
-     * Lista usuarios globales (cross-tenant), ordenados por tenant.
-     * Uso exclusivo para vistas de Super Administrador.
-     *
-     * @return list<array<string, mixed>>
+     * Cuenta usuarios del tenant con los mismos filtros del listado.
      */
-    public function listGlobalOrderedByTenant(int $limit = 50, int $offset = 0, ?string $estado = null): array
+    public function countByTenant(?string $estado = null, ?string $busqueda = null): int
     {
-        $where = '';
-        $bindings = [];
-
-        if ($estado !== null) {
-            $where = 'estado = :estado';
-            $bindings['estado'] = $estado;
-        }
-
-        $sql = 'SELECT id, tenant_id, email, nombres, apellidos, cargo, estado, ultimo_login_at, created_at
-                FROM usuarios';
-        if ($where !== '') {
-            $sql .= " WHERE {$where}";
-        }
-        $sql .= ' ORDER BY tenant_id ASC, apellidos ASC, nombres ASC LIMIT :limit OFFSET :offset';
-        $bindings['limit'] = $limit;
-        $bindings['offset'] = $offset;
-
-        return $this->db->fetchAll($sql, $bindings);
-    }
-
-    /**
-     * Cuenta usuarios del tenant.
-     */
-    public function countByTenant(?string $estado = null): int
-    {
-        $where = self::SIN_SUPERADMIN;
-        $bindings = [];
-        if ($estado !== null) {
-            $where .= ' AND estado = :estado';
-            $bindings['estado'] = $estado;
-        }
+        [$where, $bindings] = $this->filtroListado($estado, $busqueda);
         return $this->tenantCount($where, $bindings);
     }
 
     /**
-     * Cuenta usuarios globales (cross-tenant).
-     * Uso exclusivo para vistas de Super Administrador.
+     * WHERE comun del listado y del conteo (sin la cuenta superadmin).
+     *
+     * @return array{0: string, 1: array<string, string>}
      */
-    public function countGlobal(?string $estado = null): int
+    private function filtroListado(?string $estado, ?string $busqueda): array
     {
-        if ($estado === null) {
-            return (int) $this->db->fetchScalar('SELECT COUNT(*) FROM usuarios');
+        $where = self::SIN_SUPERADMIN;
+        $bindings = [];
+        if ($estado !== null && $estado !== '') {
+            $where .= ' AND estado = :estado';
+            $bindings['estado'] = $estado;
+        }
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            $busqueda,
+            ['nombres', 'apellidos', 'email', 'cargo', 'telefono'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $where .= ' AND ' . $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
-        return (int) $this->db->fetchScalar(
-            'SELECT COUNT(*) FROM usuarios WHERE estado = :estado',
-            ['estado' => $estado],
-        );
+        return [$where, $bindings];
     }
 
     /**

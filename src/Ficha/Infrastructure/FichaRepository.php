@@ -6,6 +6,7 @@ namespace DigiSecure\Ficha\Infrastructure;
 
 use DigiSecure\Ficha\Domain\Enum\EstadoFicha;
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Shared\Infrastructure\Clock;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
@@ -197,35 +198,8 @@ final class FichaRepository extends BaseRepository
             'off' => $offset,
         ];
 
-        $conditions = ["f.estado <> 'ANULADA'"];
-        $hasBusqueda = !empty($filters['busqueda']);
-        $hasCedulaHash = !empty($filters['cedula_hash']);
-
-        if ($hasBusqueda) {
-            $busq = '%' . $filters['busqueda'] . '%';
-            $bindings['busq'] = $busq;
-            $bindings['busq2'] = $busq;
-            $bindings['busq3'] = $busq;
-            $bindings['busq4'] = $busq;
-        }
-        if ($hasCedulaHash) {
-            $bindings['cedula_hash'] = (string) $filters['cedula_hash'];
-        }
-
-        if ($hasBusqueda && $hasCedulaHash) {
-            // Si el usuario busca por cedula, no forzamos un AND con filtros textuales:
-            // debe coincidir por texto O por hash de cedula.
-            $conditions[] = '((f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.email LIKE :busq3 OR f.celular LIKE :busq4) OR f.cedula_hash = :cedula_hash)';
-        } elseif ($hasBusqueda) {
-            $conditions[] = '(f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.email LIKE :busq3 OR f.celular LIKE :busq4)';
-        } elseif ($hasCedulaHash) {
-            $conditions[] = 'f.cedula_hash = :cedula_hash';
-        }
-
-        $tenantId = $this->tenantContext->requireTenantId();
-        $bindings['__tenant_id'] = $tenantId;
-
-        $where = 'WHERE f.tenant_id = :__tenant_id AND ' . implode(' AND ', $conditions);
+        [$where, $filtroBindings] = $this->filtroGuardias($filters);
+        $bindings += $filtroBindings;
 
         // Prioriza la ficha COMPLETA y luego la mas reciente para no mezclar
         // datos de fichas antiguas del mismo documento.
@@ -284,32 +258,7 @@ final class FichaRepository extends BaseRepository
      */
     public function countGuardias(array $filters = []): int
     {
-        $bindings = [];
-        $conditions = ["f.estado <> 'ANULADA'"];
-        $hasBusqueda = !empty($filters['busqueda']);
-        $hasCedulaHash = !empty($filters['cedula_hash']);
-
-        if ($hasBusqueda) {
-            $busq = '%' . $filters['busqueda'] . '%';
-            $bindings['busq'] = $busq;
-            $bindings['busq2'] = $busq;
-            $bindings['busq3'] = $busq;
-            $bindings['busq4'] = $busq;
-        }
-        if ($hasCedulaHash) {
-            $bindings['cedula_hash'] = (string) $filters['cedula_hash'];
-        }
-
-        if ($hasBusqueda && $hasCedulaHash) {
-            $conditions[] = '((f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.email LIKE :busq3 OR f.celular LIKE :busq4) OR f.cedula_hash = :cedula_hash)';
-        } elseif ($hasBusqueda) {
-            $conditions[] = '(f.apellidos LIKE :busq OR f.nombres LIKE :busq2 OR f.email LIKE :busq3 OR f.celular LIKE :busq4)';
-        } elseif ($hasCedulaHash) {
-            $conditions[] = 'f.cedula_hash = :cedula_hash';
-        }
-
-        $bindings['__tenant_id'] = $this->tenantContext->requireTenantId();
-        $where = 'WHERE f.tenant_id = :__tenant_id AND ' . implode(' AND ', $conditions);
+        [$where, $bindings] = $this->filtroGuardias($filters);
         $personaKey = "COALESCE(NULLIF(f.cedula_hash, ''), f.id)";
 
         $sql = "SELECT COUNT(*) FROM (
@@ -321,6 +270,48 @@ final class FichaRepository extends BaseRepository
 
         $result = $this->db->fetchScalar($sql, $bindings);
         return (int) $result;
+    }
+
+    /**
+     * WHERE comun del listado y del conteo de guardias (unica fuente de verdad).
+     *
+     * - busqueda: se divide en palabras y CADA una debe aparecer en apellidos,
+     *   nombres, correo o celular ("paladines nixon" encuentra apellido + nombre).
+     *   La collation utf8mb4_unicode_ci ignora tildes y mayusculas. Los comodines
+     *   % y _ escritos por el usuario se buscan literalmente.
+     * - cedula_hash: la cedula esta cifrada; solo se busca completa (10 digitos)
+     *   por su indice ciego, como alternativa (OR) a la busqueda por texto.
+     *
+     * @param array<string, mixed> $filters
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private function filtroGuardias(array $filters): array
+    {
+        $bindings = ['__tenant_id' => $this->tenantContext->requireTenantId()];
+        $conditions = ["f.estado <> 'ANULADA'"];
+
+        [$textoSql, $textoBindings] = BusquedaTexto::condicion(
+            (string) ($filters['busqueda'] ?? ''),
+            ['f.apellidos', 'f.nombres', 'f.email', 'f.celular'],
+            't',
+        );
+        $bindings += $textoBindings;
+
+        $cedulaSql = null;
+        if (!empty($filters['cedula_hash'])) {
+            $bindings['cedula_hash'] = (string) $filters['cedula_hash'];
+            $cedulaSql = 'f.cedula_hash = :cedula_hash';
+        }
+
+        if ($textoSql !== null && $cedulaSql !== null) {
+            $conditions[] = "({$textoSql} OR {$cedulaSql})";
+        } elseif ($textoSql !== null) {
+            $conditions[] = $textoSql;
+        } elseif ($cedulaSql !== null) {
+            $conditions[] = $cedulaSql;
+        }
+
+        return ['WHERE f.tenant_id = :__tenant_id AND ' . implode(' AND ', $conditions), $bindings];
     }
 
     /**

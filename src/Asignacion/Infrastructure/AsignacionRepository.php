@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\Asignacion\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 
 /**
  * Repositorio de la tabla `asignaciones` (tenant-aware).
@@ -297,14 +298,14 @@ final class AsignacionRepository extends BaseRepository
             $where[] = 'p.cliente_id = :cliente_id';
             $bindings['cliente_id'] = (string) $filters['cliente_id'];
         }
-        if (!empty($filters['q'])) {
-            $where[] = '(f.apellidos LIKE :q_apellidos OR f.nombres LIKE :q_nombres OR f.correlativo LIKE :q_correlativo OR p.nombre LIKE :q_puesto OR c.razon_social LIKE :q_cliente)';
-            $q = '%' . (string) $filters['q'] . '%';
-            $bindings['q_apellidos'] = $q;
-            $bindings['q_nombres'] = $q;
-            $bindings['q_correlativo'] = $q;
-            $bindings['q_puesto'] = $q;
-            $bindings['q_cliente'] = $q;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            (string) ($filters['q'] ?? ''),
+            ['f.apellidos', 'f.nombres', 'f.correlativo', 'p.nombre', 'p.codigo', 'c.razon_social', 'c.nombre_comercial'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $where[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         return [implode(' AND ', $where), $bindings];

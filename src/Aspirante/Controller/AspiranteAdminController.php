@@ -12,6 +12,7 @@ use DigiSecure\Aspirante\Infrastructure\VerificationMailer;
 use DigiSecure\Ficha\Infrastructure\CroquisStorage;
 use DigiSecure\Kernel\Config\Config;
 use DigiSecure\Kernel\Http\FlashBag;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -64,31 +65,29 @@ final class AspiranteAdminController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
-        $offset = ($page - 1) * $limit;
-
         $filters = [
-            'q'          => $request->query('q'),
+            'q'          => trim((string) $request->query('q', '')),
             'estado'     => $request->query('estado'),
             'verificado' => $request->query('verificado'),
         ];
 
-        $aspirantes = $this->repo->listarAdmin($filters, $limit, $offset);
-        $total = $this->repo->contarAdmin($filters);
-
-        return $this->view->response('reclutamiento/index', [
+        $paginacion = Paginacion::desdeRequest($request)->conTotal($this->repo->contarAdmin($filters));
+        $data = [
             'user'        => $user,
             'csrfToken'   => $csrf->token(),
             'currentPath' => $request->path,
-            'aspirantes'  => $aspirantes,
-            'total'       => $total,
-            'page'        => $page,
-            'totalPages'  => max(1, (int) ceil($total / $limit)),
+            'aspirantes'  => $this->repo->listarAdmin($filters, $paginacion->limite(), $paginacion->offset()),
+            'paginacion'  => $paginacion,
             'filters'     => $filters,
-            'kpis'        => $this->repo->kpisAdmin(),
             'estadosEditables' => ActualizarAspiranteService::ESTADOS_EDITABLES,
-        ]);
+        ];
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'reclutamiento') {
+            return Response::html($this->view->render('reclutamiento/_listado', $data));
+        }
+
+        return $this->view->response('reclutamiento/index', $data + ['kpis' => $this->repo->kpisAdmin()]);
     }
 
     public function show(Request $request, CsrfGuard $csrf, string $id): Response

@@ -1635,13 +1635,173 @@ body.ds-menu-hidden .ds-brand-logo {
 }
 .ds-filter-bar .ds-filter-summary strong { color: var(--ds-text); }
 
-/* Acciones por fila — agrupador horizontal de iconos */
+/* Filtro dinamico en el encabezado de una tabla (ds-filtro-tabla.js) */
+.ds-table-filter {
+    position: relative;
+    margin-left: auto;
+    flex: 0 1 280px;
+    min-width: 200px;
+}
+.ds-table-filter > .bi-search {
+    position: absolute;
+    left: .8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ds-text-soft);
+    font-size: .9rem;
+    pointer-events: none;
+}
+.ds-table-filter > input {
+    width: 100%;
+    height: 40px;
+    padding: .45rem .8rem .45rem 2.2rem;
+    border-radius: 12px;
+    background: #fff;
+    font-size: .86rem;
+}
+.ds-table-filter > input:focus {
+    border-color: #6f42c1;
+    box-shadow: 0 0 0 .2rem rgba(111, 66, 193, .14);
+    outline: none;
+}
+/* Sin la "X" nativa (solo Chrome y en otra posicion): se usa .ds-table-filter-clear. */
+.ds-table-filter > input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+.ds-table-filter-clear {
+    position: absolute;
+    right: .35rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ds-text-soft);
+    cursor: pointer;
+}
+.ds-table-filter-clear:hover,
+.ds-table-filter-clear:focus-visible { background: #f1f5f9; color: var(--ds-text); outline: none; }
+.ds-table-filter-clear[hidden] { display: none; }
+/* El espacio para la X y el contador se reserva solo cuando se muestran:
+ * en celular el texto de ayuda dispone de todo el ancho del campo. */
+.ds-table-filter:has(.ds-table-filter-clear:not([hidden])) > input { padding-right: 2.4rem; }
+.ds-table-filter:has(.ds-table-filter-count:not([hidden])) > input { padding-right: 4.9rem; }
+.ds-table-filter-count {
+    position: absolute;
+    right: 2.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: .1rem .45rem;
+    border-radius: 999px;
+    background: rgba(111, 66, 193, .1);
+    color: #6f42c1;
+    font-size: .7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+}
+.ds-table-filter-count[hidden] { display: none; }
+/* Barra del encabezado con busqueda en el servidor + registros por pagina
+ * (ds-tabla-remota.js; primer uso: listado de guardias). */
+.ds-table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0 0 0 auto;
+    flex: 0 1 440px;
+    min-width: 0;
+}
+.ds-table-toolbar .ds-table-filter { flex: 1 1 auto; margin-left: 0; min-width: 0; }
+.ds-per-page {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0;
+    flex: 0 0 auto;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--ds-text-soft);
+    white-space: nowrap;
+}
+.ds-per-page .form-select {
+    width: auto;
+    height: 40px;
+    min-width: 4.6rem;
+    padding: .35rem 1.9rem .35rem .7rem;
+    border-radius: 12px;
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--ds-text);
+    cursor: pointer;
+}
+.ds-per-page .form-select:focus {
+    border-color: #6f42c1;
+    box-shadow: 0 0 0 .2rem rgba(111, 66, 193, .14);
+    outline: none;
+}
+/* Mientras llega la respuesta del servidor */
+.ds-listado-wrap { position: relative; transition: opacity .15s ease; }
+.ds-listado-wrap.is-loading { opacity: .55; pointer-events: none; }
+.ds-listado-wrap.is-loading::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #6f42c1, transparent);
+    background-size: 40% 100%;
+    background-repeat: no-repeat;
+    animation: ds-cargando 1s linear infinite;
+}
+@keyframes ds-cargando { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+@media (prefers-reduced-motion: reduce) { .ds-listado-wrap.is-loading::after { animation: none; background: #6f42c1; } }
+.ds-listado-wrap tr.js-row-link { cursor: pointer; }
+.ds-listado-foot { flex-wrap: wrap; gap: .75rem; }
+.ds-listado-rango { font-size: .8rem; color: var(--ds-text-soft); }
+.ds-listado-rango strong { color: var(--ds-text); }
+.ds-pagination .ds-page.is-gap { border-color: transparent; background: transparent; cursor: default; }
+
+/* Filas ocultas por el filtro: en celular las filas son flex y anularian [hidden]. */
+.ds-table tbody tr[hidden] { display: none !important; }
+.ds-table tbody tr.ds-filtro-vacio td {
+    padding: 1.4rem 1rem;
+    text-align: center;
+    color: var(--ds-text-soft);
+    font-size: .86rem;
+    line-height: 1.7;
+}
+
+/* Acciones por fila: siempre en UNA fila. Con flex-wrap la columna quedaba
+ * angosta y "Ver" / "Editar" se apilaban en escritorio. La celda que las
+ * contiene se ajusta al ancho de sus botones (width: 1% + nowrap). */
 .ds-row-actions {
     display: inline-flex;
     gap: .35rem;
     align-items: center;
     justify-content: flex-end;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+}
+.ds-table td:has(> .ds-row-actions) {
+    width: 1%;
+    white-space: nowrap;
+}
+/* Tablet y escritorio: si la tabla es mas ancha que su tarjeta (Guardias,
+ * Reclutamiento, Usuarios, Tipos de documento en una laptop de 1366px), la
+ * columna de acciones queda fija a la derecha y siempre a la vista, en vez de
+ * esconderse detras del desplazamiento horizontal. */
+@media (min-width: 576px) {
+    .ds-table td:has(> .ds-row-actions),
+    .ds-table thead th:last-child.ds-cell-end {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+        background: #fff;
+        box-shadow: -10px 0 12px -12px rgba(9, 29, 53, .35);
+    }
+    .ds-table thead th:last-child.ds-cell-end { background: #f4f7fb; }
+    .ds-table tbody tr:hover td:has(> .ds-row-actions) { background: #f8fafc; }
 }
 .ds-table .ds-row-actions .ds-btn,
 .ds-table .ds-row-actions .btn {
@@ -1981,6 +2141,16 @@ a.ds-kpi-card:hover, a.ds-kpi-card:focus {
        a otra linea en vez de salirse de la tarjeta. */
     .ds-card-header { padding: .85rem .9rem; flex-wrap: wrap; row-gap: .6rem; }
     .ds-card-header > * { min-width: 0; }
+    .ds-card-header > .ds-table-filter,
+    .ds-card-header > .ds-table-toolbar { flex: 1 1 100%; margin-left: 0; }
+    .ds-per-page-label { display: none; } /* el selector se explica con su aria-label y title */
+    .ds-per-page .form-select { font-size: 16px; min-width: 0; width: 5.1rem; padding-left: .55rem; padding-right: 1.4rem; background-position: right .4rem center; } /* < 16px: iOS acerca la pantalla al enfocar */
+    .ds-listado-foot { flex-direction: column; align-items: center; text-align: center; }
+    .ds-listado-foot .ds-pagination { justify-content: center; }
+    .ds-listado-foot .ds-page { min-width: 40px; height: 40px; }
+    /* El titulo se queda al lado de su icono; solo el filtro baja de linea. */
+    .ds-card-header > .ds-card-mark + div { flex: 1 1 0; }
+    .ds-table-filter > input { font-size: 16px; } /* < 16px hace que iOS acerque la pantalla al enfocar */
     /* 13 encabezados de 9 vistas usan un div con flex en linea (titulo a la
        izquierda, botones o contador a la derecha) sin flex-wrap. */
     .ds-card-header div[style*="display: flex"],
@@ -2057,7 +2227,39 @@ a.ds-kpi-card:hover, a.ds-kpi-card:focus {
         border-top: 1px dashed #e3e9f1;
     }
     .ds-table.ds-table-stack tbody tr:not(.ds-row-full) > td:last-child:not(.ds-cell-title):has(.ds-row-actions, .ds-btn, .btn, form)::before { content: none; }
-    .ds-table.ds-table-stack .ds-row-actions { justify-content: flex-start; }
+    /* Acciones en celular: una sola fila que ocupa todo el ancho de la
+       tarjeta, botones del mismo ancho, con icono y 40px de alto (dedo). */
+    .ds-table.ds-table-stack td:has(> .ds-row-actions) { width: 100%; white-space: normal; }
+    .ds-table.ds-table-stack .ds-row-actions {
+        display: flex;
+        width: 100%;
+        gap: .5rem;
+        justify-content: stretch;
+    }
+    /* Cada boton crece segun su texto: "Validar documentos" necesita mas que "Editar". */
+    .ds-table.ds-table-stack .ds-row-actions > .ds-btn,
+    .ds-table.ds-table-stack .ds-row-actions > .btn,
+    .ds-table.ds-table-stack .ds-row-actions > form {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    /* Con 3 o mas acciones: sin icono y letra algo menor, para que quepan completas. */
+    .ds-table.ds-table-stack .ds-row-actions:has(> :nth-child(3)) { gap: .35rem; }
+    .ds-table.ds-table-stack .ds-row-actions:has(> :nth-child(3)) .ds-btn,
+    .ds-table.ds-table-stack .ds-row-actions:has(> :nth-child(3)) .btn { font-size: .76rem; padding-left: .45rem; padding-right: .45rem; }
+    .ds-table.ds-table-stack .ds-row-actions:has(> :nth-child(3)) i { display: none !important; }
+    .ds-table.ds-table-stack .ds-row-actions > form > .ds-btn,
+    .ds-table.ds-table-stack .ds-row-actions > form > .btn { width: 100%; }
+    .ds-table.ds-table-stack .ds-row-actions .ds-btn,
+    .ds-table.ds-table-stack .ds-row-actions .btn {
+        min-height: 40px;
+        justify-content: center;
+        gap: .4rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ds-table.ds-table-stack .ds-row-actions i { display: inline-block !important; }
 
     /* Filas de grupo y de "sin resultados" */
     .ds-table.ds-table-stack tbody tr.ds-row-full > td { padding: .2rem 0; }

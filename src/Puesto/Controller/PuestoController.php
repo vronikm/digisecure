@@ -6,6 +6,7 @@ namespace DigiSecure\Puesto\Controller;
 
 use DigiSecure\Asignacion\Infrastructure\AsignacionRepository;
 use DigiSecure\Kernel\Http\FlashBag;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -45,34 +46,31 @@ final class PuestoController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
-        $offset = ($page - 1) * $limit;
-
         $filters = [
-            'q' => $request->query('q'),
+            'q' => trim((string) $request->query('q', '')),
             'estado' => $request->query('estado'),
             'tipo' => $request->query('tipo'),
             'cliente_id' => $request->query('cliente_id'),
         ];
 
-        $puestos = $this->repo->listar($filters, $limit, $offset);
-        $total = $this->repo->contar($filters);
-        $totalPages = max(1, (int) ceil($total / $limit));
-        $kpis = $this->repo->kpis();
-        $clientes = $this->repo->clientesActivosParaSelect();
-
-        return $this->view->response('puestos/index', [
+        $paginacion = Paginacion::desdeRequest($request)->conTotal($this->repo->contar($filters));
+        $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
-            'puestos' => $puestos,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'puestos' => $this->repo->listar($filters, $paginacion->limite(), $paginacion->offset()),
+            'paginacion' => $paginacion,
             'filters' => $filters,
-            'kpis' => $kpis,
-            'clientes' => $clientes,
+        ];
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'puestos') {
+            return Response::html($this->view->render('puestos/_listado', $data));
+        }
+
+        return $this->view->response('puestos/index', $data + [
+            'kpis' => $this->repo->kpis(),
+            'clientes' => $this->repo->clientesActivosParaSelect(),
             'tiposPuesto' => TipoPuesto::cases(),
         ]);
     }

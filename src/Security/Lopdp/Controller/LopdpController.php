@@ -8,6 +8,7 @@ use DigiSecure\Aspirante\Infrastructure\AspiranteRepository;
 use DigiSecure\Ficha\Domain\ValueObject\Cedula;
 use DigiSecure\Ficha\Infrastructure\FichaRepository;
 use DigiSecure\Kernel\Http\FlashBag;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -76,8 +77,6 @@ final class LopdpController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
 
         $desde = $this->normalizeDate((string) $request->query('desde', ''));
         $hasta = $this->normalizeDate((string) $request->query('hasta', ''));
@@ -94,26 +93,23 @@ final class LopdpController
             'hasta' => $hasta,
         ], static fn($v) => $v !== null && $v !== '');
 
-        $total = $this->aspiranteRepo->contarAceptacionesPolitica($filters);
-        $totalPages = max(1, (int) ceil($total / $limit));
-        if ($page > $totalPages) {
-            $page = $totalPages;
-        }
-
-        $offset = ($page - 1) * $limit;
-        $aceptaciones = $this->aspiranteRepo->listarAceptacionesPolitica($filters, $limit, $offset);
-        $kpis = $this->aspiranteRepo->kpisAceptacionesPolitica($user->tenantId);
-
-        return $this->view->response('lopdp/aceptaciones/index', [
+        $paginacion = Paginacion::desdeRequest($request)->conTotal($this->aspiranteRepo->contarAceptacionesPolitica($filters));
+        $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
-            'aceptaciones' => $aceptaciones,
-            'kpis' => $kpis,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'aceptaciones' => $this->aspiranteRepo->listarAceptacionesPolitica($filters, $paginacion->limite(), $paginacion->offset()),
+            'paginacion' => $paginacion,
             'filters' => $filters,
+        ];
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'aceptaciones') {
+            return Response::html($this->view->render('lopdp/aceptaciones/_listado', $data));
+        }
+
+        return $this->view->response('lopdp/aceptaciones/index', $data + [
+            'kpis' => $this->aspiranteRepo->kpisAceptacionesPolitica($user->tenantId),
         ]);
     }
 
@@ -124,30 +120,27 @@ final class LopdpController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int)$request->query('page', 1));
-        $limit = 25;
-        $offset = ($page - 1) * $limit;
-
         $filters = array_filter([
-            'estado' => $request->query('estado'),
-            'tipo' => $request->query('tipo'),
-            'busqueda' => $request->query('q'),
-        ], static fn($v) => $v !== null && $v !== '');
+            'estado' => (string) $request->query('estado', ''),
+            'tipo' => (string) $request->query('tipo', ''),
+            'busqueda' => trim((string) $request->query('q', '')),
+        ], static fn(string $v): bool => $v !== '');
 
-        $solicitudes = $this->solicitudRepo->listar($limit, $offset, $filters);
-        $total = $this->solicitudRepo->contar($filters);
-        $totalPages = max(1, (int)ceil($total / $limit));
-
-        return $this->view->response('lopdp/solicitudes/index', [
+        $paginacion = Paginacion::desdeRequest($request)->conTotal($this->solicitudRepo->contar($filters));
+        $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
-            'solicitudes' => $solicitudes,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'solicitudes' => $this->solicitudRepo->listar($paginacion->limite(), $paginacion->offset(), $filters),
+            'paginacion' => $paginacion,
             'filters' => $filters,
-        ]);
+        ];
+
+        if ($request->header('X-Partial') === 'solicitudes') {
+            return Response::html($this->view->render('lopdp/solicitudes/_listado', $data));
+        }
+
+        return $this->view->response('lopdp/solicitudes/index', $data);
     }
 
     public function crearSolicitudForm(Request $request, CsrfGuard $csrf): Response
@@ -314,8 +307,6 @@ final class LopdpController
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
 
         $estado = $this->normalizeConsentStatus((string)($request->query('estado', '')));
         $desde = $this->normalizeDate((string)($request->query('desde', '')));
@@ -326,19 +317,25 @@ final class LopdpController
         }
 
         $filters = array_filter([
+            'q' => trim((string) $request->query('q', '')),
             'estado' => $estado,
             'desde' => $desde,
             'hasta' => $hasta,
         ], static fn($v) => $v !== null && $v !== '');
 
-        $total = $this->consentRepo->contarFiltrados($filters);
-        $totalPages = max(1, (int) ceil($total / $limit));
-        if ($page > $totalPages) {
-            $page = $totalPages;
+        $paginacion = Paginacion::desdeRequest($request)->conTotal($this->consentRepo->contarFiltrados($filters));
+        $consentimientos = $this->consentRepo->listarFiltrados($paginacion->limite(), $paginacion->offset(), $filters);
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'consentimientos') {
+            return Response::html($this->view->render('lopdp/consentimientos/_listado', [
+                'csrfToken' => $csrf->token(),
+                'consentimientos' => $consentimientos,
+                'paginacion' => $paginacion,
+                'filters' => $filters,
+            ]));
         }
 
-        $offset = ($page - 1) * $limit;
-        $consentimientos = $this->consentRepo->listarFiltrados($limit, $offset, $filters);
         $activos = $this->consentRepo->contarActivos();
 
         // Intentar localizar recursos asociados a la Política de Privacidad TDP
@@ -373,9 +370,7 @@ final class LopdpController
             'consentimientos' => $consentimientos,
             'activos' => $activos,
             'policyResources' => $policyResources,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'paginacion' => $paginacion,
             'filters' => $filters,
         ]);
     }

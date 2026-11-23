@@ -170,7 +170,7 @@ $normalizeMenuSearch = static function (array $parts): string {
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=22.0">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=22.5">
     <style>
         @keyframes dsMenuActivePulse {
             0% {
@@ -506,7 +506,9 @@ $normalizeMenuSearch = static function (array $parts): string {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="<?= $view->url('/assets/js/ds-menu-search.js') ?>?v=1.1" defer></script>
 <script src="<?= $view->url('/assets/js/ds-confirm.js') ?>?v=1.0"></script>
-<script src="<?= $view->url('/assets/js/ds-tablas-moviles.js') ?>?v=1.0" defer></script>
+<script src="<?= $view->url('/assets/js/ds-tablas-moviles.js') ?>?v=1.1" defer></script>
+<script src="<?= $view->url('/assets/js/ds-filtro-tabla.js') ?>?v=1.2" defer></script>
+<script src="<?= $view->url('/assets/js/ds-tabla-remota.js') ?>?v=1.1" defer></script>
 <script>
 (() => {
     const toasts = document.querySelectorAll('[data-ds-toast]');

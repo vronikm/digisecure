@@ -24,7 +24,7 @@
     }
 
     // Columnas que no sirven de titulo de la tarjeta: numeracion o sin nombre.
-    const NO_TITULO = /^(|#|n[°º.]?|no\.?|nro\.?)$/i;
+    const NO_TITULO = /^(|#|n[°º.]?|no\.?|nro\.?|orden)$/i;
 
     function etiquetar(table) {
         if (table.hasAttribute('data-no-stack')) return;

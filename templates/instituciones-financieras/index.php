@@ -69,26 +69,6 @@ $tipoTone = [
     </div>
 </div>
 
-<div class="ds-card ds-op-filter">
-    <div class="ds-card-body">
-        <form method="get" action="<?= $view->url('/configuracion/instituciones-financieras') ?>" class="ds-filter-row ds-form-filter">
-            <div class="ds-filter-field">
-                <div class="ds-form-field">
-                    <label class="ds-form-label">Buscar</label>
-                    <input type="text" name="q" class="form-control form-control-sm"
-                           placeholder="Nombre de la institución..." value="<?= $e($q) ?>">
-                </div>
-            </div>
-            <div class="ds-filter-actions">
-                <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm"><i class="bi bi-search"></i>Buscar</button>
-                <?php if ($q !== ''): ?>
-                <a href="<?= $view->url('/configuracion/instituciones-financieras') ?>" class="ds-btn ds-btn-ghost ds-btn-sm"><i class="bi bi-x-lg"></i>Limpiar</a>
-                <?php endif ?>
-            </div>
-        </form>
-    </div>
-</div>
-
 <div class="ds-card">
     <div class="ds-card-header tone-success">
         <span class="ds-card-mark"><i class="bi bi-bank2"></i></span>
@@ -96,6 +76,14 @@ $tipoTone = [
             <div class="ds-card-title">Catálogo</div>
             <div class="ds-card-subtitle">Primero bancos, luego cooperativas</div>
         </div>
+        <?php if ($items !== []): ?>
+        <?= $view->include('partials/filtro-local', [
+            'id' => 'filtroInstituciones',
+            'tabla' => '#tablaInstituciones',
+            'placeholder' => 'Buscar institucion...',
+            'ayuda' => 'Buscar instituciones financieras por nombre, tipo o estado',
+        ]) ?>
+        <?php endif ?>
     </div>
     <?php if ($items === []): ?>
     <div class="ds-card-body">
@@ -110,7 +98,7 @@ $tipoTone = [
     </div>
     <?php else: ?>
     <div class="table-responsive">
-        <table class="ds-table">
+        <table class="ds-table" id="tablaInstituciones">
             <thead>
                 <tr>
                     <th style="width: 70px;">Orden</th>

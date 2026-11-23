@@ -3,7 +3,7 @@
  * Listado de clientes del tenant.
  *
  * Variables: $user, $csrfToken, $currentPath, $clientes,
- *            $total, $page, $totalPages, $filters, $kpis
+ *            $paginacion (Paginacion), $filters, $kpis
  */
 
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -12,19 +12,8 @@ use DigiSecure\Kernel\View\ViewRenderer;
 $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
-$estadoTone = [
-    'activo'     => 'tone-success',
-    'inactivo'   => 'tone-warning',
-    'archivado'  => 'tone-muted',
-];
-
-$hasFilters = !empty($filters['q']) || !empty($filters['estado']);
-
-$qs = http_build_query(array_filter([
-    'q' => $filters['q'] ?? '',
-    'estado' => $filters['estado'] ?? '',
-]));
-$qsPrefix = $qs !== '' ? "&{$qs}" : '';
+/** @var \DigiSecure\Kernel\Http\Paginacion $paginacion */
+$busqueda = (string) ($filters['q'] ?? '');
 ?>
 
 <?php $view->section('title') ?>Clientes - DigiSecure<?php $view->endSection() ?>
@@ -95,46 +84,37 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
     </div>
 </div>
 
-<!-- Filtros -->
+<!-- Filtros (la busqueda por texto esta en el encabezado del listado) -->
 <div class="ds-card ds-op-filter">
     <div class="ds-card-body">
         <div class="ds-filter-bar">
-            <form method="get" action="<?= $view->url('/clientes') ?>" class="ds-filter-row ds-form-filter">
+            <form id="filtrosClientes" method="get" action="<?= $view->url('/clientes') ?>" class="ds-filter-row ds-form-filter">
+                <input type="hidden" name="q" value="<?= $e($busqueda) ?>">
+                <?php if ($paginacion->parametro() !== null): ?>
+                <input type="hidden" name="por_pagina" value="<?= $e((string) $paginacion->parametro()) ?>">
+                <?php endif ?>
                 <div class="ds-filter-field">
                     <div class="ds-form-field">
-                        <label class="ds-form-label">Buscar</label>
-                        <input type="text" name="q" class="form-control form-control-sm"
-                               placeholder="Razon social, RUC, contacto..."
-                               value="<?= $e((string) ($filters['q'] ?? '')) ?>">
-                    </div>
-                </div>
-                <div class="ds-filter-field">
-                    <div class="ds-form-field">
-                        <label class="ds-form-label">Estado</label>
-                        <select name="estado" class="form-select form-select-sm">
+                        <label class="ds-form-label" for="filtroClientesEstado">Estado</label>
+                        <select name="estado" id="filtroClientesEstado" class="form-select form-select-sm">
                             <option value="">Activos e inactivos</option>
                             <?php foreach (['activo', 'inactivo', 'archivado'] as $est): ?>
-                            <option value="<?= $est ?>" <?= ($filters['estado'] ?? '') === $est ? 'selected' : '' ?>>
-                                <?= ucfirst($est) ?>
-                            </option>
+                            <option value="<?= $est ?>" <?= ($filters['estado'] ?? '') === $est ? 'selected' : '' ?>><?= ucfirst($est) ?></option>
                             <?php endforeach ?>
                         </select>
                     </div>
                 </div>
                 <div class="ds-filter-actions">
-                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">
-                        <i class="bi bi-search"></i>Buscar
-                    </button>
-                    <?php if ($hasFilters): ?>
-                    <a href="<?= $view->url('/clientes') ?>" class="ds-btn ds-btn-ghost ds-btn-sm">
+                    <noscript><button type="submit" class="ds-btn ds-btn-primary ds-btn-sm"><i class="bi bi-funnel"></i>Aplicar</button></noscript>
+                    <a href="<?= $view->url('/clientes') ?>" class="ds-btn ds-btn-ghost ds-btn-sm" data-remota-limpiar>
                         <i class="bi bi-x-lg"></i>Limpiar
                     </a>
-                    <?php endif ?>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
 <div class="ds-card">
     <div class="ds-card-header tone-purple">
         <span class="ds-card-mark"><i class="bi bi-briefcase"></i></span>
@@ -142,121 +122,22 @@ $qsPrefix = $qs !== '' ? "&{$qs}" : '';
             <div class="ds-card-title">Listado de clientes</div>
             <div class="ds-card-subtitle">Empresas cliente con estado y contacto principal</div>
         </div>
+        <?= $view->include('partials/tabla-toolbar', [
+            'id' => 'buscarClientes',
+            'destino' => '#clientesResultados',
+            'parcial' => 'clientes',
+            'ruta' => '/clientes',
+            'paginacion' => $paginacion,
+            'busqueda' => $busqueda,
+            'placeholder' => 'Buscar cliente...',
+            'ayuda' => 'Buscar clientes por razon social, nombre comercial, RUC o cedula, contacto, correo, ciudad o sector',
+            'filtros' => '#filtrosClientes',
+            'ocultos' => ['estado' => (string) ($filters['estado'] ?? '')],
+        ]) ?>
     </div>
-    <?php if ($clientes === []): ?>
-    <div class="ds-card-body">
-        <div class="ds-empty-state">
-            <div class="ds-empty-icon"><i class="bi bi-briefcase"></i></div>
-            <h3>No hay clientes para mostrar</h3>
-            <p>
-                <?php if ($hasFilters): ?>
-                    Ningun cliente coincide con los criterios. Ajusta los filtros o limpia los criterios.
-                <?php else: ?>
-                    Registra el primer cliente para empezar a asociar puestos, turnos y guardias.
-                <?php endif ?>
-            </p>
-            <?php if ($user->tienePermiso('clientes.crear') && !$hasFilters): ?>
-            <a href="<?= $view->url('/clientes/crear') ?>" class="ds-btn ds-btn-primary">
-                <i class="bi bi-plus-lg"></i>Crear el primer cliente
-            </a>
-            <?php endif ?>
-        </div>
+    <div id="clientesResultados" class="ds-listado-wrap">
+        <?= $view->include('clientes/_listado', ['user' => $user, 'clientes' => $clientes, 'paginacion' => $paginacion, 'filters' => $filters]) ?>
     </div>
-    <?php else: ?>
-    <div class="table-responsive">
-        <table class="ds-table">
-            <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>Documento</th>
-                    <th>Contacto</th>
-                    <th>Sector</th>
-                    <th>Estado</th>
-                    <th class="ds-cell-end">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($clientes as $c):
-                    $tone = $estadoTone[$c['estado']] ?? 'tone-muted';
-                ?>
-                <tr>
-                    <td>
-                        <a href="<?= $view->url('/clientes/' . $c['id']) ?>"
-                           class="ds-cell-name" style="text-decoration: none;">
-                            <?= $e((string) $c['razon_social']) ?>
-                        </a>
-                        <?php if (!empty($c['nombre_comercial'])): ?>
-                        <div class="ds-cell-sub"><?= $e((string) $c['nombre_comercial']) ?></div>
-                        <?php endif ?>
-                    </td>
-                    <td>
-                        <span class="ds-chip"><i class="bi bi-tag"></i><?= $e((string) $c['tipo_documento']) ?></span>
-                        <div class="ds-cell-mono" style="margin-top: .15rem;"><?= $e((string) $c['documento']) ?></div>
-                    </td>
-                    <td>
-                        <?php if (!empty($c['contacto_nombre'])): ?>
-                        <div class="ds-cell-name" style="font-weight: 500;"><?= $e((string) $c['contacto_nombre']) ?></div>
-                        <?php endif ?>
-                        <?php if (!empty($c['contacto_email'])): ?>
-                        <div class="ds-cell-mono"><?= $e((string) $c['contacto_email']) ?></div>
-                        <?php elseif (!empty($c['contacto_telefono'])): ?>
-                        <div class="ds-cell-mono"><?= $e((string) $c['contacto_telefono']) ?></div>
-                        <?php else: ?>
-                        <span class="ds-cell-sub">-</span>
-                        <?php endif ?>
-                    </td>
-                    <td>
-                        <?php if (!empty($c['sector'])): ?>
-                            <span class="ds-chip"><?= $e((string) $c['sector']) ?></span>
-                        <?php else: ?>
-                            <span class="ds-cell-sub">-</span>
-                        <?php endif ?>
-                    </td>
-                    <td><span class="ds-badge <?= $tone ?>"><?= $e(ucfirst((string) $c['estado'])) ?></span></td>
-                    <td class="ds-cell-end">
-                        <div class="ds-row-actions">
-                            <a href="<?= $view->url('/clientes/' . $c['id']) ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Ver detalle">
-                                Ver
-                            </a>
-                            <?php if ($user->tienePermiso('clientes.editar') && $c['estado'] !== 'archivado'): ?>
-                            <a href="<?= $view->url('/clientes/' . $c['id'] . '/editar') ?>" class="ds-btn ds-btn-outline ds-btn-sm" title="Editar">
-                                Editar
-                            </a>
-                            <?php endif ?>
-                        </div>
-                    </td>
-                </tr>
-                <?php endforeach ?>
-            </tbody>
-        </table>
-    </div>
-
-    <?php if ($totalPages > 1): ?>
-    <div class="ds-table-foot">
-        <span>Pagina <strong><?= $page ?></strong> de <?= $totalPages ?> &middot; <?= $total ?> registro<?= $total !== 1 ? 's' : '' ?></span>
-        <ul class="ds-pagination">
-            <li>
-                <a class="ds-page <?= $page <= 1 ? 'is-disabled' : '' ?>"
-                   href="<?= $view->url('/clientes') ?>?page=<?= max(1, $page - 1) ?><?= $qsPrefix ?>" aria-label="Anterior">
-                    <i class="bi bi-chevron-left"></i>
-                </a>
-            </li>
-            <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
-            <li>
-                <a class="ds-page <?= $p === $page ? 'is-active' : '' ?>"
-                   href="<?= $view->url('/clientes') ?>?page=<?= $p ?><?= $qsPrefix ?>"><?= $p ?></a>
-            </li>
-            <?php endfor ?>
-            <li>
-                <a class="ds-page <?= $page >= $totalPages ? 'is-disabled' : '' ?>"
-                   href="<?= $view->url('/clientes') ?>?page=<?= min($totalPages, $page + 1) ?><?= $qsPrefix ?>" aria-label="Siguiente">
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-            </li>
-        </ul>
-    </div>
-    <?php endif ?>
-    <?php endif ?>
 </div>
 <?php $view->endSection() ?>
 

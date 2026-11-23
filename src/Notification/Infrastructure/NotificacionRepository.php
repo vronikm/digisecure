@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\Notification\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Notification\Domain\Enum\EstadoNotificacion;
 use DigiSecure\Shared\Infrastructure\Clock;
@@ -194,27 +195,13 @@ final class NotificacionRepository extends BaseRepository
      */
     public function listByTenant(array $filters = [], int $limit = 50, int $offset = 0): array
     {
-        $where = [];
-        $bindings = [];
-
-        if (!empty($filters['estado'])) {
-            $where[] = 'estado = :estado';
-            $bindings['estado'] = $filters['estado'];
-        }
-        if (!empty($filters['canal'])) {
-            $where[] = 'canal = :canal';
-            $bindings['canal'] = $filters['canal'];
-        }
-        if (!empty($filters['evento'])) {
-            $where[] = 'evento = :evento';
-            $bindings['evento'] = $filters['evento'];
-        }
+        [$where, $bindings] = $this->filtroListado($filters);
 
         $sql = 'SELECT id, evento, canal, prioridad, destinatario_email, asunto, estado,
                        scheduled_at, enviada_at, intentos, max_intentos, ultimo_error, created_at
                 FROM notificaciones';
-        if ($where !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $where);
+        if ($where !== '') {
+            $sql .= ' WHERE ' . $where;
         }
         $sql .= ' ORDER BY created_at DESC LIMIT :limit OFFSET :offset';
         $bindings['limit'] = $limit;
@@ -225,23 +212,38 @@ final class NotificacionRepository extends BaseRepository
 
     public function countByTenant(array $filters = []): int
     {
+        [$where, $bindings] = $this->filtroListado($filters);
+        return $this->tenantCount($where, $bindings);
+    }
+
+    /**
+     * WHERE comun del listado y del conteo: estado, canal, evento y busqueda por texto.
+     *
+     * @param array<string, mixed> $filters
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function filtroListado(array $filters): array
+    {
         $where = [];
         $bindings = [];
 
-        if (!empty($filters['estado'])) {
-            $where[] = 'estado = :estado';
-            $bindings['estado'] = $filters['estado'];
+        foreach (['estado', 'canal', 'evento'] as $campo) {
+            if (!empty($filters[$campo])) {
+                $where[] = "{$campo} = :{$campo}";
+                $bindings[$campo] = $filters[$campo];
+            }
         }
-        if (!empty($filters['canal'])) {
-            $where[] = 'canal = :canal';
-            $bindings['canal'] = $filters['canal'];
-        }
-        if (!empty($filters['evento'])) {
-            $where[] = 'evento = :evento';
-            $bindings['evento'] = $filters['evento'];
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            (string) ($filters['q'] ?? ''),
+            ['asunto', 'destinatario_email', 'destinatario_nombre', 'evento', 'canal', 'entidad_tipo'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $where[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
-        return $this->tenantCount(implode(' AND ', $where), $bindings);
+        return [implode(' AND ', $where), $bindings];
     }
 
     /**

@@ -8,6 +8,7 @@ use DigiSecure\Asignacion\Application\GestionarAsignacionesService;
 use DigiSecure\Asignacion\Infrastructure\AsignacionRepository;
 use DigiSecure\Cliente\Infrastructure\ClienteRepository;
 use DigiSecure\Kernel\Http\FlashBag;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -43,21 +44,27 @@ final class AsignacionController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 25;
-        $offset = ($page - 1) * $limit;
-
         $filters = [
-            'q' => $request->query('q'),
+            'q' => trim((string) $request->query('q', '')),
             'estado' => $request->query('estado'),
             'cliente_id' => $request->query('cliente_id'),
             'puesto_id' => $request->query('puesto_id'),
             'ficha_id' => $request->query('ficha_id'),
         ];
 
-        $asignaciones = $this->repo->listar($filters, $limit, $offset);
-        $total = $this->repo->contar($filters);
-        $totalPages = max(1, (int) ceil($total / $limit));
+        $paginacion = Paginacion::desdeRequest($request)->conTotal($this->repo->contar($filters));
+        $asignaciones = $this->repo->listar($filters, $paginacion->limite(), $paginacion->offset());
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'asignaciones') {
+            return Response::html($this->view->render('asignaciones/_listado', [
+                'user' => $user,
+                'asignaciones' => $asignaciones,
+                'paginacion' => $paginacion,
+                'filters' => $filters,
+            ]));
+        }
+
         $kpis = $this->repo->kpis();
         $clientes = $this->clienteRepo->listar(['estado' => 'activo'], 500, 0);
 
@@ -86,9 +93,7 @@ final class AsignacionController
             'csrfToken' => $csrf->token(),
             'currentPath' => $request->path,
             'asignaciones' => $asignaciones,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
+            'paginacion' => $paginacion,
             'filters' => $filters,
             'kpis' => $kpis,
             'clientes' => $clientes,

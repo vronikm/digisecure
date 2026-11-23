@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Security\Audit;
 
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Tenant\Domain\TenantContext;
 
@@ -60,7 +61,7 @@ final class AuditoriaRepository
         [$where, $bindings] = $this->buildWhere($tenantId, $filters);
 
         return (int) $this->db->fetchScalar(
-            "SELECT COUNT(*) FROM auditoria a WHERE {$where}",
+            "SELECT COUNT(*) FROM auditoria a LEFT JOIN usuarios u ON u.id = a.usuario_id WHERE {$where}",
             $bindings,
         );
     }
@@ -140,6 +141,16 @@ final class AuditoriaRepository
         if (!empty($filters['hasta'])) {
             $where[] = 'a.created_at <= :hasta';
             $bindings['hasta'] = $filters['hasta'] . ' 23:59:59.999999';
+        }
+        // Busqueda por texto: requiere el LEFT JOIN usuarios u de las consultas.
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            (string) ($filters['q'] ?? ''),
+            ['a.evento', 'a.entidad_tipo', 'a.entidad_id', 'u.email', 'u.nombres', 'u.apellidos'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $where[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         return [implode(' AND ', $where), $bindings];

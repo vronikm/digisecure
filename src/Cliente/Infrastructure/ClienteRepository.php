@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\Cliente\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 
 /**
  * Repositorio de la tabla `clientes` (tenant-aware).
@@ -13,6 +14,12 @@ use DigiSecure\Infrastructure\Persistence\BaseRepository;
  */
 final class ClienteRepository extends BaseRepository
 {
+    /** Columnas donde busca el listado (cada palabra debe aparecer en alguna). */
+    private const COLUMNAS_BUSQUEDA = [
+        'razon_social', 'nombre_comercial', 'documento', 'contacto_nombre',
+        'contacto_email', 'contacto_telefono', 'ciudad', 'sector',
+    ];
+
     protected function tableName(): string
     {
         return 'clientes';
@@ -45,13 +52,10 @@ final class ClienteRepository extends BaseRepository
             $where[] = "estado <> 'archivado'";
         }
 
-        if (!empty($filters['q'])) {
-            $where[] = '(razon_social LIKE :q_razon OR nombre_comercial LIKE :q_nombre OR documento LIKE :q_doc OR contacto_nombre LIKE :q_contacto)';
-            $q = '%' . (string) $filters['q'] . '%';
-            $bindings['q_razon'] = $q;
-            $bindings['q_nombre'] = $q;
-            $bindings['q_doc'] = $q;
-            $bindings['q_contacto'] = $q;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion((string) ($filters['q'] ?? ''), self::COLUMNAS_BUSQUEDA, 'q');
+        if ($busquedaSql !== null) {
+            $where[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         $sql = 'SELECT id, razon_social, nombre_comercial, tipo_documento, documento,
@@ -85,13 +89,10 @@ final class ClienteRepository extends BaseRepository
             $where[] = "estado <> 'archivado'";
         }
 
-        if (!empty($filters['q'])) {
-            $where[] = '(razon_social LIKE :q_razon OR nombre_comercial LIKE :q_nombre OR documento LIKE :q_doc OR contacto_nombre LIKE :q_contacto)';
-            $q = '%' . (string) $filters['q'] . '%';
-            $bindings['q_razon'] = $q;
-            $bindings['q_nombre'] = $q;
-            $bindings['q_doc'] = $q;
-            $bindings['q_contacto'] = $q;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion((string) ($filters['q'] ?? ''), self::COLUMNAS_BUSQUEDA, 'q');
+        if ($busquedaSql !== null) {
+            $where[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         return $this->tenantCount(implode(' AND ', $where), $bindings);

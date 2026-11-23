@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Aspirante\Infrastructure;
 
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Shared\Infrastructure\Clock;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
@@ -21,6 +22,9 @@ use DigiSecure\Shared\Infrastructure\IdGenerator;
  */
 class AspiranteRepository
 {
+    /** Columnas donde buscan Reclutamiento y LOPDP · Aceptaciones. */
+    private const COLUMNAS_BUSQUEDA = ['nombres', 'apellidos', 'correo', 'documento', 'celular'];
+
     public function __construct(
         private readonly PdoConnection $db,
     ) {
@@ -914,14 +918,10 @@ class AspiranteRepository
         $conds = [];
         $bind = [];
 
-        $q = trim((string) ($filtros['q'] ?? ''));
-        if ($q !== '') {
-            $conds[] = '(nombres LIKE :q_nombres OR apellidos LIKE :q_apellidos OR correo LIKE :q_correo OR documento LIKE :q_documento)';
-            $like = '%' . $q . '%';
-            $bind['q_nombres'] = $like;
-            $bind['q_apellidos'] = $like;
-            $bind['q_correo'] = $like;
-            $bind['q_documento'] = $like;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion((string) ($filtros['q'] ?? ''), self::COLUMNAS_BUSQUEDA, 'q');
+        if ($busquedaSql !== null) {
+            $conds[] = $busquedaSql;
+            $bind += $busquedaParams;
         }
 
         $estado = trim((string) ($filtros['estado'] ?? ''));
@@ -967,14 +967,10 @@ class AspiranteRepository
             $bind['tenant_id'] = $tenantId;
         }
 
-        $q = trim((string) ($filtros['q'] ?? ''));
-        if ($q !== '') {
-            $conds[] = '(nombres LIKE :q1 OR apellidos LIKE :q2 OR correo LIKE :q3 OR documento LIKE :q4)';
-            $like = '%' . $q . '%';
-            $bind['q1'] = $like;
-            $bind['q2'] = $like;
-            $bind['q3'] = $like;
-            $bind['q4'] = $like;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion((string) ($filtros['q'] ?? ''), self::COLUMNAS_BUSQUEDA, 'q');
+        if ($busquedaSql !== null) {
+            $conds[] = $busquedaSql;
+            $bind += $busquedaParams;
         }
 
         $docEstado = trim((string) ($filtros['documento_lopdp'] ?? ''));

@@ -47,6 +47,14 @@ $totalEmpresa = $total - $totalSistema;
             <div class="ds-card-title">Listado de roles</div>
             <div class="ds-card-subtitle">Roles de sistema y empresa con permisos asignados</div>
         </div>
+        <?php if ($roles !== []): ?>
+        <?= $view->include('partials/filtro-local', [
+            'id' => 'filtroRoles',
+            'tabla' => '#tablaRoles',
+            'placeholder' => 'Buscar rol...',
+            'ayuda' => 'Buscar roles por nombre, codigo, descripcion o tipo',
+        ]) ?>
+        <?php endif ?>
     </div>
 
     <?php if ($roles === []): ?>
@@ -64,7 +72,7 @@ $totalEmpresa = $total - $totalSistema;
     </div>
     <?php else: ?>
     <div class="table-responsive">
-        <table class="ds-table">
+        <table class="ds-table" id="tablaRoles">
             <thead>
                 <tr>
                     <th>Rol</th>

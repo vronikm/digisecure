@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\Notification\Controller;
 
 use DigiSecure\Kernel\Http\FlashBag;
+use DigiSecure\Kernel\Http\Paginacion;
 use DigiSecure\Kernel\Http\Request;
 use DigiSecure\Kernel\Http\Response;
 use DigiSecure\Kernel\View\ViewRenderer;
@@ -35,39 +36,37 @@ final class NotificacionController
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
 
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = 50;
-        $offset = ($page - 1) * $limit;
-
         $filters = array_filter([
-            'estado' => $request->query('estado'),
-            'canal' => $request->query('canal'),
-            'evento' => $request->query('evento'),
-        ], static fn($v) => $v !== null && $v !== '');
+            'q' => trim((string) $request->query('q', '')),
+            'estado' => (string) $request->query('estado', ''),
+            'canal' => (string) $request->query('canal', ''),
+            'evento' => (string) $request->query('evento', ''),
+        ], static fn(string $v): bool => $v !== '');
 
-        $notificaciones = $this->repo->listByTenant($filters, $limit, $offset);
-        $total = $this->repo->countByTenant($filters);
-        $totalPages = max(1, (int) ceil($total / $limit));
+        $paginacion = Paginacion::desdeRequest($request, 50)->conTotal($this->repo->countByTenant($filters));
+        $data = [
+            'user' => $user,
+            'csrfToken' => $csrf->token(),
+            'currentPath' => $request->path,
+            'notificaciones' => $this->repo->listByTenant($filters, $paginacion->limite(), $paginacion->offset()),
+            'paginacion' => $paginacion,
+            'filters' => $filters,
+        ];
+
+        // Busqueda, filtros y paginacion en vivo (ds-tabla-remota.js): solo la tabla.
+        if ($request->header('X-Partial') === 'notificaciones') {
+            return Response::html($this->view->render('notificaciones/_listado', $data));
+        }
 
         // KPIs rápidos
-        $kpis = [
+        $data['kpis'] = [
             'pendientes' => $this->repo->countByTenant(['estado' => EstadoNotificacion::PENDIENTE->value]),
             'enviadas' => $this->repo->countByTenant(['estado' => EstadoNotificacion::ENVIADA->value]),
             'fallidas' => $this->repo->countByTenant(['estado' => EstadoNotificacion::FALLIDA->value]),
             'total' => $this->repo->countByTenant(),
         ];
 
-        return $this->view->response('notificaciones/index', [
-            'user' => $user,
-            'csrfToken' => $csrf->token(),
-            'currentPath' => $request->path,
-            'notificaciones' => $notificaciones,
-            'total' => $total,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'filters' => $filters,
-            'kpis' => $kpis,
-        ]);
+        return $this->view->response('notificaciones/index', $data);
     }
 
     public function show(Request $request, CsrfGuard $csrf): Response

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DigiSecure\Security\Lopdp\Infrastructure;
 
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
+use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Shared\Infrastructure\Clock;
 use DigiSecure\Shared\Infrastructure\IdGenerator;
@@ -52,12 +53,14 @@ final class SolicitudArcopRepository extends BaseRepository
             $conditions[] = 'tipo = :tipo';
             $bindings['tipo'] = $filters['tipo'];
         }
-        if (!empty($filters['busqueda'])) {
-            $conditions[] = '(titular_nombre LIKE :busq OR titular_cedula LIKE :busq2 OR titular_email LIKE :busq3)';
-            $pattern = '%' . $filters['busqueda'] . '%';
-            $bindings['busq'] = $pattern;
-            $bindings['busq2'] = $pattern;
-            $bindings['busq3'] = $pattern;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            (string) ($filters['busqueda'] ?? ''),
+            ['titular_nombre', 'titular_cedula', 'titular_email', 'tipo', 'estado'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $conditions[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
 
         $where = $conditions !== [] ? ' WHERE ' . implode(' AND ', $conditions) : '';
@@ -88,12 +91,14 @@ final class SolicitudArcopRepository extends BaseRepository
             $conditions[] = 'tipo = :tipo';
             $bindings['tipo'] = $filters['tipo'];
         }
-        if (!empty($filters['busqueda'])) {
-            $conditions[] = '(titular_nombre LIKE :busq OR titular_cedula LIKE :busq2 OR titular_email LIKE :busq3)';
-            $pattern = '%' . $filters['busqueda'] . '%';
-            $bindings['busq'] = $pattern;
-            $bindings['busq2'] = $pattern;
-            $bindings['busq3'] = $pattern;
+        [$busquedaSql, $busquedaParams] = BusquedaTexto::condicion(
+            (string) ($filters['busqueda'] ?? ''),
+            ['titular_nombre', 'titular_cedula', 'titular_email', 'tipo', 'estado'],
+            'q',
+        );
+        if ($busquedaSql !== null) {
+            $conditions[] = $busquedaSql;
+            $bindings += $busquedaParams;
         }
         return $this->tenantCount(implode(' AND ', $conditions), $bindings);
     }
