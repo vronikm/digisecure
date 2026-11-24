@@ -29,6 +29,19 @@ final class DescargarDocumentoService
     }
 
     /**
+     * Tipos que el navegador puede mostrar dentro de la pagina (vista previa).
+     * Coincide con las extensiones que acepta la carga (pdf/jpg/png/webp).
+     */
+    public const MIMES_VISTA_PREVIA = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
+    public static function admiteVistaPrevia(?string $mime): bool
+    {
+        return in_array((string) $mime, self::MIMES_VISTA_PREVIA, true);
+    }
+
+    /**
+     * @param bool $vistaPrevia true = el archivo se mira en la pagina (se audita
+     *                          como `expediente.documento.ver`); false = descarga.
      * @return array{
      *     path: string,
      *     nombre_descarga: string,
@@ -38,7 +51,7 @@ final class DescargarDocumentoService
      *     doc: array<string, mixed>,
      * }
      */
-    public function execute(string $docId, string $usuarioId, string $ip): array
+    public function execute(string $docId, string $usuarioId, string $ip, bool $vistaPrevia = false): array
     {
         $doc = $this->repo->findDocumentoById($docId);
         if ($doc === null) {
@@ -80,7 +93,7 @@ final class DescargarDocumentoService
         $etag = '"' . substr(sha1($storageName . filemtime($realFile)), 0, 24) . '"';
 
         $this->audit->log(
-            'expediente.documento.descargar',
+            $vistaPrevia ? 'expediente.documento.ver' : 'expediente.documento.descargar',
             $usuarioId,
             'expediente_documento',
             $docId,

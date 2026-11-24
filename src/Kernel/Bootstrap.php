@@ -877,6 +877,8 @@ final class Bootstrap
         $router->post('/expedientes/{id}/documento/{tipoId}', [ExpedienteController::class, 'upload'], name: 'expedientes.documento.upload', permission: 'expedientes.cargar');
         // Fase 10: descarga de archivo físico (debe ir antes de /documento/{docId} para no conflictuar)
         $router->get('/expedientes/documento/{docId}/descargar', [ExpedienteController::class, 'descargarDocumento'], name: 'expedientes.documento.descargar', permission: 'expedientes.ver');
+        // Vista previa en la propia pagina (PDF/imagen inline, sin descargar)
+        $router->get('/expedientes/documento/{docId}/ver', [ExpedienteController::class, 'verDocumento'], name: 'expedientes.documento.ver', permission: 'expedientes.ver');
         $router->get('/expedientes/documento/{docId}', [ExpedienteController::class, 'showDocumento'], name: 'expedientes.documento.show', permission: 'expedientes.ver');
         $router->post('/expedientes/documento/{docId}/revisar', [ExpedienteController::class, 'revisar'], name: 'expedientes.documento.revisar', permission: 'expedientes.validar');
 

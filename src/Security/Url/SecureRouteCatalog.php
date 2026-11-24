@@ -49,6 +49,7 @@ final class SecureRouteCatalog
         'expedientes.documento.show' => ['docId' => 'documentos.id'],
         'expedientes.documento.revisar' => ['docId' => 'documentos.id'],
         'expedientes.documento.descargar' => ['docId' => 'documentos.id'],
+        'expedientes.documento.ver' => ['docId' => 'documentos.id'],
 
         // Notificaciones
         'notificaciones.show' => ['id' => 'notificaciones.id'],
@@ -145,6 +146,7 @@ final class SecureRouteCatalog
         ['segments' => ['expedientes', '{id}', 'documento', '{tipoId}'], 'scopes' => ['id' => 'expedientes.id']],
         ['segments' => ['expedientes', 'documento', '{docId}'], 'scopes' => ['docId' => 'documentos.id']],
         ['segments' => ['expedientes', 'documento', '{docId}', 'descargar'], 'scopes' => ['docId' => 'documentos.id']],
+        ['segments' => ['expedientes', 'documento', '{docId}', 'ver'], 'scopes' => ['docId' => 'documentos.id']],
         ['segments' => ['expedientes', 'documento', '{docId}', 'revisar'], 'scopes' => ['docId' => 'documentos.id']],
         ['segments' => ['notificaciones', '{id}'], 'scopes' => ['id' => 'notificaciones.id']],
         ['segments' => ['notificaciones', '{id}', 'retry'], 'scopes' => ['id' => 'notificaciones.id']],

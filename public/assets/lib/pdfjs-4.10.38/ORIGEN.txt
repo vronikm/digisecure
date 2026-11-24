@@ -1,0 +1,19 @@
+pdf.js (Mozilla) - pdfjs-dist 4.10.38, build "legacy" (navegadores moviles antiguos)
+Licencia: Apache-2.0 (ver LICENSE). Fuentes: standard_fonts/LICENSE_FOXIT y LICENSE_LIBERATION.
+
+Origen: https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz
+Integridad del paquete (npm): sha512-/Y3fcFrXEAsMjJXeL9J8+ZG9U01LbuWaYypvDW2ycW1jL269L3js3DVBjDJ0Up9Np1uqDXsDrRihHANhZOlwdQ==
+
+Archivos tomados del paquete sin modificar:
+  legacy/build/pdf.min.mjs         -> pdf.min.js
+  legacy/build/pdf.worker.min.mjs  -> pdf.worker.min.js
+  cmaps/, standard_fonts/, LICENSE
+(Se renombran a .js para que cualquier Apache/cPanel los sirva como JavaScript;
+ son modulos ES y se cargan con import().)
+
+Lo usa public/assets/js/ds-visor-documento.js (visor del expediente).
+Se aloja en el propio servidor a proposito: los documentos tienen datos
+personales (LOPDP) y no deben depender de un CDN externo.
+Para actualizar: reemplazar la carpeta completa por una version nueva, verificar
+su integridad contra el registro npm y cambiar la ruta/version en
+templates/expediente/documento.php y ds-visor-documento.js.

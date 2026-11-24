@@ -1,6 +1,35 @@
 # DigiSecure — Changelog
 
-Estado actual: **Phase 18.1** · 37 migraciones · 122/122 tests verdes (PHP 8.3 y 8.5).
+Estado actual: **Phase 18.1** · 37 migraciones · 144/144 tests verdes (PHP 8.3 y 8.5).
+
+---
+
+## Expediente: ver los archivos del documento sin descargarlos (2026-11-23)
+
+- **Visor dentro de la página del documento** (`/expedientes/documento/{id}`) para PDF, JPG, PNG y WEBP. Incluye:
+  - páginas con indicador "2 / 5" y flechas;
+  - zoom −/+ y "ajustar al ancho" (muestra el %);
+  - girar 90° (escaneos de lado);
+  - pantalla completa.
+  - Atajos: Ctrl + rueda, doble clic (100 % ↔ 200 %) y teclas + − 0 r f. Esc sale de pantalla completa.
+- **Celular:**
+  - Cada página ocupa el ancho del visor. Se navega deslizando y se hace zoom pellizcando.
+  - Los botones miden 40 px.
+  - La pantalla completa cubre todo, también en iPhone (capa propia, sin la API Fullscreen), y el botón **Atrás** la cierra.
+  - Una imagen sola no deja franja gris.
+- **Escritorio (≥ 1200 px):** el visor queda fijo a la izquierda mientras se completa la revisión a la derecha (Archivo, Vigencia, Validación externa y Revisión).
+- **PDF con pdf.js 4.10.38 alojado en el propio servidor** (`public/assets/lib/pdfjs-4.10.38/`, build *legacy*, licencia Apache-2.0). Se usa así por dos motivos: el visor nativo no funciona dentro de la página en Chrome de Android ni en iPhone, y los documentos tienen datos personales (LOPDP), así que no deben pasar por un CDN externo.
+  - Paquete verificado contra el sha512 del registro npm.
+  - Configurado con `isEvalSupported: false`: nunca compila código que venga del PDF. La 4.10.38 ya corrige CVE-2024-4367.
+  - Solo se descarga al abrir un PDF. Se dibujan solo las páginas cercanas a la vista y las lejanas se liberan.
+- **Nueva ruta `GET /expedientes/documento/{docId}/ver`:**
+  - Mismos permisos y controles que la descarga: tenant, bloque B, aspirante solo su ficha e id cifrado en la URL.
+  - Responde `inline` solo para PDF e imágenes rasterizadas; cualquier otro tipo recibe 404. SVG o HTML nunca se sirven inline.
+  - Se audita aparte como **`expediente.documento.ver`** (quién miró qué y cuándo).
+  - `/descargar` ahora siempre entrega el archivo como descarga (`attachment`) y se audita como `expediente.documento.descargar`.
+- **Errores claros con "Reintentar" y "Descargar":** sesión vencida, sin conexión, archivo inexistente, PDF con contraseña o dañado. Si no hay archivo, o es un formato sin vista previa (p. ej. DOCX), se muestra un estado vacío con el botón de descarga y el tamaño.
+- La tarjeta Archivo muestra el formato legible ("PDF", "Imagen JPG") y el tamaño en KB/MB. La tarjeta Revisión ya no aparece vacía para quien no puede revisar. Se corrigieron tildes en la vista.
+- Tests: 144 (nuevos: tipos con vista previa y el cifrado del id en la ruta `/ver`).
 
 ---
 

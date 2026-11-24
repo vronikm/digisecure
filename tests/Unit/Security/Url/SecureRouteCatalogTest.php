@@ -97,6 +97,23 @@ final class SecureRouteCatalogTest extends TestCase
     }
 
     #[Test]
+    public function vista_previa_del_documento_protege_el_id_igual_que_la_descarga(): void
+    {
+        $docId = '01HZX3M9K8P1Q2R3S4T5V6W7X8';
+
+        self::assertSame(
+            ['docId' => 'documentos.id'],
+            SecureRouteCatalog::routeParamScopes('expedientes.documento.ver'),
+        );
+
+        $tokenized = SecureRouteCatalog::tokenizePath(
+            "/expedientes/documento/{$docId}/ver",
+            static fn(string $resourceId, string $paramName, string $scope): string => "tok_{$scope}",
+        );
+        self::assertSame('/expedientes/documento/tok_documentos.id/ver', $tokenized);
+    }
+
+    #[Test]
     public function tokenize_path_no_toca_rutas_fuera_del_catalogo(): void
     {
         $path = '/dashboard?x=1';

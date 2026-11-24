@@ -2581,3 +2581,218 @@ textarea.form-control { min-height: 5rem; }
 .text-bg-warning { color: #3b2503 !important; background-color: #fbbf24 !important; }
 .rounded-pill { border-radius: 50rem !important; }
 .shadow-sm { box-shadow: 0 2px 8px rgba(9, 29, 53, 0.07) !important; }
+
+/* =====================================================================
+   Visor de documentos del expediente (ds-visor-documento.js)
+   PDF (pdf.js local) e imagenes dentro de la pagina, sin descargarlos.
+   ===================================================================== */
+.ds-page-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.ds-doc-lateral { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.ds-visor { display: flex; flex-direction: column; margin-bottom: 0; }
+.ds-visor-titulo { flex: 1; min-width: 0; }
+.ds-visor-titulo .ds-card-subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-visor-salidas { display: flex; gap: .35rem; flex-shrink: 0; }
+
+.ds-visor-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 .6rem;
+    border: 1px solid #dbe3ee;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ds-text);
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+}
+.ds-visor-btn:hover:not(:disabled) { background: #eef3fa; border-color: #c5d3e6; color: var(--ds-text); }
+.ds-visor-btn:focus-visible { outline: 3px solid rgba(47, 128, 237, .35); outline-offset: 1px; }
+.ds-visor-btn:disabled { opacity: .45; cursor: default; }
+.ds-visor-btn i { font-size: 1rem; line-height: 1; }
+.ds-visor-btn-principal { background: var(--ds-primary); border-color: var(--ds-primary); color: #fff; }
+.ds-visor-btn-principal:hover:not(:disabled) { background: var(--ds-primary-dark); border-color: var(--ds-primary-dark); color: #fff; }
+
+.ds-visor-barra {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: .5rem .9rem;
+    padding: .5rem .75rem;
+    border-bottom: 1px solid #eef1f5;
+    background: #fff;
+}
+.ds-visor-grupo { display: inline-flex; align-items: center; gap: .25rem; }
+.ds-visor-pagina {
+    min-width: 4.4rem;
+    text-align: center;
+    font-size: .82rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ds-text);
+}
+.ds-visor-zoom { min-width: 4.4rem; font-variant-numeric: tabular-nums; }
+.ds-visor-zoom[aria-pressed="true"] { background: #eef3fa; }
+.ds-visor.is-una-pagina .ds-visor-paginacion { display: none; }
+/* Una sola hoja (imagen o PDF de 1 pagina): el visor se ajusta a su alto, sin franja gris. */
+.ds-visor.is-una-pagina:not(.is-completo) .ds-visor-lienzo { height: auto; min-height: 200px; max-height: min(72vh, 760px); max-height: min(72dvh, 760px); }
+
+/* Area del documento: fondo oscuro tipo visor de PDF, con scroll propio. */
+.ds-visor-lienzo {
+    position: relative;
+    overflow: auto;
+    height: min(72vh, 760px);
+    height: min(72dvh, 760px);
+    padding: 12px;
+    background: #4b5563;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;   /* el pellizco lo maneja el visor */
+    -webkit-overflow-scrolling: touch;
+}
+.ds-visor-lienzo:focus-visible { outline: 3px solid rgba(47, 128, 237, .55); outline-offset: -3px; }
+/* max-content: con zoom mayor al ancho se puede desplazar hasta el borde izquierdo. */
+.ds-visor-paginas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    min-width: 100%;
+}
+.ds-visor-hoja {
+    position: relative;
+    flex: none;
+    background: #fff;
+    border-radius: 2px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .35);
+    overflow: hidden;
+}
+.ds-visor-hoja::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #f1f4f8 0, #e3e9f1 50%, #f1f4f8 100%);
+    background-size: 200% 100%;
+    animation: ds-cargando 1.2s linear infinite;
+}
+.ds-visor-hoja.is-lista::before { display: none; }
+.ds-visor-hoja.is-error::before { animation: none; background: #fef2f2; }
+/* Mientras se redibuja con otro zoom, el canvas anterior se estira y no hay salto. */
+.ds-visor-hoja canvas { position: relative; display: block; width: 100%; height: 100%; }
+
+.ds-visor-estado {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .75rem;
+    padding: 1.5rem;
+    text-align: center;
+    color: #eef2f7;
+    background: #4b5563;
+}
+.ds-visor-estado[hidden],
+.ds-visor-progreso[hidden],
+.ds-visor-estado-acciones[hidden] { display: none; }
+.ds-visor-estado p { margin: 0; max-width: 34ch; font-size: .9rem; font-weight: 600; line-height: 1.45; }
+.ds-visor-estado-icono { font-size: 2rem; line-height: 1; }
+.ds-visor-estado-icono .bi-exclamation-triangle { display: none; color: #fbbf24; }
+.ds-visor-estado[data-estado="error"] .bi-hourglass-split { display: none; }
+.ds-visor-estado[data-estado="error"] .bi-exclamation-triangle { display: inline-block; }
+.ds-visor-estado[data-estado="cargando"] .bi-hourglass-split { display: inline-block; animation: ds-visor-reloj 1.6s ease-in-out infinite; }
+@keyframes ds-visor-reloj { 0%, 35% { transform: rotate(0); } 65%, 100% { transform: rotate(180deg); } }
+.ds-visor-progreso { width: min(220px, 70%); height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .2); overflow: hidden; }
+.ds-visor-progreso span { display: block; width: 0; height: 100%; background: var(--ds-cat-yellow); transition: width .2s; }
+.ds-visor-estado-acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+.ds-visor-estado .ds-btn-outline { background: #fff; }
+
+/* Sin archivo o formato sin vista previa */
+.ds-visor-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 260px;
+    padding: 2.25rem 1.25rem;
+    text-align: center;
+}
+.ds-visor-vacio-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: .3rem;
+    border-radius: 16px;
+    background: #eef3fa;
+    color: #2f80ed;
+    font-size: 1.6rem;
+}
+.ds-visor-vacio strong { color: var(--ds-text); font-size: .98rem; }
+.ds-visor-vacio p { max-width: 38ch; margin: 0 0 .5rem; color: var(--ds-text-soft); font-size: .85rem; }
+
+/* Pantalla completa: capa propia (el API Fullscreen no existe en iPhone). */
+.ds-visor.is-completo {
+    position: fixed;
+    inset: 0;
+    z-index: 1070;            /* sobre la topbar (1045); SweetAlert y avisos siguen encima */
+    height: 100vh;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+.ds-visor.is-completo .ds-visor-cabecera { padding-top: max(.75rem, env(safe-area-inset-top)); }
+.ds-visor.is-completo .ds-visor-lienzo {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+html.ds-visor-abierto,
+html.ds-visor-abierto body { overflow: hidden; }
+
+/* Escritorio ancho: el visor queda fijo a la izquierda mientras se revisa a la derecha. */
+@media (min-width: 1200px) {
+    .ds-doc-layout > .col-xl-7 {
+        position: sticky;
+        top: calc(var(--ds-topbar-h) + 1rem);
+        align-self: flex-start;
+    }
+    .ds-visor .ds-visor-lienzo {
+        height: calc(100vh - var(--ds-topbar-h) - 10.5rem);
+        min-height: 460px;
+    }
+    .ds-visor.is-una-pagina:not(.is-completo) .ds-visor-lienzo {
+        min-height: 200px;
+        max-height: max(460px, calc(100vh - var(--ds-topbar-h) - 10.5rem));
+    }
+}
+
+/* Celular: botones tactiles de 40px, solo iconos en las salidas, mas area util. */
+@media (max-width: 575.98px) {
+    .ds-page-actions { width: 100%; }
+    .ds-page-actions .ds-btn { flex: 1; justify-content: center; }
+    .ds-visor-cabecera { padding: .7rem .8rem; }
+    .ds-visor-btn { min-width: 40px; height: 40px; }
+    .ds-visor-btn-texto span { display: none; }
+    .ds-visor-barra { justify-content: space-between; gap: .35rem; padding: .45rem .55rem; }
+    .ds-visor-lienzo { height: 68vh; height: 68dvh; padding: 8px; }
+    .ds-visor-paginas { gap: 8px; }
+    /* En el celular se navega deslizando: queda solo el indicador "2 / 5". */
+    .ds-visor-paginacion .ds-visor-btn { display: none; }
+    .ds-visor-pagina { min-width: 3.2rem; }
+}

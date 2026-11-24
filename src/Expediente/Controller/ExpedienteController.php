@@ -50,10 +50,32 @@ final class ExpedienteController
     /**
      * GET /expedientes/documento/{docId}/descargar
      *
-     * Sirve el archivo físico del documento al usuario autenticado,
-     * siempre dentro del contexto del tenant. Audita cada descarga.
+     * Entrega el archivo como descarga (attachment), sea cual sea su tipo.
+     * Audita `expediente.documento.descargar`.
      */
     public function descargarDocumento(Request $request, string $docId): Response
+    {
+        return $this->servirArchivo($request, $docId, false);
+    }
+
+    /**
+     * GET /expedientes/documento/{docId}/ver
+     *
+     * Entrega el archivo inline para la vista previa de la pagina del
+     * documento (visor de PDF/imagen). Solo PDF, JPG, PNG y WEBP; los demas
+     * tipos se descargan. Mismos controles de acceso que la descarga y se
+     * audita aparte como `expediente.documento.ver` (LOPDP: quien miro que).
+     */
+    public function verDocumento(Request $request, string $docId): Response
+    {
+        return $this->servirArchivo($request, $docId, true);
+    }
+
+    /**
+     * Sirve el archivo físico del documento al usuario autenticado,
+     * siempre dentro del contexto del tenant. Audita cada acceso.
+     */
+    private function servirArchivo(Request $request, string $docId, bool $vistaPrevia): Response
     {
         /** @var AuthenticatedUser $user */
         $user = $request->attribute('auth_user');
@@ -74,9 +96,14 @@ final class ExpedienteController
         if (!$this->aspirantePuedeAccederFicha($user, $ficha)) {
             return $this->view->response('errors/404', [], 404);
         }
+        if ($vistaPrevia && !DescargarDocumentoService::admiteVistaPrevia($doc['archivo_mime'] ?? null)) {
+            return $this->view->response('errors/404', [
+                'mensaje' => 'Este tipo de archivo no tiene vista previa; descárgalo para abrirlo.',
+            ], 404);
+        }
 
         try {
-            $file = $this->descargarService->execute($docId, $user->id, $request->clientIp());
+            $file = $this->descargarService->execute($docId, $user->id, $request->clientIp(), $vistaPrevia);
         } catch (DomainException $e) {
             return $this->view->response('errors/404', [
                 'mensaje' => $e->getMessage(),
@@ -99,7 +126,7 @@ final class ExpedienteController
         }
 
         $nombreDescarga = addslashes($file['nombre_descarga']);
-        $inline = in_array($file['mime'], ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'], true);
+        $inline = $vistaPrevia && DescargarDocumentoService::admiteVistaPrevia($file['mime']);
         $disposition = ($inline ? 'inline' : 'attachment') . "; filename=\"{$nombreDescarga}\"";
 
         return new Response(
