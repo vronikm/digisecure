@@ -37,9 +37,10 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
     <meta name="theme-color" content="#0d1f36">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= $view->url('/assets/img/favicon-32.png') ?>">
     <link rel="apple-touch-icon" href="<?= $view->url('/assets/img/apple-touch-icon.png') ?>">
-    <title>Iniciar sesion - GEMESEG</title>
+    <title>Iniciar sesión - GEMESEG</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20260922-correo2">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-auth.css') ?>?v=gemeseg-login-20261124-clave">
+    <script src="<?= $view->url('/assets/js/ds-mostrar-clave.js') ?>?v=1.0" defer></script>
 </head>
 <body class="gemeseg-login">
     <div class="login-shell">
@@ -78,17 +79,28 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
                         <i class="bi bi-envelope field-icon"></i>
                         <input type="email" class="login-input" id="email" name="email"
                                placeholder="usuario@gemeseg.com" value="<?= $e($email) ?>"
-                               required autofocus autocomplete="email">
+                               required autofocus autocomplete="email" inputmode="email"
+                               autocapitalize="none" spellcheck="false" enterkeyhint="next">
                     </div>
                 </div>
 
                 <div class="login-field">
                     <label for="password">Contraseña</label>
-                    <div class="login-input-wrap">
+                    <div class="login-input-wrap has-clave">
                         <i class="bi bi-key field-icon"></i>
                         <input type="password" class="login-input" id="password" name="password"
-                               placeholder="Tu contraseña" required autocomplete="current-password">
+                               placeholder="Tu contraseña" required autocomplete="current-password"
+                               autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go"
+                               data-aviso-mayus="password-mayus">
+                        <button type="button" class="login-clave-toggle" data-mostrar-clave
+                                aria-controls="password" aria-pressed="false"
+                                aria-label="Mostrar contraseña" title="Mostrar contraseña" hidden>
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </button>
                     </div>
+                    <p class="login-capslock" id="password-mayus" role="status" hidden>
+                        <i class="bi bi-capslock-fill" aria-hidden="true"></i>Bloq Mayús está activado
+                    </p>
                 </div>
                 <div class="login-actions">
                     <button type="submit" class="login-submit">
@@ -227,14 +239,38 @@ $tiposDoc = ['cedula' => 'Cédula', 'pasaporte' => 'Pasaporte'];
 
                         <div class="login-field">
                             <label for="reg_password">Contraseña</label>
-                            <input type="password" class="login-input no-icon" id="reg_password" name="password"
-                                   minlength="8" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
+                            <div class="login-input-wrap has-clave">
+                                <input type="password" class="login-input no-icon" id="reg_password" name="password"
+                                       minlength="8" placeholder="Mínimo 8 caracteres" required autocomplete="new-password"
+                                       autocapitalize="none" autocorrect="off" spellcheck="false"
+                                       data-aviso-mayus="reg_password-mayus">
+                                <button type="button" class="login-clave-toggle" data-mostrar-clave
+                                        aria-controls="reg_password" aria-pressed="false"
+                                        aria-label="Mostrar contraseña" title="Mostrar contraseña" hidden>
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <p class="login-capslock" id="reg_password-mayus" role="status" hidden>
+                                <i class="bi bi-capslock-fill" aria-hidden="true"></i>Bloq Mayús está activado
+                            </p>
                             <span class="login-help"><i class="bi bi-shield-lock"></i>Mín. 8 caracteres, con mayúscula, minúscula y número.</span>
                         </div>
                         <div class="login-field">
                             <label for="reg_password_confirmacion">Confirmar contraseña</label>
-                            <input type="password" class="login-input no-icon" id="reg_password_confirmacion" name="password_confirmacion"
-                                   minlength="8" placeholder="Repite tu contraseña" required autocomplete="new-password">
+                            <div class="login-input-wrap has-clave">
+                                <input type="password" class="login-input no-icon" id="reg_password_confirmacion" name="password_confirmacion"
+                                       minlength="8" placeholder="Repite tu contraseña" required autocomplete="new-password"
+                                       autocapitalize="none" autocorrect="off" spellcheck="false"
+                                       data-aviso-mayus="reg_password_confirmacion-mayus">
+                                <button type="button" class="login-clave-toggle" data-mostrar-clave
+                                        aria-controls="reg_password_confirmacion" aria-pressed="false"
+                                        aria-label="Mostrar contraseña" title="Mostrar contraseña" hidden>
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <p class="login-capslock" id="reg_password_confirmacion-mayus" role="status" hidden>
+                                <i class="bi bi-capslock-fill" aria-hidden="true"></i>Bloq Mayús está activado
+                            </p>
                         </div>
                     </div>
 

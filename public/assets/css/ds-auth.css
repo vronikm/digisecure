@@ -998,3 +998,53 @@ body.ds-modal-open { overflow: hidden; }
     .login-actions { flex-direction: column; }
     .ds-field-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- Mostrar / ocultar contraseña (ds-mostrar-clave.js) ---------- */
+/* El boton ocupa todo el alto del campo: area tactil >= 44px en celular. */
+.login-input-wrap.has-clave .login-input { padding-right: 3rem; }
+.login-clave-toggle {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+    width: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: color .15s, background-color .15s;
+}
+.login-clave-toggle[hidden] { display: none; }
+.login-clave-toggle:hover { color: #0f172a; background: #f1f5f9; }
+.login-clave-toggle:focus-visible { outline: 2px solid #2f80ed; outline-offset: -2px; }
+.login-clave-toggle[aria-pressed="true"] { color: #1d4ed8; }
+/* Edge trae su propio "ojo": se oculta para no mostrar dos. */
+.login-input::-ms-reveal,
+.login-input::-ms-clear { display: none; }
+
+.login-capslock {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    margin: .35rem 0 0;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #b45309;
+}
+.login-capslock[hidden] { display: none; }
+
+/* Celular: 16px evita que iPhone haga zoom al tocar un campo. */
+@media (max-width: 560px) {
+    .login-input { font-size: 16px; }
+    .login-clave-toggle { width: 3rem; font-size: 1.2rem; }
+    .login-input-wrap.has-clave .login-input { padding-right: 3.25rem; }
+}
