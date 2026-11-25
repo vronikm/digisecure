@@ -53,12 +53,26 @@ $resumen = $totalInt . ' guardia' . ($totalInt !== 1 ? 's' : '') . ($busqueda !=
 </div>
 <?php endif; ?>
 
+<?php $aspEnProceso = (int) ($aspirantesEnProceso ?? 0); ?>
+<?php if ($aspEnProceso > 0): ?>
+<div class="ds-callout tone-info ds-callout-accion" role="status">
+    <i class="bi bi-person-vcard"></i>
+    <div>
+        <strong><?= $aspEnProceso ?> aspirante<?= $aspEnProceso !== 1 ? 's' : '' ?> en proceso de contratación</strong>
+        Los aspirantes no aparecen aquí hasta que se los contrata. Revisa su ficha y sus documentos desde Reclutamiento.
+    </div>
+    <a href="<?= $view->url('/reclutamiento') ?>" class="ds-btn ds-btn-outline ds-btn-sm">
+        <i class="bi bi-clipboard-check"></i>Ir a Reclutamiento
+    </a>
+</div>
+<?php endif ?>
+
 <div class="ds-card">
     <div class="ds-card-header tone-purple">
         <span class="ds-card-mark"><i class="bi bi-people"></i></span>
         <div>
             <div class="ds-card-title">Listado de guardias</div>
-            <div class="ds-card-subtitle">Un registro por persona con acceso a su historial de fichas</div>
+            <div class="ds-card-subtitle">Empleados contratados: un registro por persona con acceso a su historial de fichas</div>
         </div>
         <?= $view->include('partials/tabla-toolbar', [
             'id' => 'formGuardias',
@@ -77,6 +91,7 @@ $resumen = $totalInt . ' guardia' . ($totalInt !== 1 ? 's' : '') . ($busqueda !=
             'guardias' => $guardias,
             'paginacion' => $paginacion,
             'filters' => $filters,
+            'aspirantesEnProceso' => $aspirantesEnProceso ?? 0,
         ]) ?>
     </div>
 </div>

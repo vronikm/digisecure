@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Notification\Application;
 
+use DigiSecure\Ficha\Infrastructure\FichaEmpleado;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Security\Auth\AuthenticatedUser;
 
@@ -76,7 +77,9 @@ final class AlertasCentroService
         }
 
         if ($user->tienePermiso('guardias.ver')) {
-            $fichasBorrador = $this->contarFichasPorEstado($tid, 'BORRADOR');
+            // Solo empleados: los borradores de aspirantes los llena el propio
+            // aspirante y no aparecen en Guardias.
+            $fichasBorrador = $this->contarFichasPorEstado($tid, 'BORRADOR', aspirantes: false);
             if ($fichasBorrador > 0) {
                 $items[] = [
                     'severidad' => 'info',
@@ -86,6 +89,23 @@ final class AlertasCentroService
                     'detalle' => "{$fichasBorrador} ficha(s) sin completar",
                     'cantidad' => $fichasBorrador,
                     'url' => '/guardias',
+                ];
+            }
+        }
+
+        if ($user->tienePermiso('aspirantes.gestionar')) {
+            // Fichas que un aspirante envio a revision: el personal debe
+            // revisarlas y completarlas desde Reclutamiento.
+            $fichasAspirantes = $this->contarFichasPorEstado($tid, 'EN_REVISION', aspirantes: true);
+            if ($fichasAspirantes > 0) {
+                $items[] = [
+                    'severidad' => 'media',
+                    'icon' => 'bi-person-vcard',
+                    'color' => 'info',
+                    'titulo' => 'Fichas de aspirantes por revisar',
+                    'detalle' => "{$fichasAspirantes} aspirante(s) esperan revisión de su ficha",
+                    'cantidad' => $fichasAspirantes,
+                    'url' => '/reclutamiento?avance=revision',
                 ];
             }
         }
@@ -164,10 +184,16 @@ final class AlertasCentroService
         );
     }
 
-    private function contarFichasPorEstado(string $tid, string $estado): int
+    /**
+     * @param bool $aspirantes true = solo fichas de aspirantes sin contratar;
+     *                         false = solo fichas de empleados (FichaEmpleado).
+     */
+    private function contarFichasPorEstado(string $tid, string $estado, bool $aspirantes): int
     {
+        $criterio = $aspirantes ? FichaEmpleado::esDeAspirante('f') : FichaEmpleado::condicion('f');
+
         return (int) $this->db->fetchScalar(
-            'SELECT COUNT(*) FROM fichas WHERE tenant_id = :tid AND estado = :estado',
+            "SELECT COUNT(*) FROM fichas f WHERE f.tenant_id = :tid AND f.estado = :estado AND {$criterio}",
             ['tid' => $tid, 'estado' => $estado],
         );
     }

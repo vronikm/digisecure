@@ -170,7 +170,7 @@ $normalizeMenuSearch = static function (array $parts): string {
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=22.6">
+    <link rel="stylesheet" href="<?= $view->url('/assets/css/ds-system.css') ?>?v=22.7">
     <style>
         @keyframes dsMenuActivePulse {
             0% {

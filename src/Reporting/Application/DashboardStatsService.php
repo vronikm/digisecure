@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DigiSecure\Reporting\Application;
 
+use DigiSecure\Aspirante\Infrastructure\AspiranteRepository;
+use DigiSecure\Ficha\Infrastructure\FichaEmpleado;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Tenant\Domain\TenantContext;
 
@@ -18,6 +20,7 @@ final class DashboardStatsService
     public function __construct(
         private readonly PdoConnection $db,
         private readonly TenantContext $tenantContext,
+        private readonly ?AspiranteRepository $aspirantes = null,
     ) {
     }
 
@@ -30,10 +33,12 @@ final class DashboardStatsService
     {
         $tid = $this->tenantContext->requireTenantId();
 
+        // Guardias = empleados. Los aspirantes sin contratar se cuentan aparte.
         return [
-            'guardias_activos' => $this->countFichasByEstado($tid, 'COMPLETA'),
+            'guardias_activos' => $this->countGuardiasActivos($tid),
             'fichas_borrador' => $this->countFichasByEstado($tid, 'BORRADOR'),
             'fichas_revision' => $this->countFichasByEstado($tid, 'EN_REVISION'),
+            'aspirantes' => $this->aspirantesResumen(),
             'docs_por_vencer' => $this->countDocsPorVencer($tid, 30),
             'docs_vencidos' => $this->countDocsVencidos($tid),
             'expedientes_completos' => $this->countExpedientesByEstado($tid, 'COMPLETO'),
@@ -69,18 +74,55 @@ final class DashboardStatsService
 
     // ==================== QUERIES PRIVADAS ====================
 
+    /** Fichas de empleados en un estado (sin aspirantes; ver FichaEmpleado). */
     private function countFichasByEstado(string $tid, string $estado): int
     {
         return (int) $this->db->fetchScalar(
-            'SELECT COUNT(*) FROM fichas WHERE tenant_id = :tid AND estado = :estado',
+            'SELECT COUNT(*) FROM fichas f WHERE f.tenant_id = :tid AND f.estado = :estado AND ' . FichaEmpleado::condicion('f'),
             ['tid' => $tid, 'estado' => $estado],
         );
+    }
+
+    /**
+     * Guardias activos: PERSONAS (no fichas) con una ficha COMPLETA, sin
+     * aspirantes ni dados de baja. Un reingreso no cuenta dos veces.
+     */
+    private function countGuardiasActivos(string $tid): int
+    {
+        return (int) $this->db->fetchScalar(
+            "SELECT COUNT(DISTINCT COALESCE(NULLIF(f.cedula_hash, ''), f.id))
+               FROM fichas f
+              WHERE f.tenant_id = :tid AND f.estado = 'COMPLETA' AND f.fecha_baja IS NULL
+                AND " . FichaEmpleado::condicion('f'),
+            ['tid' => $tid],
+        );
+    }
+
+    /**
+     * Postulantes en proceso, fichas suyas por revisar y listos para contratar
+     * (mismos numeros que el panel de Reclutamiento).
+     *
+     * @return array{en_proceso: int, por_revisar: int, listos: int}
+     */
+    private function aspirantesResumen(): array
+    {
+        if ($this->aspirantes === null) {
+            return ['en_proceso' => 0, 'por_revisar' => 0, 'listos' => 0];
+        }
+
+        $k = $this->aspirantes->kpisAdmin();
+
+        return [
+            'en_proceso'  => $k['en_proceso'],
+            'por_revisar' => $k['por_revisar_ficha'],
+            'listos'      => $k['listos'],
+        ];
     }
 
     private function countTotalFichas(string $tid): int
     {
         return (int) $this->db->fetchScalar(
-            'SELECT COUNT(*) FROM fichas WHERE tenant_id = :tid',
+            'SELECT COUNT(*) FROM fichas f WHERE f.tenant_id = :tid AND ' . FichaEmpleado::condicion('f'),
             ['tid' => $tid],
         );
     }
@@ -165,7 +207,7 @@ final class DashboardStatsService
     private function fichasPorEstado(string $tid): array
     {
         return $this->groupCount(
-            'SELECT estado, COUNT(*) AS total FROM fichas WHERE tenant_id = :tid GROUP BY estado',
+            'SELECT f.estado, COUNT(*) AS total FROM fichas f WHERE f.tenant_id = :tid AND ' . FichaEmpleado::condicion('f') . ' GROUP BY f.estado',
             $tid,
         );
     }
@@ -176,7 +218,7 @@ final class DashboardStatsService
     private function fichasPorTipo(string $tid): array
     {
         return $this->groupCount(
-            'SELECT tipo_ficha AS estado, COUNT(*) AS total FROM fichas WHERE tenant_id = :tid GROUP BY tipo_ficha',
+            'SELECT f.tipo_ficha AS estado, COUNT(*) AS total FROM fichas f WHERE f.tenant_id = :tid AND ' . FichaEmpleado::condicion('f') . ' GROUP BY f.tipo_ficha',
             $tid,
         );
     }
@@ -211,9 +253,10 @@ final class DashboardStatsService
     private function fichasPorMes(string $tid, int $meses): array
     {
         $rows = $this->db->fetchAll(
-            "SELECT DATE_FORMAT(created_at, '%Y-%m') AS mes, COUNT(*) AS total
-             FROM fichas
-             WHERE tenant_id = :tid AND created_at >= DATE_SUB(CURDATE(), INTERVAL :meses MONTH)
+            "SELECT DATE_FORMAT(f.created_at, '%Y-%m') AS mes, COUNT(*) AS total
+             FROM fichas f
+             WHERE f.tenant_id = :tid AND f.created_at >= DATE_SUB(CURDATE(), INTERVAL :meses MONTH)
+               AND " . FichaEmpleado::condicion('f') . "
              GROUP BY mes ORDER BY mes ASC",
             ['tid' => $tid, 'meses' => $meses],
         );

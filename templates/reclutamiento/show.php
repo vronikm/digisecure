@@ -113,6 +113,16 @@ $puedeRechazar = !in_array($estado, ['aprobado', 'descartado', 'contratado'], tr
         </div>
     </div>
     <div class="rc-actions">
+        <?php if ($ficha !== null && $fv('id') !== '' && $user->tienePermiso('guardias.ver')): ?>
+        <a href="<?= $view->url('/guardias/' . $fv('id')) ?>" class="ds-btn ds-btn-primary" title="Enviar a revisión o completar la ficha">
+            <i class="bi bi-file-earmark-person"></i>Revisar ficha
+        </a>
+        <?php endif ?>
+        <?php if ($ficha !== null && $fv('id') !== '' && $user->tieneAlgunPermiso('expedientes.ver', 'expedientes.validar')): ?>
+        <a href="<?= $view->url('/guardias/' . $fv('id') . '/expediente') ?>" class="ds-btn ds-btn-outline">
+            <i class="bi bi-folder-check"></i>Validar documentos
+        </a>
+        <?php endif ?>
         <?php if ($puedeEditar): ?>
         <a href="<?= $view->url('/reclutamiento/' . $id . '/editar') ?>" class="ds-btn ds-btn-outline"><i class="bi bi-pencil-square"></i>Editar datos</a>
         <?php endif ?>

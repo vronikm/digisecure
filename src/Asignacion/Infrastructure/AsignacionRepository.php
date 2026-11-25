@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigiSecure\Asignacion\Infrastructure;
 
+use DigiSecure\Ficha\Infrastructure\FichaEmpleado;
 use DigiSecure\Infrastructure\Persistence\BaseRepository;
 use DigiSecure\Infrastructure\Persistence\BusquedaTexto;
 
@@ -170,7 +171,8 @@ final class AsignacionRepository extends BaseRepository
     }
 
     /**
-     * Lista fichas COMPLETAS para el select del form (las elegibles).
+     * Lista fichas COMPLETAS de EMPLEADOS para el select del form (las
+     * elegibles). Los aspirantes aun no contratados no se pueden asignar.
      * @return list<array{id: string, correlativo: string, label: string}>
      */
     public function fichasCompletasParaSelect(): array
@@ -179,6 +181,7 @@ final class AsignacionRepository extends BaseRepository
             "SELECT id, correlativo, apellidos, nombres
              FROM fichas
              WHERE estado = 'COMPLETA'
+               AND " . FichaEmpleado::condicion('fichas') . "
              ORDER BY apellidos ASC, nombres ASC",
         );
         return array_map(static fn(array $r): array => [

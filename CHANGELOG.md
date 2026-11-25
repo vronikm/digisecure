@@ -1,6 +1,63 @@
 # DigiSecure — Changelog
 
-Estado actual: **Phase 18.1** · 37 migraciones · 144/144 tests verdes (PHP 8.3 y 8.5).
+Estado actual: **Phase 18.1** · 37 migraciones · 151/151 tests verdes (PHP 8.3 y 8.5).
+
+---
+
+## Guardias solo muestra empleados; los aspirantes se gestionan en Reclutamiento (2026-11-25)
+
+**Problema:** `/guardias` mostraba las 37 fichas de aspirantes, todas en BORRADOR y ninguno contratado. El registro crea la ficha del aspirante directamente en GEMESEG, para que el personal la revise. Pero el listado no distinguía entre empleados y aspirantes, así que aparecían como guardias antes de contratarlos. Por el mismo motivo:
+
+- un aspirante con la ficha COMPLETA (o uno descartado) se podía asignar a un puesto;
+- el Dashboard los contaba como guardias;
+- la alerta "Fichas en borrador" mandaba a Guardias.
+
+**Criterio único:** `Ficha\Infrastructure\FichaEmpleado`. Una ficha es de aspirante si quien la creó tiene una postulación que no está `contratado` (también `aprobado` y `descartado`) o si conserva el rol `aspirante`. Las fichas que registra o importa el personal son siempre de empleados.
+
+1. **Guardias:**
+   - Lista solo empleados.
+   - Un aviso indica cuántos aspirantes están en proceso y lleva a Reclutamiento.
+   - El estado vacío y la búsqueda sin resultados explican dónde están los aspirantes.
+   - La ficha de un aspirante (`/guardias/{id}`) se sigue abriendo. Ahora muestra el aviso "Ficha de un aspirante en proceso" con un botón para volver a Reclutamiento, y su ruta de navegación es Reclutamiento › nombre › ficha.
+2. **Reclutamiento:**
+   - Columna **Avance**: estado de la ficha (Sin ficha / Borrador / Por revisar / Completa), barra del Bloque A (x/y) y etiqueta "Listo para contratar". Va justo después del nombre, para que la columna de acciones fija no la tape.
+   - Nuevo filtro **Avance**: sin ficha, ficha en borrador, ficha por revisar, documentos pendientes y listos para contratar.
+   - Botón **Ficha** en cada fila y **Revisar ficha** / **Validar documentos** en el detalle. Antes, la única forma de llegar a "Enviar a revisión" y "Completar" era pasar por Guardias.
+   - Los indicadores son ahora enlaces que filtran el listado: Sin verificar, Fichas por revisar, Listos para contratar y Contratados. El total y los aspirantes en proceso pasan al subtítulo.
+   - "Contratados" ya no suma el estado heredado `aprobado`, porque todavía no es una contratación.
+3. **Asignaciones:**
+   - El selector de guardias ofrece solo empleados con ficha COMPLETA.
+   - `GestionarAsignacionesService` también rechaza a un aspirante si la petición llega por otra vía, con el mensaje "contrátala desde Reclutamiento".
+4. **Dashboard:**
+   - "Guardias activos" cuenta **personas**: empleados con ficha COMPLETA y sin baja; un reingreso no cuenta dos veces.
+   - Nueva tarjeta **Aspirantes en proceso** con fichas por revisar y listos para contratar.
+   - Los KPIs de fichas (por estado, tipo y mes) excluyen a los aspirantes.
+   - La campana separa "Fichas en borrador" (solo de empleados, lleva a Guardias) de la nueva alerta "Fichas de aspirantes por revisar" (lleva a Reclutamiento filtrado).
+   - "En proceso" significa lo mismo en todas partes: correo confirmado, ni contratado ni descartado.
+- Probado en una copia aislada, con la sesión del superadmin:
+  - Guardias pasó de 37 filas a 1 (el empleado registrado por el personal).
+  - Los filtros de avance contaron 1/1/1/12/34.
+  - Al contratar al aspirante listo, apareció en Guardias y en el selector de Asignaciones.
+  - Celular a 390 px sin scroll horizontal y sin errores de consola.
+- Tests: 151 (nuevos: `FichaEmpleadoTest`, criterio y validación del alias).
+
+---
+
+## Login: botón para mostrar la contraseña (2026-11-24)
+
+- **Ojo para mostrar u ocultar la contraseña** en el login y en los dos campos de contraseña del registro de postulantes. El ícono cambia (ojo / ojo tachado) y el lector de pantalla anuncia "Mostrar contraseña" u "Ocultar contraseña".
+  - Al tocarlo, el cursor se queda donde estaba y en el celular no se cierra el teclado.
+  - El botón ocupa todo el alto del campo, así que se toca fácil con el dedo.
+  - La contraseña se vuelve a ocultar sola al enviar el formulario y al salir de la página. Así el navegador no la guarda en el historial de campos de texto ni queda a la vista al volver con "Atrás".
+  - Si el script no carga, el botón no aparece y el campo funciona como siempre.
+  - Edge mostraba su propio ojo; se ocultó para que no haya dos.
+- **Aviso "Bloq Mayús está activado"** al escribir la contraseña con un teclado físico.
+- **Celular:**
+  - Los campos usan letra de 16 px: el iPhone ya no hace zoom al tocar el correo o la contraseña.
+  - El campo de correo abre el teclado de correo, sin mayúscula automática ni corrector.
+  - La tecla Enter del teclado dice "Siguiente" en el correo e "Ir" en la contraseña.
+- **Seguridad:** los campos de contraseña no pasan por el corrector ortográfico (`spellcheck="false"`). Con la contraseña visible, el corrector mejorado del navegador podría enviarla a un servicio externo.
+- Archivos: `public/assets/js/ds-mostrar-clave.js` (reutilizable con `data-mostrar-clave`), `templates/auth/login.php`, `ds-auth.css`. Título de la pestaña con tilde: "Iniciar sesión".
 
 ---
 

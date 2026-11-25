@@ -443,53 +443,66 @@ class AspiranteRepository
     // ======================= Panel de reclutamiento (Fase 4) =======================
 
     /**
-     * @param array{q?: ?string, estado?: ?string, verificado?: ?string} $filtros
+     * @param array{q?: ?string, estado?: ?string, verificado?: ?string, avance?: ?string} $filtros
      * @return list<array<string, mixed>>
      */
     public function listarAdmin(array $filtros, int $limit, int $offset): array
     {
         [$where, $bind] = $this->whereAdmin($filtros);
 
-        $sql = "SELECT a.id, a.tipo_documento, a.documento, a.nombres, a.apellidos, a.correo, a.celular,
-                       a.estado, a.email_verificado, a.usuario_id, a.created_at,
-                       (
-                           SELECT f.id
-                             FROM fichas f
-                            WHERE f.created_by = a.usuario_id
-                              AND f.estado <> 'ANULADA'
-                            ORDER BY f.created_at DESC
-                            LIMIT 1
-                       ) AS ficha_id
-                  FROM aspirantes a
-                 {$where}
-                 ORDER BY a.created_at DESC
-                 LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
+        // Avance hacia la contratacion: estado de la ficha mas reciente y
+        // documentos del Bloque A de su expediente (mismos datos que valida
+        // GestionarAspirantesService::contratar).
+        $sql = "SELECT x.*,
+                       f.estado AS ficha_estado,
+                       e.bloque_a_total,
+                       e.bloque_a_aceptados
+                  FROM (
+                        SELECT a.id, a.tipo_documento, a.documento, a.nombres, a.apellidos, a.correo, a.celular,
+                               a.estado, a.email_verificado, a.usuario_id, a.created_at,
+                               " . self::SQL_FICHA_ID . " AS ficha_id
+                          FROM aspirantes a
+                         {$where}
+                         ORDER BY a.created_at DESC
+                         LIMIT " . (int) $limit . " OFFSET " . (int) $offset . "
+                       ) x
+                  LEFT JOIN fichas f ON f.id = x.ficha_id
+                  LEFT JOIN expedientes e ON e.id = (
+                        SELECT e2.id FROM expedientes e2
+                         WHERE e2.ficha_id = x.ficha_id
+                         ORDER BY e2.created_at DESC
+                         LIMIT 1
+                  )
+                 ORDER BY x.created_at DESC";
 
         return $this->db->fetchAll($sql, $bind);
     }
 
     /**
-     * @param array{q?: ?string, estado?: ?string, verificado?: ?string} $filtros
+     * @param array{q?: ?string, estado?: ?string, verificado?: ?string, avance?: ?string} $filtros
      */
     public function contarAdmin(array $filtros): int
     {
         [$where, $bind] = $this->whereAdmin($filtros);
-        return (int) $this->db->fetchScalar("SELECT COUNT(*) FROM aspirantes {$where}", $bind);
+        return (int) $this->db->fetchScalar("SELECT COUNT(*) FROM aspirantes a {$where}", $bind);
     }
 
     /**
-     * @return array{total: int, pendientes: int, verificados: int, aprobados: int, contratados: int, descartados: int}
+     * @return array{total: int, pendientes: int, verificados: int, aprobados: int, contratados: int, descartados: int, en_proceso: int, listos: int, por_revisar_ficha: int}
      */
     public function kpisAdmin(): array
     {
         $row = $this->db->fetchOne(
             "SELECT
                 COUNT(*) AS total,
-                SUM(email_verificado = 0 AND estado = 'nuevo') AS pendientes,
-                SUM(email_verificado = 1 AND estado IN ('nuevo', 'aspirante', 'en_revision', 'contactado')) AS verificados,
-                SUM(estado IN ('aprobado', 'contratado')) AS contratados,
-                SUM(estado = 'descartado') AS descartados
-             FROM aspirantes",
+                SUM(a.email_verificado = 0 AND a.estado = 'nuevo') AS pendientes,
+                SUM(a.email_verificado = 1 AND a.estado IN ('nuevo', 'aspirante', 'en_revision', 'contactado')) AS verificados,
+                SUM(a.estado = 'contratado') AS contratados,
+                SUM(a.estado = 'descartado') AS descartados,
+                SUM(" . self::SQL_EN_PROCESO . ") AS en_proceso,
+                SUM(" . self::condicionAvance('listos') . ") AS listos,
+                SUM(" . self::condicionAvance('revision') . ") AS por_revisar_ficha
+             FROM aspirantes a",
         ) ?? [];
 
         $contratados = (int) ($row['contratados'] ?? 0);
@@ -501,7 +514,52 @@ class AspiranteRepository
             'aprobados'   => $contratados,
             'contratados' => $contratados,
             'descartados' => (int) ($row['descartados'] ?? 0),
+            'en_proceso'  => (int) ($row['en_proceso'] ?? 0),
+            'listos'      => (int) ($row['listos'] ?? 0),
+            'por_revisar_ficha' => (int) ($row['por_revisar_ficha'] ?? 0),
         ];
+    }
+
+    /** Ficha mas reciente (no anulada) del aspirante `a`. */
+    private const SQL_FICHA_ID = "(SELECT f_av.id FROM fichas f_av
+                                    WHERE f_av.created_by = a.usuario_id AND f_av.estado <> 'ANULADA'
+                                    ORDER BY f_av.created_at DESC LIMIT 1)";
+
+    /** Estado de esa ficha (NULL si aun no la crea). */
+    private const SQL_FICHA_ESTADO = "(SELECT f_av.estado FROM fichas f_av
+                                        WHERE f_av.created_by = a.usuario_id AND f_av.estado <> 'ANULADA'
+                                        ORDER BY f_av.created_at DESC LIMIT 1)";
+
+    /** Etapas del filtro "Avance" de Reclutamiento (solo postulaciones en proceso). */
+    public const AVANCES = [
+        'sin_ficha' => 'Sin ficha',
+        'borrador'  => 'Ficha en borrador',
+        'revision'  => 'Ficha por revisar',
+        'docs'      => 'Documentos pendientes',
+        'listos'    => 'Listos para contratar',
+    ];
+
+    /**
+     * Condicion SQL (sobre el alias `a`) de una etapa de avance. Solo cuenta
+     * postulaciones en proceso: ni contratadas ni descartadas.
+     */
+    private static function condicionAvance(string $avance): string
+    {
+        $enProceso = "a.estado NOT IN ('contratado', 'descartado')";
+        $bloqueACompleto = 'EXISTS (SELECT 1 FROM expedientes e_av
+                                     WHERE e_av.ficha_id = ' . self::SQL_FICHA_ID . '
+                                       AND e_av.bloque_a_total > 0
+                                       AND e_av.bloque_a_aceptados >= e_av.bloque_a_total)';
+        $estadoFicha = self::SQL_FICHA_ESTADO;
+
+        return match ($avance) {
+            'sin_ficha' => "({$enProceso} AND a.email_verificado = 1 AND {$estadoFicha} IS NULL)",
+            'borrador'  => "({$enProceso} AND {$estadoFicha} = 'BORRADOR')",
+            'revision'  => "({$enProceso} AND {$estadoFicha} = 'EN_REVISION')",
+            'docs'      => "({$enProceso} AND {$estadoFicha} = 'COMPLETA' AND NOT {$bloqueACompleto})",
+            'listos'    => "({$enProceso} AND a.email_verificado = 1 AND {$estadoFicha} = 'COMPLETA' AND {$bloqueACompleto})",
+            default     => '1 = 1',
+        };
     }
 
     /**
@@ -510,6 +568,50 @@ class AspiranteRepository
     public function findDetalle(string $id): ?array
     {
         return $this->db->fetchOne('SELECT * FROM aspirantes WHERE id = :id', ['id' => $id]);
+    }
+
+    /**
+     * Postulacion asociada a un usuario (p. ej. quien creo una ficha). Sirve
+     * para saber si una ficha es de un aspirante y enlazarla con Reclutamiento.
+     *
+     * @return array{id: string, estado: string, nombres: string, apellidos: string}|null
+     */
+    public function findPostulacionDeUsuario(string $usuarioId): ?array
+    {
+        if ($usuarioId === '') {
+            return null;
+        }
+
+        $row = $this->db->fetchOne(
+            'SELECT id, estado, nombres, apellidos FROM aspirantes WHERE usuario_id = :uid LIMIT 1',
+            ['uid' => $usuarioId],
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'id'        => (string) $row['id'],
+            'estado'    => (string) $row['estado'],
+            'nombres'   => (string) ($row['nombres'] ?? ''),
+            'apellidos' => (string) ($row['apellidos'] ?? ''),
+        ];
+    }
+
+    /** Postulacion en proceso: correo confirmado, ni contratada ni descartada (alias `a`). */
+    private const SQL_EN_PROCESO = "(a.email_verificado = 1 AND a.estado NOT IN ('contratado', 'descartado'))";
+
+    /**
+     * Postulantes que siguen en reclutamiento (mismo criterio que el KPI
+     * "en proceso" del panel y del Dashboard).
+     */
+    public function contarEnProceso(string $tenantId): int
+    {
+        return (int) $this->db->fetchScalar(
+            'SELECT COUNT(*) FROM aspirantes a WHERE a.tenant_id = :tid AND ' . self::SQL_EN_PROCESO,
+            ['tid' => $tenantId],
+        );
     }
 
     /**
@@ -910,7 +1012,7 @@ class AspiranteRepository
     }
 
     /**
-     * @param array{q?: ?string, estado?: ?string, verificado?: ?string} $filtros
+     * @param array{q?: ?string, estado?: ?string, verificado?: ?string, avance?: ?string} $filtros
      * @return array{0: string, 1: array<string, scalar|null>}
      */
     private function whereAdmin(array $filtros): array
@@ -934,6 +1036,11 @@ class AspiranteRepository
         if ($verificado === '0' || $verificado === '1') {
             $conds[] = 'email_verificado = :verificado';
             $bind['verificado'] = (int) $verificado;
+        }
+
+        $avance = (string) ($filtros['avance'] ?? '');
+        if (\array_key_exists($avance, self::AVANCES)) {
+            $conds[] = self::condicionAvance($avance);
         }
 
         $where = $conds === [] ? '' : 'WHERE ' . implode(' AND ', $conds);

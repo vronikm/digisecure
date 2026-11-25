@@ -13,6 +13,7 @@ $view->layout('layout/app');
 $e = ViewRenderer::e(...);
 
 ['label' => $estadoLabel] = require __DIR__ . '/_estados.php';
+$avances = \DigiSecure\Aspirante\Infrastructure\AspiranteRepository::AVANCES;
 
 /** @var \DigiSecure\Kernel\Http\Paginacion $paginacion */
 $busqueda = (string) ($filters['q'] ?? '');
@@ -28,7 +29,7 @@ $busqueda = (string) ($filters['q'] ?? '');
 <style>
     .ds-reclutamiento-filter .ds-filter-row {
         display: grid;
-        grid-template-columns: minmax(280px, 1fr) minmax(150px, 180px) minmax(150px, 180px) auto;
+        grid-template-columns: minmax(200px, 1.3fr) minmax(150px, 1fr) minmax(150px, 1fr) auto;
         gap: .75rem;
         align-items: end;
     }
@@ -71,41 +72,46 @@ $busqueda = (string) ($filters['q'] ?? '');
         <span class="ds-page-mark"><i class="bi bi-person-plus-fill"></i></span>
         <div>
             <h1>Reclutamiento</h1>
-            <small><?= (int) $kpis['total'] ?> postulante<?= (int) $kpis['total'] !== 1 ? 's' : '' ?> registrado<?= (int) $kpis['total'] !== 1 ? 's' : '' ?></small>
+            <small><?= (int) $kpis['total'] ?> postulante<?= (int) $kpis['total'] !== 1 ? 's' : '' ?> registrado<?= (int) $kpis['total'] !== 1 ? 's' : '' ?> · <?= (int) ($kpis['en_proceso'] ?? 0) ?> en proceso</small>
         </div>
     </div>
 </div>
 
 <!-- KPIs -->
+<!-- Cada tarjeta filtra el listado por esa etapa. -->
 <div class="ds-kpi-grid ds-kpi-grid-4 ds-kpi-grid-solid">
-    <div class="ds-kpi-card">
-        <span class="ds-kpi-icon"><i class="bi bi-collection"></i></span>
-        <div>
-            <div class="ds-kpi-label">Total</div>
-            <div class="ds-kpi-value"><?= (int) $kpis['total'] ?></div>
-        </div>
-    </div>
-    <div class="ds-kpi-card tone-warning">
+    <a href="<?= $view->url('/reclutamiento') ?>?verificado=0" class="ds-kpi-card tone-warning" style="text-decoration: none;">
         <span class="ds-kpi-icon"><i class="bi bi-envelope-exclamation"></i></span>
         <div>
             <div class="ds-kpi-label">Sin verificar</div>
             <div class="ds-kpi-value"><?= (int) $kpis['pendientes'] ?></div>
+            <div class="ds-cell-sub">Aún no confirman su correo</div>
         </div>
-    </div>
-    <div class="ds-kpi-card tone-info">
-        <span class="ds-kpi-icon"><i class="bi bi-clipboard-check"></i></span>
+    </a>
+    <a href="<?= $view->url('/reclutamiento') ?>?avance=revision" class="ds-kpi-card tone-info" style="text-decoration: none;">
+        <span class="ds-kpi-icon"><i class="bi bi-file-earmark-person"></i></span>
         <div>
-            <div class="ds-kpi-label">Por revisar</div>
-            <div class="ds-kpi-value"><?= (int) $kpis['verificados'] ?></div>
+            <div class="ds-kpi-label">Fichas por revisar</div>
+            <div class="ds-kpi-value"><?= (int) ($kpis['por_revisar_ficha'] ?? 0) ?></div>
+            <div class="ds-cell-sub">Enviadas a revisión</div>
         </div>
-    </div>
-    <div class="ds-kpi-card tone-success">
+    </a>
+    <a href="<?= $view->url('/reclutamiento') ?>?avance=listos" class="ds-kpi-card tone-purple" style="text-decoration: none;">
         <span class="ds-kpi-icon"><i class="bi bi-person-check"></i></span>
+        <div>
+            <div class="ds-kpi-label">Listos para contratar</div>
+            <div class="ds-kpi-value"><?= (int) ($kpis['listos'] ?? 0) ?></div>
+            <div class="ds-cell-sub">Ficha completa y Bloque A aceptado</div>
+        </div>
+    </a>
+    <a href="<?= $view->url('/reclutamiento') ?>?estado=contratado" class="ds-kpi-card tone-success" style="text-decoration: none;">
+        <span class="ds-kpi-icon"><i class="bi bi-person-badge"></i></span>
         <div>
             <div class="ds-kpi-label">Contratados</div>
             <div class="ds-kpi-value"><?= (int) ($kpis['contratados'] ?? $kpis['aprobados']) ?></div>
+            <div class="ds-cell-sub">Ya aparecen en Guardias</div>
         </div>
-    </div>
+    </a>
 </div>
 
 <!-- Filtros (la busqueda por texto esta en el encabezado del listado) -->
@@ -114,7 +120,7 @@ $busqueda = (string) ($filters['q'] ?? '');
         <span class="ds-card-mark"><i class="bi bi-funnel"></i></span>
         <div>
             <div class="ds-card-title">Filtros</div>
-            <div class="ds-card-subtitle">Estado y verificación del correo</div>
+            <div class="ds-card-subtitle">Avance hacia la contratación, estado y verificación del correo</div>
         </div>
     </div>
     <div class="ds-card-body">
@@ -123,6 +129,17 @@ $busqueda = (string) ($filters['q'] ?? '');
             <?php if ($paginacion->parametro() !== null): ?>
             <input type="hidden" name="por_pagina" value="<?= $e((string) $paginacion->parametro()) ?>">
             <?php endif ?>
+            <div class="ds-filter-field">
+                <div class="ds-form-field">
+                    <label class="ds-form-label" for="filtroReclAvance">Avance</label>
+                    <select name="avance" id="filtroReclAvance" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <?php foreach ($avances as $val => $lbl): ?>
+                        <option value="<?= $e($val) ?>" <?= (string) ($filters['avance'] ?? '') === $val ? 'selected' : '' ?>><?= $e($lbl) ?></option>
+                        <?php endforeach ?>
+                    </select>
+                </div>
+            </div>
             <div class="ds-filter-field">
                 <div class="ds-form-field">
                     <label class="ds-form-label" for="filtroReclEstado">Estado</label>
@@ -170,6 +187,7 @@ $busqueda = (string) ($filters['q'] ?? '');
             'ayuda' => 'Buscar aspirantes por nombres, apellidos, documento, correo o celular',
             'filtros' => '#filtrosReclutamiento',
             'ocultos' => [
+                'avance' => (string) ($filters['avance'] ?? ''),
                 'estado' => (string) ($filters['estado'] ?? ''),
                 'verificado' => (string) ($filters['verificado'] ?? ''),
             ],

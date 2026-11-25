@@ -6,6 +6,7 @@ namespace DigiSecure\Asignacion\Application;
 
 use DigiSecure\Asignacion\Domain\Enum\EstadoAsignacion;
 use DigiSecure\Asignacion\Infrastructure\AsignacionRepository;
+use DigiSecure\Ficha\Infrastructure\FichaEmpleado;
 use DigiSecure\Infrastructure\Persistence\PdoConnection;
 use DigiSecure\Security\Audit\AuditLogger;
 use DigiSecure\Shared\Domain\DomainException;
@@ -206,11 +207,16 @@ final class GestionarAsignacionesService
     {
         $tid = $this->tenantContext->requireTenantId();
         $row = $this->db->fetchOne(
-            'SELECT estado FROM fichas WHERE id = :id AND tenant_id = :tid',
+            'SELECT f.estado, ' . FichaEmpleado::esDeAspirante('f') . ' AS es_aspirante
+               FROM fichas f
+              WHERE f.id = :id AND f.tenant_id = :tid',
             ['id' => $fichaId, 'tid' => $tid],
         );
         if ($row === null) {
             throw new DomainException('La ficha seleccionada no existe.');
+        }
+        if ((int) $row['es_aspirante'] === 1) {
+            throw new DomainException('Esta persona aún es aspirante: contrátala desde Reclutamiento antes de asignarla a un puesto.');
         }
         if ($row['estado'] !== 'COMPLETA') {
             throw new DomainException('Solo se pueden asignar fichas en estado COMPLETA. Completa primero el expediente del guardia.');

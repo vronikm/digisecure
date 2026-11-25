@@ -74,7 +74,7 @@ final class AsignacionController
         if ($user->tienePermiso('asignaciones.crear')) {
             if ($this->repo->fichasCompletasParaSelect() === []) {
                 $bloqueoCreacion = [
-                    'mensaje' => 'Para asignar se necesita al menos un guardia con ficha COMPLETA.',
+                    'mensaje' => 'Para asignar se necesita al menos un guardia contratado con ficha COMPLETA (los aspirantes se contratan desde Reclutamiento).',
                     'url' => '/guardias',
                     'accion' => 'Ir a Guardias',
                 ];
@@ -109,7 +109,7 @@ final class AsignacionController
         $puestos = $this->repo->puestosActivosParaSelect();
 
         if ($fichas === []) {
-            $this->flash->warning('No hay guardias con ficha COMPLETA. Completa primero al menos un expediente.');
+            $this->flash->warning('No hay guardias contratados con ficha COMPLETA. Los aspirantes se contratan desde Reclutamiento.');
             return Response::redirect('/guardias');
         }
         if ($puestos === []) {

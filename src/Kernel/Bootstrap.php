@@ -332,6 +332,7 @@ final class Bootstrap
             static fn(Container $c) => new \DigiSecure\Reporting\Application\DashboardStatsService(
                 $c->get(PdoConnection::class),
                 $c->get(TenantContext::class),
+                $c->get(\DigiSecure\Aspirante\Infrastructure\AspiranteRepository::class),
             ),
         );
         // Fase 10: servicio de exportación de reportes CSV

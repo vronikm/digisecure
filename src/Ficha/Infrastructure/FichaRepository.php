@@ -216,8 +216,7 @@ final class FichaRepository extends BaseRepository
                     r.ultima_ficha_at,
                     r.total_fichas,
                     r.estado,
-                    r.fecha_baja,
-                    r.es_aspirante
+                    r.fecha_baja
                 FROM (
                     SELECT
                         f.id AS ficha_id,
@@ -230,11 +229,6 @@ final class FichaRepository extends BaseRepository
                         f.email,
                         f.estado,
                         f.fecha_baja,
-                        EXISTS (
-                            SELECT 1 FROM usuarios_roles ur_asp
-                              JOIN roles r_asp ON r_asp.id = ur_asp.role_id
-                             WHERE ur_asp.usuario_id = f.created_by AND r_asp.codigo = 'aspirante'
-                        ) AS es_aspirante,
                         MAX(f.created_at) OVER (PARTITION BY {$personaKey}) AS ultima_ficha_at,
                         COUNT(*) OVER (PARTITION BY {$personaKey}) AS total_fichas,
                         ROW_NUMBER() OVER (
@@ -288,7 +282,9 @@ final class FichaRepository extends BaseRepository
     private function filtroGuardias(array $filters): array
     {
         $bindings = ['__tenant_id' => $this->tenantContext->requireTenantId()];
-        $conditions = ["f.estado <> 'ANULADA'"];
+        // Solo empleados: las fichas de aspirantes sin contratar se gestionan en
+        // Reclutamiento (ver FichaEmpleado).
+        $conditions = ["f.estado <> 'ANULADA'", FichaEmpleado::condicion('f')];
 
         [$textoSql, $textoBindings] = BusquedaTexto::condicion(
             (string) ($filters['busqueda'] ?? ''),

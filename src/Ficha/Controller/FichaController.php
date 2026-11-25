@@ -111,6 +111,17 @@ final class FichaController
             $guardias = [];
         }
 
+        // Los aspirantes sin contratar no son guardias: se gestionan en
+        // Reclutamiento. Se informa cuantos hay a quien puede verlos.
+        $aspirantesEnProceso = 0;
+        if ($user->tienePermiso('aspirantes.gestionar')) {
+            try {
+                $aspirantesEnProceso = $this->aspiranteRepo()?->contarEnProceso($user->tenantId) ?? 0;
+            } catch (\Throwable $e) {
+                $this->errorHandler->report($e);
+            }
+        }
+
         $data = [
             'user' => $user,
             'csrfToken' => $csrf->token(),
@@ -119,6 +130,7 @@ final class FichaController
             'paginacion' => $paginacion,
             'filters' => ['busqueda' => $busqueda],
             'listError' => $listError,
+            'aspirantesEnProceso' => $aspirantesEnProceso,
         ];
 
         // Busqueda y paginacion en vivo (ds-tabla-remota.js): solo la tabla,
@@ -411,7 +423,39 @@ final class FichaController
             'referencias' => $referencias,
             'cursos' => $cursos,
             'googleMapsKey' => $this->googleMapsKey(),
+            'postulacion' => $this->postulacionEnProceso($user, $ficha),
         ]);
+    }
+
+    /**
+     * Si la ficha la creo un aspirante que aun no fue contratado, devuelve su
+     * postulacion (para enlazar con Reclutamiento). Null para fichas de
+     * empleados o cuando quien mira es el propio aspirante.
+     *
+     * @param array<string, mixed> $ficha
+     * @return array{id: string, estado: string, nombres: string, apellidos: string}|null
+     */
+    private function postulacionEnProceso(AuthenticatedUser $user, array $ficha): ?array
+    {
+        if ($user->esAspiranteGuardia()) {
+            return null;
+        }
+
+        try {
+            $postulacion = $this->aspiranteRepo()?->findPostulacionDeUsuario((string) ($ficha['created_by'] ?? ''));
+        } catch (\Throwable $e) {
+            $this->errorHandler->report($e);
+            return null;
+        }
+
+        return ($postulacion !== null && $postulacion['estado'] !== 'contratado') ? $postulacion : null;
+    }
+
+    private function aspiranteRepo(): ?AspiranteRepository
+    {
+        $repo = $this->container->get(AspiranteRepository::class);
+
+        return $repo instanceof AspiranteRepository ? $repo : null;
     }
 
     public function croquisImagen(Request $request, string $id): Response
@@ -700,6 +744,7 @@ final class FichaController
                     'referencias' => $this->fichaRepo->getReferencias($id),
                     'cursos' => $this->fichaRepo->getCursos($id),
                     'incumplimientos' => $incumplimientos,
+                    'postulacion' => $this->postulacionEnProceso($user, $ficha),
                 ]);
             }
 

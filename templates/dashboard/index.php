@@ -36,6 +36,13 @@ $roles = array_values(array_filter(array_map(
     $user->roles,
 )));
 
+// Aspirantes sin contratar: no son guardias, se muestran aparte.
+$aspStats = is_array($stats['aspirantes'] ?? null) ? $stats['aspirantes'] : [];
+$aspEnProceso = (int) ($aspStats['en_proceso'] ?? 0);
+$aspPorRevisar = (int) ($aspStats['por_revisar'] ?? 0);
+$aspListos = (int) ($aspStats['listos'] ?? 0);
+$verAspirantes = $user->tienePermiso('aspirantes.gestionar');
+
 $puedeCrearGuardia = $user->tienePermiso('guardias.crear');
 $puedeVerExpedientes = $user->tienePermiso('expedientes.ver');
 $puedeVerReportes = $user->tienePermiso('reportes.ver');
@@ -390,8 +397,8 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
 <?php endif; ?>
 
 <section class="ds-dashboard-section">
-    <div class="ds-kpi-grid ds-kpi-grid-solid">
-        <a href="<?= $view->url('/guardias') ?>" class="ds-kpi-card" style="text-decoration: none;">
+    <div class="ds-kpi-grid ds-kpi-grid-solid<?= $verAspirantes ? ' ds-kpi-grid-5' : '' ?>">
+        <a href="<?= $view->url('/guardias') ?>" class="ds-kpi-card" style="text-decoration: none;" title="Empleados con ficha completa (no incluye aspirantes)">
             <span class="ds-kpi-icon"><i class="bi bi-person-badge-fill"></i></span>
             <div style="flex:1; min-width:0;">
                 <div class="ds-kpi-label">Guardias activos</div>
@@ -404,11 +411,32 @@ $tieneAccionesRapidas = $puedeCrearGuardia || $puedeVerExpedientes || $puedeVerR
                     <span class="ds-badge tone-muted no-dot" style="font-size:.65rem;"><?= $fichasBorrador ?> borrador</span>
                     <?php endif ?>
                     <?php if ($fichasRevision === 0 && $fichasBorrador === 0): ?>
-                    <span style="color: var(--ds-text-soft);">Sin pendientes</span>
+                    <span>Sin pendientes</span>
                     <?php endif ?>
                 </div>
             </div>
         </a>
+
+        <?php if ($verAspirantes): ?>
+        <a href="<?= $view->url('/reclutamiento') ?>" class="ds-kpi-card tone-purple" style="text-decoration: none;" title="Postulantes que aún no se contratan">
+            <span class="ds-kpi-icon"><i class="bi bi-person-vcard"></i></span>
+            <div style="flex:1; min-width:0;">
+                <div class="ds-kpi-label">Aspirantes en proceso</div>
+                <div class="ds-kpi-value"><?= $aspEnProceso ?></div>
+                <div class="ds-cell-sub" style="margin-top:.25rem; display:flex; gap:.35rem; flex-wrap:wrap;">
+                    <?php if ($aspPorRevisar > 0): ?>
+                    <span class="ds-badge tone-warning no-dot" style="font-size:.65rem;"><?= $aspPorRevisar ?> ficha<?= $aspPorRevisar !== 1 ? 's' : '' ?> por revisar</span>
+                    <?php endif ?>
+                    <?php if ($aspListos > 0): ?>
+                    <span class="ds-badge tone-success no-dot" style="font-size:.65rem;"><?= $aspListos ?> listo<?= $aspListos !== 1 ? 's' : '' ?> para contratar</span>
+                    <?php endif ?>
+                    <?php if ($aspPorRevisar === 0 && $aspListos === 0): ?>
+                    <span>Completando su ficha</span>
+                    <?php endif ?>
+                </div>
+            </div>
+        </a>
+        <?php endif ?>
 
         <a href="<?= $view->url('/expedientes') ?>" class="ds-kpi-card tone-warning" style="text-decoration: none;">
             <span class="ds-kpi-icon"><i class="bi bi-hourglass-split"></i></span>

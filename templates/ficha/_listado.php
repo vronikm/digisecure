@@ -23,14 +23,19 @@ $resumen = $total . ' guardia' . ($total !== 1 ? 's' : '') . ($busqueda !== '' ?
     <?= $view->include('partials/sin-resultados', [
         'busqueda' => $busqueda,
         'urlLimpiar' => $view->url('/guardias'),
-        'sugerencia' => 'Prueba con el apellido, el nombre, el celular, el correo o la cedula completa (10 digitos).',
+        'sugerencia' => 'Prueba con el apellido, el nombre, el celular, el correo o la cédula completa (10 dígitos). Los aspirantes que aún no se contratan se buscan en Reclutamiento.',
     ]) ?>
 <?php elseif ($guardias === []): ?>
     <div class="ds-card-body">
         <div class="ds-empty-state">
             <div class="ds-empty-icon"><i class="bi bi-person-badge"></i></div>
-            <h3>No hay guardias para mostrar</h3>
-            <p>Cuando registres fichas de guardias, se mostraran aqui agrupadas por persona.</p>
+            <h3>Aún no hay guardias contratados</h3>
+            <p>Aquí aparecen los empleados: los que se contratan desde Reclutamiento y los que registra o importa el personal.</p>
+            <?php if ((int) ($aspirantesEnProceso ?? 0) > 0): ?>
+            <a href="<?= $view->url('/reclutamiento') ?>" class="ds-btn ds-btn-primary">
+                <i class="bi bi-clipboard-check"></i>Ver aspirantes en Reclutamiento
+            </a>
+            <?php endif ?>
         </div>
     </div>
 <?php else: ?>
@@ -57,8 +62,6 @@ $resumen = $total . ' guardia' . ($total !== 1 ? 's' : '') . ($busqueda !== '' ?
                         <div class="ds-cell-name"><?= $e((string) ($g['apellidos'] ?? '')) ?></div>
                         <?php if (!empty($g['fecha_baja'])): ?>
                         <span class="ds-badge tone-muted no-dot" style="font-size:.62rem;">De baja</span>
-                        <?php elseif (!empty($g['es_aspirante'])): ?>
-                        <span class="ds-badge tone-info no-dot" style="font-size:.62rem;" title="Ficha registrada por el aspirante; aún no contratado">Aspirante</span>
                         <?php else: ?>
                         <span class="ds-badge tone-success no-dot" style="font-size:.62rem;">Empleado</span>
                         <?php endif ?>

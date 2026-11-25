@@ -71,7 +71,7 @@ $old = static fn(string $k, string $d = ''): string => (string) ($input[$k] ?? $
                             </option>
                             <?php endforeach ?>
                         </select>
-                        <span class="ds-form-help">Solo guardias con ficha en estado COMPLETA.</span>
+                        <span class="ds-form-help">Solo guardias contratados con ficha COMPLETA. Los aspirantes se contratan primero desde Reclutamiento.</span>
                     </div>
                 </div>
                 <div class="col-md-6">

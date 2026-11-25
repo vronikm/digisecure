@@ -69,7 +69,11 @@ final class AspiranteAdminController
             'q'          => trim((string) $request->query('q', '')),
             'estado'     => $request->query('estado'),
             'verificado' => $request->query('verificado'),
+            'avance'     => $request->query('avance'),
         ];
+        if (!isset(AspiranteRepository::AVANCES[(string) $filters['avance']])) {
+            $filters['avance'] = null;
+        }
 
         $paginacion = Paginacion::desdeRequest($request)->conTotal($this->repo->contarAdmin($filters));
         $data = [

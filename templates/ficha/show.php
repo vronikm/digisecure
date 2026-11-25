@@ -27,6 +27,11 @@ $estadoTone = match ($ficha['estado']) {
 };
 
 $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr($ficha['apellidos'] ?? 'X', 0, 1));
+
+// Ficha de un aspirante aun no contratado: se gestiona desde Reclutamiento.
+$postulacion = isset($postulacion) && is_array($postulacion) ? $postulacion : null;
+$puedeReclutar = $postulacion !== null && $user->tienePermiso('aspirantes.gestionar');
+$urlPostulacion = $puedeReclutar ? $view->url('/reclutamiento/' . $postulacion['id']) : '';
 ?>
 
 <?php $view->section('title') ?>Ficha <?= $e($ficha['correlativo']) ?> - DigiSecure<?php $view->endSection() ?>
@@ -106,11 +111,35 @@ $initials = mb_strtoupper(mb_substr($ficha['nombres'] ?? 'X', 0, 1) . mb_substr(
 <?php $view->endSection() ?>
 
 <?php $view->section('breadcrumb') ?>
+<?php if ($puedeReclutar): ?>
+<li class="breadcrumb-item"><a href="<?= $view->url('/reclutamiento') ?>">Reclutamiento</a></li>
+<li class="breadcrumb-item"><a href="<?= $urlPostulacion ?>"><?= $e(trim($postulacion['apellidos'] . ' ' . $postulacion['nombres'])) ?></a></li>
+<?php else: ?>
 <li class="breadcrumb-item"><a href="<?= $view->url('/guardias') ?>">Guardias</a></li>
+<?php endif ?>
 <li class="breadcrumb-item active"><?= $e($ficha['correlativo']) ?></li>
 <?php $view->endSection() ?>
 
 <?php $view->section('content') ?>
+
+<?php if ($postulacion !== null): ?>
+<div class="ds-callout tone-info ds-callout-accion" role="status">
+    <i class="bi bi-person-vcard"></i>
+    <div>
+        <strong>Ficha de un aspirante en proceso<?= $postulacion['estado'] === 'descartado' ? ' (descartado)' : '' ?></strong>
+        <?php if ($postulacion['estado'] === 'descartado'): ?>
+        La postulación fue descartada: esta ficha no aparece en Guardias ni puede asignarse a un puesto.
+        <?php else: ?>
+        Aún no es guardia: no aparece en Guardias ni puede asignarse a un puesto. Revisa y completa la ficha, valida los documentos del Bloque A y luego contrátalo desde Reclutamiento.
+        <?php endif ?>
+    </div>
+    <?php if ($puedeReclutar): ?>
+    <a href="<?= $urlPostulacion ?>" class="ds-btn ds-btn-outline ds-btn-sm">
+        <i class="bi bi-clipboard-check"></i>Ir a Reclutamiento
+    </a>
+    <?php endif ?>
+</div>
+<?php endif ?>
 
 <?php if (!empty($incumplimientos)): ?>
 <div class="ds-card" style="border-left: 4px solid #dc2626; margin-bottom: 1.25rem;">
